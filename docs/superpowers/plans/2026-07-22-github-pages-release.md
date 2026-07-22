@@ -2,13 +2,12 @@
 
 **Goal:** 将工业城市帮派树 Demo 分段提交到 GitHub，并发布为可直接体验的 GitHub Pages。
 
-**Architecture:** Vite 根据 GitHub Actions 环境切换仓库子路径 base；官方 Pages workflow 构建并发布 `dist/`。首次仓库历史按配置、逻辑、界面、证据、发布五组提交。
+**Architecture:** Vite 在生产构建时切换仓库子路径 base；源代码保存在 `main`，构建产物发布到 `gh-pages`。首次仓库历史按配置、逻辑、界面、证据、发布五组提交。
 
 ## Task 1：发布配置与 README
 
 - 创建根目录 `README.md`。
-- 修改 `vite.config.ts`，Actions 构建使用 `/DobeDemo/`。
-- 创建 `.github/workflows/deploy-pages.yml`。
+- 修改 `vite.config.ts`，生产构建使用 `/DobeDemo/`。
 - 更新 session 发布记录。
 
 ## Task 2：本地验证
@@ -27,6 +26,6 @@
 ## Task 4：推送与 Pages 验证
 
 - 推送 `main` 到 `origin`。
-- 使用 GitHub CLI 检查仓库、workflow 与 Pages 配置。
-- 等待 deploy workflow 完成。
+- 将 `dist/` 提交并推送到 `gh-pages`。
+- 使用 GitHub CLI 将 Pages source 设置为 `gh-pages` 根目录。
 - 验证公开 URL HTTP 200。
