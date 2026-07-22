@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.tmp/
+tmp/
+temp/
+*.local
+.DS_Store
+Thumbs.db

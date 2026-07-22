@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.superpowers/
+docs/
+mistakes/
+rules/
+session/
+spec/
