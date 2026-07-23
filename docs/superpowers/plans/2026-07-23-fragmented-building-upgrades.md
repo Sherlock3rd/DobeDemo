@@ -244,13 +244,13 @@ k / N 个子建筑
 已满级 · 10 个子建筑
 ```
 
-- [ ] **Step 1:** 写 Lv.1 显示 0/2、两次点击进入确认但不升主级、确认后 Lv.2 与 0/3 测试。
-- [ ] **Step 2:** 写 Lv.9 需要 10 次、Lv.10 禁用、锁定建筑无按钮、事件不冒泡测试。
-- [ ] **Step 3:** 实现 progressbar、当前设施卡、N 格碎片网格和确认卡。
-- [ ] **Step 4:** 每次碎片完成更新 `data-upgrade-pulse` 或稳定 animation key，触发绿色扫光。
-- [ ] **Step 5:** CSS 实现桌面滚动面板、小屏抽屉、自适应网格、完成/当前/待升级状态。
-- [ ] **Step 6:** reduced motion 关闭扫光与位移动画。
-- [ ] **Step 7:** 运行 UI/App 定向测试、typecheck、lint、format check。
+- [x] **Step 1:** 写 Lv.1 显示 0/2、两次点击进入确认但不升主级、确认后 Lv.2 与 0/3 测试。
+- [x] **Step 2:** 写 Lv.9 需要 10 次、Lv.10 禁用、锁定建筑无按钮、事件不冒泡测试。
+- [x] **Step 3:** 实现具名 progressbar、当前设施卡、N 格碎片网格和确认卡。
+- [x] **Step 4:** 每次碎片完成更新稳定 animation key，触发绿色扫光和最新完成格一次性 pop。
+- [x] **Step 5:** CSS 实现桌面滚动面板、小屏抽屉、自适应网格、完成/当前/待升级状态。
+- [x] **Step 6:** reduced motion 关闭扫光与位移动画。
+- [x] **Step 7:** 运行 UI/App 定向测试、typecheck、lint、format check。
 
 ### Task 6: 集成、存档和浏览器验收
 

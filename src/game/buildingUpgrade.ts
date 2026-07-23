@@ -100,8 +100,3 @@ export function confirmBuildingLevelUp(
     completedFragments: 0,
   }
 }
-
-// Kept temporarily for the pre-fragment city store until Task 2 migrates it.
-export function upgradeBuildingLevel(level: BuildingLevel): BuildingLevel {
-  return level === 1 ? 2 : level === 2 ? 3 : level
-}

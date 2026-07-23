@@ -33,15 +33,11 @@ describe('useCityStore defaults', () => {
     ).toBe(true)
   })
 
-  it('keeps the legacy buildingLevels field in sync as a derived compat view', () => {
-    const state = useCityStore.getState()
+  it('exposes buildingProgress as the single source of truth without a legacy levels view', () => {
+    const state = useCityStore.getState() as unknown as Record<string, unknown>
 
-    expect(Object.keys(state.buildingLevels)).toHaveLength(BUILDING_IDS.length)
-    expect(
-      BUILDING_IDS.every(
-        (id) => state.buildingLevels[id] === state.buildingProgress[id].level,
-      ),
-    ).toBe(true)
+    expect(state.buildingLevels).toBeUndefined()
+    expect(state.upgradeBuilding).toBeUndefined()
   })
 })
 
@@ -69,7 +65,7 @@ describe('useCityStore fragment progression', () => {
     useCityStore.getState().reset()
   })
 
-  it('completes one fragment on the target building only and syncs the compat view', () => {
+  it('completes one fragment on the target building only', () => {
     useCityStore.getState().completeNextFragment('gas-station')
 
     const state = useCityStore.getState()
@@ -82,7 +78,6 @@ describe('useCityStore fragment progression', () => {
         (id) => state.buildingProgress[id].completedFragments === 0,
       ),
     ).toBe(true)
-    expect(state.buildingLevels['gas-station']).toBe(1)
   })
 
   it('reaches readiness without leveling up until confirmation, then commits the level', () => {
@@ -98,7 +93,6 @@ describe('useCityStore fragment progression', () => {
       level: 1,
       completedFragments: 2,
     })
-    expect(state.buildingLevels['repair-shop']).toBe(1)
 
     // A third completion while ready keeps the same state object.
     const ready = useCityStore.getState()
@@ -112,7 +106,6 @@ describe('useCityStore fragment progression', () => {
       level: 2,
       completedFragments: 0,
     })
-    expect(state.buildingLevels['repair-shop']).toBe(2)
   })
 
   it('ignores confirmation before readiness by keeping the same state object', () => {
@@ -140,80 +133,6 @@ describe('useCityStore fragment progression', () => {
   })
 })
 
-describe('useCityStore legacy upgrade compat action', () => {
-  beforeEach(() => {
-    window.localStorage.clear()
-    useCityStore.getState().reset()
-  })
-
-  it('bumps the target building level and syncs both truth views', () => {
-    useCityStore.getState().upgradeBuilding('gas-station')
-
-    const state = useCityStore.getState()
-    expect(state.buildingProgress['gas-station'].level).toBe(2)
-    expect(state.buildingProgress['gas-station'].completedFragments).toBe(0)
-    expect(state.buildingLevels['gas-station']).toBe(2)
-    expect(
-      BUILDING_IDS.filter((id) => id !== 'gas-station').every(
-        (id) => state.buildingLevels[id] === 1,
-      ),
-    ).toBe(true)
-  })
-
-  it('caps the legacy upgrade action at level 3', () => {
-    const { upgradeBuilding } = useCityStore.getState()
-
-    upgradeBuilding('clubhouse')
-    upgradeBuilding('clubhouse')
-    upgradeBuilding('clubhouse')
-
-    expect(useCityStore.getState().buildingLevels.clubhouse).toBe(3)
-    expect(useCityStore.getState().buildingProgress.clubhouse.level).toBe(3)
-  })
-
-  it('keeps the same state reference for an unknown building id', () => {
-    const before = useCityStore.getState()
-    useCityStore.getState().upgradeBuilding('unknown')
-    expect(useCityStore.getState()).toBe(before)
-  })
-
-  it('is a strict no-op that never clobbers a half-completed fragment upgrade', () => {
-    // Level 1 -> target level 2 requires two fragments; one done = mid-upgrade.
-    useCityStore.getState().completeNextFragment('repair-shop')
-    const before = useCityStore.getState()
-
-    useCityStore.getState().upgradeBuilding('repair-shop')
-
-    expect(useCityStore.getState()).toBe(before)
-    expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
-      level: 1,
-      completedFragments: 1,
-    })
-    expect(useCityStore.getState().buildingLevels['repair-shop']).toBe(1)
-  })
-
-  it('is a strict no-op that never clobbers a ready-to-confirm fragment upgrade', () => {
-    const complete = () =>
-      useCityStore.getState().completeNextFragment('repair-shop')
-    complete()
-    complete()
-    const before = useCityStore.getState()
-    expect(before.buildingProgress['repair-shop']).toEqual({
-      level: 1,
-      completedFragments: 2,
-    })
-
-    useCityStore.getState().upgradeBuilding('repair-shop')
-
-    expect(useCityStore.getState()).toBe(before)
-    expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
-      level: 1,
-      completedFragments: 2,
-    })
-    expect(useCityStore.getState().buildingLevels['repair-shop']).toBe(1)
-  })
-})
-
 describe('useCityStore reset', () => {
   beforeEach(() => {
     window.localStorage.clear()
@@ -224,7 +143,6 @@ describe('useCityStore reset', () => {
     useCityStore.getState().selectBuilding('commercial-street')
     useCityStore.getState().completeNextFragment('commercial-street')
     const previousProgress = useCityStore.getState().buildingProgress
-    const previousLevels = useCityStore.getState().buildingLevels
 
     useCityStore.getState().reset()
 
@@ -238,7 +156,6 @@ describe('useCityStore reset', () => {
       ),
     ).toBe(true)
     expect(state.buildingProgress).not.toBe(previousProgress)
-    expect(state.buildingLevels).not.toBe(previousLevels)
   })
 })
 
@@ -253,7 +170,7 @@ describe('useCityStore persistence', () => {
     window.localStorage.clear()
   })
 
-  it('persists only buildingProgress and never the selection or derived levels', () => {
+  it('persists only buildingProgress and never the selection', () => {
     useCityStore.getState().selectBuilding('repair-shop')
     useCityStore.getState().completeNextFragment('repair-shop')
 
@@ -270,7 +187,7 @@ describe('useCityStore persistence', () => {
     expect(CITY_STORAGE_KEY).toBe('dobe-city-progression-v1')
   })
 
-  it('rehydrates a half-completed upgrade and syncs the compat view', async () => {
+  it('rehydrates a half-completed upgrade', async () => {
     window.localStorage.setItem(
       CITY_STORAGE_KEY,
       JSON.stringify({
@@ -290,7 +207,6 @@ describe('useCityStore persistence', () => {
       level: 3,
       completedFragments: 2,
     })
-    expect(state.buildingLevels['repair-shop']).toBe(3)
     // Buildings absent from the save fall back to level 1.
     expect(state.buildingProgress['gas-station']).toEqual({
       level: 1,
@@ -333,8 +249,6 @@ describe('useCityStore persistence', () => {
       level: 10,
       completedFragments: 0,
     })
-    expect(state.buildingLevels['recycling-yard']).toBe(10)
-    expect(state.buildingLevels['clubhouse']).toBe(10)
   })
 
   it('caps a rehydrated level-10 building against further fragments or level ups', async () => {
@@ -363,6 +277,5 @@ describe('useCityStore persistence', () => {
       level: 10,
       completedFragments: 0,
     })
-    expect(useCityStore.getState().buildingLevels['clubhouse']).toBe(10)
   })
 })
