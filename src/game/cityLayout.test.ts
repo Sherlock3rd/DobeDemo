@@ -3,10 +3,13 @@ import { buildingCatalogById } from './buildingCatalog'
 import { BUILDING_IDS } from './cityTypes'
 import {
   BUILDING_RENDER_SCALE,
+  BUILDING_STATIC_CLEARANCE,
   CAMERA_CONFIG,
   CITY_BOUNDS,
   environmentBuildingPlacements,
   interactiveBuildingPlacements,
+  LOT_CLEARANCE,
+  LOT_ROAD_CLEARANCE,
   lotPlacements,
   riverPlacements,
   roadPlacements,
@@ -14,14 +17,21 @@ import {
   type CityPlacement,
   vehiclePlacements,
 } from './cityLayout'
+import {
+  aabbContains,
+  aabbsOverlapWithClearance,
+  getInteractiveBuildingPlacement,
+  getPlacementAabb,
+  isAabbInsideBounds,
+} from './placementGeometry'
 
 const EXPECTED_INTERACTIVE_BUILDINGS = [
-  { id: 'recycling-yard', position: [-11, 0, -8], rotation: 0 },
-  { id: 'metalworking-plant', position: [-2, 0, -9], rotation: 0 },
+  { id: 'recycling-yard', position: [-6, 0, -4], rotation: 0 },
+  { id: 'metalworking-plant', position: [-6, 0, -10.5], rotation: 0 },
   { id: 'clubhouse', position: [7, 0, -7], rotation: 0 },
-  { id: 'repair-shop', position: [-11, 0, 0], rotation: 0 },
-  { id: 'gas-station', position: [-5, 0, 8], rotation: 0 },
-  { id: 'commercial-street', position: [8, 0, 4], rotation: 0 },
+  { id: 'repair-shop', position: [-8, 0, 4], rotation: 0 },
+  { id: 'gas-station', position: [-12, 0, 10.5], rotation: 0 },
+  { id: 'commercial-street', position: [6.8, 0, 6], rotation: 0 },
 ] as const
 
 function crossesCityCenter({ position, size }: CityPlacement) {
@@ -69,30 +79,11 @@ function footprintsOverlap(
   )
 }
 
-function getPlacementAabb(placement: CityPlacement) {
-  const rotation = placement.rotation ?? 0
-  const cosine = Math.abs(Math.cos(rotation))
-  const sine = Math.abs(Math.sin(rotation))
-  const width = placement.size[0] * cosine + placement.size[1] * sine
-  const depth = placement.size[0] * sine + placement.size[1] * cosine
-
-  return {
-    minX: placement.position[0] - width / 2,
-    maxX: placement.position[0] + width / 2,
-    minZ: placement.position[2] - depth / 2,
-    maxZ: placement.position[2] + depth / 2,
-  }
-}
-
 function aabbsHavePositiveOverlap(first: CityPlacement, second: CityPlacement) {
-  const firstAabb = getPlacementAabb(first)
-  const secondAabb = getPlacementAabb(second)
-
-  return (
-    firstAabb.minX < secondAabb.maxX &&
-    firstAabb.maxX > secondAabb.minX &&
-    firstAabb.minZ < secondAabb.maxZ &&
-    firstAabb.maxZ > secondAabb.minZ
+  return aabbsOverlapWithClearance(
+    getPlacementAabb(first),
+    getPlacementAabb(second),
+    0,
   )
 }
 
@@ -312,6 +303,44 @@ describe('cityLayout', () => {
     expect(overlaps).toEqual([])
   })
 
+  it('keeps every interactive building footprint clear of every road with clearance', () => {
+    const violations: string[] = []
+
+    interactiveBuildingPlacements.forEach((building) => {
+      const buildingAabb = getPlacementAabb(
+        getInteractiveBuildingPlacement(building),
+      )
+
+      roadPlacements.forEach((road, roadIndex) => {
+        const roadAabb = getPlacementAabb(road)
+        if (
+          aabbsOverlapWithClearance(buildingAabb, roadAabb, LOT_ROAD_CLEARANCE)
+        ) {
+          violations.push(`building ${building.id} vs road ${roadIndex}`)
+        }
+      })
+    })
+
+    expect(violations).toEqual([])
+  })
+
+  it('keeps every lot clear of every road with clearance', () => {
+    const violations: string[] = []
+
+    lotPlacements.forEach((lot, lotIndex) => {
+      const lotAabb = getPlacementAabb(lot)
+
+      roadPlacements.forEach((road, roadIndex) => {
+        const roadAabb = getPlacementAabb(road)
+        if (aabbsOverlapWithClearance(lotAabb, roadAabb, LOT_ROAD_CLEARANCE)) {
+          violations.push(`lot ${lotIndex} vs road ${roadIndex}`)
+        }
+      })
+    })
+
+    expect(violations).toEqual([])
+  })
+
   it('keeps all eight environment building AABBs inside the city bounds', () => {
     expect(environmentBuildingPlacements).toHaveLength(8)
 
@@ -321,5 +350,236 @@ describe('cityLayout', () => {
       expect(position[2] - size[1] / 2).toBeGreaterThanOrEqual(CITY_BOUNDS.minZ)
       expect(position[2] + size[1] / 2).toBeLessThanOrEqual(CITY_BOUNDS.maxZ)
     }
+  })
+
+  it('keeps every interactive building footprint clear of every river segment', () => {
+    const violations: string[] = []
+
+    interactiveBuildingPlacements.forEach((building) => {
+      const buildingAabb = getPlacementAabb(
+        getInteractiveBuildingPlacement(building),
+      )
+
+      riverPlacements.forEach((river, riverIndex) => {
+        const riverAabb = getPlacementAabb(river)
+        if (
+          aabbsOverlapWithClearance(buildingAabb, riverAabb, LOT_ROAD_CLEARANCE)
+        ) {
+          violations.push(`building ${building.id} vs river ${riverIndex}`)
+        }
+      })
+    })
+
+    expect(violations).toEqual([])
+  })
+
+  it('keeps every interactive building footprint clear of every tree and vehicle', () => {
+    const violations: string[] = []
+
+    interactiveBuildingPlacements.forEach((building) => {
+      const buildingAabb = getPlacementAabb(
+        getInteractiveBuildingPlacement(building),
+      )
+
+      treePlacements.forEach((tree, treeIndex) => {
+        const treeAabb = getPlacementAabb(tree)
+        if (
+          aabbsOverlapWithClearance(
+            buildingAabb,
+            treeAabb,
+            BUILDING_STATIC_CLEARANCE,
+          )
+        ) {
+          violations.push(`building ${building.id} vs tree ${treeIndex}`)
+        }
+      })
+
+      vehiclePlacements.forEach((vehicle, vehicleIndex) => {
+        const vehicleAabb = getPlacementAabb(vehicle)
+        if (
+          aabbsOverlapWithClearance(
+            buildingAabb,
+            vehicleAabb,
+            BUILDING_STATIC_CLEARANCE,
+          )
+        ) {
+          violations.push(`building ${building.id} vs vehicle ${vehicleIndex}`)
+        }
+      })
+    })
+
+    expect(violations).toEqual([])
+  })
+
+  it('keeps every lot clear of every river segment', () => {
+    const violations: string[] = []
+
+    lotPlacements.forEach((lot, lotIndex) => {
+      const lotAabb = getPlacementAabb(lot)
+
+      riverPlacements.forEach((river, riverIndex) => {
+        const riverAabb = getPlacementAabb(river)
+        if (aabbsOverlapWithClearance(lotAabb, riverAabb, LOT_ROAD_CLEARANCE)) {
+          violations.push(`lot ${lotIndex} vs river ${riverIndex}`)
+        }
+      })
+    })
+
+    expect(violations).toEqual([])
+  })
+
+  it('keeps every lot clear of every other lot with clearance', () => {
+    const violations: string[] = []
+
+    for (
+      let firstIndex = 0;
+      firstIndex < lotPlacements.length;
+      firstIndex += 1
+    ) {
+      for (
+        let secondIndex = firstIndex + 1;
+        secondIndex < lotPlacements.length;
+        secondIndex += 1
+      ) {
+        const firstAabb = getPlacementAabb(lotPlacements[firstIndex])
+        const secondAabb = getPlacementAabb(lotPlacements[secondIndex])
+        if (aabbsOverlapWithClearance(firstAabb, secondAabb, LOT_CLEARANCE)) {
+          violations.push(`lot ${firstIndex} vs lot ${secondIndex}`)
+        }
+      }
+    }
+
+    expect(violations).toEqual([])
+  })
+
+  it('keeps every lot clear of every environment building with clearance', () => {
+    const violations: string[] = []
+
+    lotPlacements.forEach((lot, lotIndex) => {
+      const lotAabb = getPlacementAabb(lot)
+
+      environmentBuildingPlacements.forEach((environment, environmentIndex) => {
+        const environmentAabb = getPlacementAabb(environment)
+        if (
+          aabbsOverlapWithClearance(
+            lotAabb,
+            environmentAabb,
+            LOT_ROAD_CLEARANCE,
+          )
+        ) {
+          violations.push(`lot ${lotIndex} vs environment ${environmentIndex}`)
+        }
+      })
+    })
+
+    expect(violations).toEqual([])
+  })
+
+  it('keeps every environment building from positively overlapping roads, rivers, buildings, and other environment buildings', () => {
+    const violations: string[] = []
+    const obstacles: readonly { label: string; placement: CityPlacement }[] = [
+      ...roadPlacements.map((placement, index) => ({
+        label: `road ${index}`,
+        placement,
+      })),
+      ...riverPlacements.map((placement, index) => ({
+        label: `river ${index}`,
+        placement,
+      })),
+      ...interactiveBuildingPlacements.map((building) => ({
+        label: `building ${building.id}`,
+        placement: getInteractiveBuildingPlacement(building),
+      })),
+    ]
+
+    environmentBuildingPlacements.forEach((environment, environmentIndex) => {
+      const environmentAabb = getPlacementAabb(environment)
+
+      obstacles.forEach(({ label, placement }) => {
+        if (
+          aabbsOverlapWithClearance(
+            environmentAabb,
+            getPlacementAabb(placement),
+            0,
+          )
+        ) {
+          violations.push(`environment ${environmentIndex} vs ${label}`)
+        }
+      })
+
+      environmentBuildingPlacements.forEach((other, otherIndex) => {
+        if (otherIndex <= environmentIndex) {
+          return
+        }
+        if (
+          aabbsOverlapWithClearance(environmentAabb, getPlacementAabb(other), 0)
+        ) {
+          violations.push(
+            `environment ${environmentIndex} vs environment ${otherIndex}`,
+          )
+        }
+      })
+    })
+
+    expect(violations).toEqual([])
+  })
+
+  it('keeps every building, lot, and environment AABB inside the city bounds', () => {
+    const violations: string[] = []
+
+    interactiveBuildingPlacements.forEach((building) => {
+      const aabb = getPlacementAabb(getInteractiveBuildingPlacement(building))
+      if (!isAabbInsideBounds(aabb, CITY_BOUNDS)) {
+        violations.push(`building ${building.id} outside bounds`)
+      }
+    })
+
+    lotPlacements.forEach((lot, lotIndex) => {
+      if (!isAabbInsideBounds(getPlacementAabb(lot), CITY_BOUNDS)) {
+        violations.push(`lot ${lotIndex} outside bounds`)
+      }
+    })
+
+    environmentBuildingPlacements.forEach((environment, environmentIndex) => {
+      if (!isAabbInsideBounds(getPlacementAabb(environment), CITY_BOUNDS)) {
+        violations.push(`environment ${environmentIndex} outside bounds`)
+      }
+    })
+
+    expect(violations).toEqual([])
+  })
+
+  it('keeps every interactive building centered inside its matching lot', () => {
+    const violations: string[] = []
+
+    interactiveBuildingPlacements.forEach((building) => {
+      const buildingAabb = getPlacementAabb(
+        getInteractiveBuildingPlacement(building),
+      )
+      const lot = lotPlacements.find(
+        ({ position }) =>
+          position[0] === building.position[0] &&
+          position[2] === building.position[2],
+      )
+
+      if (!lot) {
+        violations.push(`building ${building.id} has no matching lot`)
+        return
+      }
+
+      const lotAabb = getPlacementAabb(lot)
+
+      if (!aabbContains(lotAabb, buildingAabb)) {
+        violations.push(`building ${building.id} not contained by its lot`)
+      }
+      if (lot.position[0] !== building.position[0]) {
+        violations.push(`building ${building.id} lot center x mismatch`)
+      }
+      if (lot.position[2] !== building.position[2]) {
+        violations.push(`building ${building.id} lot center z mismatch`)
+      }
+    })
+
+    expect(violations).toEqual([])
   })
 })
