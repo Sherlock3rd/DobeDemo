@@ -97,7 +97,7 @@ describe('GangIdleController', () => {
     expect(syncSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('settles once per second with the real store under StrictMode and stops after unmount', () => {
+  it('settles each ten-second tick once under StrictMode and stops after unmount', () => {
     useGangStore.setState({ syncIdleProgress: originalSyncIdleProgress })
     useGangStore.getState().reset(1_000)
 
@@ -110,17 +110,23 @@ describe('GangIdleController', () => {
     expect(useGangStore.getState().totalReputation).toBe(0)
 
     act(() => {
+      vi.advanceTimersByTime(9_000)
+    })
+    expect(useGangStore.getState().totalReputation).toBe(0)
+    expect(useGangStore.getState().lastUpdatedAt).toBe(1_000)
+
+    act(() => {
       vi.advanceTimersByTime(1_000)
     })
-    expect(useGangStore.getState().totalReputation).toBe(5)
-    expect(useGangStore.getState().lastUpdatedAt).toBe(2_000)
+    expect(useGangStore.getState().totalReputation).toBe(1)
+    expect(useGangStore.getState().lastUpdatedAt).toBe(11_000)
 
     unmount()
     act(() => {
       vi.advanceTimersByTime(2_000)
     })
 
-    expect(useGangStore.getState().totalReputation).toBe(5)
-    expect(useGangStore.getState().lastUpdatedAt).toBe(2_000)
+    expect(useGangStore.getState().totalReputation).toBe(1)
+    expect(useGangStore.getState().lastUpdatedAt).toBe(11_000)
   })
 })

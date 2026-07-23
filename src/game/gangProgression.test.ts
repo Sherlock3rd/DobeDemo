@@ -7,7 +7,8 @@ import {
   MAX_OFFLINE_SECONDS,
   MAX_REPUTATION,
   REPUTATION_PER_LEVEL,
-  REPUTATION_PER_SECOND,
+  REPUTATION_PER_TICK,
+  REPUTATION_TICK_SECONDS,
   calculateIdleReputation,
   calculateIdleSettlement,
   getBuildingUnlock,
@@ -64,14 +65,16 @@ describe('gang progression constants', () => {
       GANG_MIN_LEVEL,
       GANG_MAX_LEVEL,
       REPUTATION_PER_LEVEL,
-      REPUTATION_PER_SECOND,
+      REPUTATION_TICK_SECONDS,
+      REPUTATION_PER_TICK,
       MAX_OFFLINE_SECONDS,
       MAX_REPUTATION,
     }).toEqual({
       GANG_MIN_LEVEL: 1,
       GANG_MAX_LEVEL: 50,
       REPUTATION_PER_LEVEL: 30,
-      REPUTATION_PER_SECOND: 5,
+      REPUTATION_TICK_SECONDS: 10,
+      REPUTATION_PER_TICK: 1,
       MAX_OFFLINE_SECONDS: 28_800,
       MAX_REPUTATION: 1_470,
     })
@@ -253,13 +256,13 @@ describe('building unlocks', () => {
 })
 
 describe('idle reputation', () => {
-  it('awards five reputation for each complete elapsed second', () => {
-    expect(calculateIdleReputation(1_000, 11_000)).toBe(50)
+  it('awards one reputation for each complete ten-second tick', () => {
+    expect(calculateIdleReputation(1_000, 21_000)).toBe(2)
   })
 
-  it('ignores partial seconds', () => {
-    expect(calculateIdleReputation(1_000, 2_999)).toBe(5)
-    expect(calculateIdleReputation(1_000, 1_999)).toBe(0)
+  it('ignores partial ticks', () => {
+    expect(calculateIdleReputation(1_000, 20_999)).toBe(1)
+    expect(calculateIdleReputation(1_000, 10_999)).toBe(0)
   })
 
   it('returns zero for non-positive elapsed time', () => {
@@ -279,28 +282,28 @@ describe('idle reputation', () => {
   it('caps idle earnings at eight hours', () => {
     const eightHoursInMs = MAX_OFFLINE_SECONDS * 1_000
 
-    expect(calculateIdleReputation(0, eightHoursInMs)).toBe(144_000)
-    expect(calculateIdleReputation(0, eightHoursInMs * 2)).toBe(144_000)
+    expect(calculateIdleReputation(0, eightHoursInMs)).toBe(2_880)
+    expect(calculateIdleReputation(0, eightHoursInMs * 2)).toBe(2_880)
   })
 })
 
 describe('idle settlement', () => {
-  it('settles five complete seconds into twenty-five reputation', () => {
-    expect(calculateIdleSettlement(1_000, 6_000)).toEqual({
-      earnedReputation: 25,
-      nextUpdatedAt: 6_000,
+  it('settles complete ten-second ticks', () => {
+    expect(calculateIdleSettlement(1_000, 26_000)).toEqual({
+      earnedReputation: 2,
+      nextUpdatedAt: 21_000,
     })
   })
 
-  it('settles only complete seconds and keeps the sub-second remainder', () => {
-    expect(calculateIdleSettlement(1_000, 2_500)).toEqual({
-      earnedReputation: 5,
-      nextUpdatedAt: 2_000,
+  it('settles only complete ticks and keeps the sub-tick remainder', () => {
+    expect(calculateIdleSettlement(1_000, 26_000)).toEqual({
+      earnedReputation: 2,
+      nextUpdatedAt: 21_000,
     })
   })
 
-  it('does not advance lastUpdatedAt when less than one second elapsed', () => {
-    expect(calculateIdleSettlement(1_000, 1_999)).toEqual({
+  it('does not advance lastUpdatedAt when less than ten seconds elapsed', () => {
+    expect(calculateIdleSettlement(1_000, 10_999)).toEqual({
       earnedReputation: 0,
       nextUpdatedAt: 1_000,
     })
@@ -310,13 +313,13 @@ describe('idle settlement', () => {
     const eightHoursInMs = MAX_OFFLINE_SECONDS * 1_000
 
     expect(calculateIdleSettlement(0, eightHoursInMs)).toEqual({
-      earnedReputation: 144_000,
+      earnedReputation: 2_880,
       nextUpdatedAt: eightHoursInMs,
     })
 
     const beyondCapNow = eightHoursInMs * 2 + 500
     expect(calculateIdleSettlement(0, beyondCapNow)).toEqual({
-      earnedReputation: 144_000,
+      earnedReputation: 2_880,
       nextUpdatedAt: beyondCapNow,
     })
   })
@@ -341,8 +344,8 @@ describe('idle settlement', () => {
   })
 
   it('backs calculateIdleReputation with the settlement earned amount', () => {
-    expect(calculateIdleReputation(1_000, 6_000)).toBe(
-      calculateIdleSettlement(1_000, 6_000).earnedReputation,
+    expect(calculateIdleReputation(1_000, 26_000)).toBe(
+      calculateIdleSettlement(1_000, 26_000).earnedReputation,
     )
   })
 })

@@ -97,10 +97,38 @@
 }
 
 .city-hud__rate {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.5rem;
   color: #7fd8a4;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.city-hud__resources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+}
+
+.city-hud__resource {
+  padding: 0.4rem;
+  border: 1px solid rgba(248, 250, 252, 0.12);
+  border-radius: 0.4rem;
+  background: rgba(248, 250, 252, 0.05);
+}
+
+.city-hud__resource p {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.city-hud__resource p + p {
+  color: #7fd8a4;
+  font-size: 0.64rem;
 }
 
 .city-hud__actions {

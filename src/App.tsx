@@ -1,6 +1,7 @@
 import { Loader } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useState, type JSX } from 'react'
+import { EconomyIdleController } from './game/EconomyIdleController'
 import { GangIdleController } from './game/GangIdleController'
 import { CAMERA_CONFIG } from './game/cityLayout'
 import { CityScene } from './scene/city/CityScene'
@@ -54,6 +55,7 @@ export default function App(): JSX.Element {
           }
         />
         <GangIdleController />
+        <EconomyIdleController />
         <CityHud onOpenGangTree={openGangTree} onOpenSettings={openSettings} />
         <BuildingPanel />
         <GangTreePanel

@@ -3,7 +3,8 @@ import type { BuildingId } from './cityTypes'
 export const GANG_MIN_LEVEL = 1
 export const GANG_MAX_LEVEL = 50
 export const REPUTATION_PER_LEVEL = 30
-export const REPUTATION_PER_SECOND = 5
+export const REPUTATION_TICK_SECONDS = 10
+export const REPUTATION_PER_TICK = 1
 export const MAX_OFFLINE_SECONDS = 28_800
 export const MAX_REPUTATION = 1_470
 
@@ -154,22 +155,25 @@ export function calculateIdleSettlement(
     return { earnedReputation: 0, nextUpdatedAt: lastUpdatedAt }
   }
 
-  const elapsedSeconds = Math.floor((now - lastUpdatedAt) / 1_000)
+  const elapsedMs = now - lastUpdatedAt
+  const tickMs = REPUTATION_TICK_SECONDS * 1_000
+  const maxOfflineMs = MAX_OFFLINE_SECONDS * 1_000
+  const ticks = Math.floor(Math.min(elapsedMs, maxOfflineMs) / tickMs)
 
-  if (elapsedSeconds < 1) {
+  if (ticks < 1) {
     return { earnedReputation: 0, nextUpdatedAt: lastUpdatedAt }
   }
 
-  if (elapsedSeconds >= MAX_OFFLINE_SECONDS) {
+  if (elapsedMs >= maxOfflineMs) {
     return {
-      earnedReputation: MAX_OFFLINE_SECONDS * REPUTATION_PER_SECOND,
+      earnedReputation: ticks * REPUTATION_PER_TICK,
       nextUpdatedAt: now,
     }
   }
 
   return {
-    earnedReputation: elapsedSeconds * REPUTATION_PER_SECOND,
-    nextUpdatedAt: lastUpdatedAt + elapsedSeconds * 1_000,
+    earnedReputation: ticks * REPUTATION_PER_TICK,
+    nextUpdatedAt: lastUpdatedAt + ticks * tickMs,
   }
 }
 

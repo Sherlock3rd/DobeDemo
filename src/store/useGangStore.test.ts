@@ -24,26 +24,26 @@ describe('useGangStore idle sync', () => {
     useGangStore.getState().reset(BASE_TIME)
   })
 
-  it('awards five reputation per complete second', () => {
-    useGangStore.getState().syncIdleProgress(BASE_TIME + 5_000)
+  it('awards one reputation per complete ten-second tick', () => {
+    useGangStore.getState().syncIdleProgress(BASE_TIME + 20_000)
 
     const state = useGangStore.getState()
-    expect(state.totalReputation).toBe(25)
-    expect(state.lastUpdatedAt).toBe(BASE_TIME + 5_000)
+    expect(state.totalReputation).toBe(2)
+    expect(state.lastUpdatedAt).toBe(BASE_TIME + 20_000)
   })
 
-  it('settles only complete seconds and keeps the sub-second remainder across calls', () => {
-    useGangStore.getState().syncIdleProgress(BASE_TIME + 1_500)
-    expect(useGangStore.getState().totalReputation).toBe(5)
-    expect(useGangStore.getState().lastUpdatedAt).toBe(BASE_TIME + 1_000)
+  it('settles only complete ticks and keeps the sub-tick remainder across calls', () => {
+    useGangStore.getState().syncIdleProgress(BASE_TIME + 15_000)
+    expect(useGangStore.getState().totalReputation).toBe(1)
+    expect(useGangStore.getState().lastUpdatedAt).toBe(BASE_TIME + 10_000)
 
-    useGangStore.getState().syncIdleProgress(BASE_TIME + 1_999)
-    expect(useGangStore.getState().totalReputation).toBe(5)
-    expect(useGangStore.getState().lastUpdatedAt).toBe(BASE_TIME + 1_000)
+    useGangStore.getState().syncIdleProgress(BASE_TIME + 19_999)
+    expect(useGangStore.getState().totalReputation).toBe(1)
+    expect(useGangStore.getState().lastUpdatedAt).toBe(BASE_TIME + 10_000)
 
-    useGangStore.getState().syncIdleProgress(BASE_TIME + 2_000)
-    expect(useGangStore.getState().totalReputation).toBe(10)
-    expect(useGangStore.getState().lastUpdatedAt).toBe(BASE_TIME + 2_000)
+    useGangStore.getState().syncIdleProgress(BASE_TIME + 20_000)
+    expect(useGangStore.getState().totalReputation).toBe(2)
+    expect(useGangStore.getState().lastUpdatedAt).toBe(BASE_TIME + 20_000)
   })
 
   it('caps reputation at the max level and snaps lastUpdatedAt to now beyond eight hours', () => {
@@ -98,7 +98,7 @@ describe('useGangStore idle sync', () => {
   })
 
   it('resets reputation to zero and applies the provided timestamp', () => {
-    useGangStore.getState().syncIdleProgress(BASE_TIME + 5_000)
+    useGangStore.getState().syncIdleProgress(BASE_TIME + 20_000)
 
     useGangStore.getState().reset(BASE_TIME + 100_000)
 
@@ -130,7 +130,7 @@ describe('useGangStore persistence', () => {
   })
 
   it('persists only totalReputation and lastUpdatedAt under the storage key', () => {
-    useGangStore.getState().syncIdleProgress(BASE_TIME + 5_000)
+    useGangStore.getState().syncIdleProgress(BASE_TIME + 20_000)
 
     const raw = window.localStorage.getItem(GANG_STORAGE_KEY)
     expect(raw).not.toBeNull()
@@ -140,8 +140,8 @@ describe('useGangStore persistence', () => {
       expect.arrayContaining(['totalReputation', 'lastUpdatedAt']),
     )
     expect(Object.keys(parsed.state)).toHaveLength(2)
-    expect(parsed.state.totalReputation).toBe(25)
-    expect(parsed.state.lastUpdatedAt).toBe(BASE_TIME + 5_000)
+    expect(parsed.state.totalReputation).toBe(2)
+    expect(parsed.state.lastUpdatedAt).toBe(BASE_TIME + 20_000)
   })
 
   it('uses the documented storage key', () => {
@@ -149,7 +149,7 @@ describe('useGangStore persistence', () => {
   })
 
   it('rehydrates a persisted timestamp before settling offline progress', async () => {
-    const persistedLastUpdatedAt = BASE_TIME - 5_000
+    const persistedLastUpdatedAt = BASE_TIME - 20_000
     window.localStorage.setItem(
       GANG_STORAGE_KEY,
       JSON.stringify({
@@ -168,7 +168,7 @@ describe('useGangStore persistence', () => {
 
     useGangStore.getState().syncIdleProgress(BASE_TIME)
 
-    expect(useGangStore.getState().totalReputation).toBe(35)
+    expect(useGangStore.getState().totalReputation).toBe(12)
     expect(useGangStore.getState().lastUpdatedAt).toBe(BASE_TIME)
   })
 })

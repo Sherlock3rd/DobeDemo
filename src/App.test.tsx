@@ -28,6 +28,12 @@ vi.mock('./game/GangIdleController', () => ({
   GangIdleController: () => <div data-testid="gang-idle-controller-mock" />,
 }))
 
+vi.mock('./game/EconomyIdleController', () => ({
+  EconomyIdleController: () => (
+    <div data-testid="economy-idle-controller-mock" />
+  ),
+}))
+
 const { default: App } = await import('./App')
 
 describe('App', () => {
@@ -68,6 +74,17 @@ describe('App', () => {
     render(<App />)
 
     expect(screen.getByTestId('gang-idle-controller-mock')).toBeInTheDocument()
+  })
+
+  it('mounts the economy idle controller after the gang controller', () => {
+    render(<App />)
+
+    const gangController = screen.getByTestId('gang-idle-controller-mock')
+    const economyController = screen.getByTestId('economy-idle-controller-mock')
+    expect(
+      gangController.compareDocumentPosition(economyController) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('does not show the gang tree dialog until the HUD button is clicked', () => {

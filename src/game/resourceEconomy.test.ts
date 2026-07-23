@@ -2,9 +2,14 @@ import { describe, expect, it } from 'vitest'
 import type { BuildingId } from './cityTypes'
 import { economyConfig } from '../config/economyConfig'
 import {
+  createInitialBuildingProgress,
+  type BuildingProgressById,
+} from '../store/cityProgressMigration'
+import {
   EMPTY_WALLET,
   canAfford,
   getBuildingProductionPerTick,
+  getCurrentProductionRates,
   settleResourceProduction,
   subtractCost,
   type BuildingProgressByIdLike,
@@ -49,6 +54,38 @@ describe('resourceEconomy', () => {
     expect(
       getBuildingProductionPerTick('repair-shop', [1, 1, 1, 1, 1]),
     ).toEqual({ money: 2, oil: 0, materials: 0 })
+  })
+
+  it('combines current production from active producer buildings', () => {
+    const initialProgress = createInitialBuildingProgress()
+    const buildingProgress: BuildingProgressById = {
+      ...initialProgress,
+      'repair-shop': {
+        ...initialProgress['repair-shop'],
+        childLevels: [1, 1, 1, 1, 1],
+      },
+      'commercial-street': {
+        ...initialProgress['commercial-street'],
+        childLevels: Array(10).fill(1),
+      },
+      'gas-station': {
+        ...initialProgress['gas-station'],
+        childLevels: [1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+      },
+      'metalworking-plant': {
+        ...initialProgress['metalworking-plant'],
+        childLevels: Array(10).fill(1),
+      },
+    }
+
+    expect(
+      getCurrentProductionRates(buildingProgress, [
+        'repair-shop',
+        'commercial-street',
+        'gas-station',
+        'metalworking-plant',
+      ]),
+    ).toEqual({ money: 6, oil: 2, materials: 3 })
   })
 
   it('returns an empty wallet constant', () => {

@@ -3,6 +3,7 @@ import {
   type ResourceCost,
   type ResourceWallet,
 } from '../config/economyConfig'
+import type { BuildingProgressById } from '../store/cityProgressMigration'
 import type { BuildingId } from './cityTypes'
 
 export type BuildingProgressByIdLike = Readonly<
@@ -69,6 +70,26 @@ function addWallets(
     oil: left.oil + right.oil,
     materials: left.materials + right.materials,
   }
+}
+
+export function getCurrentProductionRates(
+  buildingProgress: BuildingProgressById,
+  activeProducerIds: readonly BuildingId[],
+): ResourceWallet {
+  return activeProducerIds.reduce<ResourceWallet>(
+    (total, buildingId) => {
+      const progress = buildingProgress[buildingId]
+      if (!progress) {
+        return total
+      }
+
+      return addWallets(
+        total,
+        getBuildingProductionPerTick(buildingId, progress.childLevels),
+      )
+    },
+    { ...EMPTY_WALLET },
+  )
 }
 
 function scaleWallet(wallet: ResourceWallet, ticks: number): ResourceWallet {
