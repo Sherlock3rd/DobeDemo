@@ -2,7 +2,7 @@
 
 生成日期：2026-07-23  
 执行范围：Task 3 Execution Boundaries 的本地 Step 1–3  
-状态：DONE_WITH_CONCERNS  
+状态：DONE  
 公开发布：待父代理发布
 
 ## 边界与版本状态
@@ -65,25 +65,27 @@
 
 1. `node ".superpowers/sdd/settings-reset-cdp.mjs"` → exit 1。前 24 条业务/持久化断言通过；脚本在 `Page.reload` 后误把旧文档识别为新文档，移动步骤找不到设置按钮。进程、端口和 profile 均安全清理。
 2. 同命令复验 → exit 1。刷新竞态已用 `performance.timeOrigin` 条件等待修复，完整八步流程通过；仅“注入声望必须精确等于 330”断言失败，实际为 335，原因是允许的当秒挂机 +5。进程、端口和 profile 均安全清理。
-3. 隐私修复后同命令最终运行 → exit 0；生成时间 `2026-07-23T10:33:49.738Z`，`ASSERTION SELF-TEST: PASS (32 pure-data checks)`、`ALL ASSERTIONS PASSED`，33/33 运行时断言通过。公开 JSON 仅记录 `chromeExecutable="chrome.exe"` 与 `tempProfileName="dobe-settings-reset-cdp-kK6puo"`。
+3. 错误字段隐私修复后同命令最终运行 → exit 0；生成时间 `2026-07-23T10:43:36.266Z`，`ASSERTION SELF-TEST: PASS (33 pure-data checks)`、`ALL ASSERTIONS PASSED`，33/33 运行时断言通过。公开 JSON 仅记录 `chromeExecutable="chrome.exe"` 与 `tempProfileName="dobe-settings-reset-cdp-15nlfl"`。
 
 ### Important 隐私修复验证
 
 1. `node --check ".superpowers/sdd/settings-reset-cdp.mjs"` → exit 0。
-2. `npm.cmd exec prettier -- --check --ignore-path NUL ".superpowers/sdd/settings-reset-cdp.mjs"` → exit 0；`All matched files use Prettier code style!`。
+2. 首次 Prettier check 检出新增转换函数格式差异并 exit 1；执行 `npm.cmd exec prettier -- --write --ignore-path NUL ".superpowers/sdd/settings-reset-cdp.mjs"` 后，再次 check exit 0，`All matched files use Prettier code style!`。
 3. 运行前端口复检 → 5188/9234 均未监听；首次 PowerShell 表达式因旧版解析器不接受该管道写法而 exit 1，改为先收集 `$rows` 后重试 exit 0。
-4. `node ".superpowers/sdd/settings-reset-cdp.mjs"` → exit 0；33/33 断言、32 项纯数据 self-test 全部通过。
-5. Node JSON 脱敏扫描 → exit 0；`C:\\Users\\`、`/Users/`、`AppData`、Windows 盘符绝对路径、Chrome 安装目录模式全部为 false，解析后的字符串值中绝对路径数量为 0。
+4. `node ".superpowers/sdd/settings-reset-cdp.mjs"` → exit 0；33/33 运行断言、33 项纯数据 self-test 全部通过。
+5. 错误转换 self-test 使用含 `C:\Users\private\secret` 和 `/Users/private/secret` 的 Error message/stack；公开输出仅为 `{ name: "Error", code: "ENOENT" }` 与 `{ name: "TypeError" }`，`forbiddenDataPresent=false`。
+6. Node JSON 脱敏扫描 → exit 0；`C:\`、`/Users/`、`AppData`、Windows 盘符绝对路径、`secret` 全部为 false，解析后的字符串值中不安全路径数量为 0。
+7. 失败时原始 Error 仅由本地 stderr 输出；公开 `results.error` / `results.teardown.error` 只允许经白名单转换后的 `name` 与可选安全 `code`，不写 message 或 stack。
 
 ## 真实浏览器八步流程
 
-1. 写入 gang 基线 330 声望（Lv.12）及修车厂 `{ level: 6, completedFragments: 3 }`；加载后 GangIdleController 合法结算 +5，持久化为 335，时间戳从 `1784802833060` 前进至 `1784802834060`。
+1. 写入 gang 基线 330 声望（Lv.12）及修车厂 `{ level: 6, completedFragments: 3 }`；加载后 GangIdleController 合法结算 +5，持久化为 335，时间戳从 `1784803419829` 前进至 `1784803420829`。
 2. 真实 CDP 场景点击 `(455, 280)` 打开修车厂，显示“等级 6 / 10”“3 / 7 个子建筑”。
 3. 真实点击 `aria-label="打开调试设置"`，得到具名“调试设置”的 `role="dialog"`，帮派树不存在。
 4. 首次点击“重置账号”后，城市持久化 JSON 完全未变；gang 仍为 Lv.12 且仅允许按 +5/秒推导；HUD 与修车厂面板不变，出现“确认重置账号”与永久重置警告。
-5. 点击“确认重置账号”后立即读取原始持久化 JSON：六建筑全部 Lv.1/0，gang 声望精确为 0，`lastUpdatedAt=1784802835647`，且落在 Node 点击区间 `[1784802835624, 1784802835651]`；设置 dialog 和建筑面板关闭，HUD 为 Lv.1。
+5. 点击“确认重置账号”后立即读取原始持久化 JSON：六建筑全部 Lv.1/0，gang 声望精确为 0，`lastUpdatedAt=1784803422571`，且落在 Node 点击区间 `[1784803422564, 1784803422577]`；设置 dialog 和建筑面板关闭，HUD 为 Lv.1。
 6. 再次真实点击修车厂，显示“等级 1 / 10”“0 / 2 个子建筑”。
-7. 刷新后，城市双存档仍为六建筑 Lv.1/0；gang 为 `{ totalReputation: 0, lastUpdatedAt: 1784802835647 }`，精确满足“重置基线 + 按整秒 5 点挂机收益”的公式，HUD 仍为 Lv.1。
+7. 刷新后，城市双存档仍为六建筑 Lv.1/0；gang 为 `{ totalReputation: 0, lastUpdatedAt: 1784803422571 }`，精确满足“重置基线 + 按整秒 5 点挂机收益”的公式，HUD 仍为 Lv.1。
 8. 设备指标切换为 390×844 后真实打开设置：抽屉矩形为 `left=0, top=567.5625, right=390, bottom=844, width=390, height=276.4375`；panel `scrollWidth/clientWidth=389/389`，document `scrollWidth=390`，无横向溢出。
 
 ## CDP 逐条断言
@@ -107,7 +109,7 @@
 15. first click enters confirmation state：确认按钮与警告均存在。
 16. reset moment city persistence is initial：六建筑全部 Lv.1/0。
 17. reset moment gang persistence is zero：0 声望。
-18. reset uses confirmation `Date.now()`：时间戳 1784802835647 落在点击区间内。
+18. reset uses confirmation `Date.now()`：时间戳 1784803422571 落在点击区间内。
 19. confirmation closes settings dialog：false。
 20. confirmation closes building panel：false。
 21. HUD resets to Lv.1：`Lv. 1`。
@@ -136,19 +138,20 @@
 ## 进程与端口安全
 
 - 最终运行预检选择空闲 dev 5188、CDP 9234；策略为跳过占用端口，绝不连接或终止未知 PID。
-- 脚本自建并记录：Vite PID 58960、Chrome PID 62064。
+- 脚本自建并记录：Vite PID 62148、Chrome PID 53316。
 - teardown 仅对上述 owned PID 执行树终止；`unknownProcessesTerminated=false`。
 - 最终确认 dev 5188 与 CDP 9234 均释放。
-- 运行时仍使用原始绝对 Chrome/profile 路径启动与清理，但这些路径只存在于脚本局部变量；公开 `processSafety` 仅保留 basename：`chromeExecutable="chrome.exe"`、`tempProfileName="dobe-settings-reset-cdp-kK6puo"`。
+- 运行时仍使用原始绝对 Chrome/profile 路径启动与清理，但这些路径只存在于脚本局部变量；公开 `processSafety` 仅保留 basename：`chromeExecutable="chrome.exe"`、`tempProfileName="dobe-settings-reset-cdp-15nlfl"`。
 - 临时 profile 仅清理脚本自身创建、精确匹配前缀和内部绝对路径的目录，最终 `tempProfileRemoved=true`；公开 JSON 不记录该内部绝对路径。
-- 最终证据文件大小：确认态 149,648 bytes、完成态 155,461 bytes、移动端 74,432 bytes、结果 JSON 23,493 bytes。
+- 最终证据文件大小：确认态 149,367 bytes、完成态 153,180 bytes、移动端 74,432 bytes、结果 JSON 23,754 bytes。
 
 ## 脱敏扫描
 
-- 原始 JSON 正则扫描：`C:\\Users\\` false、`/Users/` false、`AppData` false、`[A-Za-z]:\\` false。
+- 原始 JSON 正则扫描：`C:\` false、`/Users/` false、`AppData` false、`[A-Za-z]:\` false、`secret` false。
 - Chrome 安装目录扫描：`Program Files`/`Google\\Chrome` false。
 - 递归解析所有 JSON 字符串后，Windows 或 macOS 用户目录绝对路径共 0 项。
 - 公开字段已从 `chromePath`/`tempProfile` 改为 `chromeExecutable`/`tempProfileName`；值均为 basename，不含盘符、用户名、系统临时目录或安装目录。
+- 公开失败字段只保留安全错误类别；self-test 输出的 Error/TypeError 类别不含 message、stack、`Users`、盘符或 `secret`。
 
 ## 关注事项
 

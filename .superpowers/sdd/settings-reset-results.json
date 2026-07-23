@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T10:33:49.738Z",
+  "generatedAt": "2026-07-23T10:43:36.266Z",
   "preflight": {
     "terminalAndPortCheckPerformed": true,
     "strategy": "skip occupied preferred ports; never terminate unknown PID",
@@ -25,28 +25,28 @@
     "ownedPids": [
       {
         "label": "vite",
-        "pid": 58960
+        "pid": 62148
       },
       {
         "label": "chrome",
-        "pid": 62064
+        "pid": 53316
       }
     ],
     "killAttempts": [
       {
         "label": "chrome",
-        "pid": 62064,
+        "pid": 53316,
         "owned": true
       },
       {
         "label": "vite",
-        "pid": 58960,
+        "pid": 62148,
         "owned": true
       }
     ],
     "unknownProcessesTerminated": false,
     "chromeExecutable": "chrome.exe",
-    "tempProfileName": "dobe-settings-reset-cdp-kK6puo"
+    "tempProfileName": "dobe-settings-reset-cdp-15nlfl"
   },
   "dist": {
     "index": "dist/index.html",
@@ -63,7 +63,7 @@
     "hasMainTsx": true
   },
   "injection": {
-    "injectedAt": 1784802833060,
+    "injectedAt": 1784803419829,
     "citySave": {
       "state": {
         "buildingProgress": {
@@ -98,7 +98,7 @@
     "gangSave": {
       "state": {
         "totalReputation": 330,
-        "lastUpdatedAt": 1784802833060
+        "lastUpdatedAt": 1784803419829
       },
       "version": 0
     },
@@ -137,7 +137,7 @@
       "gang": {
         "state": {
           "totalReputation": 335,
-          "lastUpdatedAt": 1784802834060
+          "lastUpdatedAt": 1784803420829
         },
         "version": 0
       }
@@ -211,7 +211,7 @@
       "gang": {
         "state": {
           "totalReputation": 335,
-          "lastUpdatedAt": 1784802834060
+          "lastUpdatedAt": 1784803420829
         },
         "version": 0
       }
@@ -269,7 +269,7 @@
       "gang": {
         "state": {
           "totalReputation": 335,
-          "lastUpdatedAt": 1784802834060
+          "lastUpdatedAt": 1784803420829
         },
         "version": 0
       }
@@ -323,7 +323,7 @@
       "gang": {
         "state": {
           "totalReputation": 335,
-          "lastUpdatedAt": 1784802834060
+          "lastUpdatedAt": 1784803420829
         },
         "version": 0
       }
@@ -346,8 +346,8 @@
     "gangIdleTolerance": "GangIdleController may add exact +5/sec; progression must remain Lv.12 and must not reset."
   },
   "resetMoment": {
-    "nodeBeforeClick": 1784802835624,
-    "nodeAfterClick": 1784802835651,
+    "nodeBeforeClick": 1784803422564,
+    "nodeAfterClick": 1784803422577,
     "storage": {
       "city": {
         "state": {
@@ -383,7 +383,7 @@
       "gang": {
         "state": {
           "totalReputation": 0,
-          "lastUpdatedAt": 1784802835647
+          "lastUpdatedAt": 1784803422571
         },
         "version": 0
       }
@@ -440,7 +440,7 @@
       "gang": {
         "state": {
           "totalReputation": 0,
-          "lastUpdatedAt": 1784802835647
+          "lastUpdatedAt": 1784803422571
         },
         "version": 0
       }
@@ -500,7 +500,7 @@
       "gang": {
         "state": {
           "totalReputation": 0,
-          "lastUpdatedAt": 1784802835647
+          "lastUpdatedAt": 1784803422571
         },
         "version": 0
       }
@@ -542,7 +542,7 @@
       "gang": {
         "state": {
           "totalReputation": 0,
-          "lastUpdatedAt": 1784802835647
+          "lastUpdatedAt": 1784803422571
         },
         "version": 0
       }
@@ -611,9 +611,23 @@
   },
   "assertionSelfTest": {
     "ok": true,
-    "checked": 32,
+    "checked": 33,
     "failuresOnGoodData": [],
-    "passesOnBadData": []
+    "passesOnBadData": [],
+    "errorSanitization": {
+      "ok": true,
+      "checked": 1,
+      "outputs": [
+        {
+          "name": "Error",
+          "code": "ENOENT"
+        },
+        {
+          "name": "TypeError"
+        }
+      ],
+      "forbiddenDataPresent": false
+    }
   },
   "assertions": [
     {
@@ -644,7 +658,7 @@
     {
       "name": "injected gang is Lv.12 seed plus exact idle earnings",
       "pass": true,
-      "detail": "{\"injectedAt\":1784802833060,\"injectedGang\":{\"totalReputation\":335,\"lastUpdatedAt\":1784802834060}}"
+      "detail": "{\"injectedAt\":1784803419829,\"injectedGang\":{\"totalReputation\":335,\"lastUpdatedAt\":1784803420829}}"
     },
     {
       "name": "injected repair shop is Lv.6 with 3 fragments",
@@ -674,7 +688,7 @@
     {
       "name": "first click preserves gang progression except valid idle tick",
       "pass": true,
-      "detail": "{\"injectedAt\":1784802833060,\"beforeGang\":{\"totalReputation\":335,\"lastUpdatedAt\":1784802834060},\"afterFirstGang\":{\"totalReputation\":335,\"lastUpdatedAt\":1784802834060}}"
+      "detail": "{\"injectedAt\":1784803419829,\"beforeGang\":{\"totalReputation\":335,\"lastUpdatedAt\":1784803420829},\"afterFirstGang\":{\"totalReputation\":335,\"lastUpdatedAt\":1784803420829}}"
     },
     {
       "name": "first click preserves HUD Lv.12",
@@ -699,12 +713,12 @@
     {
       "name": "reset moment gang persistence is zero",
       "pass": true,
-      "detail": "{\"totalReputation\":0,\"lastUpdatedAt\":1784802835647}"
+      "detail": "{\"totalReputation\":0,\"lastUpdatedAt\":1784803422571}"
     },
     {
       "name": "reset uses confirmation Date.now()",
       "pass": true,
-      "detail": "{\"resetGang\":{\"totalReputation\":0,\"lastUpdatedAt\":1784802835647},\"before\":1784802835624,\"after\":1784802835651}"
+      "detail": "{\"resetGang\":{\"totalReputation\":0,\"lastUpdatedAt\":1784803422571},\"before\":1784803422564,\"after\":1784803422577}"
     },
     {
       "name": "confirmation closes settings dialog",
@@ -734,7 +748,7 @@
     {
       "name": "refresh gang is reset baseline plus exact idle earnings",
       "pass": true,
-      "detail": "{\"refreshGang\":{\"totalReputation\":0,\"lastUpdatedAt\":1784802835647},\"resetAt\":1784802835647}"
+      "detail": "{\"refreshGang\":{\"totalReputation\":0,\"lastUpdatedAt\":1784803422571},\"resetAt\":1784803422571}"
     },
     {
       "name": "refresh HUD remains Lv.1",
@@ -764,7 +778,7 @@
     {
       "name": "only owned PIDs targeted",
       "pass": true,
-      "detail": "{\"ownedPids\":[{\"label\":\"vite\",\"pid\":58960},{\"label\":\"chrome\",\"pid\":62064}],\"killAttempts\":[{\"label\":\"chrome\",\"pid\":62064,\"owned\":true},{\"label\":\"vite\",\"pid\":58960,\"owned\":true}],\"unknownProcessesTerminated\":false,\"chromeExecutable\":\"chrome.exe\",\"tempProfileName\":\"dobe-settings-reset-cdp-kK6puo\"}"
+      "detail": "{\"ownedPids\":[{\"label\":\"vite\",\"pid\":62148},{\"label\":\"chrome\",\"pid\":53316}],\"killAttempts\":[{\"label\":\"chrome\",\"pid\":53316,\"owned\":true},{\"label\":\"vite\",\"pid\":62148,\"owned\":true}],\"unknownProcessesTerminated\":false,\"chromeExecutable\":\"chrome.exe\",\"tempProfileName\":\"dobe-settings-reset-cdp-15nlfl\"}"
     },
     {
       "name": "dev port released",

@@ -603,6 +603,56 @@ function evaluateAssertions(value) {
   return checks
 }
 
+function toPublicErrorCategory(error) {
+  const candidateName =
+    error && typeof error === 'object' && typeof error.name === 'string'
+      ? error.name
+      : 'Error'
+  const name = /^[A-Za-z][A-Za-z0-9]*$/.test(candidateName)
+    ? candidateName.slice(0, 64)
+    : 'Error'
+  const candidateCode =
+    error && typeof error === 'object' && typeof error.code === 'string'
+      ? error.code
+      : null
+  const code =
+    candidateCode && /^[A-Z0-9_-]{1,40}$/.test(candidateCode)
+      ? candidateCode
+      : null
+  return code ? { name, code } : { name }
+}
+
+function runPublicErrorSelfTest() {
+  const windowsError = new Error(
+    'failed at C:\\Users\\private\\secret\\settings-reset-cdp.mjs',
+  )
+  windowsError.stack =
+    'Error: secret\n at C:\\Users\\private\\secret\\settings-reset-cdp.mjs:1:1'
+  windowsError.code = 'ENOENT'
+  const unixError = new TypeError(
+    'failed at /Users/private/secret/settings-reset-cdp.mjs',
+  )
+  unixError.stack =
+    'TypeError: secret\n at /Users/private/secret/settings-reset-cdp.mjs:1:1'
+  const outputs = [
+    toPublicErrorCategory(windowsError),
+    toPublicErrorCategory(unixError),
+  ]
+  const serialized = JSON.stringify(outputs)
+  const forbidden = /Users|secret|[A-Za-z]:\\|\/Users\/|message|stack/i.test(
+    serialized,
+  )
+  const expected =
+    serialized ===
+    JSON.stringify([{ name: 'Error', code: 'ENOENT' }, { name: 'TypeError' }])
+  return {
+    ok: !forbidden && expected,
+    checked: 1,
+    outputs,
+    forbiddenDataPresent: forbidden,
+  }
+}
+
 function runAssertionSelfTest() {
   const now = 1_000_000
   const initialProgress = Object.fromEntries(
@@ -709,17 +759,20 @@ function runAssertionSelfTest() {
   const badChecks = evaluateAssertions({}).filter(
     (check) => check.name !== 'all three screenshots written',
   )
+  const errorSanitization = runPublicErrorSelfTest()
   return {
     ok:
       pureChecks.every((check) => check.pass) &&
-      badChecks.every((check) => !check.pass),
-    checked: pureChecks.length,
+      badChecks.every((check) => !check.pass) &&
+      errorSanitization.ok,
+    checked: pureChecks.length + errorSanitization.checked,
     failuresOnGoodData: pureChecks
       .filter((check) => !check.pass)
       .map((check) => check.name),
     passesOnBadData: badChecks
       .filter((check) => check.pass)
       .map((check) => check.name),
+    errorSanitization,
   }
 }
 
@@ -1022,17 +1075,19 @@ async function teardown() {
 
 results.assertionSelfTest = runAssertionSelfTest()
 let runError
+let teardownError
 try {
   await runFlow()
 } catch (error) {
   runError = error
-  results.error = String(error?.stack || error)
+  results.error = toPublicErrorCategory(error)
 } finally {
   try {
     await teardown()
   } catch (error) {
+    teardownError = error
     runError ||= error
-    results.teardown.error = String(error?.stack || error)
+    results.teardown.error = toPublicErrorCategory(error)
   }
 }
 
@@ -1048,8 +1103,10 @@ for (const assertion of results.assertions) {
     `${assertion.pass ? 'PASS' : 'FAIL'} ${assertion.name}: ${assertion.detail}`,
   )
 }
-if (runError)
-  console.error(`RUN ERROR: ${results.error || results.teardown.error}`)
+if (runError) console.error('RUN ERROR:', runError?.stack || runError)
+if (teardownError && teardownError !== runError) {
+  console.error('TEARDOWN ERROR:', teardownError?.stack || teardownError)
+}
 if (failures.length) {
   console.error(
     `FAILED ASSERTIONS: ${failures.map((item) => item.name).join(', ')}`,
