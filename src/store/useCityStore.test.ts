@@ -44,6 +44,17 @@ describe('useCityStore atomic economy', () => {
     expect(useCityStore.getState().resources.money).toBe(2_883)
   })
 
+  it('does not move the resource clock backward when producers change', () => {
+    useCityStore.getState().syncResourceProduction(START - 5_000, 16)
+
+    const state = useCityStore.getState()
+    expect(state.lastResourceUpdatedAt).toBe(START)
+    expect(state.activeProducerIds).toEqual([
+      'repair-shop',
+      'commercial-street',
+    ])
+  })
+
   it('settles old production, charges five money, and upgrades only child 4', () => {
     useCityStore.setState({
       resources: { money: 5, oil: 0, materials: 0 },

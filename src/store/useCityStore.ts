@@ -92,7 +92,7 @@ export const useCityStore = create<CityState>()(
             activeProducerIds,
           )
           const lastResourceUpdatedAt = producersChanged
-            ? now
+            ? Math.max(now, settlement.nextUpdatedAt)
             : settlement.nextUpdatedAt
           if (
             settlement.wallet === state.resources &&
