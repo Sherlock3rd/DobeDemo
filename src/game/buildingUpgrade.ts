@@ -3,7 +3,7 @@ import {
   type ResourceCost,
   type ResourceWallet,
 } from '../config/economyConfig'
-import { canAfford } from './resourceEconomy'
+import { EMPTY_WALLET, canAfford } from './resourceEconomy'
 import { isBuildingUnlocked } from './gangProgression'
 import {
   type BuildingId,
@@ -47,8 +47,6 @@ export interface MainUpgradeDecisionInput {
   gangLevel: number
 }
 
-const noMissing: ResourceCost = { money: 0, oil: 0, materials: 0 }
-
 export function getBuildingChildCount(id: BuildingId): 5 | 10 {
   return id === 'repair-shop' ? 5 : 10
 }
@@ -83,7 +81,7 @@ function blocked(
     targetLevel,
     cost,
     missingResources:
-      cost && wallet ? missingResources(wallet, cost) : { ...noMissing },
+      cost && wallet ? missingResources(wallet, cost) : { ...EMPTY_WALLET },
   }
 }
 
@@ -96,7 +94,7 @@ export function getChildUpgradeDecision(
   }
 
   const childLevel = progress.childLevels[childIndex]
-  if (childLevel >= progress.level) {
+  if (childLevel === undefined || childLevel >= progress.level) {
     return blocked('child-at-main-level')
   }
 

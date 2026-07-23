@@ -95,6 +95,21 @@ describe('child upgrade decisions', () => {
       missingResources: { money: 3, oil: 0, materials: 0 },
     })
   })
+
+  it('never throws for an out-of-range child index', () => {
+    for (const childIndex of [-1, 5, 99]) {
+      const decision = getChildUpgradeDecision({
+        buildingId: 'repair-shop',
+        childIndex,
+        progress: progress(1, [0, 0, 0, 0, 0]),
+        wallet: richWallet,
+        gangLevel: 1,
+      })
+      expect(decision.reason).not.toBe('ready')
+      expect(decision.targetLevel).toBeNull()
+      expect(decision.cost).toBeNull()
+    }
+  })
 })
 
 describe('main building upgrade decisions', () => {

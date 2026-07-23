@@ -128,22 +128,6 @@ describe('useCityStore atomic economy', () => {
     }
   })
 
-  it('keeps temporary bridge actions canonical', () => {
-    useCityStore.getState().completeNextFragment('repair-shop')
-    expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
-      level: 1,
-      childLevels: [1, 0, 0, 0, 0],
-    })
-    for (let index = 0; index < 4; index += 1) {
-      useCityStore.getState().completeNextFragment('repair-shop')
-    }
-    useCityStore.getState().confirmBuildingLevelUp('repair-shop')
-    expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
-      level: 2,
-      childLevels: Array(5).fill(1),
-    })
-  })
-
   it('persists only the four durable v2 fields', () => {
     useCityStore.getState().selectBuilding('repair-shop')
     useCityStore.getState().syncResourceProduction(START + 10_000, 1)

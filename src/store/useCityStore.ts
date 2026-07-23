@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { economyConfig, type ResourceWallet } from '../config/economyConfig'
 import {
-  getBuildingMaxLevel,
+  getBuildingChildCount,
   getChildUpgradeDecision,
   getMainUpgradeDecision,
 } from '../game/buildingUpgrade'
@@ -14,7 +14,11 @@ import {
   type ChildBuildingLevel,
 } from '../game/cityTypes'
 import { isBuildingUnlocked } from '../game/gangProgression'
-import { settleResourceProduction, subtractCost } from '../game/resourceEconomy'
+import {
+  EMPTY_WALLET,
+  settleResourceProduction,
+  subtractCost,
+} from '../game/resourceEconomy'
 import { createSafeStorage } from './safeStorage'
 import {
   CITY_STORAGE_KEY,
@@ -40,16 +44,10 @@ interface CityState extends CityDurableState {
     now: number,
   ) => void
   upgradeMainBuilding: (id: string, gangLevel: number, now: number) => void
-  completeNextFragment: (id: string) => void
-  confirmBuildingLevelUp: (id: string) => void
   reset: (now?: number) => void
 }
 
-const emptyResources = (): ResourceWallet => ({
-  money: 0,
-  oil: 0,
-  materials: 0,
-})
+const emptyResources = (): ResourceWallet => ({ ...EMPTY_WALLET })
 
 function getUnlockedProducerIds(gangLevel: number): BuildingId[] {
   return BUILDING_IDS.filter(
@@ -115,7 +113,7 @@ export const useCityStore = create<CityState>()(
           !isBuildingId(id) ||
           !Number.isInteger(childIndex) ||
           childIndex < 0 ||
-          childIndex >= stateChildCount(id) ||
+          childIndex >= getBuildingChildCount(id) ||
           !Number.isFinite(now)
         ) {
           return
@@ -205,54 +203,6 @@ export const useCityStore = create<CityState>()(
           }
         })
       },
-      completeNextFragment: (id) =>
-        set((state) => {
-          if (!isBuildingId(id)) {
-            return state
-          }
-
-          const current = state.buildingProgress[id]
-          const childIndex = current.childLevels.findIndex(
-            (level) => level < current.level,
-          )
-          if (childIndex < 0) {
-            return state
-          }
-          const childLevels = [...current.childLevels]
-          childLevels[childIndex] = (childLevels[childIndex] +
-            1) as ChildBuildingLevel
-
-          return {
-            buildingProgress: {
-              ...state.buildingProgress,
-              [id]: { ...current, childLevels },
-            },
-          }
-        }),
-      confirmBuildingLevelUp: (id) =>
-        set((state) => {
-          if (!isBuildingId(id)) {
-            return state
-          }
-
-          const current = state.buildingProgress[id]
-          if (
-            current.level >= getBuildingMaxLevel(id) ||
-            current.childLevels.some((level) => level !== current.level)
-          ) {
-            return state
-          }
-
-          return {
-            buildingProgress: {
-              ...state.buildingProgress,
-              [id]: {
-                ...current,
-                level: (current.level + 1) as BuildingLevel,
-              },
-            },
-          }
-        }),
       reset: (now = Date.now()) =>
         set({
           selectedBuildingId: null,
@@ -286,7 +236,3 @@ export const useCityStore = create<CityState>()(
     },
   ),
 )
-
-function stateChildCount(id: BuildingId): number {
-  return id === 'repair-shop' ? 5 : 10
-}

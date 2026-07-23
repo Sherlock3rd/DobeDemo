@@ -39,6 +39,17 @@ vi.mock('./LockedBuildingPlot', () => ({
 
 const { BuildingVisual } = await import('./BuildingVisual')
 
+// Canonically raises the first repair child from Lv.0 to Lv.1 (a single-child
+// increase), the same effect the removed fixed-order bridge action produced.
+function bumpFirstRepairChild(): void {
+  useCityStore.setState((state) => ({
+    buildingProgress: {
+      ...state.buildingProgress,
+      'repair-shop': { level: 1, childLevels: [1, 0, 0, 0, 0] },
+    },
+  }))
+}
+
 describe('BuildingVisual', () => {
   beforeEach(() => {
     window.localStorage.clear()
@@ -74,7 +85,7 @@ describe('BuildingVisual', () => {
 
   it('forwards the full building progress from the store', () => {
     act(() => {
-      useCityStore.getState().completeNextFragment('repair-shop')
+      bumpFirstRepairChild()
     })
 
     render(<BuildingVisual id="repair-shop" highlighted={false} />)
@@ -96,7 +107,7 @@ describe('BuildingVisual', () => {
 
     it('does not replay an entrance for progress restored on mount', () => {
       act(() => {
-        useCityStore.getState().completeNextFragment('repair-shop')
+        bumpFirstRepairChild()
       })
 
       render(<BuildingVisual id="repair-shop" highlighted={false} />)
@@ -151,7 +162,7 @@ describe('BuildingVisual', () => {
       )
 
       act(() => {
-        useCityStore.getState().completeNextFragment('repair-shop')
+        bumpFirstRepairChild()
       })
       expect(screen.getByTestId('building-model')).toHaveAttribute(
         'data-animated',
@@ -241,7 +252,7 @@ describe('BuildingVisual', () => {
       )
 
       act(() => {
-        useCityStore.getState().completeNextFragment('repair-shop')
+        bumpFirstRepairChild()
       })
 
       expect(screen.getByTestId('building-model')).toHaveAttribute(
