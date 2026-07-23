@@ -24,7 +24,6 @@ export function InteractiveBuilding({
 }: InteractiveBuildingProps): JSX.Element {
   const definition = buildingCatalogById[id]
   const selected = useCityStore((state) => state.selectedBuildingId === id)
-  const level = useCityStore((state) => state.buildingLevels[id])
   const selectBuilding = useCityStore((state) => state.selectBuilding)
   const [hovered, setHovered] = useState(false)
   const highlighted = hovered || selected
@@ -67,7 +66,7 @@ export function InteractiveBuilding({
 
   return (
     <group position={position} rotation={[0, rotation, 0]}>
-      <BuildingVisual id={id} level={level} highlighted={highlighted} />
+      <BuildingVisual id={id} highlighted={highlighted} />
 
       {highlighted && (
         <mesh position={[0, 0.07, 0]} receiveShadow>

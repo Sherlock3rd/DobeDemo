@@ -170,13 +170,23 @@ export function getRenderedBuildingFragments(
 
 **Files:**
 
+- Create: `src/scene/city/buildingVisualTypes.ts`（承接原 `buildingVisualConfig` 的
+  `BuildingColorRole` / `Box|CylinderVisualPart` / `BuildingVisualPart` 类型）。
 - Create: `src/scene/city/AnimatedBuildingFragment.tsx`
 - Create: `src/scene/city/AnimatedBuildingFragment.test.tsx`
+- Create: `src/scene/city/buildingFragmentAnimation.ts`（纯 easing 常量与 transform，
+  与组件分文件以满足 react-refresh/only-export-components）。
+- Create: `src/scene/city/buildingFragmentMaterial.ts`（scaffold / highlight / neon
+  材质语义纯函数，由 `BuildingModel` 消费）。
+- Create: `src/scene/city/usePrefersReducedMotion.ts` 与 `.test.ts`（小 hook）。
 - Rewrite: `src/scene/city/BuildingModel.tsx`
+- Create: `src/scene/city/BuildingModel.test.tsx`
 - Modify: `src/scene/city/BuildingVisual.tsx`
 - Modify: `src/scene/city/BuildingVisual.test.tsx`
-- Modify: `src/scene/city/InteractiveBuilding.tsx`
-- Modify: `src/scene/city/InteractiveBuilding.test.tsx`
+- Modify: `src/scene/city/InteractiveBuilding.tsx`（`InteractiveBuilding.test.tsx` 无需改动，
+  其对 `BuildingVisual` 的 mock 只读 `id`）。
+- Migrate: `src/scene/city/buildingFragmentCatalog.ts` 与 `.test.ts` 的类型导入指向
+  `buildingVisualTypes`。
 - Delete (legacy, Task 3 保留至此删除): `src/scene/city/buildingVisualConfig.ts` 与 `.test.ts`
 
 **Interfaces:**
@@ -192,18 +202,27 @@ interface BuildingModelProps {
   definition: BuildingDefinition
   progress: BuildingProgress
   highlighted: boolean
+  // BuildingVisual 依据本会话前后 progress 计算传入；缺省不 animate。
+  animatedFragmentId?: string
+}
+
+// BuildingVisual 现自行从 store 订阅 progress，故只保留 id / highlighted。
+interface BuildingVisualProps {
+  id: BuildingId
+  highlighted: boolean
 }
 ```
 
-- [ ] **Step 1:** 写动画 easing RED：0ms、200ms、400ms、越界 clamp、reduced motion。
-- [ ] **Step 2:** 实现纯 transform 与 `useFrame` 组件；只更新 refs。
-- [ ] **Step 3:** `BuildingModel` 映射 `getRenderedBuildingFragments`，稳定 key 为 fragment ID，
+- [x] **Step 1:** 写动画 easing RED：0ms、200ms、400ms、越界 clamp、reduced motion。
+- [x] **Step 2:** 实现纯 transform 与 `useFrame` 组件；只更新 refs。
+- [x] **Step 3:** `BuildingModel` 映射 `getRenderedBuildingFragments`，稳定 key 为 fragment ID，
       每 fragment 用 `<group position={anchor}>` 原地缩放；依据前后 progress 计算 `animatedFragmentId`。
-- [ ] **Step 4:** `BuildingVisual` 从 store 订阅完整 progress 并传递；锁定模式保持不变。
-- [ ] **Step 5:** `InteractiveBuilding` 选中/highlight/拖动行为保持，改读 `progress.level`。
-- [ ] **Step 6:** 组件测试断言 progress 透传、仅新完成 fragment animate、锁定切换不回归。
-- [ ] **Step 7:** 删除 Task 3 保留的 legacy `buildingVisualConfig` / `getBuildingVisualStage` 及其测试。
-- [ ] **Step 8:** 运行 scene 定向测试、typecheck、lint。
+- [x] **Step 4:** `BuildingVisual` 从 store 订阅完整 progress 并传递；锁定模式保持不变。
+- [x] **Step 5:** `InteractiveBuilding` 选中/highlight/拖动行为保持，移除 legacy `buildingLevels` 兼容读取
+      （由 `BuildingVisual` 直接订阅 `buildingProgress`）。
+- [x] **Step 6:** 组件测试断言 progress 透传、仅新完成 fragment animate、锁定切换不回归。
+- [x] **Step 7:** 删除 Task 3 保留的 legacy `buildingVisualConfig` / `getBuildingVisualStage` 及其测试。
+- [x] **Step 8:** 运行 scene 定向测试、typecheck、lint。
 
 ### Task 5: Setup 面板与确认闭环
 

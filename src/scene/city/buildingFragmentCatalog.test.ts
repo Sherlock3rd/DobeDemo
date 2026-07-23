@@ -16,7 +16,7 @@ import {
   getRenderedBuildingFragments,
   type FragmentRenderState,
 } from './buildingFragmentCatalog'
-import type { BuildingVisualPart } from './buildingVisualConfig'
+import type { BuildingVisualPart } from './buildingVisualTypes'
 
 const buildingKinds = [
   'repair',

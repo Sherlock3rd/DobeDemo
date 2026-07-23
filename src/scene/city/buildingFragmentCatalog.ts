@@ -13,7 +13,7 @@ import type {
   BuildingColorRole,
   BuildingVisualPart,
   CylinderVisualPart,
-} from './buildingVisualConfig'
+} from './buildingVisualTypes'
 
 export interface BuildingFragmentBlueprint {
   id: string

@@ -1,70 +1,77 @@
-import type { JSX } from 'react'
-import type { BuildingDefinition, BuildingLevel } from '../../game/cityTypes'
-import {
-  getBuildingVisualStage,
-  type BuildingColorRole,
-} from './buildingVisualConfig'
+import { useMemo, type JSX } from 'react'
+import type { BuildingDefinition, BuildingProgress } from '../../game/cityTypes'
+import { AnimatedBuildingFragment } from './AnimatedBuildingFragment'
+import { getRenderedBuildingFragments } from './buildingFragmentCatalog'
+import { getFragmentPartMaterial } from './buildingFragmentMaterial'
 
 interface BuildingModelProps {
   definition: BuildingDefinition
-  level: BuildingLevel
+  progress: BuildingProgress
   highlighted: boolean
-}
-
-const fixedColors: Readonly<
-  Record<Exclude<BuildingColorRole, 'primary' | 'accent'>, string>
-> = {
-  roof: '#c8c9c7',
-  dark: '#2f3438',
-  glass: '#78909c',
+  animatedFragmentId?: string
 }
 
 export function BuildingModel({
   definition,
-  level,
+  progress,
   highlighted,
+  animatedFragmentId,
 }: BuildingModelProps): JSX.Element {
-  const stage = getBuildingVisualStage(definition.kind, level)
-  const colors: Readonly<Record<BuildingColorRole, string>> = {
-    primary: definition.primaryColor,
-    accent: definition.accentColor,
-    ...fixedColors,
-  }
+  const fragments = useMemo(
+    () =>
+      getRenderedBuildingFragments(
+        definition.kind,
+        progress,
+        animatedFragmentId,
+      ),
+    [definition.kind, progress, animatedFragmentId],
+  )
+  const neon = definition.kind === 'clubhouse'
 
   return (
     <group>
-      {stage.map((part, index) => {
-        const isNeonSign =
-          definition.kind === 'clubhouse' &&
-          (part.tag === 'clubhouse-sign' || part.tag === 'neon-sign')
+      {fragments.map((fragment) => {
+        const scaffold = fragment.state === 'scaffold'
 
         return (
-          <mesh
-            key={`${part.tag}-${index}`}
-            position={part.position}
-            rotation={part.rotation}
-            castShadow
-            receiveShadow
-          >
-            {part.shape === 'box' ? (
-              <boxGeometry args={part.size} />
-            ) : (
-              <cylinderGeometry
-                args={[part.radius, part.radius, part.height, 16]}
-              />
-            )}
-            <meshStandardMaterial
-              color={colors[part.colorRole]}
-              emissive={
-                highlighted
-                  ? '#ffcf70'
-                  : isNeonSign
-                    ? definition.accentColor
-                    : '#000000'
-              }
-              emissiveIntensity={highlighted ? 0.22 : isNeonSign ? 0.45 : 0}
-            />
-          </mesh>
+          <group key={fragment.id} position={fragment.anchor}>
+            <AnimatedBuildingFragment animate={fragment.animate}>
+              {fragment.parts.map((part, index) => {
+                const material = getFragmentPartMaterial(part, {
+                  primaryColor: definition.primaryColor,
+                  accentColor: definition.accentColor,
+                  highlighted,
+                  neon,
+                  scaffold,
+                })
+
+                return (
+                  <mesh
+                    key={`${part.tag}-${index}`}
+                    position={part.position}
+                    rotation={part.rotation}
+                    castShadow
+                    receiveShadow
+                  >
+                    {part.shape === 'box' ? (
+                      <boxGeometry args={part.size} />
+                    ) : (
+                      <cylinderGeometry
+                        args={[part.radius, part.radius, part.height, 16]}
+                      />
+                    )}
+                    <meshStandardMaterial
+                      color={material.color}
+                      emissive={material.emissive}
+                      emissiveIntensity={material.emissiveIntensity}
+                      transparent={material.transparent}
+                      opacity={material.opacity}
+                    />
+                  </mesh>
+                )
+              })}
+            </AnimatedBuildingFragment>
+          </group>
         )
       })}
     </group>
