@@ -103,7 +103,14 @@
   font-weight: 700;
 }
 
-.city-hud__open-gang-tree {
+.city-hud__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.city-hud__open-gang-tree,
+.city-hud__open-settings {
   display: inline-flex;
   align-items: center;
   min-height: 2.35rem;
@@ -123,16 +130,29 @@
     box-shadow 120ms ease;
 }
 
-.city-hud__open-gang-tree:hover {
+.city-hud__open-settings {
+  border-color: rgba(248, 250, 252, 0.35);
+  color: #e2e8f0;
+  background: rgba(248, 250, 252, 0.08);
+}
+
+.city-hud__open-gang-tree:hover,
+.city-hud__open-settings:hover {
   background: #ffe27a;
   box-shadow: 0 0.5rem 1.4rem rgba(255, 212, 59, 0.28);
 }
 
-.city-hud__open-gang-tree:active {
+.city-hud__open-settings:hover {
+  color: #1b1206;
+}
+
+.city-hud__open-gang-tree:active,
+.city-hud__open-settings:active {
   transform: translateY(2px);
 }
 
-.city-hud__open-gang-tree:focus-visible {
+.city-hud__open-gang-tree:focus-visible,
+.city-hud__open-settings:focus-visible {
   outline: 3px solid #f8fafc;
   outline-offset: 3px;
   box-shadow: 0 0 0 6px rgba(255, 212, 59, 0.4);
@@ -493,6 +513,159 @@
   font-size: 0.8rem;
 }
 
+/* Debug settings modal */
+
+.settings-panel__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 21;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(4, 6, 9, 0.78);
+  backdrop-filter: blur(0.35rem);
+  pointer-events: auto;
+  animation: overlay-enter 180ms ease-out both;
+}
+
+.settings-panel {
+  position: relative;
+  width: min(30rem, 100%);
+  max-height: calc(100vh - 3rem);
+  padding: 1.75rem;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 212, 59, 0.32);
+  border-left: 4px solid #ffd43b;
+  border-radius: 0.9rem;
+  background: rgba(14, 18, 23, 0.98);
+  box-shadow: 0 2rem 4.5rem rgba(0, 0, 0, 0.6);
+  animation: panel-pop-enter 220ms ease-out both;
+}
+
+.settings-panel__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid rgba(248, 250, 252, 0.2);
+  border-radius: 0.5rem;
+  color: #cbd5e1;
+  background: rgba(248, 250, 252, 0.06);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.settings-panel__close:hover {
+  color: #f8fafc;
+  background: rgba(248, 250, 252, 0.14);
+}
+
+.settings-panel__title {
+  margin: 0 4rem 0.45rem 0;
+  color: #f8fafc;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.settings-panel__description {
+  margin: 0 0 1.25rem;
+  color: #b8c2cc;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.settings-panel__item {
+  padding: 1rem;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 0.7rem;
+  background: rgba(127, 29, 29, 0.12);
+}
+
+.settings-panel__item-title {
+  margin: 0 0 0.4rem;
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.settings-panel__item-description {
+  margin: 0 0 1rem;
+  color: #fecaca;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.settings-panel__reset,
+.settings-panel__confirm-reset,
+.settings-panel__cancel-reset {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.9rem;
+  border: 2px solid #f87171;
+  border-radius: 0.55rem;
+  color: #fff;
+  background: #b91c1c;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.settings-panel__reset:hover,
+.settings-panel__confirm-reset:hover {
+  background: #dc2626;
+  box-shadow: 0 0.5rem 1.4rem rgba(248, 113, 113, 0.2);
+}
+
+.settings-panel__reset:active,
+.settings-panel__confirm-reset:active,
+.settings-panel__cancel-reset:active {
+  transform: translateY(2px);
+}
+
+.settings-panel__close:focus-visible,
+.settings-panel__reset:focus-visible,
+.settings-panel__confirm-reset:focus-visible,
+.settings-panel__cancel-reset:focus-visible {
+  outline: 3px solid #f8fafc;
+  outline-offset: 3px;
+}
+
+.settings-panel__confirmation {
+  padding-top: 0.15rem;
+}
+
+.settings-panel__warning {
+  margin: 0 0 0.8rem;
+  color: #fca5a5;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.settings-panel__confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.settings-panel__cancel-reset {
+  border-color: rgba(248, 250, 252, 0.3);
+  color: #e2e8f0;
+  background: rgba(248, 250, 252, 0.08);
+}
+
+.settings-panel__cancel-reset:hover {
+  background: rgba(248, 250, 252, 0.16);
+}
+
 /* Gang tree modal */
 
 .gang-tree-panel__overlay {
@@ -760,6 +933,24 @@
   .gang-tree-panel__title {
     font-size: 1.25rem;
   }
+
+  .settings-panel__overlay {
+    place-items: end center;
+    padding: 0;
+  }
+
+  .settings-panel {
+    width: 100%;
+    max-height: 75vh;
+    padding: 1.25rem 1.1rem 1.4rem;
+    border-left: none;
+    border-radius: 0.9rem 0.9rem 0 0;
+    animation: drawer-enter 220ms ease-out both;
+  }
+
+  .settings-panel__title {
+    font-size: 1.25rem;
+  }
 }
 
 @keyframes drawer-enter {
@@ -772,6 +963,8 @@
 @media (prefers-reduced-motion: reduce) {
   .city-hud,
   .building-panel,
+  .settings-panel__overlay,
+  .settings-panel,
   .gang-tree-panel__overlay,
   .gang-tree-panel {
     animation: none;
@@ -782,6 +975,11 @@
   .building-panel__progress-fill,
   .building-panel__fragment,
   .city-hud__open-gang-tree,
+  .city-hud__open-settings,
+  .settings-panel__close,
+  .settings-panel__reset,
+  .settings-panel__confirm-reset,
+  .settings-panel__cancel-reset,
   .gang-tree-panel__close {
     transition: none;
   }

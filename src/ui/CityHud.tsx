@@ -9,9 +9,13 @@ import { useGangStore } from '../store/useGangStore'
 
 export interface CityHudProps {
   onOpenGangTree?: () => void
+  onOpenSettings?: () => void
 }
 
-export function CityHud({ onOpenGangTree }: CityHudProps = {}): JSX.Element {
+export function CityHud({
+  onOpenGangTree,
+  onOpenSettings,
+}: CityHudProps = {}): JSX.Element {
   const totalReputation = useGangStore((state) => state.totalReputation)
   const level = getGangLevel(totalReputation)
   const role = getGangRole(level)
@@ -27,13 +31,23 @@ export function CityHud({ onOpenGangTree }: CityHudProps = {}): JSX.Element {
       <p className="city-hud__progress-label">{`${current} / ${required}`}</p>
       <progress className="city-hud__progress" max={required} value={current} />
       <p className="city-hud__rate">{`+${REPUTATION_PER_SECOND} 声望/秒`}</p>
-      <button
-        type="button"
-        className="city-hud__open-gang-tree"
-        onClick={onOpenGangTree}
-      >
-        打开帮派树
-      </button>
+      <div className="city-hud__actions">
+        <button
+          type="button"
+          className="city-hud__open-gang-tree"
+          onClick={onOpenGangTree}
+        >
+          打开帮派树
+        </button>
+        <button
+          type="button"
+          className="city-hud__open-settings"
+          aria-label="打开调试设置"
+          onClick={onOpenSettings}
+        >
+          设置
+        </button>
+      </div>
       <p className="city-hud__hint">拖拽平移 · 滚轮缩放 · 点击建筑升级</p>
     </section>
   )

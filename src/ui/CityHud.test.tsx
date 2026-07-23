@@ -59,4 +59,15 @@ describe('CityHud', () => {
 
     expect(onOpenGangTree).toHaveBeenCalledTimes(1)
   })
+
+  it('calls onOpenSettings from the debug settings button', async () => {
+    const onOpenSettings = vi.fn()
+    render(<CityHud onOpenSettings={onOpenSettings} />)
+
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: '打开调试设置' }))
+
+    expect(onOpenSettings).toHaveBeenCalledTimes(1)
+  })
 })

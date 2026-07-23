@@ -8,10 +8,22 @@ import { AppErrorBoundary } from './ui/AppErrorBoundary'
 import { BuildingPanel } from './ui/BuildingPanel'
 import { CityHud } from './ui/CityHud'
 import { GangTreePanel } from './ui/GangTreePanel'
+import { SettingsPanel } from './ui/SettingsPanel'
 import './App.css'
 
 export default function App(): JSX.Element {
   const [gangTreeOpen, setGangTreeOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  const openGangTree = (): void => {
+    setSettingsOpen(false)
+    setGangTreeOpen(true)
+  }
+
+  const openSettings = (): void => {
+    setGangTreeOpen(false)
+    setSettingsOpen(true)
+  }
 
   return (
     <AppErrorBoundary>
@@ -42,12 +54,15 @@ export default function App(): JSX.Element {
           }
         />
         <GangIdleController />
-        <CityHud onOpenGangTree={() => setGangTreeOpen(true)} />
+        <CityHud onOpenGangTree={openGangTree} onOpenSettings={openSettings} />
         <BuildingPanel />
         <GangTreePanel
           open={gangTreeOpen}
           onClose={() => setGangTreeOpen(false)}
         />
+        {settingsOpen ? (
+          <SettingsPanel onClose={() => setSettingsOpen(false)} />
+        ) : null}
       </main>
     </AppErrorBoundary>
   )

@@ -94,4 +94,65 @@ describe('App', () => {
       screen.queryByRole('dialog', { name: '帮派树' }),
     ).not.toBeInTheDocument()
   })
+
+  it('does not show the debug settings dialog by default', () => {
+    render(<App />)
+
+    expect(
+      screen.queryByRole('dialog', { name: '调试设置' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('opens and closes debug settings from named buttons, resetting confirmation state', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: '打开调试设置' }))
+    expect(screen.getByRole('dialog', { name: '调试设置' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '重置账号' }))
+    expect(
+      screen.getByRole('button', { name: '确认重置账号' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '关闭调试设置' }))
+    expect(
+      screen.queryByRole('dialog', { name: '调试设置' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '打开调试设置' }))
+    expect(
+      screen.queryByRole('button', { name: '确认重置账号' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '重置账号' })).toBeInTheDocument()
+  })
+
+  it('closes the gang tree when debug settings opens', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: '打开帮派树' }))
+    expect(screen.getByRole('dialog', { name: '帮派树' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '打开调试设置' }))
+
+    expect(screen.getByRole('dialog', { name: '调试设置' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('dialog', { name: '帮派树' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('opens only the gang tree after debug settings closes', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: '打开调试设置' }))
+    await user.click(screen.getByRole('button', { name: '关闭调试设置' }))
+    await user.click(screen.getByRole('button', { name: '打开帮派树' }))
+
+    expect(screen.getByRole('dialog', { name: '帮派树' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('dialog', { name: '调试设置' }),
+    ).not.toBeInTheDocument()
+  })
 })
