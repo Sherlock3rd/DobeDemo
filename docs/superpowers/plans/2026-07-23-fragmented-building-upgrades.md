@@ -114,8 +114,9 @@ interface CityState {
 
 - Create: `src/scene/city/buildingFragmentCatalog.ts`
 - Create: `src/scene/city/buildingFragmentCatalog.test.ts`
-- Rewrite: `src/scene/city/buildingVisualConfig.ts`
-- Rewrite: `src/scene/city/buildingVisualConfig.test.ts`
+- Keep (legacy, 过渡): `src/scene/city/buildingVisualConfig.ts` 与 `.test.ts`。为保持 Task 3
+  独立可构建，旧 `buildingVisualConfig` / `getBuildingVisualStage` 原样保留为明确的过渡
+  API（`BuildingModel` 仍在消费）；**Task 4 迁移到碎片渲染后再删除**，Task 3 不删除、不改。
 
 **Interfaces:**
 
@@ -124,6 +125,10 @@ export interface BuildingFragmentBlueprint {
   id: string
   name: string
   description: string
+  // Local slot centre; Task 4 renders under <group position={anchor}> so a
+  // fragment scales in place instead of sliding toward the building origin.
+  anchor: readonly [number, number, number]
+  // Origin-relative Lv.1 parts.
   parts: readonly BuildingVisualPart[]
 }
 
@@ -133,6 +138,7 @@ export interface RenderedBuildingFragment {
   id: string
   name: string
   state: FragmentRenderState
+  anchor: readonly [number, number, number]
   parts: readonly BuildingVisualPart[]
   animate: boolean
 }
@@ -140,18 +146,25 @@ export interface RenderedBuildingFragment {
 export function getBuildingFragments(
   kind: BuildingKind,
 ): readonly BuildingFragmentBlueprint[]
+// animatedFragmentId 可选；缺省不 animate（刷新不重播）。Task 4 依据前后 progress 传入。
 export function getRenderedBuildingFragments(
   kind: BuildingKind,
   progress: BuildingProgress,
+  animatedFragmentId?: string,
 ): readonly RenderedBuildingFragment[]
 ```
 
-- [ ] **Step 1:** 写六 kind × 10 唯一 fragment、名称/说明非空、part 有效测试。
-- [ ] **Step 2:** 写 Lv.N 恰好 N 个 fragment、部分完成选择 current/target/scaffold、仅最新完成项 animate 测试。
-- [ ] **Step 3:** 实现六类稳定槽位和共享等级强化生成器。
-- [ ] **Step 4:** 用 Three.js matrix/Box3 验证每个 kind 的 Lv.1–10 和部分态都位于原 footprint、最高点不超过命中盒。
-- [ ] **Step 5:** 删除旧 3 快照 API，迁移调用测试。
-- [ ] **Step 6:** 运行 visual config 定向测试、typecheck、lint。
+- [x] **Step 1:** 写六 kind × 10 唯一 fragment、名称/说明非空且唯一、anchor、每槽 geometry/tag
+      signature 唯一 + 语义 tag 抽查、part 有效测试。
+- [x] **Step 2:** 写 Lv.N 恰好 N 个 fragment、部分完成选择 current/target/scaffold、`animatedFragmentId`
+      驱动的 animate（缺省不 animate）测试。
+- [x] **Step 3:** 实现六类稳定槽位（anchor + 局部坐标）、每 index 专属几何与共享等级强化生成器
+      （绕局部地面统一 Y 缩放，附件不沉入主体；marker 由 fragment 真实 top 计算）。
+- [x] **Step 4:** 用解析（8 角点 + Matrix4，圆柱保守精确半径）AABB 验证每个 kind 的 Lv.1–10 与
+      全部部分态（含 anchor + `BUILDING_RENDER_SCALE`）位于原 footprint、最高点不超过命中盒；
+      补相邻级 target(L+1) 顶部强于 current(L) 的 L1–L9 抽查。默认 5s 超时。
+- [x] **Step 5:** 保留 legacy 三快照 API 到 Task 4（不删除）；新增蓝图与 legacy 并存，均绿。
+- [x] **Step 6:** 运行 fragment catalog 定向测试、全量、typecheck、lint、format。
 
 ### Task 4: 3D 碎片渲染与入场动画
 
@@ -164,6 +177,7 @@ export function getRenderedBuildingFragments(
 - Modify: `src/scene/city/BuildingVisual.test.tsx`
 - Modify: `src/scene/city/InteractiveBuilding.tsx`
 - Modify: `src/scene/city/InteractiveBuilding.test.tsx`
+- Delete (legacy, Task 3 保留至此删除): `src/scene/city/buildingVisualConfig.ts` 与 `.test.ts`
 
 **Interfaces:**
 
@@ -183,11 +197,13 @@ interface BuildingModelProps {
 
 - [ ] **Step 1:** 写动画 easing RED：0ms、200ms、400ms、越界 clamp、reduced motion。
 - [ ] **Step 2:** 实现纯 transform 与 `useFrame` 组件；只更新 refs。
-- [ ] **Step 3:** `BuildingModel` 映射 `getRenderedBuildingFragments`，稳定 key 为 fragment ID。
+- [ ] **Step 3:** `BuildingModel` 映射 `getRenderedBuildingFragments`，稳定 key 为 fragment ID，
+      每 fragment 用 `<group position={anchor}>` 原地缩放；依据前后 progress 计算 `animatedFragmentId`。
 - [ ] **Step 4:** `BuildingVisual` 从 store 订阅完整 progress 并传递；锁定模式保持不变。
 - [ ] **Step 5:** `InteractiveBuilding` 选中/highlight/拖动行为保持，改读 `progress.level`。
-- [ ] **Step 6:** 组件测试断言 progress 透传、仅最新 fragment animate、锁定切换不回归。
-- [ ] **Step 7:** 运行 scene 定向测试、typecheck、lint。
+- [ ] **Step 6:** 组件测试断言 progress 透传、仅新完成 fragment animate、锁定切换不回归。
+- [ ] **Step 7:** 删除 Task 3 保留的 legacy `buildingVisualConfig` / `getBuildingVisualStage` 及其测试。
+- [ ] **Step 8:** 运行 scene 定向测试、typecheck、lint。
 
 ### Task 5: Setup 面板与确认闭环
 
