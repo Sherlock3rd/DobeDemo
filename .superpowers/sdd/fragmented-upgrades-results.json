@@ -1,0 +1,379 @@
+{
+  "generatedAt": "2026-07-23T08:03:59.532Z",
+  "devUrl": "http://127.0.0.1:5188/",
+  "cdpPort": 9234,
+  "distIndex": "dist/index.html",
+  "preflight": {
+    "cdpPort": 9234,
+    "cdpPortFree": true,
+    "devPort": 5188,
+    "devPortFree": true,
+    "ok": true
+  },
+  "distBaseOk": true,
+  "http": {
+    "url": "http://127.0.0.1:5188/",
+    "status": 200,
+    "ok": true,
+    "hasRoot": true,
+    "hasMainTsx": true
+  },
+  "storageCleared": {
+    "city": null,
+    "gang": "{\"state\":{\"totalReputation\":5,\"lastUpdatedAt\":1784793844577},\"version\":0}"
+  },
+  "repairShopCoordinate": {
+    "x": 455,
+    "y": 280
+  },
+  "lv1": {
+    "present": true,
+    "locked": false,
+    "title": "修车厂",
+    "level": "等级 1 / 10",
+    "progressCount": "0 / 2 个子建筑",
+    "goal": "升级至 Lv.2",
+    "hasProgressbar": true,
+    "progressbarName": "修车厂升级进度",
+    "valuemax": "2",
+    "valuenow": "0",
+    "cellCount": 2,
+    "ready": false,
+    "facilityName": "基础维修棚",
+    "upgradeLabel": "升级子建筑 1/2",
+    "upgradeDisabled": false
+  },
+  "firstFragment": {
+    "progressCount": "1 / 2 个子建筑",
+    "valuenow": "1",
+    "roiRequested": {
+      "x": 255,
+      "y": 60,
+      "w": 350,
+      "h": 350
+    },
+    "canvas": {
+      "changedPixels": 299,
+      "consideredPixels": 100966,
+      "roiClipped": {
+        "x": 255,
+        "y": 60,
+        "w": 350,
+        "h": 350
+      },
+      "imageSize": {
+        "width": 1424,
+        "height": 805
+      },
+      "totalPixels": 1146320,
+      "changedPct": 0.296
+    },
+    "canvasMasks": [
+      {
+        "x": 24,
+        "y": 24,
+        "w": 328,
+        "h": 258
+      },
+      {
+        "x": 1072,
+        "y": 193,
+        "w": 328,
+        "h": 419
+      }
+    ]
+  },
+  "afterRefresh": {
+    "progressCount": "1 / 2 个子建筑",
+    "level": "等级 1 / 10"
+  },
+  "ready": {
+    "ready": true,
+    "level": "等级 1 / 10",
+    "progressCount": "2 / 2 个子建筑"
+  },
+  "afterConfirm": {
+    "level": "等级 2 / 10",
+    "progressCount": "0 / 3 个子建筑",
+    "cellCount": 3
+  },
+  "lv10Save": {
+    "state": {
+      "buildingProgress": {
+        "repair-shop": {
+          "level": 10,
+          "completedFragments": 0
+        },
+        "recycling-yard": {
+          "level": 1,
+          "completedFragments": 0
+        },
+        "commercial-street": {
+          "level": 1,
+          "completedFragments": 0
+        },
+        "metalworking-plant": {
+          "level": 1,
+          "completedFragments": 0
+        },
+        "gas-station": {
+          "level": 1,
+          "completedFragments": 0
+        },
+        "clubhouse": {
+          "level": 1,
+          "completedFragments": 0
+        }
+      }
+    },
+    "version": 1
+  },
+  "lv10": {
+    "present": true,
+    "locked": false,
+    "title": "修车厂",
+    "level": "等级 10 / 10",
+    "progressCount": null,
+    "goal": null,
+    "hasProgressbar": false,
+    "progressbarName": null,
+    "valuemax": null,
+    "valuenow": null,
+    "cellCount": 10,
+    "ready": false,
+    "facilityName": null,
+    "upgradeLabel": "已满级 · 10 个子建筑",
+    "upgradeDisabled": true
+  },
+  "viewport": {
+    "desktop": {
+      "panelPresent": true,
+      "iw": 1424,
+      "ih": 805,
+      "rect": {
+        "left": 1076,
+        "top": 238.3203125,
+        "right": 1396,
+        "bottom": 566.6796875,
+        "width": 320,
+        "height": 328.359375
+      },
+      "scrollWidth": 318,
+      "clientWidth": 318,
+      "scrollHeight": 326,
+      "clientHeight": 326,
+      "deScrollWidth": 1424,
+      "overflowY": "auto",
+      "withinBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true
+    },
+    "mobile": {
+      "panelPresent": true,
+      "iw": 390,
+      "ih": 844,
+      "rect": {
+        "left": 12,
+        "top": 551,
+        "right": 378,
+        "bottom": 844,
+        "width": 366,
+        "height": 293
+      },
+      "scrollWidth": 364,
+      "clientWidth": 364,
+      "scrollHeight": 291,
+      "clientHeight": 291,
+      "deScrollWidth": 390,
+      "overflowY": "auto",
+      "withinBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true
+    },
+    "mobilePanel": {
+      "present": true,
+      "title": "修车厂",
+      "level": "等级 10 / 10",
+      "cellCount": 10
+    }
+  },
+  "screenshots": {
+    "lv1": "fragmented-upgrades-lv1.png",
+    "partial": "fragmented-upgrades-partial.png",
+    "lv10": "fragmented-upgrades-lv10.png",
+    "mobile": "fragmented-upgrades-mobile.png"
+  },
+  "ports": {
+    "cdpPort": 9234,
+    "cdpStartedByScript": true,
+    "cdpPortReleased": true,
+    "devPort": 5188,
+    "devStartedByScript": true,
+    "devPortReleased": true
+  },
+  "tempProfileRemoved": true,
+  "assertionSelfTest": {
+    "ok": true,
+    "totalChecks": 30,
+    "failuresOnGoodData": [],
+    "passesOnBadData": []
+  },
+  "assertions": [
+    {
+      "name": "preflight.ok",
+      "pass": true,
+      "detail": "ok=true"
+    },
+    {
+      "name": "http.status===200",
+      "pass": true,
+      "detail": "status=200"
+    },
+    {
+      "name": "http.hasRoot",
+      "pass": true,
+      "detail": "hasRoot=true"
+    },
+    {
+      "name": "http.hasMainTsx",
+      "pass": true,
+      "detail": "hasMainTsx=true"
+    },
+    {
+      "name": "dist base /DobeDemo/",
+      "pass": true,
+      "detail": "distBaseOk=true"
+    },
+    {
+      "name": "lv1.title 修车厂",
+      "pass": true,
+      "detail": "title=修车厂"
+    },
+    {
+      "name": "lv1.level 等级 1 / 10",
+      "pass": true,
+      "detail": "level=等级 1 / 10"
+    },
+    {
+      "name": "lv1.progress 0 / 2",
+      "pass": true,
+      "detail": "count=0 / 2 个子建筑"
+    },
+    {
+      "name": "lv1.progressbar named",
+      "pass": true,
+      "detail": "name=修车厂升级进度"
+    },
+    {
+      "name": "lv1.valuemax 2",
+      "pass": true,
+      "detail": "valuemax=2"
+    },
+    {
+      "name": "lv1.two cells",
+      "pass": true,
+      "detail": "cellCount=2"
+    },
+    {
+      "name": "first fragment 1 / 2",
+      "pass": true,
+      "detail": "count=1 / 2 个子建筑"
+    },
+    {
+      "name": "ROI canvas changed >= 40",
+      "pass": true,
+      "detail": "changed=299/100966 (0.296%) roi={\"x\":255,\"y\":60,\"w\":350,\"h\":350}"
+    },
+    {
+      "name": "refresh persists 1 / 2",
+      "pass": true,
+      "detail": "count=1 / 2 个子建筑"
+    },
+    {
+      "name": "ready to confirm",
+      "pass": true,
+      "detail": "ready=true"
+    },
+    {
+      "name": "ready level still 1",
+      "pass": true,
+      "detail": "level=等级 1 / 10"
+    },
+    {
+      "name": "confirm -> level 2",
+      "pass": true,
+      "detail": "level=等级 2 / 10"
+    },
+    {
+      "name": "confirm -> 0 / 3",
+      "pass": true,
+      "detail": "count=0 / 3 个子建筑"
+    },
+    {
+      "name": "lv10.level 10 / 10",
+      "pass": true,
+      "detail": "level=等级 10 / 10"
+    },
+    {
+      "name": "lv10.ten cells",
+      "pass": true,
+      "detail": "cellCount=10"
+    },
+    {
+      "name": "lv10.button disabled",
+      "pass": true,
+      "detail": "disabled=true"
+    },
+    {
+      "name": "lv10.maxed label",
+      "pass": true,
+      "detail": "label=已满级 · 10 个子建筑"
+    },
+    {
+      "name": "desktop within bounds",
+      "pass": true,
+      "detail": "withinBounds=true"
+    },
+    {
+      "name": "desktop no h-overflow",
+      "pass": true,
+      "detail": "noHOverflow=true"
+    },
+    {
+      "name": "mobile within bounds",
+      "pass": true,
+      "detail": "withinBounds=true"
+    },
+    {
+      "name": "mobile no h-overflow",
+      "pass": true,
+      "detail": "noHOverflow=true"
+    },
+    {
+      "name": "mobile scrollable/fits",
+      "pass": true,
+      "detail": "scrollableOrFits=true"
+    },
+    {
+      "name": "cdpPortReleased",
+      "pass": true,
+      "detail": "cdpPortReleased=true"
+    },
+    {
+      "name": "devPortReleased",
+      "pass": true,
+      "detail": "devPortReleased=true"
+    },
+    {
+      "name": "tempProfileRemoved",
+      "pass": true,
+      "detail": "tempProfileRemoved=true"
+    }
+  ],
+  "distBaseDetail": {
+    "assetRefs": [
+      "/DobeDemo/assets/index-DKZurk8k.js",
+      "/DobeDemo/assets/index-CWQQiqnw.css"
+    ]
+  }
+}

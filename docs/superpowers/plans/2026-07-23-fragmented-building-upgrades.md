@@ -266,14 +266,14 @@ k / N 个子建筑
 - Create: `.superpowers/sdd/fragmented-upgrades-partial.png`
 - Create: `.superpowers/sdd/fragmented-upgrades-lv10.png`
 
-- [ ] **Step 1:** 运行 format、typecheck、lint、全量 test、build。
-- [ ] **Step 2:** 本地固定端口 HTTP 200，并验证生产 base 资源路径。
-- [ ] **Step 3:** Chrome/CDP 普通点击修车厂，断言面板显示 Lv.1/10、0/2。
-- [ ] **Step 4:** 完成第一个碎片并截图，断言 1/2 和画面像素变化。
-- [ ] **Step 5:** 刷新后断言仍为 1/2；完成第二个碎片，确认主级后断言 Lv.2、0/3。
-- [ ] **Step 6:** 注入合法 Lv.10 存档并刷新，断言满级 UI、10 个 fragment、按钮禁用。
-- [ ] **Step 7:** 桌面 1440×900 与移动 390×844 无面板溢出。
-- [ ] **Step 8:** 更新 README、需求、session 和可重复验收报告。
+- [x] **Step 1:** 运行 format、typecheck、lint、全量 test、build。
+- [x] **Step 2:** 本地固定端口 HTTP 200，并验证生产 base 资源路径。
+- [x] **Step 3:** Chrome/CDP 普通点击修车厂，断言面板显示 Lv.1/10、0/2。
+- [x] **Step 4:** 完成第一个碎片并截图，断言 1/2 和画面像素变化。
+- [x] **Step 5:** 刷新后断言仍为 1/2；完成第二个碎片，确认主级后断言 Lv.2、0/3。
+- [x] **Step 6:** 注入合法 Lv.10 存档并刷新，断言满级 UI、10 个 fragment、按钮禁用。
+- [x] **Step 7:** 桌面 1440×900 与移动 390×844 无面板溢出。
+- [x] **Step 8:** 更新 README、需求、session 和可重复验收报告。
 
 ### Task 7: 分段 Git 与 GitHub Pages
 
