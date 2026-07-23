@@ -132,7 +132,7 @@ describe('getFragmentPartMaterial', () => {
 })
 
 describe('BuildingModel', () => {
-  it('renders one fragment for a fresh level 1 building and animates none', () => {
+  it('renders all five repair slots for a fresh building and animates none', () => {
     render(
       <BuildingModel
         definition={buildingCatalogById['repair-shop']}
@@ -142,24 +142,28 @@ describe('BuildingModel', () => {
     )
 
     const fragments = screen.getAllByTestId('fragment')
-    expect(fragments).toHaveLength(1)
-    expect(fragments[0]).toHaveAttribute('data-animate', 'false')
+    expect(fragments).toHaveLength(5)
+    fragments.forEach((fragment) => {
+      expect(fragment).toHaveAttribute('data-animate', 'false')
+    })
   })
 
-  it('animates only the freshly completed fragment during a partial upgrade', () => {
+  it('animates only the freshly upgraded child at its independent slot', () => {
     render(
       <BuildingModel
         definition={buildingCatalogById['repair-shop']}
-        progress={{ level: 1, childLevels: [1, 0, 0, 0, 0] }}
+        progress={{ level: 3, childLevels: [1, 0, 2, 0, 0] }}
         highlighted={false}
-        animatedFragmentId="repair-fragment-1"
+        animatedFragmentId="repair-fragment-3"
       />,
     )
 
     const fragments = screen.getAllByTestId('fragment')
-    // Target level 2 renders two slots: the completed target and one scaffold.
-    expect(fragments).toHaveLength(2)
-    expect(fragments[0]).toHaveAttribute('data-animate', 'true')
+    expect(fragments).toHaveLength(5)
+    expect(fragments[0]).toHaveAttribute('data-animate', 'false')
     expect(fragments[1]).toHaveAttribute('data-animate', 'false')
+    expect(fragments[2]).toHaveAttribute('data-animate', 'true')
+    expect(fragments[3]).toHaveAttribute('data-animate', 'false')
+    expect(fragments[4]).toHaveAttribute('data-animate', 'false')
   })
 })

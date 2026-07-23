@@ -1,6 +1,5 @@
 import { useEffect, useState, type JSX } from 'react'
 import { buildingCatalogById } from '../../game/buildingCatalog'
-import { getCaughtUpChildCount } from '../../game/buildingUpgrade'
 import { BUILDING_RENDER_SCALE } from '../../game/cityLayout'
 import type {
   BuildingId,
@@ -20,9 +19,8 @@ interface BuildingVisualProps {
   highlighted: boolean
 }
 
-// Detects a fragment that was completed during THIS session (a p -> p+1 step at
-// the same level) and returns its blueprint id. Restored/rehydrated progress on
-// mount keeps `previous === progress`, so a refresh never replays an entrance.
+// Restored progress is the initial snapshot, so only a later, single child +1
+// transition can opt a fragment into the entrance animation.
 function getSessionCompletedFragmentId(
   kind: BuildingKind,
   previous: BuildingProgress,
@@ -30,14 +28,26 @@ function getSessionCompletedFragmentId(
 ): string | undefined {
   if (
     previous === progress ||
-    progress.level !== previous.level ||
-    getCaughtUpChildCount(progress) !== getCaughtUpChildCount(previous) + 1
+    previous.childLevels.length !== progress.childLevels.length
   ) {
     return undefined
   }
 
-  const completedIndex = getCaughtUpChildCount(progress) - 1
-  return getBuildingFragments(kind)[completedIndex]?.id
+  let upgradedIndex = -1
+  for (let index = 0; index < progress.childLevels.length; index += 1) {
+    const delta = progress.childLevels[index] - previous.childLevels[index]
+    if (delta === 0) {
+      continue
+    }
+    if (delta !== 1 || upgradedIndex !== -1) {
+      return undefined
+    }
+    upgradedIndex = index
+  }
+
+  return upgradedIndex === -1
+    ? undefined
+    : getBuildingFragments(kind)[upgradedIndex]?.id
 }
 
 export function BuildingVisual({

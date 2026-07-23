@@ -1,5 +1,4 @@
 import { buildingCatalog } from '../../game/buildingCatalog'
-import { getCaughtUpChildCount } from '../../game/buildingUpgrade'
 import type {
   BuildingKind,
   BuildingLevel,
@@ -167,10 +166,11 @@ function getFragmentAnchor(
   index: number,
 ): readonly [number, number, number] {
   const [footprintX, footprintZ] = footprintByKind[kind]
+  const rows = kind === 'repair' ? 1 : FRAGMENT_SLOT_ROWS
   const column = index % FRAGMENT_SLOT_COLUMNS
   const row = Math.floor(index / FRAGMENT_SLOT_COLUMNS)
   const cellWidth = footprintX / FRAGMENT_SLOT_COLUMNS
-  const cellDepth = footprintZ / FRAGMENT_SLOT_ROWS
+  const cellDepth = footprintZ / rows
 
   return [
     -footprintX / 2 + cellWidth * (column + 0.5),
@@ -182,9 +182,10 @@ function getFragmentAnchor(
 // Half-extents available to a fragment inside its slot cell (origin-relative).
 function getFragmentBudget(kind: BuildingKind): { bx: number; bz: number } {
   const [footprintX, footprintZ] = footprintByKind[kind]
+  const rows = kind === 'repair' ? 1 : FRAGMENT_SLOT_ROWS
   return {
     bx: footprintX / (2 * FRAGMENT_SLOT_COLUMNS),
-    bz: footprintZ / (2 * FRAGMENT_SLOT_ROWS),
+    bz: footprintZ / (2 * rows),
   }
 }
 
@@ -1580,13 +1581,6 @@ export function getRenderedBuildingFragments(
   animatedFragmentId?: string,
 ): readonly RenderedBuildingFragment[] {
   const blueprints = getBuildingFragments(kind)
-  const level = progress.level
-  const maximum = kind === 'clubhouse' ? 10 : 5
-  const targetLevel = Math.min(level + 1, maximum) as BuildingLevel
-  const completed = Math.max(
-    0,
-    Math.min(blueprints.length, getCaughtUpChildCount(progress)),
-  )
 
   const toRendered = (
     blueprint: BuildingFragmentBlueprint,
@@ -1598,39 +1592,26 @@ export function getRenderedBuildingFragments(
     state,
     anchor: blueprint.anchor,
     parts,
-    // Only a freshly completed slot (a target-form fragment) plays the entrance
-    // animation; current/scaffold slots never animate even if their id is sent.
     animate:
       state === 'target' &&
       animatedFragmentId != null &&
       blueprint.id === animatedFragmentId,
   })
 
-  if (completed === 0) {
-    return blueprints
-      .slice(0, level)
-      .map((blueprint) =>
-        toRendered(blueprint, 'current', renderFragmentParts(blueprint, level)),
-      )
-  }
-
-  return blueprints.slice(0, targetLevel).map((blueprint, index) => {
-    if (index < completed) {
-      return toRendered(
-        blueprint,
-        'target',
-        renderFragmentParts(blueprint, targetLevel),
-      )
+  return blueprints.map((blueprint, index) => {
+    const childLevel = progress.childLevels[index] ?? 0
+    if (childLevel === 0) {
+      return toRendered(blueprint, 'scaffold', buildScaffoldParts(blueprint))
     }
 
-    if (index < level) {
-      return toRendered(
-        blueprint,
-        'current',
-        renderFragmentParts(blueprint, level),
-      )
-    }
-
-    return toRendered(blueprint, 'scaffold', buildScaffoldParts(blueprint))
+    const state =
+      blueprint.id === animatedFragmentId
+        ? ('target' satisfies FragmentRenderState)
+        : ('current' satisfies FragmentRenderState)
+    return toRendered(
+      blueprint,
+      state,
+      renderFragmentParts(blueprint, childLevel),
+    )
   })
 }

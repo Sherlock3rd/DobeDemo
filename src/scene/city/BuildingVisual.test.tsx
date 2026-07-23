@@ -22,6 +22,7 @@ vi.mock('./BuildingModel', () => ({
       data-completed={
         progress.childLevels.filter((level) => level === progress.level).length
       }
+      data-child-levels={progress.childLevels.join(',')}
       data-animated={animatedFragmentId ?? ''}
     >
       {definition.id}
@@ -141,6 +142,93 @@ describe('BuildingVisual', () => {
       expect(screen.getByTestId('building-model')).toHaveAttribute(
         'data-animated',
         'repair-fragment-1',
+      )
+    })
+
+    it('animates the exact child that increases by one regardless of slot order', () => {
+      render(<BuildingVisual id="repair-shop" highlighted={false} />)
+
+      act(() => {
+        useCityStore.setState((state) => ({
+          buildingProgress: {
+            ...state.buildingProgress,
+            'repair-shop': {
+              ...state.buildingProgress['repair-shop'],
+              childLevels: [0, 0, 0, 0, 1],
+            },
+          },
+        }))
+      })
+
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        'repair-fragment-5',
+      )
+    })
+
+    it('does not animate for a main-only level change', () => {
+      render(<BuildingVisual id="repair-shop" highlighted={false} />)
+
+      act(() => {
+        useCityStore.setState((state) => ({
+          buildingProgress: {
+            ...state.buildingProgress,
+            'repair-shop': {
+              level: 2,
+              childLevels: [
+                ...state.buildingProgress['repair-shop'].childLevels,
+              ],
+            },
+          },
+        }))
+      })
+
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        '',
+      )
+    })
+
+    it('does not animate when multiple children change together', () => {
+      render(<BuildingVisual id="repair-shop" highlighted={false} />)
+
+      act(() => {
+        useCityStore.setState((state) => ({
+          buildingProgress: {
+            ...state.buildingProgress,
+            'repair-shop': {
+              ...state.buildingProgress['repair-shop'],
+              childLevels: [1, 1, 0, 0, 0],
+            },
+          },
+        }))
+      })
+
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        '',
+      )
+    })
+
+    it('does not animate when reset lowers a child level', () => {
+      useCityStore.setState((state) => ({
+        buildingProgress: {
+          ...state.buildingProgress,
+          'repair-shop': {
+            ...state.buildingProgress['repair-shop'],
+            childLevels: [1, 0, 0, 0, 0],
+          },
+        },
+      }))
+      render(<BuildingVisual id="repair-shop" highlighted={false} />)
+
+      act(() => {
+        useCityStore.getState().reset()
+      })
+
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        '',
       )
     })
   })
