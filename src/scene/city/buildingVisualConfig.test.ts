@@ -139,18 +139,20 @@ describe('buildingVisualConfig', () => {
 
   it('provides non-empty stages whose part counts strictly increase', () => {
     buildingKinds.forEach((kind) => {
-      const stages = buildingVisualConfig[kind]
+      const level1 = getBuildingVisualStage(kind, 1)
+      const level2 = getBuildingVisualStage(kind, 2)
+      const level3 = getBuildingVisualStage(kind, 3)
 
-      expect(stages[1].length).toBeGreaterThan(0)
-      expect(stages[2].length).toBeGreaterThan(stages[1].length)
-      expect(stages[3].length).toBeGreaterThan(stages[2].length)
+      expect(level1.length).toBeGreaterThan(0)
+      expect(level2.length).toBeGreaterThan(level1.length)
+      expect(level3.length).toBeGreaterThan(level2.length)
     })
   })
 
   it('uses only positive geometry dimensions', () => {
     buildingKinds.forEach((kind) => {
       ;([1, 2, 3] as const).forEach((level) => {
-        buildingVisualConfig[kind][level].forEach(expectPositiveGeometry)
+        getBuildingVisualStage(kind, level).forEach(expectPositiveGeometry)
       })
     })
   })
@@ -160,7 +162,7 @@ describe('buildingVisualConfig', () => {
 
     buildingKinds.forEach((kind) => {
       ;([1, 2, 3] as const).forEach((level) => {
-        buildingVisualConfig[kind][level].forEach((part) => {
+        getBuildingVisualStage(kind, level).forEach((part) => {
           const scaledTop = getVisualPartTop(part) * BUILDING_RENDER_SCALE
 
           expect(
@@ -175,7 +177,7 @@ describe('buildingVisualConfig', () => {
   it('represents every catalog level summary with stage-specific tags', () => {
     buildingKinds.forEach((kind) => {
       ;([1, 2, 3] as const).forEach((level) => {
-        const stageTags = buildingVisualConfig[kind][level].map(
+        const stageTags = getBuildingVisualStage(kind, level).map(
           ({ tag }) => tag,
         )
 
@@ -193,6 +195,15 @@ describe('buildingVisualConfig', () => {
           buildingVisualConfig[kind][level],
         )
       })
+    })
+  })
+
+  it('falls back to the highest current snapshot for level 10', () => {
+    buildingKinds.forEach((kind) => {
+      const stage = getBuildingVisualStage(kind, 10)
+
+      expect(stage).toBeDefined()
+      expect(stage).toBe(buildingVisualConfig[kind][3])
     })
   })
 })

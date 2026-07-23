@@ -59,12 +59,12 @@ export function confirmBuildingLevelUp(
 ): BuildingProgress
 ```
 
-- [ ] **Step 1:** 先写 1–10 类型、目标等级、N 个碎片、每次 +1、确认门槛、准备态不再增加、Lv.10 封顶和非法输入测试。
-- [ ] **Step 2:** 运行 `npm.cmd test -- src/game/buildingUpgrade.test.ts`，确认旧三等级实现 RED。
-- [ ] **Step 3:** 实现最小纯函数并保证无 UI/store 依赖。
-- [ ] **Step 4:** 把 `BuildingDefinition.levelSummary` 改为 10 项 readonly tuple；六建筑补 10 级递进文案。
-- [ ] **Step 5:** 更新 catalog 测试，断言六建筑每个都有 10 项、ID 唯一。
-- [ ] **Step 6:** 运行 game 定向测试、typecheck、lint。
+- [x] **Step 1:** 先写 1–10 类型、目标等级、N 个碎片、每次 +1、确认门槛、准备态不再增加、Lv.10 封顶和非法输入测试。
+- [x] **Step 2:** 运行 `npm.cmd test -- src/game/buildingUpgrade.test.ts`，确认旧三等级实现 RED。
+- [x] **Step 3:** 实现最小纯函数并保证无 UI/store 依赖。
+- [x] **Step 4:** 把 `BuildingDefinition.levelSummary` 改为 10 项 readonly tuple；六建筑补 10 级递进文案。
+- [x] **Step 5:** 更新 catalog 测试，断言六建筑每个都有 10 项、ID 唯一。
+- [x] **Step 6:** 运行 game 定向测试、typecheck、lint。
 
 ### Task 2: 安全持久化城市进度
 

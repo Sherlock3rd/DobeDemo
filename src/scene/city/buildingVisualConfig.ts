@@ -22,8 +22,10 @@ export interface CylinderVisualPart {
 }
 
 export type BuildingVisualPart = BoxVisualPart | CylinderVisualPart
+// Temporary Task 1 compatibility shim. Task 3 replaces these partial legacy
+// snapshots with the ten-slot procedural fragment blueprint.
 export type BuildingVisualStages = Readonly<
-  Record<BuildingLevel, readonly BuildingVisualPart[]>
+  Partial<Record<BuildingLevel, readonly BuildingVisualPart[]>>
 >
 
 const recyclingLevel1 = [
@@ -590,5 +592,12 @@ export function getBuildingVisualStage(
   kind: BuildingKind,
   level: BuildingLevel,
 ): readonly BuildingVisualPart[] {
-  return buildingVisualConfig[kind][level]
+  const stages = buildingVisualConfig[kind]
+  const currentHighestStage = stages[3]
+
+  if (!currentHighestStage) {
+    throw new Error(`Missing legacy level 3 visual stage for ${kind}`)
+  }
+
+  return stages[level] ?? currentHighestStage
 }

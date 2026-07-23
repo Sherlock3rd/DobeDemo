@@ -31,12 +31,21 @@ describe('buildingCatalog', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('provides three non-empty level appearance summaries per building', () => {
+  it('provides ten non-empty level appearance summaries per building', () => {
     for (const building of buildingCatalog) {
-      expect(building.levelSummary).toHaveLength(3)
+      expect(building.levelSummary).toHaveLength(10)
       expect(
         building.levelSummary.every((summary) => summary.trim().length > 0),
       ).toBe(true)
+    }
+  })
+
+  it('uses unique level summaries within each building', () => {
+    for (const building of buildingCatalog) {
+      expect(
+        new Set(building.levelSummary).size,
+        `${building.id} level summaries`,
+      ).toBe(building.levelSummary.length)
     }
   })
 
