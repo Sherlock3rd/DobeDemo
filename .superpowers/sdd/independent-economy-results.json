@@ -1,0 +1,685 @@
+{
+  "generatedAt": "2026-07-23T12:40:14.665Z",
+  "preflight": {
+    "terminalAndPortCheckPerformed": true,
+    "strategy": "skip occupied preferred ports; never terminate unknown PID",
+    "attemptedDevPorts": [
+      {
+        "port": 5199,
+        "free": true
+      }
+    ],
+    "attemptedCdpPorts": [
+      {
+        "port": 9245,
+        "free": true
+      }
+    ],
+    "devPort": 5199,
+    "cdpPort": 9245,
+    "devPortFree": true,
+    "cdpPortFree": true,
+    "ok": true
+  },
+  "processSafety": {
+    "ownedPids": [
+      {
+        "label": "vite",
+        "pid": 52668
+      },
+      {
+        "label": "chrome",
+        "pid": 23412
+      }
+    ],
+    "killAttempts": [
+      {
+        "label": "chrome",
+        "pid": 23412,
+        "owned": true
+      },
+      {
+        "label": "vite",
+        "pid": 52668,
+        "owned": true
+      }
+    ],
+    "unknownProcessesTerminated": false,
+    "chromeExecutable": "chrome.exe",
+    "tempProfileName": "dobe-independent-economy-cdp-ZlLn35"
+  },
+  "dist": {
+    "index": "dist/index.html",
+    "assetRefs": [
+      "/DobeDemo/assets/index-BJ6q-ZtE.js",
+      "/DobeDemo/assets/index-BSltOOxX.css"
+    ],
+    "baseOk": true
+  },
+  "http": {
+    "url": "http://127.0.0.1:5199/",
+    "status": 200,
+    "hasRoot": true,
+    "hasMainTsx": true
+  },
+  "fresh": {
+    "storage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "recycling-yard": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "commercial-street": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "gas-station": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "clubhouse": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "resources": {
+            "money": 0,
+            "oil": 0,
+            "materials": 0
+          },
+          "lastResourceUpdatedAt": 1784810417499,
+          "activeProducerIds": [
+            "repair-shop"
+          ]
+        },
+        "version": 2
+      },
+      "gang": {
+        "state": {
+          "totalReputation": 0,
+          "lastUpdatedAt": 1784810417499
+        },
+        "version": 0
+      }
+    },
+    "hud": {
+      "rate": "+1 声望/10秒",
+      "resources": [
+        "钱 0",
+        "钱 +1/10秒",
+        "油 0",
+        "油 +0/10秒",
+        "物资 0",
+        "物资 +0/10秒"
+      ]
+    }
+  },
+  "idle": {
+    "moneyBefore": 0,
+    "moneyAfter": 1
+  },
+  "freeChoice": {
+    "coordinate": {
+      "x": 468,
+      "y": 280
+    },
+    "childLevelsBefore": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "childLevelsAfter": [
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "moneyPre": 100000,
+    "moneyPost": 99995,
+    "moneySpent": 5,
+    "roiRequested": {
+      "x": 248,
+      "y": 40,
+      "w": 400,
+      "h": 390
+    },
+    "canvas": {
+      "changedPixels": 650,
+      "consideredPixels": 125320,
+      "roiClipped": {
+        "x": 248,
+        "y": 40,
+        "w": 400,
+        "h": 390
+      },
+      "changedPct": 0.519
+    }
+  },
+  "gateLocked": {
+    "coordinate": {
+      "x": 468,
+      "y": 280
+    },
+    "blocker": "需要先将帮派树提升至 Lv.40 解锁 Clubhouse",
+    "panel": {
+      "present": true,
+      "unlocked": true,
+      "title": "修车厂",
+      "level": "等级 1 / 5",
+      "mainStatus": null,
+      "mainBlocker": "需要先将帮派树提升至 Lv.40 解锁 Clubhouse",
+      "mainGoal": "目标 Lv.2",
+      "mainCost": "成本 钱 25",
+      "mainButtonPresent": false,
+      "mainButtonLabel": null,
+      "childCount": 5,
+      "childButtons": [
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        }
+      ]
+    }
+  },
+  "gateTooLow": {
+    "coordinate": {
+      "x": 468,
+      "y": 280
+    },
+    "blocker": "需要先将 Clubhouse 提升至 Lv.2",
+    "panel": {
+      "present": true,
+      "unlocked": true,
+      "title": "修车厂",
+      "level": "等级 1 / 5",
+      "mainStatus": null,
+      "mainBlocker": "需要先将 Clubhouse 提升至 Lv.2",
+      "mainGoal": "目标 Lv.2",
+      "mainCost": "成本 钱 25",
+      "mainButtonPresent": false,
+      "mainButtonLabel": null,
+      "childCount": 5,
+      "childButtons": [
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        }
+      ]
+    }
+  },
+  "loop": {
+    "clubhouseBefore": {
+      "present": true,
+      "unlocked": true,
+      "title": "Clubhouse",
+      "level": "等级 1 / 10",
+      "mainStatus": null,
+      "mainBlocker": null,
+      "mainGoal": "目标 Lv.2",
+      "mainCost": "成本 钱 25",
+      "mainButtonPresent": true,
+      "mainButtonLabel": "升级主建筑至 Lv.2",
+      "childCount": 10,
+      "childButtons": [
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        }
+      ]
+    },
+    "clubhouseLevelBefore": "等级 1 / 10",
+    "clubhouseLevelAfter": "等级 2 / 10",
+    "clubhouseStored": 2,
+    "repairLoopBefore": {
+      "present": true,
+      "unlocked": true,
+      "title": "修车厂",
+      "level": "等级 1 / 5",
+      "mainStatus": null,
+      "mainBlocker": null,
+      "mainGoal": "目标 Lv.2",
+      "mainCost": "成本 钱 25",
+      "mainButtonPresent": true,
+      "mainButtonLabel": "升级主建筑至 Lv.2",
+      "childCount": 5,
+      "childButtons": [
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        }
+      ]
+    },
+    "repairLevelBefore": "等级 1 / 5",
+    "repairLevelAfter": "等级 2 / 5",
+    "repairStored": 2,
+    "repairChildLevels": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "clubhouseCoordinate": {
+      "x": 888,
+      "y": 280
+    }
+  },
+  "persist": {
+    "repairLevel": 2,
+    "repairChildLevels": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "clubhouseLevel": 2,
+    "activeProducerIds": [
+      "repair-shop",
+      "commercial-street",
+      "metalworking-plant",
+      "gas-station"
+    ],
+    "moneyBefore": 99954,
+    "moneyAfter": 99954
+  },
+  "resourceGrowth": {
+    "money": 3,
+    "oil": 1,
+    "materials": 1,
+    "hud": {
+      "rate": "+1 声望/10秒",
+      "resources": [
+        "钱 3",
+        "钱 +3/10秒",
+        "油 1",
+        "油 +1/10秒",
+        "物资 1",
+        "物资 +1/10秒"
+      ]
+    }
+  },
+  "maxed": {
+    "repairLevel": "等级 5 / 5",
+    "repairMainButtonPresent": false,
+    "repairStatus": "已达到最高等级 Lv.5",
+    "clubhouseLevel": "等级 10 / 10",
+    "clubhouseMainButtonPresent": false,
+    "clubhouseStatus": "已达到最高等级 Lv.10"
+  },
+  "mobile": {
+    "dom": {
+      "present": true,
+      "unlocked": true,
+      "title": "Clubhouse",
+      "level": "等级 10 / 10",
+      "mainStatus": "已达到最高等级 Lv.10",
+      "mainBlocker": null,
+      "mainGoal": null,
+      "mainCost": null,
+      "mainButtonPresent": false,
+      "mainButtonLabel": null,
+      "childCount": 10,
+      "childButtons": [
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        },
+        {
+          "label": "已追平主建筑",
+          "disabled": true
+        }
+      ]
+    },
+    "measure": {
+      "present": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "withinBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true
+    }
+  },
+  "screenshots": {
+    "independent-economy-initial.png": "independent-economy-initial.png",
+    "independent-economy-free-choice-before.png": "independent-economy-free-choice-before.png",
+    "independent-economy-free-choice.png": "independent-economy-free-choice.png",
+    "independent-economy-gate.png": "independent-economy-gate.png",
+    "independent-economy-resources.png": "independent-economy-resources.png",
+    "independent-economy-mobile.png": "independent-economy-mobile.png"
+  },
+  "teardown": {
+    "cdpPortReleased": true,
+    "devPortReleased": true,
+    "tempProfileRemoved": true
+  },
+  "assertionSelfTest": {
+    "ok": true,
+    "checked": 23,
+    "failuresOnGoodData": [],
+    "passesOnBadData": [],
+    "errorSanitization": {
+      "ok": true,
+      "checked": 1,
+      "outputs": [
+        {
+          "name": "Error",
+          "code": "ENOENT"
+        },
+        {
+          "name": "TypeError"
+        }
+      ],
+      "forbiddenDataPresent": false
+    }
+  },
+  "assertions": [
+    {
+      "name": "preflight selected free dev port",
+      "pass": true,
+      "detail": "5199"
+    },
+    {
+      "name": "preflight selected free CDP port",
+      "pass": true,
+      "detail": "9245"
+    },
+    {
+      "name": "dist assets use /DobeDemo/",
+      "pass": true,
+      "detail": "[\"/DobeDemo/assets/index-BJ6q-ZtE.js\",\"/DobeDemo/assets/index-BSltOOxX.css\"]"
+    },
+    {
+      "name": "HTTP status 200",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "HTTP contains root and main.tsx",
+      "pass": true,
+      "detail": "{\"url\":\"http://127.0.0.1:5199/\",\"status\":200,\"hasRoot\":true,\"hasMainTsx\":true}"
+    },
+    {
+      "name": "1. fresh v2 save: repair Lv.1, 5 children all 0, resources 0",
+      "pass": true,
+      "detail": "{\"version\":2,\"freshRepair\":{\"level\":1,\"childLevels\":[0,0,0,0,0]},\"freshResources\":{\"money\":0,\"oil\":0,\"materials\":0}}"
+    },
+    {
+      "name": "1b. HUD shows +1 声望/10秒 and 钱 +1/10秒",
+      "pass": true,
+      "detail": "{\"rate\":\"+1 声望/10秒\",\"resources\":[\"钱 0\",\"钱 +1/10秒\",\"油 0\",\"油 +0/10秒\",\"物资 0\",\"物资 +0/10秒\"]}"
+    },
+    {
+      "name": "2. exactly +1 money after a 10s tick",
+      "pass": true,
+      "detail": "{\"moneyBefore\":0,\"moneyAfter\":1}"
+    },
+    {
+      "name": "3. real click 5th repair child sets childLevels [0,0,0,0,1] and spends 5 money",
+      "pass": true,
+      "detail": "[0,0,0,0,1]"
+    },
+    {
+      "name": "4. 5th slot 3D ROI changed >= 40 and other children unchanged",
+      "pass": true,
+      "detail": "changed=650/125320"
+    },
+    {
+      "name": "5. clubhouse-locked gate text exact",
+      "pass": true,
+      "detail": "需要先将帮派树提升至 Lv.40 解锁 Clubhouse"
+    },
+    {
+      "name": "6. clubhouse-too-low gate text exact",
+      "pass": true,
+      "detail": "需要先将 Clubhouse 提升至 Lv.2"
+    },
+    {
+      "name": "7. real loop: Clubhouse Lv.2 then repair Lv.2",
+      "pass": true,
+      "detail": "{\"clubhouseBefore\":{\"present\":true,\"unlocked\":true,\"title\":\"Clubhouse\",\"level\":\"等级 1 / 10\",\"mainStatus\":null,\"mainBlocker\":null,\"mainGoal\":\"目标 Lv.2\",\"mainCost\":\"成本 钱 25\",\"mainButtonPresent\":true,\"mainButtonLabel\":\"升级主建筑至 Lv.2\",\"childCount\":10,\"childButtons\":[{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true}]},\"clubhouseLevelBefore\":\"等级 1 / 10\",\"clubhouseLevelAfter\":\"等级 2 / 10\",\"clubhouseStored\":2,\"repairLoopBefore\":{\"present\":true,\"unlocked\":true,\"title\":\"修车厂\",\"level\":\"等级 1 / 5\",\"mainStatus\":null,\"mainBlocker\":null,\"mainGoal\":\"目标 Lv.2\",\"mainCost\":\"成本 钱 25\",\"mainButtonPresent\":true,\"mainButtonLabel\":\"升级主建筑至 Lv.2\",\"childCount\":5,\"childButtons\":[{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true},{\"label\":\"已追平主建筑\",\"disabled\":true}]},\"repairLevelBefore\":\"等级 1 / 5\",\"repairLevelAfter\":\"等级 2 / 5\",\"repairStored\":2,\"repairChildLevels\":[1,1,1,1,1],\"clubhouseCoordinate\":{\"x\":888,\"y\":280}}"
+    },
+    {
+      "name": "8. refresh persists wallet, producers, main/child levels",
+      "pass": true,
+      "detail": "{\"repairLevel\":2,\"repairChildLevels\":[1,1,1,1,1],\"clubhouseLevel\":2,\"activeProducerIds\":[\"repair-shop\",\"commercial-street\",\"metalworking-plant\",\"gas-station\"],\"moneyBefore\":99954,\"moneyAfter\":99954}"
+    },
+    {
+      "name": "9. three resources grow per config (money=3/tick, oil=1/tick, materials=1/tick)",
+      "pass": true,
+      "detail": "{\"money\":3,\"oil\":1,\"materials\":1,\"hud\":{\"rate\":\"+1 声望/10秒\",\"resources\":[\"钱 3\",\"钱 +3/10秒\",\"油 1\",\"油 +1/10秒\",\"物资 1\",\"物资 +1/10秒\"]}}"
+    },
+    {
+      "name": "9b. HUD shows 钱 +3/10秒, 油 +1/10秒, 物资 +1/10秒",
+      "pass": true,
+      "detail": "{\"rate\":\"+1 声望/10秒\",\"resources\":[\"钱 3\",\"钱 +3/10秒\",\"油 1\",\"油 +1/10秒\",\"物资 1\",\"物资 +1/10秒\"]}"
+    },
+    {
+      "name": "10. repair Lv.5 and Clubhouse Lv.10 disable main upgrade",
+      "pass": true,
+      "detail": "{\"repairLevel\":\"等级 5 / 5\",\"repairMainButtonPresent\":false,\"repairStatus\":\"已达到最高等级 Lv.5\",\"clubhouseLevel\":\"等级 10 / 10\",\"clubhouseMainButtonPresent\":false,\"clubhouseStatus\":\"已达到最高等级 Lv.10\"}"
+    },
+    {
+      "name": "11. mobile 390x844 no horizontal overflow and within bounds",
+      "pass": true,
+      "detail": "{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true}"
+    },
+    {
+      "name": "all five screenshots written",
+      "pass": true,
+      "detail": "{\"independent-economy-initial.png\":\"independent-economy-initial.png\",\"independent-economy-free-choice-before.png\":\"independent-economy-free-choice-before.png\",\"independent-economy-free-choice.png\":\"independent-economy-free-choice.png\",\"independent-economy-gate.png\":\"independent-economy-gate.png\",\"independent-economy-resources.png\":\"independent-economy-resources.png\",\"independent-economy-mobile.png\":\"independent-economy-mobile.png\"}"
+    },
+    {
+      "name": "12. only owned PIDs targeted",
+      "pass": true,
+      "detail": "{\"ownedPids\":[{\"label\":\"vite\",\"pid\":52668},{\"label\":\"chrome\",\"pid\":23412}],\"killAttempts\":[{\"label\":\"chrome\",\"pid\":23412,\"owned\":true},{\"label\":\"vite\",\"pid\":52668,\"owned\":true}],\"unknownProcessesTerminated\":false,\"chromeExecutable\":\"chrome.exe\",\"tempProfileName\":\"dobe-independent-economy-cdp-ZlLn35\"}"
+    },
+    {
+      "name": "12. dev port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "12. CDP port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "12. temporary Chrome profile removed",
+      "pass": true,
+      "detail": "true"
+    }
+  ]
+}

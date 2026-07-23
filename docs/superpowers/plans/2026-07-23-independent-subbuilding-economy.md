@@ -109,7 +109,7 @@ export function settleResourceProduction(input: {
 }): ResourceSettlement
 ```
 
-- [ ] **Step 1: 启用 JSON 导入并写配置 RED**
+- [x] **Step 1: 启用 JSON 导入并写配置 RED**
 
 在 `tsconfig.app.json` 增加：
 
@@ -140,7 +140,7 @@ Run: `npm.cmd test -- src/config/economyConfig.test.ts`
 
 Expected: FAIL because config files do not exist.
 
-- [ ] **Step 2: 写 JSON 与严格解析器**
+- [x] **Step 2: 写 JSON 与严格解析器**
 
 JSON 数值逐字复制设计规格。解析器：
 
@@ -151,7 +151,7 @@ JSON 数值逐字复制设计规格。解析器：
 - 每个 cost 精确包含三个非负有限整数。
 - 错误抛出 `Error('Invalid economy config: <path>')`，路径指出第一个无效字段。
 
-- [ ] **Step 3: 覆盖坏配置**
+- [x] **Step 3: 覆盖坏配置**
 
 测试：
 
@@ -172,7 +172,7 @@ expect(() =>
 
 同时覆盖未知生产建筑、错误资源、缺失 level 10、浮点/Infinity。
 
-- [ ] **Step 4: 写钱包和生产 RED**
+- [x] **Step 4: 写钱包和生产 RED**
 
 断言：
 
@@ -190,7 +190,7 @@ expect(
 
 资源结算覆盖 9.999 秒为 0、10 秒一 tick、25 秒两 tick并保留 5 秒余量、8 小时封顶、无 active producer 为 0、非法时间 no-op。
 
-- [ ] **Step 5: 实现纯资源规则**
+- [x] **Step 5: 实现纯资源规则**
 
 生产总额：
 
@@ -206,7 +206,7 @@ perTick =
 nextUpdatedAt = lastUpdatedAt + ticks * tickMs
 ```
 
-- [ ] **Step 6: 验证**
+- [x] **Step 6: 验证**
 
 Run:
 
@@ -326,7 +326,7 @@ export function getMainUpgradeDecision(
 ): UpgradeDecision
 ```
 
-- [ ] **Step 1: 写 5/10 槽和等级门槛 RED**
+- [x] **Step 1: 写 5/10 槽和等级门槛 RED**
 
 断言：
 
@@ -347,7 +347,7 @@ Run: `npm.cmd test -- src/game/buildingUpgrade.test.ts`
 
 Expected: FAIL against legacy completedFragments model.
 
-- [ ] **Step 2: 实现纯升级判定**
+- [x] **Step 2: 实现纯升级判定**
 
 判定不得读取 Zustand。`UpgradeDecision` 至少包含：
 
@@ -362,7 +362,7 @@ interface UpgradeDecision {
 
 主建筑判定顺序严格为：自身解锁→满级→子建筑追平→Clubhouse 解锁→Clubhouse 等级→资源。
 
-- [ ] **Step 3: 写 v1→v2 迁移 RED**
+- [x] **Step 3: 写 v1→v2 迁移 RED**
 
 旧输入：
 
@@ -386,7 +386,7 @@ interface UpgradeDecision {
 
 同时覆盖 v2 坏数组、负资源、未知 active producer、非有限时间。
 
-- [ ] **Step 4: 实现迁移和 persist version 2**
+- [x] **Step 4: 实现迁移和 persist version 2**
 
 Zustand 配置：
 
@@ -415,7 +415,7 @@ Zustand 配置：
 }
 ```
 
-- [ ] **Step 5: 写原子 Store RED**
+- [x] **Step 5: 写原子 Store RED**
 
 覆盖：
 
@@ -427,7 +427,7 @@ Zustand 配置：
 - Clubhouse 未解锁/等级不足严格 no-op。
 - 未知 ID/index、非法 now no-op。
 
-- [ ] **Step 6: 实现 Store**
+- [x] **Step 6: 实现 Store**
 
 把“结算→判定→扣费→升级”放在一次 `set((state) => ...)`。不调用另一个 action，避免两次通知。
 
@@ -438,7 +438,7 @@ useCityStore.getState().reset(now)
 useGangStore.getState().reset(now)
 ```
 
-- [ ] **Step 7: 迁移期间兼容消费者**
+- [x] **Step 7: 迁移期间兼容消费者**
 
 Task 3–5 完成前，旧 UI/3D 仍引用固定顺序 API。本任务必须在同一提交内增加最小编译桥接，而不是把旧字段写回 v2 存档：
 
@@ -453,7 +453,7 @@ export function getCaughtUpChildCount(progress: BuildingProgress): number {
 - 旧 UI/3D 只能通过 `getCaughtUpChildCount` 读取顺序进度；禁止给最终 `BuildingProgress` 增加 `completedFragments`。
 - 两个桥接 action 只为 Task 2–4 的中间提交保持 TypeScript/现有组件可运行，不写入额外存档字段，不用于 Task 5 最终 UI，并在 Task 5 删除。
 
-- [ ] **Step 8: 验证**
+- [x] **Step 8: 验证**
 
 Run:
 
@@ -492,7 +492,7 @@ export function getCurrentProductionRates(
 ): ResourceWallet
 ```
 
-- [ ] **Step 1: 写 10 秒帮派 RED**
+- [x] **Step 1: 写 10 秒帮派 RED**
 
 断言常量和结算：
 
@@ -511,11 +511,11 @@ expect(calculateIdleSettlement(BASE, BASE + 25_000)).toEqual({
 
 8 小时为 2,880 声望，再由 Store 封顶到 1,470。
 
-- [ ] **Step 2: 实现帮派结算并更新 Store 测试**
+- [x] **Step 2: 实现帮派结算并更新 Store 测试**
 
 删除 `REPUTATION_PER_SECOND`。所有 HUD/测试改用 tick 常量，系统时间倒退、Infinity 和满级行为不回归。
 
-- [ ] **Step 3: 写资源控制器 RED**
+- [x] **Step 3: 写资源控制器 RED**
 
 使用 fake timers：
 
@@ -526,7 +526,7 @@ expect(calculateIdleSettlement(BASE, BASE + 25_000)).toEqual({
 - StrictMode 不重复收益。
 - unmount 清理 timer/listener。
 
-- [ ] **Step 4: 实现 `EconomyIdleController`**
+- [x] **Step 4: 实现 `EconomyIdleController`**
 
 控制器从 gang store 读取最新声望计算 gang level，再调用：
 
@@ -536,7 +536,7 @@ syncResourceProduction(Date.now(), gangLevel)
 
 App 在 `GangIdleController` 后挂载该控制器。
 
-- [ ] **Step 5: 写 HUD RED**
+- [x] **Step 5: 写 HUD RED**
 
 初始断言：
 
@@ -550,11 +550,11 @@ expect(screen.getByText('钱 +1/10秒')).toBeInTheDocument()
 
 激活 commercial/gas/metal 且提高子建筑等级后，断言三种当前产量。
 
-- [ ] **Step 6: 实现 HUD 与 App**
+- [x] **Step 6: 实现 HUD 与 App**
 
 资源数字使用整数格式；无产出资源仍显示 `+0/10秒`。资源区使用可读文本，不只用图标。
 
-- [ ] **Step 7: 验证**
+- [x] **Step 7: 验证**
 
 Run:
 
@@ -592,7 +592,7 @@ export function getRenderedBuildingFragments(
 ): readonly RenderedBuildingFragment[]
 ```
 
-- [ ] **Step 1: 写 5/10 蓝图和 Lv.0 RED**
+- [x] **Step 1: 写 5/10 蓝图和 Lv.0 RED**
 
 断言：
 
@@ -610,11 +610,11 @@ expect(rendered.every(({ state }) => state === 'scaffold')).toBe(true)
 
 混合 `[1, 0, 1, 0, 0]` 时 index 0/2 按 Lv.1 parts，其余脚手架；父建筑 Lv.3、子建筑 `[1,2,3...]` 必须产生不同高度签名。
 
-- [ ] **Step 2: 重排修车厂五槽**
+- [x] **Step 2: 重排修车厂五槽**
 
 修车厂使用 5 列×1 行，anchor 在 footprint 内沿 Z 居中；其他建筑保持 5×2。更新几何预算与 AABB 测试，保证零越界。
 
-- [ ] **Step 3: 实现独立等级渲染**
+- [x] **Step 3: 实现独立等级渲染**
 
 每个 blueprint：
 
@@ -627,7 +627,7 @@ return renderFragmentParts(blueprint, childLevel)
 
 只有 `blueprint.id === animatedFragmentId` 且 childLevel > 0 时 state=`target`/animate=true；其他已建成子建筑 state=`current`。
 
-- [ ] **Step 4: 改会话动画检测**
+- [x] **Step 4: 改会话动画检测**
 
 `BuildingVisual` 比较前后 `childLevels`：
 
@@ -636,7 +636,7 @@ return renderFragmentParts(blueprint, childLevel)
 - 主建筑 level 不要求不变，但主建筑单独升级不改变 childLevels，因此不会动画。
 - 多项变化（rehydrate/reset）不动画。
 
-- [ ] **Step 5: 验证**
+- [x] **Step 5: 验证**
 
 Run:
 
@@ -671,7 +671,7 @@ Expected: all exit 0.
   - `升级 <子建筑名> 至 Lv.N`
   - `升级主建筑至 Lv.N`
 
-- [ ] **Step 1: 写修车厂 5 卡片 RED**
+- [x] **Step 1: 写修车厂 5 卡片 RED**
 
 初始选中修车厂，断言：
 
@@ -681,7 +681,7 @@ Expected: all exit 0.
 - 任意卡片按钮成本 `钱 5`
 - 不再出现旧 `progressbar`、`completedFragments` 或“升级子建筑 1/N”。
 
-- [ ] **Step 2: 写自由选择与原子消费 RED**
+- [x] **Step 2: 写自由选择与原子消费 RED**
 
 给钱包 5 钱，先点第五张：
 
@@ -695,7 +695,7 @@ expect(resources.money).toBe(0)
 
 具体第五个名称以修车厂裁剪后的 blueprint 为准，测试从 `getBuildingFragments('repair')[4].name` 构造 accessible name，禁止硬编码错误名称。
 
-- [ ] **Step 3: 写主建筑判定 UI RED**
+- [x] **Step 3: 写主建筑判定 UI RED**
 
 覆盖：
 
@@ -707,7 +707,7 @@ expect(resources.money).toBe(0)
 - repair Lv.5：显示 `已达到最高等级 Lv.5`。
 - Clubhouse Lv.10：显示 `已达到最高等级 Lv.10`。
 
-- [ ] **Step 4: 实现面板**
+- [x] **Step 4: 实现面板**
 
 结构：
 
@@ -721,7 +721,7 @@ expect(resources.money).toBe(0)
 
 每次按钮点击传 `Date.now()` 和当前 gang level。成本展示函数固定顺序：钱→油→物资，只隐藏值为0的项；全0显示“免费”。
 
-- [ ] **Step 5: 删除迁移兼容层**
+- [x] **Step 5: 删除迁移兼容层**
 
 删除：
 
@@ -734,11 +734,11 @@ expect(resources.money).toBe(0)
 
 全仓 `rg` 不得有产品代码引用；历史文档和验收 JSON 可保留旧文本。
 
-- [ ] **Step 6: 响应式样式**
+- [x] **Step 6: 响应式样式**
 
 桌面子建筑卡片 2 列；窄屏 1 列。面板保持现有最大高度和滚动，成本/提示可换行，不产生横向滚动。新按钮加入 focus-visible 和 reduced-motion。
 
-- [ ] **Step 7: 验证**
+- [x] **Step 7: 验证**
 
 Run:
 
@@ -776,7 +776,7 @@ Expected: all tests pass and commands exit 0.
 - Main action: `升级主建筑至 Lv.N`
 - Storage: `dobe-city-progression-v1`, version 2
 
-- [ ] **Step 1: fresh 工程门禁**
+- [x] **Step 1: fresh 工程门禁**
 
 Run:
 
@@ -790,7 +790,7 @@ npm.cmd run build
 
 Expected: all exit 0; production asset refs start `/DobeDemo/`.
 
-- [ ] **Step 2: 安全 CDP 预检**
+- [x] **Step 2: 安全 CDP 预检**
 
 脚本必须：
 
@@ -803,7 +803,7 @@ Expected: all exit 0; production asset refs start `/DobeDemo/`.
 - 失败非零退出。
 - assertion self-test 对空坏数据全部失败，并包含错误路径脱敏自检。
 
-- [ ] **Step 3: 浏览器流程**
+- [x] **Step 3: 浏览器流程**
 
 至少断言：
 
@@ -820,7 +820,7 @@ Expected: all exit 0; production asset refs start `/DobeDemo/`.
 11. 390×844 无横向溢出且可滚动。
 12. dev/CDP 端口释放、临时 profile 删除、仅 owned PID 被 targeting。
 
-- [ ] **Step 4: 文档**
+- [x] **Step 4: 文档**
 
 README 写明：
 
