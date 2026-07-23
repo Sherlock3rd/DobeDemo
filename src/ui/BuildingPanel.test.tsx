@@ -25,7 +25,10 @@ function setBuildingProgress(
       ...state.buildingProgress,
       [id]: {
         level: level as (typeof state.buildingProgress)[BuildingId]['level'],
-        completedFragments,
+        childLevels: Array.from(
+          { length: id === 'repair-shop' ? 5 : 10 },
+          (_, index) => (index < completedFragments ? level : 0),
+        ) as (typeof state.buildingProgress)[BuildingId]['childLevels'],
       },
     },
   }))
@@ -44,7 +47,7 @@ describe('BuildingPanel', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('shows the repair shop Setup workbench at level 1 with a 0/2 progress bar', () => {
+  it('shows the repair shop bridge with five canonical child slots', () => {
     useCityStore.getState().selectBuilding('repair-shop')
 
     render(<BuildingPanel />)
@@ -54,7 +57,7 @@ describe('BuildingPanel', () => {
     expect(panel).toHaveClass('building-panel')
     expect(panel).toHaveAttribute('aria-labelledby', title.id)
 
-    expect(screen.getByText('等级 1 / 10')).toBeInTheDocument()
+    expect(screen.getByText('等级 1 / 5')).toBeInTheDocument()
     expect(screen.getByText('升级至 Lv.2')).toBeInTheDocument()
 
     const progressbar = screen.getByRole('progressbar', {
@@ -62,15 +65,15 @@ describe('BuildingPanel', () => {
     })
     expect(progressbar).toHaveAttribute('aria-valuenow', '0')
     expect(progressbar).toHaveAttribute('aria-valuemin', '0')
-    expect(progressbar).toHaveAttribute('aria-valuemax', '2')
-    expect(screen.getByText('0 / 2 个子建筑')).toBeInTheDocument()
+    expect(progressbar).toHaveAttribute('aria-valuemax', '5')
+    expect(screen.getByText('0 / 5 个子建筑')).toBeInTheDocument()
 
     const fragments = getBuildingFragments('repair')
     expect(screen.getByText(fragments[0].name)).toBeInTheDocument()
     expect(screen.getByText(fragments[0].description)).toBeInTheDocument()
 
     expect(
-      screen.getByRole('button', { name: '升级子建筑 1/2' }),
+      screen.getByRole('button', { name: '升级子建筑 1/5' }),
     ).toBeInTheDocument()
   })
 
@@ -81,11 +84,11 @@ describe('BuildingPanel', () => {
     const { container } = render(<BuildingPanel />)
 
     const cellsBefore = container.querySelectorAll('.building-panel__fragment')
-    expect(cellsBefore).toHaveLength(2)
+    expect(cellsBefore).toHaveLength(5)
     expect(cellsBefore[0]).toHaveAttribute('data-state', 'current')
     expect(cellsBefore[1]).toHaveAttribute('data-state', 'pending')
 
-    await user.click(screen.getByRole('button', { name: '升级子建筑 1/2' }))
+    await user.click(screen.getByRole('button', { name: '升级子建筑 1/5' }))
 
     const cellsAfter = container.querySelectorAll('.building-panel__fragment')
     expect(cellsAfter[0]).toHaveAttribute('data-state', 'done')
@@ -103,7 +106,7 @@ describe('BuildingPanel', () => {
       container.querySelectorAll('.building-panel__fragment--latest'),
     ).toHaveLength(0)
 
-    await user.click(screen.getByRole('button', { name: '升级子建筑 1/2' }))
+    await user.click(screen.getByRole('button', { name: '升级子建筑 1/5' }))
     const afterFirst = container.querySelectorAll(
       '.building-panel__fragment--latest',
     )
@@ -116,7 +119,7 @@ describe('BuildingPanel', () => {
       'building-panel__fragment--latest',
     )
 
-    await user.click(screen.getByRole('button', { name: '升级子建筑 2/2' }))
+    await user.click(screen.getByRole('button', { name: '升级子建筑 2/5' }))
     const afterSecond = container.querySelectorAll(
       '.building-panel__fragment--latest',
     )
@@ -136,15 +139,19 @@ describe('BuildingPanel', () => {
 
     render(<BuildingPanel />)
 
-    await user.click(screen.getByRole('button', { name: '升级子建筑 1/2' }))
-    expect(screen.getByText('1 / 2 个子建筑')).toBeInTheDocument()
-    expect(screen.getByText('等级 1 / 10')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '升级子建筑 1/5' }))
+    expect(screen.getByText('1 / 5 个子建筑')).toBeInTheDocument()
+    expect(screen.getByText('等级 1 / 5')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: '升级子建筑 2/2' }))
+    for (let index = 2; index <= 5; index += 1) {
+      await user.click(
+        screen.getByRole('button', { name: `升级子建筑 ${index}/5` }),
+      )
+    }
 
     // Ready to confirm, but the main level has not advanced yet.
-    expect(screen.getByText('等级 1 / 10')).toBeInTheDocument()
-    expect(screen.getByText('2 / 2 个子建筑')).toBeInTheDocument()
+    expect(screen.getByText('等级 1 / 5')).toBeInTheDocument()
+    expect(screen.getByText('5 / 5 个子建筑')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: '完成 Lv.2 升级' }),
     ).toBeInTheDocument()
@@ -153,78 +160,83 @@ describe('BuildingPanel', () => {
     ).not.toBeInTheDocument()
     expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
       level: 1,
-      completedFragments: 2,
+      childLevels: [1, 1, 1, 1, 1],
     })
   })
 
-  it('confirms the level up and resets the fragment progress to 0/3', async () => {
+  it('confirms the level up while preserving child levels', async () => {
     const user = userEvent.setup()
     useCityStore.getState().selectBuilding('repair-shop')
 
     render(<BuildingPanel />)
 
-    await user.click(screen.getByRole('button', { name: '升级子建筑 1/2' }))
-    await user.click(screen.getByRole('button', { name: '升级子建筑 2/2' }))
-    await user.click(screen.getByRole('button', { name: '完成 Lv.2 升级' }))
-
-    expect(screen.getByText('等级 2 / 10')).toBeInTheDocument()
-    expect(screen.getByText('升级至 Lv.3')).toBeInTheDocument()
-    expect(screen.getByText('0 / 3 个子建筑')).toBeInTheDocument()
-    const progressbar = screen.getByRole('progressbar')
-    expect(progressbar).toHaveAttribute('aria-valuemax', '3')
-    expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
-      level: 2,
-      completedFragments: 0,
-    })
-  })
-
-  it('shows the level 9 to 10 upgrade needing ten fragment presses then confirmation', async () => {
-    const user = userEvent.setup()
-    setBuildingProgress('repair-shop', 9, 0)
-    useCityStore.getState().selectBuilding('repair-shop')
-
-    render(<BuildingPanel />)
-
-    expect(screen.getByText('等级 9 / 10')).toBeInTheDocument()
-    expect(screen.getByText('升级至 Lv.10')).toBeInTheDocument()
-    expect(screen.getByRole('progressbar')).toHaveAttribute(
-      'aria-valuemax',
-      '10',
-    )
-
-    for (let pressed = 1; pressed <= 10; pressed += 1) {
+    for (let index = 1; index <= 5; index += 1) {
       await user.click(
-        screen.getByRole('button', { name: `升级子建筑 ${pressed}/10` }),
+        screen.getByRole('button', { name: `升级子建筑 ${index}/5` }),
       )
     }
+    await user.click(screen.getByRole('button', { name: '完成 Lv.2 升级' }))
 
-    expect(screen.getByText('10 / 10 个子建筑')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '完成 Lv.10 升级' }))
+    expect(screen.getByText('等级 2 / 5')).toBeInTheDocument()
+    expect(screen.getByText('升级至 Lv.3')).toBeInTheDocument()
+    expect(screen.getByText('0 / 5 个子建筑')).toBeInTheDocument()
+    const progressbar = screen.getByRole('progressbar')
+    expect(progressbar).toHaveAttribute('aria-valuemax', '5')
+    expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
+      level: 2,
+      childLevels: [1, 1, 1, 1, 1],
+    })
+  })
 
-    expect(screen.getByText('等级 10 / 10')).toBeInTheDocument()
+  it('shows the level 4 to 5 repair upgrade needing five presses', async () => {
+    const user = userEvent.setup()
+    setBuildingProgress('repair-shop', 4, 0)
+    useCityStore.getState().selectBuilding('repair-shop')
+
+    render(<BuildingPanel />)
+
+    expect(screen.getByText('等级 4 / 5')).toBeInTheDocument()
+    expect(screen.getByText('升级至 Lv.5')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'aria-valuemax',
+      '5',
+    )
+
+    for (let child = 1; child <= 5; child += 1) {
+      for (let childLevel = 0; childLevel < 4; childLevel += 1) {
+        await user.click(
+          screen.getByRole('button', { name: `升级子建筑 ${child}/5` }),
+        )
+      }
+    }
+
+    expect(screen.getByText('5 / 5 个子建筑')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '完成 Lv.5 升级' }))
+
+    expect(screen.getByText('等级 5 / 5')).toBeInTheDocument()
     const maxedButton = screen.getByRole('button', {
-      name: '已满级 · 10 个子建筑',
+      name: '已满级 · 5 个子建筑',
     })
     expect(maxedButton).toBeDisabled()
     expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
-      level: 10,
-      completedFragments: 0,
+      level: 5,
+      childLevels: [4, 4, 4, 4, 4],
     })
   })
 
-  it('shows a disabled maxed state for a level 10 building', () => {
-    setBuildingProgress('repair-shop', 10, 0)
+  it('shows a disabled maxed state for a level 5 repair shop', () => {
+    setBuildingProgress('repair-shop', 5, 0)
     useCityStore.getState().selectBuilding('repair-shop')
 
     render(<BuildingPanel />)
 
-    expect(screen.getByText('等级 10 / 10')).toBeInTheDocument()
+    expect(screen.getByText('等级 5 / 5')).toBeInTheDocument()
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: /升级子建筑|完成 Lv/ }),
     ).not.toBeInTheDocument()
     const maxedButton = screen.getByRole('button', {
-      name: '已满级 · 10 个子建筑',
+      name: '已满级 · 5 个子建筑',
     })
     expect(maxedButton).toBeDisabled()
   })
@@ -255,9 +267,9 @@ describe('BuildingPanel', () => {
     render(<BuildingPanel />)
 
     expect(screen.queryByText('尚未解锁')).not.toBeInTheDocument()
-    expect(screen.getByText('等级 1 / 10')).toBeInTheDocument()
+    expect(screen.getByText('等级 1 / 5')).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: '升级子建筑 1/2' }),
+      screen.getByRole('button', { name: '升级子建筑 1/10' }),
     ).toBeInTheDocument()
   })
 
@@ -285,7 +297,7 @@ describe('BuildingPanel', () => {
       </div>,
     )
 
-    await user.click(screen.getByRole('button', { name: '升级子建筑 1/2' }))
+    await user.click(screen.getByRole('button', { name: '升级子建筑 1/5' }))
     await user.click(screen.getByRole('button', { name: '关闭建筑面板' }))
 
     expect(onParentPointerDown).not.toHaveBeenCalled()
@@ -315,8 +327,11 @@ describe('BuildingPanel', () => {
 
     render(<BuildingPanel />)
 
-    await user.click(screen.getByRole('button', { name: '升级子建筑 1/2' }))
-    await user.click(screen.getByRole('button', { name: '升级子建筑 2/2' }))
+    for (let index = 1; index <= 5; index += 1) {
+      await user.click(
+        screen.getByRole('button', { name: `升级子建筑 ${index}/5` }),
+      )
+    }
 
     const confirmCard = screen
       .getByRole('button', { name: '完成 Lv.2 升级' })
@@ -327,6 +342,7 @@ describe('BuildingPanel', () => {
     expect(scoped.getByText('Lv.1 → Lv.2')).toBeInTheDocument()
     expect(scoped.getByText(fragments[0].name)).toBeInTheDocument()
     expect(scoped.getByText(fragments[1].name)).toBeInTheDocument()
+    expect(scoped.getByText(fragments[4].name)).toBeInTheDocument()
   })
 
   it('renders nothing when the selected building is missing from the catalog', () => {

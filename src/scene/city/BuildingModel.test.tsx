@@ -136,7 +136,7 @@ describe('BuildingModel', () => {
     render(
       <BuildingModel
         definition={buildingCatalogById['repair-shop']}
-        progress={{ level: 1, completedFragments: 0 }}
+        progress={{ level: 1, childLevels: [0, 0, 0, 0, 0] }}
         highlighted={false}
       />,
     )
@@ -150,7 +150,7 @@ describe('BuildingModel', () => {
     render(
       <BuildingModel
         definition={buildingCatalogById['repair-shop']}
-        progress={{ level: 1, completedFragments: 1 }}
+        progress={{ level: 1, childLevels: [1, 0, 0, 0, 0] }}
         highlighted={false}
         animatedFragmentId="repair-fragment-1"
       />,

@@ -1,155 +1,193 @@
 import { describe, expect, it } from 'vitest'
-import { BUILDING_LEVELS, type BuildingLevel } from './cityTypes'
+import type { BuildingProgress } from './cityTypes'
 import {
-  BUILDING_MAX_LEVEL,
-  completeNextBuildingFragment,
-  confirmBuildingLevelUp,
-  getBuildingUpgradePercent,
-  getRequiredFragmentCount,
-  getTargetBuildingLevel,
-  isBuildingReadyToLevelUp,
-  normalizeBuildingLevel,
-  normalizeBuildingProgress,
+  CLUBHOUSE_MAX_LEVEL,
+  NON_CLUBHOUSE_MAX_LEVEL,
+  getBuildingChildCount,
+  getBuildingMaxLevel,
+  getCaughtUpChildCount,
+  getChildUpgradeDecision,
+  getMainUpgradeDecision,
 } from './buildingUpgrade'
 
-describe('building upgrade rules', () => {
-  it('defines every building level from 1 through 10', () => {
-    expect(BUILDING_LEVELS).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    expect(BUILDING_MAX_LEVEL).toBe(10)
+const emptyWallet = { money: 0, oil: 0, materials: 0 }
+const richWallet = { money: 10_000, oil: 10_000, materials: 10_000 }
+
+function progress(
+  level: BuildingProgress['level'],
+  childLevels: BuildingProgress['childLevels'],
+): BuildingProgress {
+  return { level, childLevels }
+}
+
+describe('building shape rules', () => {
+  it('uses five repair slots and ten slots for other buildings', () => {
+    expect(getBuildingChildCount('repair-shop')).toBe(5)
+    expect(getBuildingChildCount('clubhouse')).toBe(10)
+    expect(getBuildingChildCount('commercial-street')).toBe(10)
   })
 
-  it.each([
-    [1, 2],
-    [2, 3],
-    [3, 4],
-    [4, 5],
-    [5, 6],
-    [6, 7],
-    [7, 8],
-    [8, 9],
-    [9, 10],
-    [10, 10],
-  ] satisfies readonly (readonly [BuildingLevel, BuildingLevel])[])(
-    'advances current level %i to target level %i',
-    (level, targetLevel) => {
-      expect(getTargetBuildingLevel(level)).toBe(targetLevel)
-    },
-  )
+  it('caps non-clubhouse buildings at 5 and clubhouse at 10', () => {
+    expect(NON_CLUBHOUSE_MAX_LEVEL).toBe(5)
+    expect(CLUBHOUSE_MAX_LEVEL).toBe(10)
+    expect(getBuildingMaxLevel('repair-shop')).toBe(5)
+    expect(getBuildingMaxLevel('clubhouse')).toBe(10)
+  })
 
-  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const)(
-    'requires the target level fragment count at Lv.%i',
-    (level) => {
-      expect(getRequiredFragmentCount(level)).toBe(
-        level === BUILDING_MAX_LEVEL ? BUILDING_MAX_LEVEL : level + 1,
-      )
-    },
-  )
+  it('counts only child buildings caught up to the main level', () => {
+    expect(getCaughtUpChildCount(progress(2, [2, 1, 2, 0, 2]))).toBe(3)
+  })
+})
 
-  it('completes exactly one fragment without changing the building level', () => {
-    const progress = { level: 4 as const, completedFragments: 2 }
-
-    expect(completeNextBuildingFragment(progress)).toEqual({
-      level: 4,
-      completedFragments: 3,
+describe('child upgrade decisions', () => {
+  it('allows freely choosing repair child index 4', () => {
+    expect(
+      getChildUpgradeDecision({
+        buildingId: 'repair-shop',
+        childIndex: 4,
+        progress: progress(1, [0, 0, 0, 0, 0]),
+        wallet: richWallet,
+        gangLevel: 1,
+      }),
+    ).toMatchObject({
+      reason: 'ready',
+      targetLevel: 1,
+      cost: { money: 5, oil: 0, materials: 0 },
+      missingResources: emptyWallet,
     })
   })
 
-  it('waits for confirmation after all target fragments are complete', () => {
-    const progress = { level: 2 as const, completedFragments: 3 }
-
-    expect(isBuildingReadyToLevelUp(progress)).toBe(true)
-    expect(getBuildingUpgradePercent(progress)).toBe(100)
-    expect(completeNextBuildingFragment(progress)).toBe(progress)
-  })
-
-  it('reports partial fragment progress as a percentage', () => {
+  it('blocks a child already caught up to its main building', () => {
     expect(
-      getBuildingUpgradePercent({
-        level: 1,
-        completedFragments: 1,
+      getChildUpgradeDecision({
+        buildingId: 'repair-shop',
+        childIndex: 0,
+        progress: progress(1, [1, 0, 0, 0, 0]),
+        wallet: richWallet,
+        gangLevel: 1,
+      }).reason,
+    ).toBe('child-at-main-level')
+  })
+
+  it('checks the building unlock before child progress', () => {
+    expect(
+      getChildUpgradeDecision({
+        buildingId: 'commercial-street',
+        childIndex: 0,
+        progress: progress(1, Array(10).fill(1)),
+        wallet: richWallet,
+        gangLevel: 1,
+      }).reason,
+    ).toBe('building-locked')
+  })
+
+  it('reports exact missing resources', () => {
+    expect(
+      getChildUpgradeDecision({
+        buildingId: 'repair-shop',
+        childIndex: 0,
+        progress: progress(1, [0, 0, 0, 0, 0]),
+        wallet: { money: 2, oil: 0, materials: 0 },
+        gangLevel: 1,
       }),
-    ).toBe(50)
+    ).toMatchObject({
+      reason: 'insufficient-resources',
+      missingResources: { money: 3, oil: 0, materials: 0 },
+    })
+  })
+})
+
+describe('main building upgrade decisions', () => {
+  it('requires all children to catch up first', () => {
+    expect(
+      getMainUpgradeDecision({
+        buildingId: 'repair-shop',
+        progress: progress(1, [1, 1, 1, 1, 0]),
+        clubhouseProgress: progress(2, Array(10).fill(0)),
+        wallet: richWallet,
+        gangLevel: 40,
+      }).reason,
+    ).toBe('children-not-caught-up')
   })
 
-  it('does not confirm an incomplete target level', () => {
-    const progress = { level: 5 as const, completedFragments: 5 }
-
-    expect(isBuildingReadyToLevelUp(progress)).toBe(false)
-    expect(confirmBuildingLevelUp(progress)).toBe(progress)
+  it('blocks non-clubhouse upgrades while clubhouse is locked', () => {
+    expect(
+      getMainUpgradeDecision({
+        buildingId: 'repair-shop',
+        progress: progress(1, Array(5).fill(1)),
+        clubhouseProgress: progress(2, Array(10).fill(0)),
+        wallet: richWallet,
+        gangLevel: 39,
+      }).reason,
+    ).toBe('clubhouse-locked')
   })
 
-  it('confirms a ready level atomically and clears fragment progress', () => {
-    const progress = { level: 8 as const, completedFragments: 9 }
+  it('blocks non-clubhouse targets above the clubhouse level', () => {
+    expect(
+      getMainUpgradeDecision({
+        buildingId: 'repair-shop',
+        progress: progress(1, Array(5).fill(1)),
+        clubhouseProgress: progress(1, Array(10).fill(1)),
+        wallet: richWallet,
+        gangLevel: 40,
+      }).reason,
+    ).toBe('clubhouse-too-low')
+  })
 
-    expect(confirmBuildingLevelUp(progress)).toEqual({
-      level: 9,
-      completedFragments: 0,
+  it('allows a caught-up repair shop to reach level 2', () => {
+    expect(
+      getMainUpgradeDecision({
+        buildingId: 'repair-shop',
+        progress: progress(1, Array(5).fill(1)),
+        clubhouseProgress: progress(2, Array(10).fill(0)),
+        wallet: richWallet,
+        gangLevel: 40,
+      }),
+    ).toMatchObject({
+      reason: 'ready',
+      targetLevel: 2,
+      cost: { money: 25, oil: 0, materials: 0 },
+      missingResources: emptyWallet,
     })
   })
 
-  it('caps level 10 and keeps its progress complete', () => {
-    const progress = { level: 10 as const, completedFragments: 0 }
-
-    expect(getTargetBuildingLevel(progress.level)).toBe(10)
-    expect(getBuildingUpgradePercent(progress)).toBe(100)
-    expect(isBuildingReadyToLevelUp(progress)).toBe(false)
-    expect(completeNextBuildingFragment(progress)).toBe(progress)
-    expect(confirmBuildingLevelUp(progress)).toBe(progress)
+  it('caps non-clubhouse level 5 before clubhouse and resource checks', () => {
+    expect(
+      getMainUpgradeDecision({
+        buildingId: 'repair-shop',
+        progress: progress(5, Array(5).fill(5)),
+        clubhouseProgress: progress(1, Array(10).fill(0)),
+        wallet: emptyWallet,
+        gangLevel: 1,
+      }).reason,
+    ).toBe('building-maxed')
   })
 
-  it.each([
-    [-5, 1],
-    [1.9, 1],
-    [6.8, 6],
-    [99, 10],
-    [Number.NaN, 1],
-    [Number.POSITIVE_INFINITY, 1],
-    ['4', 1],
-    [null, 1],
-  ])('normalizes building level %j to %i', (value, expected) => {
-    expect(normalizeBuildingLevel(value)).toBe(expected)
+  it('caps clubhouse level 10', () => {
+    expect(
+      getMainUpgradeDecision({
+        buildingId: 'clubhouse',
+        progress: progress(10, Array(10).fill(10)),
+        clubhouseProgress: progress(10, Array(10).fill(10)),
+        wallet: richWallet,
+        gangLevel: 50,
+      }).reason,
+    ).toBe('building-maxed')
   })
 
-  it('normalizes legacy numeric progress and malformed progress objects', () => {
-    expect(normalizeBuildingProgress(7)).toEqual({
-      level: 7,
-      completedFragments: 0,
-    })
+  it('reports insufficient main-upgrade resources last', () => {
     expect(
-      normalizeBuildingProgress({
-        level: 3.9,
-        completedFragments: 99.8,
-        ignored: true,
+      getMainUpgradeDecision({
+        buildingId: 'clubhouse',
+        progress: progress(1, Array(10).fill(1)),
+        clubhouseProgress: progress(1, Array(10).fill(1)),
+        wallet: emptyWallet,
+        gangLevel: 40,
       }),
-    ).toEqual({ level: 3, completedFragments: 4 })
-    expect(
-      normalizeBuildingProgress({
-        level: 8,
-        completedFragments: -4,
-      }),
-    ).toEqual({ level: 8, completedFragments: 0 })
-    expect(
-      normalizeBuildingProgress({
-        level: 10,
-        completedFragments: 10,
-      }),
-    ).toEqual({ level: 10, completedFragments: 0 })
-    expect(
-      normalizeBuildingProgress({
-        level: Number.POSITIVE_INFINITY,
-        completedFragments: Number.NaN,
-      }),
-    ).toEqual({ level: 1, completedFragments: 0 })
-    expect(normalizeBuildingProgress(null)).toEqual({
-      level: 1,
-      completedFragments: 0,
-    })
-  })
-
-  it('normalizes array input as default progress', () => {
-    expect(normalizeBuildingProgress([8, 9])).toEqual({
-      level: 1,
-      completedFragments: 0,
+    ).toMatchObject({
+      reason: 'insufficient-resources',
+      targetLevel: 2,
+      missingResources: { money: 25, oil: 0, materials: 0 },
     })
   })
 })

@@ -1,5 +1,6 @@
 import { useEffect, useState, type JSX } from 'react'
 import { buildingCatalogById } from '../../game/buildingCatalog'
+import { getCaughtUpChildCount } from '../../game/buildingUpgrade'
 import { BUILDING_RENDER_SCALE } from '../../game/cityLayout'
 import type {
   BuildingId,
@@ -30,12 +31,12 @@ function getSessionCompletedFragmentId(
   if (
     previous === progress ||
     progress.level !== previous.level ||
-    progress.completedFragments !== previous.completedFragments + 1
+    getCaughtUpChildCount(progress) !== getCaughtUpChildCount(previous) + 1
   ) {
     return undefined
   }
 
-  const completedIndex = progress.completedFragments - 1
+  const completedIndex = getCaughtUpChildCount(progress) - 1
   return getBuildingFragments(kind)[completedIndex]?.id
 }
 

@@ -1,11 +1,8 @@
 import { useState, type JSX } from 'react'
 import { buildingCatalogById } from '../game/buildingCatalog'
 import {
-  BUILDING_MAX_LEVEL,
-  getBuildingUpgradePercent,
-  getRequiredFragmentCount,
-  getTargetBuildingLevel,
-  isBuildingReadyToLevelUp,
+  getBuildingMaxLevel,
+  getCaughtUpChildCount,
 } from '../game/buildingUpgrade'
 import {
   getBuildingUnlock,
@@ -100,14 +97,15 @@ export function BuildingPanel(): JSX.Element | null {
   }
 
   const level = progress.level
-  const isMaxLevel = level === BUILDING_MAX_LEVEL
-  const targetLevel = getTargetBuildingLevel(level)
-  const requiredFragments = getRequiredFragmentCount(level)
-  const completed = progress.completedFragments
-  const ready = isBuildingReadyToLevelUp(progress)
-  const percent = getBuildingUpgradePercent(progress)
+  const maxLevel = getBuildingMaxLevel(selectedBuildingId)
+  const isMaxLevel = level === maxLevel
+  const targetLevel = Math.min(level + 1, maxLevel)
+  const requiredFragments = progress.childLevels.length
+  const completed = getCaughtUpChildCount(progress)
+  const ready = !isMaxLevel && completed === requiredFragments
+  const percent = (completed / requiredFragments) * 100
   const fragments = getBuildingFragments(building.kind)
-  const cellCount = isMaxLevel ? BUILDING_MAX_LEVEL : requiredFragments
+  const cellCount = requiredFragments
   const currentFragment = fragments[completed]
 
   const cellState = (index: number): FragmentCellState => {
@@ -160,7 +158,7 @@ export function BuildingPanel(): JSX.Element | null {
       <h2 id={TITLE_ID} className="building-panel__title">
         {building.name}
       </h2>
-      <p className="building-panel__level">{`等级 ${level} / ${BUILDING_MAX_LEVEL}`}</p>
+      <p className="building-panel__level">{`等级 ${level} / ${maxLevel}`}</p>
 
       {isMaxLevel ? (
         <>
@@ -171,10 +169,10 @@ export function BuildingPanel(): JSX.Element | null {
           <button
             type="button"
             className="building-panel__upgrade"
-            aria-label="已满级 · 10 个子建筑"
+            aria-label={`已满级 · ${requiredFragments} 个子建筑`}
             disabled
           >
-            已满级 · 10 个子建筑
+            {`已满级 · ${requiredFragments} 个子建筑`}
           </button>
         </>
       ) : (

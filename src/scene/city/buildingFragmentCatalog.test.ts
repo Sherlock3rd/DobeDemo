@@ -1,7 +1,6 @@
 import { Euler, Matrix4, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 import { buildingCatalog } from '../../game/buildingCatalog'
-import { getTargetBuildingLevel } from '../../game/buildingUpgrade'
 import {
   BUILDING_HITBOX_HEIGHT,
   BUILDING_RENDER_SCALE,
@@ -10,6 +9,8 @@ import {
   BUILDING_LEVELS,
   type BuildingKind,
   type BuildingLevel,
+  type BuildingProgress,
+  type ChildBuildingLevel,
 } from '../../game/cityTypes'
 import {
   getBuildingFragments,
@@ -26,6 +27,24 @@ const buildingKinds = [
   'gas',
   'clubhouse',
 ] as const satisfies readonly BuildingKind[]
+
+function progress(
+  kind: BuildingKind,
+  level: BuildingLevel,
+  caughtUp = 0,
+): BuildingProgress {
+  const childCount = kind === 'repair' ? 5 : 10
+  return {
+    level,
+    childLevels: Array.from(
+      { length: childCount },
+      (_, index) =>
+        (index < caughtUp
+          ? level
+          : Math.max(0, level - 1)) as ChildBuildingLevel,
+    ),
+  }
+}
 
 const expectedFragmentNames: Readonly<Record<BuildingKind, readonly string[]>> =
   {
@@ -110,8 +129,7 @@ const semanticTagSpotChecks: readonly {
   index: number
   tagFragment: string
 }[] = [
-  { kind: 'repair', index: 7, tagFragment: 'paint-booth' },
-  { kind: 'repair', index: 9, tagFragment: 'control-room' },
+  { kind: 'repair', index: 4, tagFragment: 'diagnostic' },
   { kind: 'recycling', index: 5, tagFragment: 'magnet' },
   { kind: 'recycling', index: 9, tagFragment: 'control' },
   { kind: 'commercial', index: 9, tagFragment: 'beacon' },
@@ -128,8 +146,6 @@ const rooftopAttachments: readonly {
   index: number
   attachmentTag: string
 }[] = [
-  { kind: 'repair', index: 7, attachmentTag: 'repair-paint-filter' },
-  { kind: 'commercial', index: 9, attachmentTag: 'commercial-central-beacon' },
   {
     kind: 'metalworking',
     index: 4,
@@ -295,18 +311,17 @@ function fragmentTopFromParts(parts: readonly BuildingVisualPart[]): number {
 }
 
 function renderedTop(kind: BuildingKind, level: BuildingLevel, index: number) {
-  const rendered = getRenderedBuildingFragments(kind, {
-    level,
-    completedFragments: 0,
-  })
+  const rendered = getRenderedBuildingFragments(kind, progress(kind, level))
 
   return fragmentTopFromParts(rendered[index].parts)
 }
 
 describe('getBuildingFragments', () => {
-  it('provides exactly ten fragments for every kind', () => {
+  it('provides five repair fragments and ten for every other kind', () => {
     buildingKinds.forEach((kind) => {
-      expect(getBuildingFragments(kind)).toHaveLength(10)
+      expect(getBuildingFragments(kind)).toHaveLength(
+        kind === 'repair' ? 5 : 10,
+      )
     })
   })
 
@@ -314,7 +329,11 @@ describe('getBuildingFragments', () => {
     buildingKinds.forEach((kind) => {
       expect(
         getBuildingFragments(kind).map((fragment) => fragment.name),
-      ).toEqual(expectedFragmentNames[kind])
+      ).toEqual(
+        kind === 'repair'
+          ? expectedFragmentNames[kind].slice(0, 5)
+          : expectedFragmentNames[kind],
+      )
     })
   })
 
@@ -391,14 +410,18 @@ describe('getBuildingFragments', () => {
 
 describe('getRenderedBuildingFragments render states', () => {
   it('shows only the current level fragments when no fragment is completed', () => {
-    ;([1, 4, 9] as const).forEach((level) => {
-      buildingKinds.forEach((kind) => {
-        const rendered = getRenderedBuildingFragments(kind, {
-          level,
-          completedFragments: 0,
-        })
+    buildingKinds.forEach((kind) => {
+      const levels =
+        kind === 'clubhouse' ? ([1, 4, 9] as const) : ([1, 4, 5] as const)
+      levels.forEach((level) => {
+        const rendered = getRenderedBuildingFragments(
+          kind,
+          progress(kind, level),
+        )
 
-        expect(rendered).toHaveLength(level)
+        expect(rendered).toHaveLength(
+          Math.min(level, getBuildingFragments(kind).length),
+        )
         rendered.forEach((fragment) => {
           expect(fragment.state).toBe<FragmentRenderState>('current')
           expect(fragment.animate).toBe(false)
@@ -409,13 +432,13 @@ describe('getRenderedBuildingFragments render states', () => {
 
   it('renders exactly N fragments while an upgrade is in progress', () => {
     const level: BuildingLevel = 3
-    const target = getTargetBuildingLevel(level)
+    const target = level + 1
 
     buildingKinds.forEach((kind) => {
-      const rendered = getRenderedBuildingFragments(kind, {
-        level,
-        completedFragments: 1,
-      })
+      const rendered = getRenderedBuildingFragments(
+        kind,
+        progress(kind, level, 1),
+      )
 
       expect(rendered).toHaveLength(target)
     })
@@ -423,13 +446,13 @@ describe('getRenderedBuildingFragments render states', () => {
 
   it('marks completed slots target, old slots current and the new slot scaffold', () => {
     const level: BuildingLevel = 3
-    const target = getTargetBuildingLevel(level)
+    const target = level + 1
 
     buildingKinds.forEach((kind) => {
-      const rendered = getRenderedBuildingFragments(kind, {
-        level,
-        completedFragments: 2,
-      })
+      const rendered = getRenderedBuildingFragments(
+        kind,
+        progress(kind, level, 2),
+      )
 
       expect(rendered.map((fragment) => fragment.state)).toEqual([
         'target',
@@ -443,13 +466,13 @@ describe('getRenderedBuildingFragments render states', () => {
 
   it('shows every fragment as target when ready to level up', () => {
     const level: BuildingLevel = 4
-    const target = getTargetBuildingLevel(level)
+    const target = level + 1
 
     buildingKinds.forEach((kind) => {
-      const rendered = getRenderedBuildingFragments(kind, {
-        level,
-        completedFragments: target,
-      })
+      const rendered = getRenderedBuildingFragments(
+        kind,
+        progress(kind, level, target),
+      )
 
       expect(rendered).toHaveLength(target)
       rendered.forEach((fragment) => {
@@ -458,14 +481,12 @@ describe('getRenderedBuildingFragments render states', () => {
     })
   })
 
-  it('keeps the level-10 building at ten current fragments', () => {
+  it('keeps a max-level building at its canonical child count', () => {
     buildingKinds.forEach((kind) => {
-      const rendered = getRenderedBuildingFragments(kind, {
-        level: 10,
-        completedFragments: 0,
-      })
+      const level = kind === 'clubhouse' ? 10 : 5
+      const rendered = getRenderedBuildingFragments(kind, progress(kind, level))
 
-      expect(rendered).toHaveLength(10)
+      expect(rendered).toHaveLength(kind === 'repair' ? 5 : level)
       rendered.forEach((fragment) => {
         expect(fragment.state).toBe<FragmentRenderState>('current')
       })
@@ -475,10 +496,10 @@ describe('getRenderedBuildingFragments render states', () => {
   it('carries the blueprint anchor and stable ids through rendering', () => {
     buildingKinds.forEach((kind) => {
       const blueprint = getBuildingFragments(kind)
-      const rendered = getRenderedBuildingFragments(kind, {
-        level: 6,
-        completedFragments: 2,
-      })
+      const rendered = getRenderedBuildingFragments(
+        kind,
+        progress(kind, kind === 'clubhouse' ? 6 : 5, 2),
+      )
 
       rendered.forEach((fragment, index) => {
         expect(fragment.id).toBe(blueprint[index].id)
@@ -492,10 +513,7 @@ describe('getRenderedBuildingFragments render states', () => {
 describe('getRenderedBuildingFragments animation control', () => {
   it('never animates when no animated fragment id is supplied', () => {
     buildingKinds.forEach((kind) => {
-      const rendered = getRenderedBuildingFragments(kind, {
-        level: 5,
-        completedFragments: 3,
-      })
+      const rendered = getRenderedBuildingFragments(kind, progress(kind, 5, 3))
 
       expect(rendered.some((fragment) => fragment.animate)).toBe(false)
     })
@@ -506,7 +524,7 @@ describe('getRenderedBuildingFragments animation control', () => {
       const target = getBuildingFragments(kind)[2]
       const rendered = getRenderedBuildingFragments(
         kind,
-        { level: 5, completedFragments: 3 },
+        progress(kind, 5, 3),
         target.id,
       )
 
@@ -519,10 +537,10 @@ describe('getRenderedBuildingFragments animation control', () => {
 
   it('ignores an animated fragment id that is not rendered', () => {
     buildingKinds.forEach((kind) => {
-      const offscreen = getBuildingFragments(kind)[8]
+      const offscreen = getBuildingFragments(kind)[kind === 'repair' ? 4 : 8]
       const rendered = getRenderedBuildingFragments(
         kind,
-        { level: 2, completedFragments: 1 },
+        progress(kind, 2, 1),
         offscreen.id,
       )
 
@@ -534,7 +552,7 @@ describe('getRenderedBuildingFragments animation control', () => {
     buildingKinds.forEach((kind) => {
       const rendered = getRenderedBuildingFragments(
         kind,
-        { level: 3, completedFragments: 2 },
+        progress(kind, 3, 2),
         getBuildingFragments(kind)[2].id,
       )
 
@@ -548,7 +566,7 @@ describe('getRenderedBuildingFragments animation control', () => {
     buildingKinds.forEach((kind) => {
       const rendered = getRenderedBuildingFragments(
         kind,
-        { level: 3, completedFragments: 2 },
+        progress(kind, 3, 2),
         getBuildingFragments(kind)[3].id,
       )
 
@@ -574,7 +592,8 @@ describe('getRenderedBuildingFragments level enhancement', () => {
 
   it('makes an existing fragment visibly stronger at the target level for every L1-L9', () => {
     buildingKinds.forEach((kind) => {
-      for (let level = 1; level <= 9; level += 1) {
+      const maxLevel = kind === 'clubhouse' ? 10 : 5
+      for (let level = 1; level < maxLevel; level += 1) {
         const index = level - 1
         const currentTop = renderedTop(kind, level as BuildingLevel, index)
         const targetTop = renderedTop(kind, (level + 1) as BuildingLevel, index)
@@ -589,10 +608,8 @@ describe('getRenderedBuildingFragments level enhancement', () => {
 
   it('keeps rooftop attachments resting on their body top at level 10', () => {
     rooftopAttachments.forEach(({ kind, index, attachmentTag }) => {
-      const rendered = getRenderedBuildingFragments(kind, {
-        level: 10,
-        completedFragments: 0,
-      })
+      const level = kind === 'clubhouse' ? 10 : 5
+      const rendered = getRenderedBuildingFragments(kind, progress(kind, level))
       const fragment = rendered[index]
       const bodyTop = partLocalAabb(fragment.parts[0]).max.y
       const attachment = fragment.parts.find(
@@ -613,10 +630,10 @@ describe('getRenderedBuildingFragments spatial invariants', () => {
   it('keeps every rendered part inside the footprint and under the hitbox for all full levels', () => {
     buildingKinds.forEach((kind) => {
       BUILDING_LEVELS.forEach((level) => {
-        const rendered = getRenderedBuildingFragments(kind, {
-          level,
-          completedFragments: 0,
-        })
+        const rendered = getRenderedBuildingFragments(
+          kind,
+          progress(kind, level),
+        )
 
         rendered.forEach((fragment) => {
           fragment.parts.forEach((part) => {
@@ -639,12 +656,12 @@ describe('getRenderedBuildingFragments spatial invariants', () => {
           return
         }
 
-        const target = getTargetBuildingLevel(level)
+        const target = level + 1
         for (let completed = 1; completed <= target; completed += 1) {
-          const rendered = getRenderedBuildingFragments(kind, {
-            level,
-            completedFragments: completed,
-          })
+          const rendered = getRenderedBuildingFragments(
+            kind,
+            progress(kind, level, completed),
+          )
 
           rendered.forEach((fragment) => {
             fragment.parts.forEach((part) => {

@@ -61,7 +61,7 @@ describe('App', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: '修车厂' })).toBeInTheDocument()
-    expect(screen.getByText('等级 1 / 10')).toBeInTheDocument()
+    expect(screen.getByText('等级 1 / 5')).toBeInTheDocument()
   })
 
   it('mounts the gang idle controller placeholder without starting real timers', () => {

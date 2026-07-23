@@ -12,14 +12,16 @@ vi.mock('./BuildingModel', () => ({
     animatedFragmentId,
   }: {
     definition: { id: string }
-    progress: { level: number; completedFragments: number }
+    progress: { level: number; childLevels: number[] }
     animatedFragmentId?: string
   }) => (
     <div
       data-testid="building-model"
       data-id={definition.id}
       data-level={progress.level}
-      data-completed={progress.completedFragments}
+      data-completed={
+        progress.childLevels.filter((level) => level === progress.level).length
+      }
       data-animated={animatedFragmentId ?? ''}
     >
       {definition.id}

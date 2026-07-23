@@ -1,8 +1,5 @@
 import { buildingCatalog } from '../../game/buildingCatalog'
-import {
-  BUILDING_MAX_LEVEL,
-  getTargetBuildingLevel,
-} from '../../game/buildingUpgrade'
+import { getCaughtUpChildCount } from '../../game/buildingUpgrade'
 import type {
   BuildingKind,
   BuildingLevel,
@@ -1568,7 +1565,8 @@ function buildScaffoldParts(
 export function getBuildingFragments(
   kind: BuildingKind,
 ): readonly BuildingFragmentBlueprint[] {
-  return buildingFragmentCatalog[kind]
+  const fragments = buildingFragmentCatalog[kind]
+  return kind === 'repair' ? fragments.slice(0, 5) : fragments
 }
 
 // Pure and deterministic in (kind, progress, animatedFragmentId): the same
@@ -1581,16 +1579,14 @@ export function getRenderedBuildingFragments(
   progress: BuildingProgress,
   animatedFragmentId?: string,
 ): readonly RenderedBuildingFragment[] {
-  const blueprints = buildingFragmentCatalog[kind]
+  const blueprints = getBuildingFragments(kind)
   const level = progress.level
-  const targetLevel = getTargetBuildingLevel(level)
-  const completed =
-    level === BUILDING_MAX_LEVEL
-      ? 0
-      : Math.max(
-          0,
-          Math.min(targetLevel, Math.trunc(progress.completedFragments)),
-        )
+  const maximum = kind === 'clubhouse' ? 10 : 5
+  const targetLevel = Math.min(level + 1, maximum) as BuildingLevel
+  const completed = Math.max(
+    0,
+    Math.min(blueprints.length, getCaughtUpChildCount(progress)),
+  )
 
   const toRendered = (
     blueprint: BuildingFragmentBlueprint,

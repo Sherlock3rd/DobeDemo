@@ -28,13 +28,13 @@ function readGangPersistedState(): Record<string, unknown> | null {
 describe('resetAccount', () => {
   beforeEach(() => {
     window.localStorage.clear()
-    useCityStore.getState().reset()
+    useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
   })
 
   afterEach(() => {
     vi.useRealTimers()
-    useCityStore.getState().reset()
+    useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
     window.localStorage.clear()
   })
@@ -45,8 +45,10 @@ describe('resetAccount', () => {
       selectedBuildingId: 'repair-shop',
       buildingProgress: {
         ...useCityStore.getState().buildingProgress,
-        'repair-shop': { level: 7, completedFragments: 4 },
+        'repair-shop': { level: 5, childLevels: [5, 4, 3, 2, 1] },
       },
+      resources: { money: 99, oil: 8, materials: 7 },
+      activeProducerIds: ['repair-shop', 'commercial-street'],
     })
 
     resetAccount(RESET_TIME)
@@ -56,8 +58,15 @@ describe('resetAccount', () => {
     expect(useCityStore.getState().selectedBuildingId).toBeNull()
     expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
       level: 1,
-      completedFragments: 0,
+      childLevels: [0, 0, 0, 0, 0],
     })
+    expect(useCityStore.getState().resources).toEqual({
+      money: 0,
+      oil: 0,
+      materials: 0,
+    })
+    expect(useCityStore.getState().lastResourceUpdatedAt).toBe(RESET_TIME)
+    expect(useCityStore.getState().activeProducerIds).toEqual(['repair-shop'])
   })
 
   it('persists reset state to storage and survives rehydrate', async () => {
@@ -66,9 +75,10 @@ describe('resetAccount', () => {
       selectedBuildingId: 'repair-shop',
       buildingProgress: {
         ...useCityStore.getState().buildingProgress,
-        'repair-shop': { level: 7, completedFragments: 4 },
-        'gas-station': { level: 3, completedFragments: 1 },
+        'repair-shop': { level: 5, childLevels: [5, 4, 3, 2, 1] },
+        'gas-station': { level: 3, childLevels: Array(10).fill(1) },
       },
+      resources: { money: 99, oil: 8, materials: 7 },
     })
 
     resetAccount(RESET_TIME)
@@ -81,9 +91,16 @@ describe('resetAccount', () => {
     for (const id of BUILDING_IDS) {
       expect(buildingProgress[id]).toEqual({
         level: 1,
-        completedFragments: 0,
+        childLevels: Array(id === 'repair-shop' ? 5 : 10).fill(0),
       })
     }
+    expect(cityPersisted?.resources).toEqual({
+      money: 0,
+      oil: 0,
+      materials: 0,
+    })
+    expect(cityPersisted?.lastResourceUpdatedAt).toBe(RESET_TIME)
+    expect(cityPersisted?.activeProducerIds).toEqual(['repair-shop'])
 
     const gangPersisted = readGangPersistedState()
     expect(gangPersisted).not.toBeNull()
@@ -100,7 +117,9 @@ describe('resetAccount', () => {
       BUILDING_IDS.every(
         (id) =>
           useCityStore.getState().buildingProgress[id].level === 1 &&
-          useCityStore.getState().buildingProgress[id].completedFragments === 0,
+          useCityStore
+            .getState()
+            .buildingProgress[id].childLevels.every((level) => level === 0),
       ),
     ).toBe(true)
   })
@@ -114,5 +133,6 @@ describe('resetAccount', () => {
     resetAccount(Number.NaN)
 
     expect(useGangStore.getState().lastUpdatedAt).toBe(FALLBACK_TIME)
+    expect(useCityStore.getState().lastResourceUpdatedAt).toBe(FALLBACK_TIME)
   })
 })
