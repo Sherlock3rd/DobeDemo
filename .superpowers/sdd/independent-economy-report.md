@@ -2,7 +2,7 @@
 
 **日期：** 2026-07-23
 **范围：** 文档、可重复安全 CDP 浏览器验收与本地发布证据。
-**发布状态：** 12 个逻辑分段提交与全分支终审已完成；尚未 push、尚未更新 GitHub Pages。
+**发布状态：** 功能、验收与终审提交已普通推送至 `main`；`gh-pages` 已快进发布且 Pages 构建为 `built`，公开复验通过。
 
 ## 1. Fresh 工程门禁
 
@@ -78,6 +78,7 @@
 | `independent-economy-gate.png`        | Clubhouse 未解锁门槛文本                                          | 182 KB |
 | `independent-economy-resources.png`   | Lv.40 下 `钱 +3/10秒`、`油 +1/10秒`、`物资 +1/10秒`，全城建筑解锁 | 148 KB |
 | `independent-economy-mobile.png`      | 390×844 建筑面板底部抽屉，无横向溢出                              | 98 KB  |
+| `independent-economy-public.png`      | GitHub Pages 公开地址：三资源 HUD 与修车厂 5 子建筑面板           | 185 KB |
 
 > 另有中间证据 `independent-economy-free-choice-before.png`（点击前脚手架态），用于 ROI 前后像素差比对。
 
@@ -95,18 +96,19 @@
 - `README.md`：改写核心玩法为独立子建筑（修车厂 5/其余 10、Lv.0 自由升级）、三资源生产与 8 小时离线、每 10 秒 +1 声望、Clubhouse 上限/门槛、`economy.config.json` 配置 EXE 契约；测试基线更新为 37 文件/420 项；新增本验收脚本引用；删除旧固定顺序碎片与每秒 5 声望表述。
 - `session/requirements/gang-tree-idle-unlocks.md`：删除“每秒 5 声望”“固定顺序碎片闭环”矛盾文本，改为每 10 秒 +1 与独立子建筑三资源闭环，注明配置 JSON 契约。
 - `session/session.md`：更新当前目标，新增独立经济与 Task6 本地验收两条变更总账。
-- `docs/superpowers/plans/2026-07-23-independent-subbuilding-economy.md`：勾选 Task 1–5 全部步骤与 Task 6 Step 1–5；Step 6（推送和 Pages）保持未勾。
+- `docs/superpowers/plans/2026-07-23-independent-subbuilding-economy.md`：Task 1–6 全部步骤已勾选。
 
 ## 7. 全分支终审
 
 完整分支 `116ea09..2f227e2` 终审结论为 **Approved**，无 Critical/Important。终审指出系统时钟回拨且生产者集合变化时，生产时间戳可能被回拨；已用 RED→GREEN 回归测试修复为不早于结算时间戳。修复增量 `2f227e2..f52dea8` 复审同样为 **Approved**，并在修复后 fresh 运行全部工程门禁与浏览器验收。
 
-## 8. 待发布步骤
+## 8. GitHub Pages 发布
 
-1. 普通推送 `main`（禁止 force push）。
-2. fresh `dist`（`/DobeDemo/` base）经独立临时 index 快进更新 `gh-pages`。
-3. 等待最新 Pages build 的 commit 精确匹配且 `status=built`，校验公开 HTML 与当前 JS/CSS HTTP 200。
-4. 真实 Chrome 加载公开 URL 截图（三资源 HUD + 修车厂五子建筑面板），更新发布报告与 session，再次普通推送 `main`。
+- `main` 通过普通 push 发布，无 force push。
+- fresh `dist` 通过独立临时 index 构造 `gh-pages` 快进提交 `2fffcf455b1e191b52ca296ad857abd63f98a2c5`，发布树仅含 `index.html`、当前 JS 与 CSS。
+- GitHub Pages build `1110802086` 的 commit 精确匹配 `2fffcf455b1e191b52ca296ad857abd63f98a2c5`，状态从 `building` 变为 `built`；source 保持 `gh-pages:/` 且强制 HTTPS。
+- 公开 HTML、`assets/index-BqDEkGFJ.js`、`assets/index-BSltOOxX.css` 均返回 HTTP 200，HTML 精确引用当前 hash 资源。
+- `.superpowers/sdd/independent-economy-public-cdp.mjs` 用自建 headless Chrome 真实加载公开 URL、清空独立 profile 的本地存档并扫描点击修车厂；断言面板标题为“修车厂”、子建筑卡片恰好 5 张、HUD 同时显示钱/油/物资。截图 `independent-economy-public.png` 非空（189,819 bytes），临时 profile 已删除。
 
 ## 9. 复现命令
 
@@ -117,6 +119,7 @@ npm.cmd run lint
 npm.cmd test
 npm.cmd run build
 node .superpowers/sdd/independent-economy-cdp.mjs
+node .superpowers/sdd/independent-economy-public-cdp.mjs
 ```
 
 可选环境变量：`DEV_PORT`、`CDP_PORT`、`CHROME_PATH`（占用的首选端口会被自动跳过）。
