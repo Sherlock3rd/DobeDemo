@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T08:03:59.532Z",
+  "generatedAt": "2026-07-23T08:09:32.188Z",
   "devUrl": "http://127.0.0.1:5188/",
   "cdpPort": 9234,
   "distIndex": "dist/index.html",
@@ -20,7 +20,7 @@
   },
   "storageCleared": {
     "city": null,
-    "gang": "{\"state\":{\"totalReputation\":5,\"lastUpdatedAt\":1784793844577},\"version\":0}"
+    "gang": "{\"state\":{\"totalReputation\":5,\"lastUpdatedAt\":1784794177155},\"version\":0}"
   },
   "repairShopCoordinate": {
     "x": 455,
