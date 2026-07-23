@@ -1,9 +1,9 @@
-# Settings Reset Task 3 本地验收报告
+# Settings Reset 发布报告
 
 生成日期：2026-07-23  
-执行范围：Task 3 Execution Boundaries 的本地 Step 1–3  
+执行范围：Task 3 本地验收、分段提交与 GitHub Pages 发布  
 状态：DONE  
-公开发布：待父代理发布
+公开发布：已完成
 
 ## 边界与版本状态
 
@@ -158,5 +158,14 @@
 - 构建仍有既有的主 JS chunk 大于 500 kB 警告，不阻塞本任务。
 - 工作区开始时已有大量非本任务状态条目；父代理提交前应按简报检查 status/diff/log，仅暂存 Task 3 指定文件和证据。
 - `git diff --numstat -- src` 对既有产品代码状态仅显示 `0 0`，本任务没有产品内容差异。
-- `.superpowers/sdd/.gitignore:1` 的 `*` 会忽略六个新增验收文件；`git check-ignore -v` 已确认脚本、JSON、三张截图和报告均命中该规则。父代理提交验收证据时需显式纳入这些指定文件，不能依赖普通 `git add` 自动发现。
-- 公开 GitHub Pages 尚未发布或复验；状态必须保持“待父代理发布”。
+- `.superpowers/sdd/.gitignore:1` 的 `*` 会忽略验收文件；发布提交已使用精确路径显式纳入脚本、JSON、截图和报告。
+
+## Git 与 GitHub Pages 发布
+
+- `main` 以 6 个分段提交从 `ae482c7` 普通快进推送至 `7616eee`，包含设计、计划、重置协调器、设置 UI、验收证据和隐私加固；未使用 force push。
+- fresh `dist` 通过独立临时 index 生成 `gh-pages` 提交 `1d58eff`，由远端 `46a9025` 快进；发布树仅含 `index.html`、当前 JS 和 CSS。
+- GitHub Pages 来源保持 `gh-pages:/`、HTTPS 强制开启。构建 `1110599606` 的 commit 精确为 `1d58eff81a5de6a8295f5c0dc08b52e3762d1823`，状态从 `building` 转为 `built`。
+- 公开首页 `https://sherlock3rd.github.io/DobeDemo/` HTTP 200（415 bytes）。
+- 当前 JS `assets/index-CnCFOskQ.js` HTTP 200（1,145,391 bytes）。
+- 当前 CSS `assets/index-D2tbbVLS.css` HTTP 200（15,921 bytes）。
+- 真实 Chrome 使用独立临时 profile 加载公开 URL，生成 `.superpowers/sdd/settings-reset-pages.png`（127,991 bytes）；截图可见 HUD 的“设置”入口和正常 3D 城市场景，profile 已清理。
