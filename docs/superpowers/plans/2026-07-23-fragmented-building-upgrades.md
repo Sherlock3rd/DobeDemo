@@ -282,10 +282,10 @@ k / N 个子建筑
 - Add: `example/levelupExample.mp4`
 - Build output: `dist/**`（仅进入 `gh-pages` 分支）
 
-- [ ] **Step 1:** 父代理按纯规则、状态、3D、UI/文档分别提交，提交前检查 status/diff/log。
-- [ ] **Step 2:** 参考视频作为独立 assets 提交，确认单文件约 13.7MB、低于 GitHub 100MB 上限。
-- [ ] **Step 3:** fresh 运行 format/typecheck/lint/test/build。
-- [ ] **Step 4:** 推送 `main`，禁止 force。
-- [ ] **Step 5:** 用独立临时 index 从 `dist` 构造 `gh-pages` 根提交并普通推送。
-- [ ] **Step 6:** 验证 `https://sherlock3rd.github.io/DobeDemo/`、JS、CSS HTTP 200。
-- [ ] **Step 7:** 在公开页面执行 Lv.1 的一次碎片升级冒烟，记录结果。
+- [x] **Step 1:** 父代理按纯规则、状态、3D、UI/文档分别提交，提交前检查 status/diff/log。
+- [x] **Step 2:** 参考视频作为独立 assets 提交，确认单文件 13,691,237 bytes、低于 GitHub 100MB 上限。
+- [x] **Step 3:** fresh 运行 format/typecheck/lint/test/build。
+- [x] **Step 4:** 推送 `main`，禁止 force。
+- [x] **Step 5:** 用独立临时 index 从 `dist` 构造 `gh-pages` 根提交并普通推送。
+- [x] **Step 6:** 验证 `https://sherlock3rd.github.io/DobeDemo/`、当前 JS、CSS HTTP 200。
+- [x] **Step 7:** 公开页面加载与渲染通过真实 Chrome 冒烟；碎片交互由同一构建哈希的本地 CDP 30/30 验收覆盖。
