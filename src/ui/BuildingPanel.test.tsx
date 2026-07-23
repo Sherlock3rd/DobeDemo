@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildingCatalogById } from '../game/buildingCatalog'
@@ -97,6 +97,44 @@ describe('BuildingPanel', () => {
       level: 1,
       childLevels: [0, 0, 0, 0, 1],
     })
+    expect(useCityStore.getState().resources.money).toBe(0)
+  })
+
+  it('disables an unaffordable child with a shortfall hint, then enables it once funded', async () => {
+    const user = userEvent.setup()
+    useCityStore.getState().selectBuilding('repair-shop')
+    // Wallet is empty right after reset, so every child is unaffordable.
+
+    render(<BuildingPanel />)
+
+    const firstName = repairFragments[0].name
+    expect(
+      screen.getAllByText('资源不足，还需 钱 5').length,
+    ).toBeGreaterThanOrEqual(1)
+    // Full next-level cost stays visible on every card.
+    expect(screen.getAllByText('钱 5').length).toBeGreaterThanOrEqual(5)
+
+    const blockedButton = screen.getByRole('button', {
+      name: `资源不足，无法升级 ${firstName} 至 Lv.1`,
+    })
+    expect(blockedButton).toBeDisabled()
+    expect(
+      screen.queryByRole('button', { name: `升级 ${firstName} 至 Lv.1` }),
+    ).not.toBeInTheDocument()
+
+    act(() => {
+      useCityStore.setState({ resources: { money: 5, oil: 0, materials: 0 } })
+    })
+
+    const enabledButton = screen.getByRole('button', {
+      name: `升级 ${firstName} 至 Lv.1`,
+    })
+    expect(enabledButton).toBeEnabled()
+    await user.click(enabledButton)
+
+    expect(
+      useCityStore.getState().buildingProgress['repair-shop'].childLevels[0],
+    ).toBe(1)
     expect(useCityStore.getState().resources.money).toBe(0)
   })
 
@@ -244,6 +282,7 @@ describe('BuildingPanel', () => {
   it('reveals ten free-choice cards for the recycling yard once level 8 is reached', () => {
     useGangStore.setState({ totalReputation: getTotalReputationForLevel(8) })
     useCityStore.getState().selectBuilding('recycling-yard')
+    setResources(5)
 
     const { container } = render(<BuildingPanel />)
 

@@ -83,7 +83,7 @@ function mainBlockerMessage(
     case 'insufficient-resources':
       return `资源不足，还需 ${formatCost(decision.missingResources)}`
     default:
-      return ''
+      return '暂不可升级'
   }
 }
 
@@ -262,9 +262,9 @@ export function BuildingPanel(): JSX.Element | null {
             wallet: resources,
             gangLevel,
           })
-          const caughtUp = decision.reason === 'child-at-main-level'
           const ratio = `Lv.${childLevel} / ${level}`
           const statusText = childLevel === 0 ? `未建设 · ${ratio}` : ratio
+          const { cost, targetLevel: childTargetLevel } = decision
 
           return (
             <li key={fragment.id} className="building-panel__child-card">
@@ -273,7 +273,7 @@ export function BuildingPanel(): JSX.Element | null {
                 {fragment.description}
               </p>
               <p className="building-panel__child-status">{statusText}</p>
-              {caughtUp || decision.cost === null ? (
+              {decision.reason === 'child-at-main-level' ? (
                 <button
                   type="button"
                   className="building-panel__child-upgrade"
@@ -282,19 +282,44 @@ export function BuildingPanel(): JSX.Element | null {
                 >
                   已追平主建筑
                 </button>
+              ) : cost === null || childTargetLevel === null ? (
+                <button
+                  type="button"
+                  className="building-panel__child-upgrade"
+                  aria-label="暂不可升级"
+                  disabled
+                >
+                  暂不可升级
+                </button>
               ) : (
                 <>
                   <p className="building-panel__child-cost">
-                    {formatCost(decision.cost)}
+                    {formatCost(cost)}
                   </p>
-                  <button
-                    type="button"
-                    className="building-panel__child-upgrade"
-                    aria-label={`升级 ${fragment.name} 至 Lv.${decision.targetLevel}`}
-                    onClick={() => handleChildUpgrade(index)}
-                  >
-                    {`升级至 Lv.${decision.targetLevel}`}
-                  </button>
+                  {decision.reason === 'insufficient-resources' ? (
+                    <>
+                      <p className="building-panel__child-shortfall">
+                        {`资源不足，还需 ${formatCost(decision.missingResources)}`}
+                      </p>
+                      <button
+                        type="button"
+                        className="building-panel__child-upgrade"
+                        aria-label={`资源不足，无法升级 ${fragment.name} 至 Lv.${childTargetLevel}`}
+                        disabled
+                      >
+                        {`升级至 Lv.${childTargetLevel}`}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="building-panel__child-upgrade"
+                      aria-label={`升级 ${fragment.name} 至 Lv.${childTargetLevel}`}
+                      onClick={() => handleChildUpgrade(index)}
+                    >
+                      {`升级至 Lv.${childTargetLevel}`}
+                    </button>
+                  )}
                 </>
               )}
             </li>

@@ -418,6 +418,15 @@
   word-break: break-word;
 }
 
+.building-panel__child-shortfall {
+  margin: 0 0 0.35rem;
+  color: #f0b7a4;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
 .building-panel__child-upgrade {
   margin-top: auto;
 }
