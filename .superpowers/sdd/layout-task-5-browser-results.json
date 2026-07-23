@@ -1,0 +1,166 @@
+{
+  "generatedAt": "2026-07-23T03:45:32.997Z",
+  "devUrl": "http://127.0.0.1:5177/",
+  "cdpPort": 9224,
+  "preflight": {
+    "cdpPort": 9224,
+    "cdpPortFree": true,
+    "devPort": 5177,
+    "devPortFree": true,
+    "ok": true
+  },
+  "http": {
+    "url": "http://127.0.0.1:5177/",
+    "status": 200,
+    "ok": true,
+    "hasRoot": true,
+    "hasMainTsx": true
+  },
+  "window": {
+    "requested": {
+      "width": 1440,
+      "height": 900
+    },
+    "outer": {
+      "width": 1440,
+      "height": 900
+    }
+  },
+  "viewport": {
+    "width": 1424,
+    "height": 805,
+    "devicePixelRatio": 1
+  },
+  "storageClearedThenReseededFresh": {
+    "rawStorage": "{\"state\":{\"totalReputation\":10,\"lastUpdatedAt\":1784778337611},\"version\":0}",
+    "showsLevel1": true
+  },
+  "gestures": [
+    {
+      "name": "left-button-pan",
+      "before": "layout-leftpan-before.png",
+      "after": "layout-leftpan-after.png",
+      "changedPixels": 305006,
+      "totalPixels": 1146320,
+      "changedPct": 26.61
+    },
+    {
+      "name": "right-button-pan",
+      "before": "layout-rightpan-before.png",
+      "after": "layout-rightpan-after.png",
+      "changedPixels": 337569,
+      "totalPixels": 1146320,
+      "changedPct": 29.45
+    },
+    {
+      "name": "single-finger-touch-pan",
+      "before": "layout-touchpan-before.png",
+      "after": "layout-touchpan-after.png",
+      "changedPixels": 314922,
+      "totalPixels": 1146320,
+      "changedPct": 27.47
+    }
+  ],
+  "clickSuppression": {
+    "buildingCoordinate": {
+      "x": 380,
+      "y": 300
+    },
+    "panelAfterClick": true,
+    "panelAfterDrag": false
+  },
+  "screenshots": {
+    "main": "layout-pan-drag-screenshot.png"
+  },
+  "ports": {
+    "cdpPort": 9224,
+    "cdpStartedByScript": true,
+    "cdpPortReleased": true,
+    "devPort": 5177,
+    "devStartedByScript": true,
+    "devPortReleased": true
+  },
+  "assertionSelfTest": {
+    "ok": true,
+    "totalChecks": 12,
+    "detectedFailuresOnBadData": [
+      "http.status===200",
+      "http.hasRoot",
+      "http.hasMainTsx",
+      "canvas present",
+      "left-button-pan changedPct>=1",
+      "right-button-pan changedPct>=1",
+      "single-finger-touch-pan changedPct>=1",
+      "panelAfterClick===true",
+      "panelAfterDrag===false",
+      "cdpPortReleased",
+      "devPortReleased",
+      "tempProfileRemoved"
+    ],
+    "failuresOnGoodData": []
+  },
+  "assertions": [
+    {
+      "name": "http.status===200",
+      "pass": true,
+      "detail": "status=200"
+    },
+    {
+      "name": "http.hasRoot",
+      "pass": true,
+      "detail": "hasRoot=true"
+    },
+    {
+      "name": "http.hasMainTsx",
+      "pass": true,
+      "detail": "hasMainTsx=true"
+    },
+    {
+      "name": "canvas present",
+      "pass": true,
+      "detail": "hasCanvas=true"
+    },
+    {
+      "name": "left-button-pan changedPct>=1",
+      "pass": true,
+      "detail": "changedPct=26.61"
+    },
+    {
+      "name": "right-button-pan changedPct>=1",
+      "pass": true,
+      "detail": "changedPct=29.45"
+    },
+    {
+      "name": "single-finger-touch-pan changedPct>=1",
+      "pass": true,
+      "detail": "changedPct=27.47"
+    },
+    {
+      "name": "panelAfterClick===true",
+      "pass": true,
+      "detail": "panelAfterClick=true"
+    },
+    {
+      "name": "panelAfterDrag===false",
+      "pass": true,
+      "detail": "panelAfterDrag=false"
+    },
+    {
+      "name": "cdpPortReleased",
+      "pass": true,
+      "detail": "cdpPortReleased=true"
+    },
+    {
+      "name": "devPortReleased",
+      "pass": true,
+      "detail": "devPortReleased=true"
+    },
+    {
+      "name": "tempProfileRemoved",
+      "pass": true,
+      "detail": "tempProfileRemoved=true"
+    }
+  ],
+  "hasCanvas": true,
+  "tempProfileRemoved": true
+}
