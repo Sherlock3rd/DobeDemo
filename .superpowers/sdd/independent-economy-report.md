@@ -2,31 +2,31 @@
 
 **日期：** 2026-07-23
 **范围：** 文档、可重复安全 CDP 浏览器验收与本地发布证据。
-**发布状态：** 未 commit、未 push、未更新 GitHub Pages；分段提交、全分支终审与 Pages 发布均等待父代理。
+**发布状态：** 12 个逻辑分段提交与全分支终审已完成；尚未 push、尚未更新 GitHub Pages。
 
 ## 1. Fresh 工程门禁
 
 在干净工作区依次运行，全部退出码 0：
 
-| 命令                     | 结果                                                    |
-| ------------------------ | ------------------------------------------------------- |
-| `npm.cmd run format:check` | 通过（All matched files use Prettier code style）        |
-| `npm.cmd run typecheck`  | 通过（`tsc -b --pretty false`，退出码 0）               |
-| `npm.cmd run lint`       | 通过（`eslint .`，退出码 0）                            |
-| `npm.cmd test`           | 通过：**37 个测试文件、419 项测试**（vitest run）        |
-| `npm.cmd run build`      | 通过（`tsc -b && vite build`，退出码 0）                 |
+| 命令                       | 结果                                              |
+| -------------------------- | ------------------------------------------------- |
+| `npm.cmd run format:check` | 通过（All matched files use Prettier code style） |
+| `npm.cmd run typecheck`    | 通过（`tsc -b --pretty false`，退出码 0）         |
+| `npm.cmd run lint`         | 通过（`eslint .`，退出码 0）                      |
+| `npm.cmd test`             | 通过：**37 个测试文件、420 项测试**（vitest run） |
+| `npm.cmd run build`        | 通过（`tsc -b && vite build`，退出码 0）          |
 
 构建资产（`vite v8.1.5`）：
 
-| 资产                              | 大小        | gzip      |
-| --------------------------------- | ----------- | --------- |
-| `dist/index.html`                 | 0.41 kB     | 0.27 kB   |
-| `dist/assets/index-BSltOOxX.css`  | 15.13 kB    | 3.32 kB   |
-| `dist/assets/index-BJ6q-ZtE.js`   | 1,156.65 kB | 319.65 kB |
+| 资产                             | 大小        | gzip      |
+| -------------------------------- | ----------- | --------- |
+| `dist/index.html`                | 0.41 kB     | 0.27 kB   |
+| `dist/assets/index-BSltOOxX.css` | 15.13 kB    | 3.32 kB   |
+| `dist/assets/index-BqDEkGFJ.js`  | 1,156.68 kB | 319.66 kB |
 
 `dist/index.html` 的资源引用均以 `/DobeDemo/` 开头：
 
-- `/DobeDemo/assets/index-BJ6q-ZtE.js`
+- `/DobeDemo/assets/index-BqDEkGFJ.js`
 - `/DobeDemo/assets/index-BSltOOxX.css`
 
 > 构建的 “chunks larger than 500 kB” 只是提示（stderr），构建退出码为 0，非错误。
@@ -53,31 +53,31 @@
 
 真实 Chrome（headless，1440×900）经 CDP 驱动。允许注入合法 v2 `localStorage` 并 reload 加速场景，但下列真实交互均实际发生：真实等待 10 秒钱产出、真实鼠标点击第 5 个修车厂子建筑、真实点击 Clubhouse/修车厂主建筑升级、真实测量移动视口。
 
-| # | 断言 | 证据 |
-| --- | --- | --- |
-| 1 | fresh v2 存档：修车厂 Lv.1、5 子建筑全 0、资源全 0 | `city.version=2`，`repair-shop {level:1, childLevels:[0,0,0,0,0]}`，`resources {0,0,0}` |
-| 1b | HUD 显示 `+1 声望/10秒` 与 `钱 +1/10秒` | HUD rate `+1 声望/10秒`，资源含 `钱 +1/10秒` |
-| 2 | 10 秒后钱精确 +1 | `moneyBefore=0` → `moneyAfter=1`（9.999 秒无收益由纯单测覆盖） |
-| 3 | 真实点击第 5 个修车厂子建筑（诊断工位），数组变 `[0,0,0,0,1]` 并扣 5 钱 | `childLevelsBefore=[0,0,0,0,0]`，`childLevelsAfter=[0,0,0,0,1]`，`moneySpent=5` |
-| 4 | 第 5 槽 3D ROI 变化，其余子建筑数据不变 | ROI 变化 **650/125320 px**（阈值 40），其余 index 保持 0 |
-| 5 | 五子建筑全 Lv.1 后 Clubhouse 未解锁精确提示 | `需要先将帮派树提升至 Lv.40 解锁 Clubhouse` |
-| 6 | 注入帮派 Lv.40、Clubhouse Lv.1 后门槛提示 | `需要先将 Clubhouse 提升至 Lv.2` |
-| 7 | 真实升级 Clubhouse 10 子建筑→Lv.2，再升修车厂→Lv.2 | Clubhouse `等级 1/10`→`等级 2/10`（存档 2）；修车厂 `等级 1/5`→`等级 2/5`（存档 2，childLevels `[1,1,1,1,1]`） |
-| 8 | 刷新后钱包、active producers、主/子等级持久 | 刷新后 repair Lv.2 `[1,1,1,1,1]`、clubhouse Lv.2、producers `[repair-shop, commercial-street, metalworking-plant, gas-station]`、钱包 `99954`→`99954` |
-| 9 | 激活商业街/加油站/金属加工厂后三资源按配置增长 | 一个 tick 后 `money=3, oil=1, materials=1`（钱=油×3、物资=油），HUD `钱 +3/10秒`、`油 +1/10秒`、`物资 +1/10秒` |
-| 10 | 非 Clubhouse Lv.5、Clubhouse Lv.10 上限注入后按钮禁用 | 修车厂 `等级 5/5` 无主升级按钮、`已达到最高等级 Lv.5`；Clubhouse `等级 10/10` 无主升级按钮、`已达到最高等级 Lv.10` |
-| 11 | 390×844 无横向溢出且可滚动 | `withinBounds=true`、`noHorizontalOverflow=true`、`scrollableOrFits=true` |
-| 12 | dev/CDP 端口释放、临时 profile 删除、仅 owned PID 被 targeting | `devPortReleased/cdpPortReleased/tempProfileRemoved=true`，`unknownProcessesTerminated=false`，killAttempts 全 owned |
+| #   | 断言                                                                    | 证据                                                                                                                                                  |
+| --- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | fresh v2 存档：修车厂 Lv.1、5 子建筑全 0、资源全 0                      | `city.version=2`，`repair-shop {level:1, childLevels:[0,0,0,0,0]}`，`resources {0,0,0}`                                                               |
+| 1b  | HUD 显示 `+1 声望/10秒` 与 `钱 +1/10秒`                                 | HUD rate `+1 声望/10秒`，资源含 `钱 +1/10秒`                                                                                                          |
+| 2   | 10 秒后钱精确 +1                                                        | `moneyBefore=0` → `moneyAfter=1`（9.999 秒无收益由纯单测覆盖）                                                                                        |
+| 3   | 真实点击第 5 个修车厂子建筑（诊断工位），数组变 `[0,0,0,0,1]` 并扣 5 钱 | `childLevelsBefore=[0,0,0,0,0]`，`childLevelsAfter=[0,0,0,0,1]`，`moneySpent=5`                                                                       |
+| 4   | 第 5 槽 3D ROI 变化，其余子建筑数据不变                                 | ROI 变化 **650/125320 px**（阈值 40），其余 index 保持 0                                                                                              |
+| 5   | 五子建筑全 Lv.1 后 Clubhouse 未解锁精确提示                             | `需要先将帮派树提升至 Lv.40 解锁 Clubhouse`                                                                                                           |
+| 6   | 注入帮派 Lv.40、Clubhouse Lv.1 后门槛提示                               | `需要先将 Clubhouse 提升至 Lv.2`                                                                                                                      |
+| 7   | 真实升级 Clubhouse 10 子建筑→Lv.2，再升修车厂→Lv.2                      | Clubhouse `等级 1/10`→`等级 2/10`（存档 2）；修车厂 `等级 1/5`→`等级 2/5`（存档 2，childLevels `[1,1,1,1,1]`）                                        |
+| 8   | 刷新后钱包、active producers、主/子等级持久                             | 刷新后 repair Lv.2 `[1,1,1,1,1]`、clubhouse Lv.2、producers `[repair-shop, commercial-street, metalworking-plant, gas-station]`、钱包 `99954`→`99954` |
+| 9   | 激活商业街/加油站/金属加工厂后三资源按配置增长                          | 一个 tick 后 `money=3, oil=1, materials=1`（钱=油×3、物资=油），HUD `钱 +3/10秒`、`油 +1/10秒`、`物资 +1/10秒`                                        |
+| 10  | 非 Clubhouse Lv.5、Clubhouse Lv.10 上限注入后按钮禁用                   | 修车厂 `等级 5/5` 无主升级按钮、`已达到最高等级 Lv.5`；Clubhouse `等级 10/10` 无主升级按钮、`已达到最高等级 Lv.10`                                    |
+| 11  | 390×844 无横向溢出且可滚动                                              | `withinBounds=true`、`noHorizontalOverflow=true`、`scrollableOrFits=true`                                                                             |
+| 12  | dev/CDP 端口释放、临时 profile 删除、仅 owned PID 被 targeting          | `devPortReleased/cdpPortReleased/tempProfileRemoved=true`，`unknownProcessesTerminated=false`，killAttempts 全 owned                                  |
 
 ## 4. 截图（均由脚本生成、非空）
 
-| 文件 | 内容 | 大小 |
-| --- | --- | --- |
-| `independent-economy-initial.png` | fresh v2：修车厂 Lv.1、5 子建筑全脚手架、三资源 HUD 归零 | 133 KB |
-| `independent-economy-free-choice.png` | 真实点击后第 5 子建筑（诊断工位）Lv.1，其余为脚手架，三资源 HUD | 182 KB |
-| `independent-economy-gate.png` | Clubhouse 未解锁门槛文本 | 182 KB |
-| `independent-economy-resources.png` | Lv.40 下 `钱 +3/10秒`、`油 +1/10秒`、`物资 +1/10秒`，全城建筑解锁 | 148 KB |
-| `independent-economy-mobile.png` | 390×844 建筑面板底部抽屉，无横向溢出 | 98 KB |
+| 文件                                  | 内容                                                              | 大小   |
+| ------------------------------------- | ----------------------------------------------------------------- | ------ |
+| `independent-economy-initial.png`     | fresh v2：修车厂 Lv.1、5 子建筑全脚手架、三资源 HUD 归零          | 133 KB |
+| `independent-economy-free-choice.png` | 真实点击后第 5 子建筑（诊断工位）Lv.1，其余为脚手架，三资源 HUD   | 182 KB |
+| `independent-economy-gate.png`        | Clubhouse 未解锁门槛文本                                          | 182 KB |
+| `independent-economy-resources.png`   | Lv.40 下 `钱 +3/10秒`、`油 +1/10秒`、`物资 +1/10秒`，全城建筑解锁 | 148 KB |
+| `independent-economy-mobile.png`      | 390×844 建筑面板底部抽屉，无横向溢出                              | 98 KB  |
 
 > 另有中间证据 `independent-economy-free-choice-before.png`（点击前脚手架态），用于 ROI 前后像素差比对。
 
@@ -92,21 +92,23 @@
 
 ## 6. 文档更新
 
-- `README.md`：改写核心玩法为独立子建筑（修车厂 5/其余 10、Lv.0 自由升级）、三资源生产与 8 小时离线、每 10 秒 +1 声望、Clubhouse 上限/门槛、`economy.config.json` 配置 EXE 契约；测试基线更新为 37 文件/419 项；新增本验收脚本引用；删除旧固定顺序碎片与每秒 5 声望表述。
+- `README.md`：改写核心玩法为独立子建筑（修车厂 5/其余 10、Lv.0 自由升级）、三资源生产与 8 小时离线、每 10 秒 +1 声望、Clubhouse 上限/门槛、`economy.config.json` 配置 EXE 契约；测试基线更新为 37 文件/420 项；新增本验收脚本引用；删除旧固定顺序碎片与每秒 5 声望表述。
 - `session/requirements/gang-tree-idle-unlocks.md`：删除“每秒 5 声望”“固定顺序碎片闭环”矛盾文本，改为每 10 秒 +1 与独立子建筑三资源闭环，注明配置 JSON 契约。
 - `session/session.md`：更新当前目标，新增独立经济与 Task6 本地验收两条变更总账。
-- `docs/superpowers/plans/2026-07-23-independent-subbuilding-economy.md`：勾选 Task 1–5 全部步骤与 Task 6 Step 1–4；Step 5（分段提交与终审）、Step 6（推送和 Pages）保持未勾，待父代理。
+- `docs/superpowers/plans/2026-07-23-independent-subbuilding-economy.md`：勾选 Task 1–5 全部步骤与 Task 6 Step 1–5；Step 6（推送和 Pages）保持未勾。
 
-## 7. 待父代理发布步骤（本次未执行）
+## 7. 全分支终审
 
-1. 按审查通过的逻辑分段提交到 `main`（config+纯规则 → v2 迁移+原子 Store → idle+HUD → 独立 3D → 自由选择面板 → 验收+文档）。
-2. 运行全分支审查，修复所有 Critical/Important，再跑一次 fresh 全门禁。
-3. 普通推送 `main`（禁止 force push）。
-4. fresh `dist`（`/DobeDemo/` base）经独立临时 index 快进更新 `gh-pages`。
-5. 等待最新 Pages build 的 commit 精确匹配且 `status=built`，校验公开 HTML 与当前 JS/CSS HTTP 200。
-6. 真实 Chrome 加载公开 URL 截图（三资源 HUD + 修车厂五子建筑面板），更新发布报告与 session，再次普通推送 `main`。
+完整分支 `116ea09..2f227e2` 终审结论为 **Approved**，无 Critical/Important。终审指出系统时钟回拨且生产者集合变化时，生产时间戳可能被回拨；已用 RED→GREEN 回归测试修复为不早于结算时间戳。修复增量 `2f227e2..f52dea8` 复审同样为 **Approved**，并在修复后 fresh 运行全部工程门禁与浏览器验收。
 
-## 8. 复现命令
+## 8. 待发布步骤
+
+1. 普通推送 `main`（禁止 force push）。
+2. fresh `dist`（`/DobeDemo/` base）经独立临时 index 快进更新 `gh-pages`。
+3. 等待最新 Pages build 的 commit 精确匹配且 `status=built`，校验公开 HTML 与当前 JS/CSS HTTP 200。
+4. 真实 Chrome 加载公开 URL 截图（三资源 HUD + 修车厂五子建筑面板），更新发布报告与 session，再次普通推送 `main`。
+
+## 9. 复现命令
 
 ```powershell
 npm.cmd run format:check

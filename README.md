@@ -99,7 +99,7 @@ npm test
 npm run build
 ```
 
-当前验收基线：37 个测试文件、419 项测试。
+当前验收基线：37 个测试文件、420 项测试。
 
 独立子建筑经济的可重复浏览器验收脚本为 `.superpowers/sdd/independent-economy-cdp.mjs`（安全模式：动态选择空闲端口、`--strictPort`、仅终止脚本自建 PID、临时 profile 删除前校验前缀、结果 JSON 只记录 basename、错误脱敏、坏数据自测、失败非零退出）。它覆盖 fresh v2 存档、10 秒钱产出、真实点击第五个修车厂子建筑并校验数组与 3D ROI 变化、两条 Clubhouse 门槛文本、Clubhouse→修车厂真实升级闭环、刷新持久化、三资源 10 秒增长、Lv.5/Lv.10 上限禁用与 390×844 移动面板，结果与截图见 `.superpowers/sdd/independent-economy-*`。
 

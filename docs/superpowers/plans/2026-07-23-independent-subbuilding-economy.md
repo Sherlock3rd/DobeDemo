@@ -79,19 +79,14 @@ export interface EconomyConfig {
   maxOfflineSeconds: 28_800
   production: Partial<Record<BuildingId, ProductionConfig>>
   childUpgradeCostByTargetLevel: Record<BuildingLevel, ResourceCost>
-  buildingUpgradeCostByTargetLevel: Partial<
-    Record<BuildingLevel, ResourceCost>
-  >
+  buildingUpgradeCostByTargetLevel: Partial<Record<BuildingLevel, ResourceCost>>
 }
 
 export function parseEconomyConfig(value: unknown): EconomyConfig
 export const economyConfig: EconomyConfig
 export const EMPTY_WALLET: ResourceWallet
 
-export function canAfford(
-  wallet: ResourceWallet,
-  cost: ResourceCost,
-): boolean
+export function canAfford(wallet: ResourceWallet, cost: ResourceCost): boolean
 export function subtractCost(
   wallet: ResourceWallet,
   cost: ResourceCost,
@@ -156,9 +151,7 @@ JSON 数值逐字复制设计规格。解析器：
 测试：
 
 ```ts
-expect(() => parseEconomyConfig({})).toThrow(
-  'Invalid economy config: version',
-)
+expect(() => parseEconomyConfig({})).toThrow('Invalid economy config: version')
 expect(() =>
   parseEconomyConfig({
     ...valid,
@@ -183,9 +176,11 @@ expect(subtractCost({ money: 5, oil: 2, materials: 3 }, cost5)).toEqual({
   oil: 2,
   materials: 3,
 })
-expect(
-  getBuildingProductionPerTick('repair-shop', [1, 1, 1, 1, 1]),
-).toEqual({ money: 2, oil: 0, materials: 0 })
+expect(getBuildingProductionPerTick('repair-shop', [1, 1, 1, 1, 1])).toEqual({
+  money: 2,
+  oil: 0,
+  materials: 0,
+})
 ```
 
 资源结算覆盖 9.999 秒为 0、10 秒一 tick、25 秒两 tick并保留 5 秒余量、8 小时封顶、无 active producer 为 0、非法时间 no-op。
@@ -196,8 +191,7 @@ expect(
 
 ```ts
 perTick =
-  basePerTick +
-  Math.floor(sum(childLevels) / childLevelStep) * bonusPerStep
+  basePerTick + Math.floor(sum(childLevels) / childLevelStep) * bonusPerStep
 ```
 
 结算使用完整 tick；达到离线上限时 `nextUpdatedAt = now`，否则保留余量：
@@ -686,9 +680,7 @@ Expected: all exit 0.
 给钱包 5 钱，先点第五张：
 
 ```ts
-await user.click(
-  screen.getByRole('button', { name: '升级 诊断工位 至 Lv.1' }),
-)
+await user.click(screen.getByRole('button', { name: '升级 诊断工位 至 Lv.1' }))
 expect(childLevels).toEqual([0, 0, 0, 0, 1])
 expect(resources.money).toBe(0)
 ```
@@ -833,7 +825,7 @@ README 写明：
 
 session/requirements 删除旧的固定顺序碎片描述，避免并存矛盾。
 
-- [ ] **Step 5: 分段提交与终审**
+- [x] **Step 5: 分段提交与终审**
 
 父代理按审查通过的逻辑分段提交：
 

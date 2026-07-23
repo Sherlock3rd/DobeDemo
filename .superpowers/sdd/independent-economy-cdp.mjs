@@ -336,7 +336,8 @@ function decodePng(buffer) {
       const cur = raw[rp++]
       const a = x >= channels ? out[y * stride + x - channels] : 0
       const b = y > 0 ? out[(y - 1) * stride + x] : 0
-      const c = x >= channels && y > 0 ? out[(y - 1) * stride + x - channels] : 0
+      const c =
+        x >= channels && y > 0 ? out[(y - 1) * stride + x - channels] : 0
       let val
       switch (filter) {
         case 0:
@@ -649,7 +650,11 @@ function evaluateAssertions(value) {
       freshResources?.money === 0 &&
       freshResources?.oil === 0 &&
       freshResources?.materials === 0,
-    JSON.stringify({ version: freshCity?.version, freshRepair, freshResources }),
+    JSON.stringify({
+      version: freshCity?.version,
+      freshRepair,
+      freshResources,
+    }),
   )
   add(
     '1b. HUD shows +1 声望/10秒 and 钱 +1/10秒',
@@ -783,7 +788,9 @@ function evaluateAssertions(value) {
     '12. only owned PIDs targeted',
     value.processSafety?.unknownProcessesTerminated === false &&
       Array.isArray(value.processSafety?.killAttempts) &&
-      value.processSafety.killAttempts.every((attempt) => attempt.owned === true),
+      value.processSafety.killAttempts.every(
+        (attempt) => attempt.owned === true,
+      ),
     JSON.stringify(value.processSafety),
   )
   add(
@@ -967,8 +974,14 @@ function runAssertionSelfTest() {
 async function preflight() {
   const preferredDev = Number(process.env.DEV_PORT || 5199)
   const preferredCdp = Number(process.env.CDP_PORT || 9245)
-  devPort = await selectFreePort(preferredDev, results.preflight.attemptedDevPorts)
-  cdpPort = await selectFreePort(preferredCdp, results.preflight.attemptedCdpPorts)
+  devPort = await selectFreePort(
+    preferredDev,
+    results.preflight.attemptedDevPorts,
+  )
+  cdpPort = await selectFreePort(
+    preferredCdp,
+    results.preflight.attemptedCdpPorts,
+  )
   devUrl = `http://127.0.0.1:${devPort}/`
   results.preflight.devPort = devPort
   results.preflight.cdpPort = cdpPort
@@ -995,7 +1008,14 @@ async function startDevServer() {
   if (!fs.existsSync(VITE_BIN)) throw new Error(`Vite CLI missing: ${VITE_BIN}`)
   devProc = spawn(
     process.execPath,
-    [VITE_BIN, '--host', '127.0.0.1', '--port', String(devPort), '--strictPort'],
+    [
+      VITE_BIN,
+      '--host',
+      '127.0.0.1',
+      '--port',
+      String(devPort),
+      '--strictPort',
+    ],
     { cwd: REPO, stdio: 'ignore', windowsHide: true },
   )
   registerOwnedProcess(devProc, 'vite')
@@ -1027,7 +1047,9 @@ async function checkHttp() {
 
 function launchChrome() {
   const chromePath = resolveChromePath()
-  profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dobe-independent-economy-cdp-'))
+  profileDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'dobe-independent-economy-cdp-'),
+  )
   // Keep absolute paths only in local runtime variables. The JSON is a public
   // artifact, so it records basenames that cannot expose a drive, home folder,
   // username, or install directory.
@@ -1118,7 +1140,9 @@ async function runFlow() {
     w: ROI_LEFT + ROI_RIGHT,
     h: ROI_UP + ROI_DOWN,
   }
-  const beforeShot = await screenshot('independent-economy-free-choice-before.png')
+  const beforeShot = await screenshot(
+    'independent-economy-free-choice-before.png',
+  )
   await clickSelector('[aria-label="升级 诊断工位 至 Lv.1"]')
   await sleep(900)
   const afterShot = await screenshot('independent-economy-free-choice.png')
@@ -1205,7 +1229,10 @@ async function runFlow() {
   const clubhouseAfter = await readPanel()
   const afterClubhouseStorage = await readStorage()
   await closePanel()
-  const repairLoopSpot = await findBuilding('修车厂', results.freeChoice.coordinate)
+  const repairLoopSpot = await findBuilding(
+    '修车厂',
+    results.freeChoice.coordinate,
+  )
   const repairLoopBefore = repairLoopSpot.panel
   if (repairLoopBefore.mainButtonPresent) {
     await clickSelector('[aria-label="升级主建筑至 Lv.2"]')
@@ -1224,8 +1251,8 @@ async function runFlow() {
     repairLevelBefore: repairLoopBefore.level,
     repairLevelAfter: repairLoopAfter.level,
     repairStored:
-      afterRepairStorage.city?.state?.buildingProgress?.['repair-shop']?.level ??
-      null,
+      afterRepairStorage.city?.state?.buildingProgress?.['repair-shop']
+        ?.level ?? null,
     repairChildLevels:
       afterRepairStorage.city?.state?.buildingProgress?.['repair-shop']
         ?.childLevels ?? null,
@@ -1238,14 +1265,14 @@ async function runFlow() {
   const afterRefresh = await readStorage()
   results.persist = {
     repairLevel:
-      afterRefresh.city?.state?.buildingProgress?.['repair-shop']?.level ?? null,
-    repairChildLevels:
-      afterRefresh.city?.state?.buildingProgress?.['repair-shop']?.childLevels ??
+      afterRefresh.city?.state?.buildingProgress?.['repair-shop']?.level ??
       null,
+    repairChildLevels:
+      afterRefresh.city?.state?.buildingProgress?.['repair-shop']
+        ?.childLevels ?? null,
     clubhouseLevel:
       afterRefresh.city?.state?.buildingProgress?.clubhouse?.level ?? null,
-    activeProducerIds:
-      afterRefresh.city?.state?.activeProducerIds ?? null,
+    activeProducerIds: afterRefresh.city?.state?.activeProducerIds ?? null,
     moneyBefore: beforeRefresh.city?.state?.resources?.money ?? null,
     moneyAfter: afterRefresh.city?.state?.resources?.money ?? null,
   }
@@ -1294,7 +1321,10 @@ async function runFlow() {
     }),
     gangSave(GANG_LV40_REPUTATION, maxedAt),
   )
-  const maxedRepair = await findBuilding('修车厂', results.freeChoice.coordinate)
+  const maxedRepair = await findBuilding(
+    '修车厂',
+    results.freeChoice.coordinate,
+  )
   const maxedRepairPanel = maxedRepair.panel
   await closePanel()
   const maxedClubhouse = await findBuilding(
@@ -1363,7 +1393,10 @@ async function teardown() {
     ? !(await isPortInUse(devPort))
     : null
   if (profileDir) {
-    const expectedPrefix = path.join(os.tmpdir(), 'dobe-independent-economy-cdp-')
+    const expectedPrefix = path.join(
+      os.tmpdir(),
+      'dobe-independent-economy-cdp-',
+    )
     if (!profileDir.startsWith(expectedPrefix)) {
       throw new Error(
         `SAFETY_ABORT: refusing to remove unexpected profile ${profileDir}`,
