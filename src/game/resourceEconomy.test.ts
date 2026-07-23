@@ -169,6 +169,38 @@ describe('resourceEconomy', () => {
     })
   })
 
+  it.each([
+    { label: 'NaN now', lastUpdatedAt: 0, now: Number.NaN },
+    {
+      label: 'Infinity now',
+      lastUpdatedAt: 0,
+      now: Number.POSITIVE_INFINITY,
+    },
+    { label: 'NaN lastUpdatedAt', lastUpdatedAt: Number.NaN, now: 10_000 },
+    {
+      label: 'Infinity lastUpdatedAt',
+      lastUpdatedAt: Number.POSITIVE_INFINITY,
+      now: 10_000,
+    },
+  ])('no-ops for invalid timestamps ($label)', ({ lastUpdatedAt, now }) => {
+    const wallet = { money: 10, oil: 0, materials: 0 }
+
+    const result = settleResourceProduction({
+      wallet,
+      buildingProgress: repairShopProgress([0, 0, 0, 0, 0]),
+      activeProducerIds: ['repair-shop'],
+      lastUpdatedAt,
+      now,
+    })
+
+    expect(result.wallet).toEqual(wallet)
+    expect(result.earned).toEqual({ money: 0, oil: 0, materials: 0 })
+    expect(result.nextUpdatedAt).toBe(lastUpdatedAt)
+    expect(Number.isFinite(result.wallet.money)).toBe(true)
+    expect(Number.isFinite(result.wallet.oil)).toBe(true)
+    expect(Number.isFinite(result.wallet.materials)).toBe(true)
+  })
+
   it('aggregates production from multiple active producers', () => {
     const buildingProgress: BuildingProgressByIdLike = {
       ...EMPTY_CHILD_LEVELS,

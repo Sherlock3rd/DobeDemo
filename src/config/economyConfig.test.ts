@@ -25,6 +25,24 @@ describe('economyConfig', () => {
     )
   })
 
+  it('rejects resourceTickSeconds other than 10', () => {
+    expect(() =>
+      parseEconomyConfig({
+        ...economyConfig,
+        resourceTickSeconds: 11,
+      }),
+    ).toThrow('Invalid economy config: resourceTickSeconds')
+  })
+
+  it('rejects maxOfflineSeconds other than 28_800', () => {
+    expect(() =>
+      parseEconomyConfig({
+        ...economyConfig,
+        maxOfflineSeconds: 28_801,
+      }),
+    ).toThrow('Invalid economy config: maxOfflineSeconds')
+  })
+
   it('rejects negative child upgrade cost fields', () => {
     expect(() =>
       parseEconomyConfig({
@@ -69,6 +87,40 @@ describe('economyConfig', () => {
         },
       }),
     ).toThrow('Invalid economy config: production.repair-shop.resource')
+  })
+
+  it('rejects wrong production resource mapping for repair-shop', () => {
+    expect(() =>
+      parseEconomyConfig({
+        ...economyConfig,
+        production: {
+          ...economyConfig.production,
+          'repair-shop': {
+            resource: 'oil',
+            basePerTick: 1,
+            childLevelStep: 5,
+            bonusPerStep: 1,
+          },
+        },
+      }),
+    ).toThrow('Invalid economy config: production.repair-shop.resource')
+  })
+
+  it('rejects wrong production resource mapping for gas-station', () => {
+    expect(() =>
+      parseEconomyConfig({
+        ...economyConfig,
+        production: {
+          ...economyConfig.production,
+          'gas-station': {
+            resource: 'money',
+            basePerTick: 1,
+            childLevelStep: 5,
+            bonusPerStep: 1,
+          },
+        },
+      }),
+    ).toThrow('Invalid economy config: production.gas-station.resource')
   })
 
   it('rejects missing child upgrade level 10', () => {

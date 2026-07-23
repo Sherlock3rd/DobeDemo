@@ -89,6 +89,14 @@ export function settleResourceProduction(input: {
   const { wallet, buildingProgress, activeProducerIds, lastUpdatedAt, now } =
     input
 
+  if (!Number.isFinite(now) || !Number.isFinite(lastUpdatedAt)) {
+    return {
+      wallet,
+      earned: { ...EMPTY_WALLET },
+      nextUpdatedAt: lastUpdatedAt,
+    }
+  }
+
   if (now < lastUpdatedAt) {
     return {
       wallet,

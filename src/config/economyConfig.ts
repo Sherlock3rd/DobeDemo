@@ -35,6 +35,19 @@ const PRODUCTION_BUILDING_IDS = [
   'metalworking-plant',
 ] as const satisfies readonly BuildingId[]
 
+const PRODUCTION_RESOURCE_BY_BUILDING: Record<
+  (typeof PRODUCTION_BUILDING_IDS)[number],
+  ResourceType
+> = {
+  'repair-shop': 'money',
+  'commercial-street': 'money',
+  'gas-station': 'oil',
+  'metalworking-plant': 'materials',
+}
+
+const REQUIRED_RESOURCE_TICK_SECONDS = 10
+const REQUIRED_MAX_OFFLINE_SECONDS = 28_800
+
 const CHILD_UPGRADE_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
 const BUILDING_UPGRADE_LEVELS = [2, 3, 4, 5, 6, 7, 8, 9, 10] as const
 
@@ -57,6 +70,20 @@ function parsePositiveInteger(value: unknown, path: string): number {
   }
 
   return value
+}
+
+function parseExactPositiveInteger(
+  value: unknown,
+  path: string,
+  expected: number,
+): number {
+  parsePositiveInteger(value, path)
+
+  if (value !== expected) {
+    invalidConfig(path)
+  }
+
+  return expected
 }
 
 function parseNonNegativeInteger(value: unknown, path: string): number {
@@ -103,13 +130,22 @@ function parseResourceCost(value: unknown, path: string): ResourceCost {
   }
 }
 
-function parseProductionConfig(value: unknown, path: string): ProductionConfig {
+function parseProductionConfig(
+  value: unknown,
+  path: string,
+  buildingId: (typeof PRODUCTION_BUILDING_IDS)[number],
+): ProductionConfig {
   if (!isRecord(value)) {
     invalidConfig(path)
   }
 
+  const resource = parseResourceType(value.resource, `${path}.resource`)
+  if (resource !== PRODUCTION_RESOURCE_BY_BUILDING[buildingId]) {
+    invalidConfig(`${path}.resource`)
+  }
+
   return {
-    resource: parseResourceType(value.resource, `${path}.resource`),
+    resource,
     basePerTick: parseNonNegativeInteger(
       value.basePerTick,
       `${path}.basePerTick`,
@@ -152,6 +188,7 @@ function parseProduction(
     production[buildingId] = parseProductionConfig(
       value[buildingId],
       `production.${buildingId}`,
+      buildingId,
     )
   }
 
@@ -214,13 +251,15 @@ export function parseEconomyConfig(value: unknown): EconomyConfig {
 
   return {
     version: 1,
-    resourceTickSeconds: parsePositiveInteger(
+    resourceTickSeconds: parseExactPositiveInteger(
       value.resourceTickSeconds,
       'resourceTickSeconds',
+      REQUIRED_RESOURCE_TICK_SECONDS,
     ) as 10,
-    maxOfflineSeconds: parsePositiveInteger(
+    maxOfflineSeconds: parseExactPositiveInteger(
       value.maxOfflineSeconds,
       'maxOfflineSeconds',
+      REQUIRED_MAX_OFFLINE_SECONDS,
     ) as 28_800,
     production: parseProduction(value.production),
     childUpgradeCostByTargetLevel,
