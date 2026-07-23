@@ -1,0 +1,785 @@
+{
+  "generatedAt": "2026-07-23T10:33:49.738Z",
+  "preflight": {
+    "terminalAndPortCheckPerformed": true,
+    "strategy": "skip occupied preferred ports; never terminate unknown PID",
+    "attemptedDevPorts": [
+      {
+        "port": 5188,
+        "free": true
+      }
+    ],
+    "attemptedCdpPorts": [
+      {
+        "port": 9234,
+        "free": true
+      }
+    ],
+    "devPort": 5188,
+    "cdpPort": 9234,
+    "devPortFree": true,
+    "cdpPortFree": true,
+    "ok": true
+  },
+  "processSafety": {
+    "ownedPids": [
+      {
+        "label": "vite",
+        "pid": 58960
+      },
+      {
+        "label": "chrome",
+        "pid": 62064
+      }
+    ],
+    "killAttempts": [
+      {
+        "label": "chrome",
+        "pid": 62064,
+        "owned": true
+      },
+      {
+        "label": "vite",
+        "pid": 58960,
+        "owned": true
+      }
+    ],
+    "unknownProcessesTerminated": false,
+    "chromeExecutable": "chrome.exe",
+    "tempProfileName": "dobe-settings-reset-cdp-kK6puo"
+  },
+  "dist": {
+    "index": "dist/index.html",
+    "assetRefs": [
+      "/DobeDemo/assets/index-CnCFOskQ.js",
+      "/DobeDemo/assets/index-D2tbbVLS.css"
+    ],
+    "baseOk": true
+  },
+  "http": {
+    "url": "http://127.0.0.1:5188/",
+    "status": 200,
+    "hasRoot": true,
+    "hasMainTsx": true
+  },
+  "injection": {
+    "injectedAt": 1784802833060,
+    "citySave": {
+      "state": {
+        "buildingProgress": {
+          "repair-shop": {
+            "level": 6,
+            "completedFragments": 3
+          },
+          "recycling-yard": {
+            "level": 1,
+            "completedFragments": 0
+          },
+          "commercial-street": {
+            "level": 1,
+            "completedFragments": 0
+          },
+          "metalworking-plant": {
+            "level": 1,
+            "completedFragments": 0
+          },
+          "gas-station": {
+            "level": 1,
+            "completedFragments": 0
+          },
+          "clubhouse": {
+            "level": 1,
+            "completedFragments": 0
+          }
+        }
+      },
+      "version": 1
+    },
+    "gangSave": {
+      "state": {
+        "totalReputation": 330,
+        "lastUpdatedAt": 1784802833060
+      },
+      "version": 0
+    },
+    "storage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 6,
+              "completedFragments": 3
+            },
+            "recycling-yard": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "commercial-street": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "gas-station": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "clubhouse": {
+              "level": 1,
+              "completedFragments": 0
+            }
+          }
+        },
+        "version": 1
+      },
+      "gang": {
+        "state": {
+          "totalReputation": 335,
+          "lastUpdatedAt": 1784802834060
+        },
+        "version": 0
+      }
+    },
+    "dom": {
+      "hudLevel": "Lv. 12",
+      "hudProgress": "5 / 30",
+      "buildingPresent": false,
+      "buildingTitle": null,
+      "buildingLevel": null,
+      "buildingProgress": null,
+      "settingsDialogPresent": false,
+      "dialogName": null,
+      "gangTreePresent": false,
+      "resetButtonPresent": false,
+      "confirmButtonPresent": false,
+      "warning": null
+    }
+  },
+  "nonInitialBuilding": {
+    "coordinate": {
+      "x": 455,
+      "y": 280
+    },
+    "dom": {
+      "hudLevel": "Lv. 12",
+      "hudProgress": "5 / 30",
+      "buildingPresent": true,
+      "buildingTitle": "修车厂",
+      "buildingLevel": "等级 6 / 10",
+      "buildingProgress": "3 / 7 个子建筑",
+      "settingsDialogPresent": false,
+      "dialogName": null,
+      "gangTreePresent": false,
+      "resetButtonPresent": false,
+      "confirmButtonPresent": false,
+      "warning": null
+    },
+    "storage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 6,
+              "completedFragments": 3
+            },
+            "recycling-yard": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "commercial-street": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "gas-station": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "clubhouse": {
+              "level": 1,
+              "completedFragments": 0
+            }
+          }
+        },
+        "version": 1
+      },
+      "gang": {
+        "state": {
+          "totalReputation": 335,
+          "lastUpdatedAt": 1784802834060
+        },
+        "version": 0
+      }
+    }
+  },
+  "settingsOpened": {
+    "dom": {
+      "hudLevel": "Lv. 12",
+      "hudProgress": "5 / 30",
+      "buildingPresent": true,
+      "buildingTitle": "修车厂",
+      "buildingLevel": "等级 6 / 10",
+      "buildingProgress": "3 / 7 个子建筑",
+      "settingsDialogPresent": true,
+      "dialogName": "调试设置",
+      "gangTreePresent": false,
+      "resetButtonPresent": true,
+      "confirmButtonPresent": false,
+      "warning": null
+    }
+  },
+  "firstResetClick": {
+    "beforeStorage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 6,
+              "completedFragments": 3
+            },
+            "recycling-yard": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "commercial-street": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "gas-station": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "clubhouse": {
+              "level": 1,
+              "completedFragments": 0
+            }
+          }
+        },
+        "version": 1
+      },
+      "gang": {
+        "state": {
+          "totalReputation": 335,
+          "lastUpdatedAt": 1784802834060
+        },
+        "version": 0
+      }
+    },
+    "beforeDom": {
+      "hudLevel": "Lv. 12",
+      "hudProgress": "5 / 30",
+      "buildingPresent": true,
+      "buildingTitle": "修车厂",
+      "buildingLevel": "等级 6 / 10",
+      "buildingProgress": "3 / 7 个子建筑",
+      "settingsDialogPresent": true,
+      "dialogName": "调试设置",
+      "gangTreePresent": false,
+      "resetButtonPresent": true,
+      "confirmButtonPresent": false,
+      "warning": null
+    },
+    "afterStorage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 6,
+              "completedFragments": 3
+            },
+            "recycling-yard": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "commercial-street": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "gas-station": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "clubhouse": {
+              "level": 1,
+              "completedFragments": 0
+            }
+          }
+        },
+        "version": 1
+      },
+      "gang": {
+        "state": {
+          "totalReputation": 335,
+          "lastUpdatedAt": 1784802834060
+        },
+        "version": 0
+      }
+    },
+    "afterDom": {
+      "hudLevel": "Lv. 12",
+      "hudProgress": "5 / 30",
+      "buildingPresent": true,
+      "buildingTitle": "修车厂",
+      "buildingLevel": "等级 6 / 10",
+      "buildingProgress": "3 / 7 个子建筑",
+      "settingsDialogPresent": true,
+      "dialogName": "调试设置",
+      "gangTreePresent": false,
+      "resetButtonPresent": false,
+      "confirmButtonPresent": true,
+      "warning": "确定要永久重置当前账号吗？"
+    },
+    "cityStorageUnchanged": true,
+    "gangIdleTolerance": "GangIdleController may add exact +5/sec; progression must remain Lv.12 and must not reset."
+  },
+  "resetMoment": {
+    "nodeBeforeClick": 1784802835624,
+    "nodeAfterClick": 1784802835651,
+    "storage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "recycling-yard": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "commercial-street": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "gas-station": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "clubhouse": {
+              "level": 1,
+              "completedFragments": 0
+            }
+          }
+        },
+        "version": 1
+      },
+      "gang": {
+        "state": {
+          "totalReputation": 0,
+          "lastUpdatedAt": 1784802835647
+        },
+        "version": 0
+      }
+    },
+    "evidence": "Raw persisted JSON read immediately after confirmation, before waiting for idle settlement."
+  },
+  "afterReset": {
+    "dom": {
+      "hudLevel": "Lv. 1",
+      "hudProgress": "0 / 30",
+      "buildingPresent": false,
+      "buildingTitle": null,
+      "buildingLevel": null,
+      "buildingProgress": null,
+      "settingsDialogPresent": false,
+      "dialogName": null,
+      "gangTreePresent": false,
+      "resetButtonPresent": false,
+      "confirmButtonPresent": false,
+      "warning": null
+    },
+    "storage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "recycling-yard": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "commercial-street": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "gas-station": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "clubhouse": {
+              "level": 1,
+              "completedFragments": 0
+            }
+          }
+        },
+        "version": 1
+      },
+      "gang": {
+        "state": {
+          "totalReputation": 0,
+          "lastUpdatedAt": 1784802835647
+        },
+        "version": 0
+      }
+    }
+  },
+  "reopenedInitialBuilding": {
+    "coordinate": {
+      "x": 455,
+      "y": 280
+    },
+    "dom": {
+      "hudLevel": "Lv. 1",
+      "hudProgress": "0 / 30",
+      "buildingPresent": true,
+      "buildingTitle": "修车厂",
+      "buildingLevel": "等级 1 / 10",
+      "buildingProgress": "0 / 2 个子建筑",
+      "settingsDialogPresent": false,
+      "dialogName": null,
+      "gangTreePresent": false,
+      "resetButtonPresent": false,
+      "confirmButtonPresent": false,
+      "warning": null
+    },
+    "storage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "recycling-yard": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "commercial-street": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "gas-station": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "clubhouse": {
+              "level": 1,
+              "completedFragments": 0
+            }
+          }
+        },
+        "version": 1
+      },
+      "gang": {
+        "state": {
+          "totalReputation": 0,
+          "lastUpdatedAt": 1784802835647
+        },
+        "version": 0
+      }
+    }
+  },
+  "afterRefresh": {
+    "storage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "recycling-yard": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "commercial-street": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "gas-station": {
+              "level": 1,
+              "completedFragments": 0
+            },
+            "clubhouse": {
+              "level": 1,
+              "completedFragments": 0
+            }
+          }
+        },
+        "version": 1
+      },
+      "gang": {
+        "state": {
+          "totalReputation": 0,
+          "lastUpdatedAt": 1784802835647
+        },
+        "version": 0
+      }
+    },
+    "dom": {
+      "hudLevel": "Lv. 1",
+      "hudProgress": "0 / 30",
+      "buildingPresent": false,
+      "buildingTitle": null,
+      "buildingLevel": null,
+      "buildingProgress": null,
+      "settingsDialogPresent": false,
+      "dialogName": null,
+      "gangTreePresent": false,
+      "resetButtonPresent": false,
+      "confirmButtonPresent": false,
+      "warning": null
+    },
+    "idleTolerance": "Allowed only when reputation equals 5 * whole seconds since reset timestamp and remains Lv.1."
+  },
+  "mobile": {
+    "dom": {
+      "hudLevel": "Lv. 1",
+      "hudProgress": "0 / 30",
+      "buildingPresent": false,
+      "buildingTitle": null,
+      "buildingLevel": null,
+      "buildingProgress": null,
+      "settingsDialogPresent": true,
+      "dialogName": "调试设置",
+      "gangTreePresent": false,
+      "resetButtonPresent": true,
+      "confirmButtonPresent": false,
+      "warning": null
+    },
+    "measure": {
+      "present": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "rect": {
+        "left": 0,
+        "top": 567.5625,
+        "right": 390,
+        "bottom": 844,
+        "width": 390,
+        "height": 276.4375
+      },
+      "panelScrollWidth": 389,
+      "panelClientWidth": 389,
+      "documentScrollWidth": 390,
+      "withinBounds": true,
+      "noHorizontalOverflow": true
+    }
+  },
+  "screenshots": {
+    "settings-reset-confirm.png": "settings-reset-confirm.png",
+    "settings-reset-complete.png": "settings-reset-complete.png",
+    "settings-reset-mobile.png": "settings-reset-mobile.png"
+  },
+  "teardown": {
+    "cdpPortReleased": true,
+    "devPortReleased": true,
+    "tempProfileRemoved": true
+  },
+  "assertionSelfTest": {
+    "ok": true,
+    "checked": 32,
+    "failuresOnGoodData": [],
+    "passesOnBadData": []
+  },
+  "assertions": [
+    {
+      "name": "preflight selected free dev port",
+      "pass": true,
+      "detail": "5188"
+    },
+    {
+      "name": "preflight selected free CDP port",
+      "pass": true,
+      "detail": "9234"
+    },
+    {
+      "name": "dist assets use /DobeDemo/",
+      "pass": true,
+      "detail": "[\"/DobeDemo/assets/index-CnCFOskQ.js\",\"/DobeDemo/assets/index-D2tbbVLS.css\"]"
+    },
+    {
+      "name": "HTTP status 200",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "HTTP contains root and main.tsx",
+      "pass": true,
+      "detail": "{\"url\":\"http://127.0.0.1:5188/\",\"status\":200,\"hasRoot\":true,\"hasMainTsx\":true}"
+    },
+    {
+      "name": "injected gang is Lv.12 seed plus exact idle earnings",
+      "pass": true,
+      "detail": "{\"injectedAt\":1784802833060,\"injectedGang\":{\"totalReputation\":335,\"lastUpdatedAt\":1784802834060}}"
+    },
+    {
+      "name": "injected repair shop is Lv.6 with 3 fragments",
+      "pass": true,
+      "detail": "{\"level\":6,\"completedFragments\":3}"
+    },
+    {
+      "name": "non-initial repair panel shown",
+      "pass": true,
+      "detail": "{\"hudLevel\":\"Lv. 12\",\"hudProgress\":\"5 / 30\",\"buildingPresent\":true,\"buildingTitle\":\"修车厂\",\"buildingLevel\":\"等级 6 / 10\",\"buildingProgress\":\"3 / 7 个子建筑\",\"settingsDialogPresent\":false,\"dialogName\":null,\"gangTreePresent\":false,\"resetButtonPresent\":false,\"confirmButtonPresent\":false,\"warning\":null}"
+    },
+    {
+      "name": "settings dialog accessible name",
+      "pass": true,
+      "detail": "{\"hudLevel\":\"Lv. 12\",\"hudProgress\":\"5 / 30\",\"buildingPresent\":true,\"buildingTitle\":\"修车厂\",\"buildingLevel\":\"等级 6 / 10\",\"buildingProgress\":\"3 / 7 个子建筑\",\"settingsDialogPresent\":true,\"dialogName\":\"调试设置\",\"gangTreePresent\":false,\"resetButtonPresent\":true,\"confirmButtonPresent\":false,\"warning\":null}"
+    },
+    {
+      "name": "settings and gang tree are mutually exclusive",
+      "pass": true,
+      "detail": "false"
+    },
+    {
+      "name": "first click preserves city durable store",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "first click preserves gang progression except valid idle tick",
+      "pass": true,
+      "detail": "{\"injectedAt\":1784802833060,\"beforeGang\":{\"totalReputation\":335,\"lastUpdatedAt\":1784802834060},\"afterFirstGang\":{\"totalReputation\":335,\"lastUpdatedAt\":1784802834060}}"
+    },
+    {
+      "name": "first click preserves HUD Lv.12",
+      "pass": true,
+      "detail": "Lv. 12"
+    },
+    {
+      "name": "first click preserves repair panel",
+      "pass": true,
+      "detail": "{\"hudLevel\":\"Lv. 12\",\"hudProgress\":\"5 / 30\",\"buildingPresent\":true,\"buildingTitle\":\"修车厂\",\"buildingLevel\":\"等级 6 / 10\",\"buildingProgress\":\"3 / 7 个子建筑\",\"settingsDialogPresent\":true,\"dialogName\":\"调试设置\",\"gangTreePresent\":false,\"resetButtonPresent\":false,\"confirmButtonPresent\":true,\"warning\":\"确定要永久重置当前账号吗？\"}"
+    },
+    {
+      "name": "first click enters confirmation state",
+      "pass": true,
+      "detail": "{\"hudLevel\":\"Lv. 12\",\"hudProgress\":\"5 / 30\",\"buildingPresent\":true,\"buildingTitle\":\"修车厂\",\"buildingLevel\":\"等级 6 / 10\",\"buildingProgress\":\"3 / 7 个子建筑\",\"settingsDialogPresent\":true,\"dialogName\":\"调试设置\",\"gangTreePresent\":false,\"resetButtonPresent\":false,\"confirmButtonPresent\":true,\"warning\":\"确定要永久重置当前账号吗？\"}"
+    },
+    {
+      "name": "reset moment city persistence is initial",
+      "pass": true,
+      "detail": "{\"repair-shop\":{\"level\":1,\"completedFragments\":0},\"recycling-yard\":{\"level\":1,\"completedFragments\":0},\"commercial-street\":{\"level\":1,\"completedFragments\":0},\"metalworking-plant\":{\"level\":1,\"completedFragments\":0},\"gas-station\":{\"level\":1,\"completedFragments\":0},\"clubhouse\":{\"level\":1,\"completedFragments\":0}}"
+    },
+    {
+      "name": "reset moment gang persistence is zero",
+      "pass": true,
+      "detail": "{\"totalReputation\":0,\"lastUpdatedAt\":1784802835647}"
+    },
+    {
+      "name": "reset uses confirmation Date.now()",
+      "pass": true,
+      "detail": "{\"resetGang\":{\"totalReputation\":0,\"lastUpdatedAt\":1784802835647},\"before\":1784802835624,\"after\":1784802835651}"
+    },
+    {
+      "name": "confirmation closes settings dialog",
+      "pass": true,
+      "detail": "false"
+    },
+    {
+      "name": "confirmation closes building panel",
+      "pass": true,
+      "detail": "false"
+    },
+    {
+      "name": "HUD resets to Lv.1",
+      "pass": true,
+      "detail": "Lv. 1"
+    },
+    {
+      "name": "repair shop reopens at Lv.1 0/2",
+      "pass": true,
+      "detail": "{\"hudLevel\":\"Lv. 1\",\"hudProgress\":\"0 / 30\",\"buildingPresent\":true,\"buildingTitle\":\"修车厂\",\"buildingLevel\":\"等级 1 / 10\",\"buildingProgress\":\"0 / 2 个子建筑\",\"settingsDialogPresent\":false,\"dialogName\":null,\"gangTreePresent\":false,\"resetButtonPresent\":false,\"confirmButtonPresent\":false,\"warning\":null}"
+    },
+    {
+      "name": "refresh city persistence remains initial",
+      "pass": true,
+      "detail": "{\"repair-shop\":{\"level\":1,\"completedFragments\":0},\"recycling-yard\":{\"level\":1,\"completedFragments\":0},\"commercial-street\":{\"level\":1,\"completedFragments\":0},\"metalworking-plant\":{\"level\":1,\"completedFragments\":0},\"gas-station\":{\"level\":1,\"completedFragments\":0},\"clubhouse\":{\"level\":1,\"completedFragments\":0}}"
+    },
+    {
+      "name": "refresh gang is reset baseline plus exact idle earnings",
+      "pass": true,
+      "detail": "{\"refreshGang\":{\"totalReputation\":0,\"lastUpdatedAt\":1784802835647},\"resetAt\":1784802835647}"
+    },
+    {
+      "name": "refresh HUD remains Lv.1",
+      "pass": true,
+      "detail": "Lv. 1"
+    },
+    {
+      "name": "mobile settings dialog present",
+      "pass": true,
+      "detail": "{\"hudLevel\":\"Lv. 1\",\"hudProgress\":\"0 / 30\",\"buildingPresent\":false,\"buildingTitle\":null,\"buildingLevel\":null,\"buildingProgress\":null,\"settingsDialogPresent\":true,\"dialogName\":\"调试设置\",\"gangTreePresent\":false,\"resetButtonPresent\":true,\"confirmButtonPresent\":false,\"warning\":null}"
+    },
+    {
+      "name": "mobile drawer within viewport",
+      "pass": true,
+      "detail": "{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"rect\":{\"left\":0,\"top\":567.5625,\"right\":390,\"bottom\":844,\"width\":390,\"height\":276.4375},\"panelScrollWidth\":389,\"panelClientWidth\":389,\"documentScrollWidth\":390,\"withinBounds\":true,\"noHorizontalOverflow\":true}"
+    },
+    {
+      "name": "mobile drawer has no horizontal overflow",
+      "pass": true,
+      "detail": "{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"rect\":{\"left\":0,\"top\":567.5625,\"right\":390,\"bottom\":844,\"width\":390,\"height\":276.4375},\"panelScrollWidth\":389,\"panelClientWidth\":389,\"documentScrollWidth\":390,\"withinBounds\":true,\"noHorizontalOverflow\":true}"
+    },
+    {
+      "name": "all three screenshots written",
+      "pass": true,
+      "detail": "{\"settings-reset-confirm.png\":\"settings-reset-confirm.png\",\"settings-reset-complete.png\":\"settings-reset-complete.png\",\"settings-reset-mobile.png\":\"settings-reset-mobile.png\"}"
+    },
+    {
+      "name": "only owned PIDs targeted",
+      "pass": true,
+      "detail": "{\"ownedPids\":[{\"label\":\"vite\",\"pid\":58960},{\"label\":\"chrome\",\"pid\":62064}],\"killAttempts\":[{\"label\":\"chrome\",\"pid\":62064,\"owned\":true},{\"label\":\"vite\",\"pid\":58960,\"owned\":true}],\"unknownProcessesTerminated\":false,\"chromeExecutable\":\"chrome.exe\",\"tempProfileName\":\"dobe-settings-reset-cdp-kK6puo\"}"
+    },
+    {
+      "name": "dev port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "CDP port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "temporary Chrome profile removed",
+      "pass": true,
+      "detail": "true"
+    }
+  ]
+}

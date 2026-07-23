@@ -48,7 +48,8 @@
 - 点击建筑或锁定地块：查看建筑信息与升级面板（拖动超过 6px 后松开不会误触发选中）。
 - 在升级面板点击“升级子建筑 k/N”逐个完成碎片，满进度后点击“完成 Lv.N 升级”确认升级。
 - 点击“打开帮派树”：查看 50 级完整进度。
-- Escape：关闭帮派树。
+- 点击“设置”：打开调试设置；“重置账号”后还需点击“确认重置账号”，才会把帮派声望、挂机时间、建筑解锁、建筑等级和碎片进度恢复为当前浏览器的初始账号。
+- Escape：关闭已打开的帮派树或调试设置。
 
 ## 技术栈
 
@@ -82,9 +83,11 @@ npm test
 npm run build
 ```
 
-当前验收基线：32 个测试文件、391 项测试。
+当前验收基线：34 个测试文件、404 项测试。
 
 碎片升级的可重复浏览器验收脚本为 `.superpowers/sdd/fragmented-upgrades-cdp.mjs`（安全模式：端口 preflight、仅终止自建进程、临时 profile、失败非零退出），结果与截图见 `.superpowers/sdd/fragmented-upgrades-*`。
+
+设置重置的可重复浏览器验收脚本为 `.superpowers/sdd/settings-reset-cdp.mjs`；它验证二次确认、双存档重置与刷新持久化、模态互斥及 390×844 移动抽屉，结果与截图见 `.superpowers/sdd/settings-reset-*`。
 
 ## GitHub Pages 部署
 

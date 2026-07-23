@@ -40,7 +40,7 @@
 export function resetAccount(now: number = Date.now()): void
 ```
 
-- [ ] **Step 1: 写双 store 失败测试**
+- [x] **Step 1: 写双 store 失败测试**
 
 ```ts
 it('restores both progression stores and clears the selected building', () => {
@@ -65,13 +65,13 @@ it('restores both progression stores and clears the selected building', () => {
 })
 ```
 
-- [ ] **Step 2: 运行 RED**
+- [x] **Step 2: 运行 RED**
 
 Run: `npm.cmd test -- src/game/resetAccount.test.ts`
 
 Expected: FAIL because `resetAccount.ts` does not exist.
 
-- [ ] **Step 3: 实现最小协调器**
+- [x] **Step 3: 实现最小协调器**
 
 ```ts
 import { useCityStore } from '../store/useCityStore'
@@ -83,15 +83,15 @@ export function resetAccount(now: number = Date.now()): void {
 }
 ```
 
-- [ ] **Step 4: 补持久化断言**
+- [x] **Step 4: 补持久化断言**
 
 测试解析 `CITY_STORAGE_KEY` 与 `GANG_STORAGE_KEY`，断言城市六建筑均为 Lv.1/0、帮派为 0 声望且时间为 `RESET_TIME`；再调用 `persist.rehydrate()`，状态仍是初始账号。
 
-- [ ] **Step 5: 补非有限时间测试**
+- [x] **Step 5: 补非有限时间测试**
 
 用 `vi.setSystemTime(FALLBACK_TIME)` 调用 `resetAccount(Number.NaN)`，断言 gang `lastUpdatedAt === FALLBACK_TIME`。
 
-- [ ] **Step 6: 验证**
+- [x] **Step 6: 验证**
 
 Run:
 
@@ -132,7 +132,7 @@ export interface CityHudProps {
 }
 ```
 
-- [ ] **Step 1: 写 CityHud 设置入口 RED**
+- [x] **Step 1: 写 CityHud 设置入口 RED**
 
 ```tsx
 it('calls onOpenSettings from the debug settings button', async () => {
@@ -151,7 +151,7 @@ Run: `npm.cmd test -- src/ui/CityHud.test.tsx`
 
 Expected: FAIL because the settings button is absent.
 
-- [ ] **Step 2: 实现 HUD 双按钮**
+- [x] **Step 2: 实现 HUD 双按钮**
 
 用 `.city-hud__actions` 包裹现有帮派树按钮和新增按钮：
 
@@ -166,7 +166,7 @@ Expected: FAIL because the settings button is absent.
 </button>
 ```
 
-- [ ] **Step 3: 写 SettingsPanel RED**
+- [x] **Step 3: 写 SettingsPanel RED**
 
 覆盖：
 
@@ -186,11 +186,11 @@ it('requires a second confirmation before resetting', async () => {
 
 同时测试取消、关闭、Escape、`role="dialog"`、警告文案、父级 pointer/click 不触发。
 
-- [ ] **Step 4: 实现 SettingsPanel**
+- [x] **Step 4: 实现 SettingsPanel**
 
 组件内部使用 `useState(false)` 管理 `confirming`。首次危险按钮只进入确认态；确认调用 `resetAccount(Date.now())` 后关闭。挂载期间监听 Escape，卸载时移除监听。
 
-- [ ] **Step 5: 写 App 互斥 RED**
+- [x] **Step 5: 写 App 互斥 RED**
 
 测试：
 
@@ -200,7 +200,7 @@ it('requires a second confirmation before resetting', async () => {
 - 先开帮派树，再通过重新可用入口打开设置时只保留设置 dialog。
 - 先开设置、关闭后开帮派树时只保留帮派树 dialog。
 
-- [ ] **Step 6: 实现 App 状态**
+- [x] **Step 6: 实现 App 状态**
 
 ```tsx
 const [settingsOpen, setSettingsOpen] = useState(false)
@@ -218,7 +218,7 @@ const openSettings = () => {
 
 条件挂载设置面板，确保关闭后确认态销毁。
 
-- [ ] **Step 7: 实现响应式样式**
+- [x] **Step 7: 实现响应式样式**
 
 新增：
 
@@ -230,7 +230,7 @@ const openSettings = () => {
 
 桌面 `width:min(30rem,100%)` 居中；`max-width:45rem` 下改为底部抽屉。将设置 overlay/panel/按钮加入 reduced-motion 规则。
 
-- [ ] **Step 8: 验证**
+- [x] **Step 8: 验证**
 
 Run:
 
@@ -265,7 +265,7 @@ Expected: all exit 0.
 - Actions: `重置账号` → `确认重置账号`
 - Persistent keys: `dobe-city-progression-v1`, `gang-progression-v1`
 
-- [ ] **Step 1: fresh 工程门禁**
+- [x] **Step 1: fresh 工程门禁**
 
 Run:
 
@@ -279,7 +279,7 @@ npm.cmd run build
 
 Expected: all exit 0; build assets use `/DobeDemo/`.
 
-- [ ] **Step 2: 编写安全 CDP 验收**
+- [x] **Step 2: 编写安全 CDP 验收**
 
 沿用 `.superpowers/sdd/fragmented-upgrades-cdp.mjs` 的端口 preflight、只终止自建进程、临时 profile、失败非零和断言自检。
 
@@ -294,11 +294,11 @@ Expected: all exit 0; build assets use `/DobeDemo/`.
 7. 刷新后再次断言双存档保持初始。
 8. 390×844 下设置抽屉不横向溢出并截图。
 
-- [ ] **Step 3: 文档与报告**
+- [x] **Step 3: 文档与报告**
 
 README 增加设置/重置操作；session 记录功能与验收。报告写明命令、断言、截图、进程安全和公开发布结果。
 
-- [ ] **Step 4: 分段提交**
+- [x] **Step 4: 分段提交**
 
 父代理提交：
 
