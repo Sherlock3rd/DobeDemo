@@ -12,6 +12,7 @@ import { usePrefersReducedMotion } from './usePrefersReducedMotion'
 
 interface AnimatedBuildingFragmentProps {
   animate: boolean
+  animationRun?: number
   children: ReactNode
 }
 
@@ -20,6 +21,7 @@ interface AnimatedBuildingFragmentProps {
 // own highlight/neon materials, and never writes React or Zustand state.
 export function AnimatedBuildingFragment({
   animate,
+  animationRun,
   children,
 }: AnimatedBuildingFragmentProps): JSX.Element {
   const groupRef = useRef<Group>(null)
@@ -39,7 +41,7 @@ export function AnimatedBuildingFragment({
     if (!animate) {
       snapFragmentRest(groupRef.current, feedbackRef.current)
     }
-  }, [animate])
+  }, [animate, animationRun])
 
   useFrame((state) => {
     const controller = controllerRef.current

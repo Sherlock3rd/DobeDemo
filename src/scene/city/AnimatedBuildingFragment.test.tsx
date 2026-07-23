@@ -9,10 +9,13 @@ vi.mock('@react-three/fiber', () => ({
 
 const { BUILDING_FRAGMENT_ANIMATION_MS, getFragmentAnimationTransform } =
   await import('./buildingFragmentAnimation')
+const { FragmentAnimationController } =
+  await import('./fragmentAnimationController')
 const { AnimatedBuildingFragment } = await import('./AnimatedBuildingFragment')
 
 afterEach(() => {
   useFrameMock.mockClear()
+  vi.restoreAllMocks()
 })
 
 describe('getFragmentAnimationTransform', () => {
@@ -103,5 +106,24 @@ describe('AnimatedBuildingFragment', () => {
 
     expect(useFrameMock).toHaveBeenCalledTimes(1)
     expect(useFrameMock.mock.calls[0]?.[0]).toBeTypeOf('function')
+  })
+
+  it('resets its controller when a new run arrives for the same animation', () => {
+    const reset = vi.spyOn(FragmentAnimationController.prototype, 'reset')
+    const { rerender } = render(
+      <AnimatedBuildingFragment animate animationRun={1}>
+        <mesh />
+      </AnimatedBuildingFragment>,
+    )
+    const resetsAfterFirstRun = reset.mock.calls.length
+
+    rerender(
+      <AnimatedBuildingFragment animate animationRun={2}>
+        <mesh />
+      </AnimatedBuildingFragment>,
+    )
+
+    expect(resetsAfterFirstRun).toBeGreaterThan(0)
+    expect(reset).toHaveBeenCalledTimes(resetsAfterFirstRun + 1)
   })
 })

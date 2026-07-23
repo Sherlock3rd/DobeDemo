@@ -1417,7 +1417,9 @@ function buildFragmentParts(
 function buildKindFragments(
   kind: BuildingKind,
 ): readonly BuildingFragmentBlueprint[] {
-  return fragmentMeta[kind].map((meta, index) => ({
+  const metadata =
+    kind === 'repair' ? fragmentMeta[kind].slice(0, 5) : fragmentMeta[kind]
+  return metadata.map((meta, index) => ({
     id: `${kind}-fragment-${index + 1}`,
     name: meta.name,
     description: meta.description,
@@ -1566,8 +1568,7 @@ function buildScaffoldParts(
 export function getBuildingFragments(
   kind: BuildingKind,
 ): readonly BuildingFragmentBlueprint[] {
-  const fragments = buildingFragmentCatalog[kind]
-  return kind === 'repair' ? fragments.slice(0, 5) : fragments
+  return buildingFragmentCatalog[kind]
 }
 
 // Pure and deterministic in (kind, progress, animatedFragmentId): the same

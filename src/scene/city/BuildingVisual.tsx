@@ -19,6 +19,16 @@ interface BuildingVisualProps {
   highlighted: boolean
 }
 
+interface FragmentAnimationRun {
+  fragmentId?: string
+  run: number
+}
+
+interface HydrationStatus {
+  active: boolean
+  progress: BuildingProgress | null
+}
+
 // Restored progress is the initial snapshot, so only a later, single child +1
 // transition can opt a fragment into the entrance animation.
 function getSessionCompletedFragmentId(
@@ -63,32 +73,64 @@ export function BuildingVisual({
   // is StrictMode-safe (idempotent) and, unlike an effect-diff, never drops the
   // entrance under double invocation.
   const [previousProgress, setPreviousProgress] = useState(progress)
-  const [animatedFragmentId, setAnimatedFragmentId] = useState<
-    string | undefined
-  >(undefined)
+  const [animation, setAnimation] = useState<FragmentAnimationRun>({
+    run: 0,
+  })
+  const [hydration, setHydration] = useState<HydrationStatus>({
+    active: !useCityStore.persist.hasHydrated(),
+    progress: null,
+  })
+
+  useEffect(() => {
+    const unsubscribeHydrate = useCityStore.persist.onHydrate(() => {
+      setHydration({ active: true, progress: null })
+    })
+    const unsubscribeFinish = useCityStore.persist.onFinishHydration(
+      (state) => {
+        setHydration({
+          active: false,
+          progress: state.buildingProgress[id],
+        })
+      },
+    )
+    return () => {
+      unsubscribeHydrate()
+      unsubscribeFinish()
+    }
+  }, [id])
 
   if (previousProgress !== progress) {
+    const suppressAnimation =
+      hydration.active || hydration.progress === progress
     setPreviousProgress(progress)
-    setAnimatedFragmentId(
-      getSessionCompletedFragmentId(
-        definition.kind,
-        previousProgress,
-        progress,
-      ),
-    )
+    const fragmentId = suppressAnimation
+      ? undefined
+      : getSessionCompletedFragmentId(
+          definition.kind,
+          previousProgress,
+          progress,
+        )
+    if (fragmentId === undefined) {
+      setAnimation((current) => ({ run: current.run }))
+    } else {
+      setAnimation((current) => ({
+        fragmentId,
+        run: current.run + 1,
+      }))
+    }
   }
 
   useEffect(() => {
-    if (animatedFragmentId === undefined) {
+    if (animation.fragmentId === undefined) {
       return
     }
 
     const timer = setTimeout(
-      () => setAnimatedFragmentId(undefined),
+      () => setAnimation((current) => ({ run: current.run })),
       BUILDING_FRAGMENT_ANIMATION_MS,
     )
     return () => clearTimeout(timer)
-  }, [animatedFragmentId])
+  }, [animation])
 
   const renderedFootprint = [
     definition.footprint[0] * BUILDING_RENDER_SCALE,
@@ -110,7 +152,8 @@ export function BuildingVisual({
         definition={definition}
         progress={progress}
         highlighted={highlighted}
-        animatedFragmentId={animatedFragmentId}
+        animatedFragmentId={animation.fragmentId}
+        animationRun={animation.run}
       />
     </group>
   )

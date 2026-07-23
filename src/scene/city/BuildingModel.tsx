@@ -9,6 +9,7 @@ interface BuildingModelProps {
   progress: BuildingProgress
   highlighted: boolean
   animatedFragmentId?: string
+  animationRun?: number
 }
 
 export function BuildingModel({
@@ -16,6 +17,7 @@ export function BuildingModel({
   progress,
   highlighted,
   animatedFragmentId,
+  animationRun,
 }: BuildingModelProps): JSX.Element {
   const fragments = useMemo(
     () =>
@@ -35,7 +37,10 @@ export function BuildingModel({
 
         return (
           <group key={fragment.id} position={fragment.anchor}>
-            <AnimatedBuildingFragment animate={fragment.animate}>
+            <AnimatedBuildingFragment
+              animate={fragment.animate}
+              animationRun={fragment.animate ? animationRun : undefined}
+            >
               {fragment.parts.map((part, index) => {
                 const material = getFragmentPartMaterial(part, {
                   primaryColor: definition.primaryColor,

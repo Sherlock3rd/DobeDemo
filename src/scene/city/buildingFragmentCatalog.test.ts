@@ -320,6 +320,19 @@ describe('getBuildingFragments', () => {
     })
   })
 
+  it('stores only five repair blueprints instead of slicing per lookup', () => {
+    const first = getBuildingFragments('repair')
+    const second = getBuildingFragments('repair')
+    const [footprintX, footprintZ] = footprintByKind.repair
+
+    expect(first).toBe(second)
+    expect(first).toHaveLength(5)
+    first.forEach(({ anchor }) => {
+      expect(Math.abs(anchor[0])).toBeLessThanOrEqual(footprintX / 2)
+      expect(Math.abs(anchor[2])).toBeLessThanOrEqual(footprintZ / 2)
+    })
+  })
+
   it('uses the exact design table names in order', () => {
     buildingKinds.forEach((kind) => {
       expect(

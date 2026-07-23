@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getTotalReputationForLevel } from '../../game/gangProgression'
-import { useCityStore } from '../../store/useCityStore'
+import { CITY_STORAGE_KEY, useCityStore } from '../../store/useCityStore'
 import { useGangStore } from '../../store/useGangStore'
 
 vi.mock('./BuildingModel', () => ({
@@ -10,10 +10,12 @@ vi.mock('./BuildingModel', () => ({
     definition,
     progress,
     animatedFragmentId,
+    animationRun,
   }: {
     definition: { id: string }
     progress: { level: number; childLevels: number[] }
     animatedFragmentId?: string
+    animationRun?: number
   }) => (
     <div
       data-testid="building-model"
@@ -24,6 +26,7 @@ vi.mock('./BuildingModel', () => ({
       }
       data-child-levels={progress.childLevels.join(',')}
       data-animated={animatedFragmentId ?? ''}
+      data-animation-run={animationRun ?? ''}
     >
       {definition.id}
     </div>
@@ -104,6 +107,42 @@ describe('BuildingVisual', () => {
       )
     })
 
+    it('does not animate a single-child increase applied by rehydrate after mount', async () => {
+      render(<BuildingVisual id="repair-shop" highlighted={false} />)
+      const durable = useCityStore.getState()
+      window.localStorage.setItem(
+        CITY_STORAGE_KEY,
+        JSON.stringify({
+          version: 2,
+          state: {
+            buildingProgress: {
+              ...durable.buildingProgress,
+              'repair-shop': {
+                level: 1,
+                childLevels: [1, 0, 0, 0, 0],
+              },
+            },
+            resources: durable.resources,
+            lastResourceUpdatedAt: durable.lastResourceUpdatedAt,
+            activeProducerIds: durable.activeProducerIds,
+          },
+        }),
+      )
+
+      await act(async () => {
+        await useCityStore.persist.rehydrate()
+      })
+
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-child-levels',
+        '1,0,0,0,0',
+      )
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        '',
+      )
+    })
+
     it('animates only the freshly completed fragment for a session click, then clears', () => {
       render(<BuildingVisual id="repair-shop" highlighted={false} />)
       expect(screen.getByTestId('building-model')).toHaveAttribute(
@@ -121,6 +160,72 @@ describe('BuildingVisual', () => {
 
       act(() => {
         vi.advanceTimersByTime(400)
+      })
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        '',
+      )
+    })
+
+    it('restarts the same fragment with a new run for consecutive upgrades', () => {
+      useCityStore.setState((state) => ({
+        buildingProgress: {
+          ...state.buildingProgress,
+          'repair-shop': {
+            level: 3,
+            childLevels: [0, 0, 0, 0, 0],
+          },
+        },
+      }))
+      render(<BuildingVisual id="repair-shop" highlighted={false} />)
+
+      act(() => {
+        useCityStore.setState((state) => ({
+          buildingProgress: {
+            ...state.buildingProgress,
+            'repair-shop': {
+              level: 3,
+              childLevels: [1, 0, 0, 0, 0],
+            },
+          },
+        }))
+      })
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animation-run',
+        '1',
+      )
+
+      act(() => {
+        vi.advanceTimersByTime(100)
+        useCityStore.setState((state) => ({
+          buildingProgress: {
+            ...state.buildingProgress,
+            'repair-shop': {
+              level: 3,
+              childLevels: [2, 0, 0, 0, 0],
+            },
+          },
+        }))
+      })
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        'repair-fragment-1',
+      )
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animation-run',
+        '2',
+      )
+
+      act(() => {
+        vi.advanceTimersByTime(300)
+      })
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        'repair-fragment-1',
+      )
+
+      act(() => {
+        vi.advanceTimersByTime(100)
       })
       expect(screen.getByTestId('building-model')).toHaveAttribute(
         'data-animated',

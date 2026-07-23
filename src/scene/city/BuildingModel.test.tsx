@@ -6,12 +6,18 @@ import type { BuildingVisualPart } from './buildingVisualTypes'
 vi.mock('./AnimatedBuildingFragment', () => ({
   AnimatedBuildingFragment: ({
     animate,
+    animationRun,
     children,
   }: {
     animate: boolean
+    animationRun?: number
     children: unknown
   }) => (
-    <div data-testid="fragment" data-animate={String(animate)}>
+    <div
+      data-testid="fragment"
+      data-animate={String(animate)}
+      data-animation-run={animationRun ?? ''}
+    >
       {children as never}
     </div>
   ),
@@ -155,6 +161,7 @@ describe('BuildingModel', () => {
         progress={{ level: 3, childLevels: [1, 0, 2, 0, 0] }}
         highlighted={false}
         animatedFragmentId="repair-fragment-3"
+        animationRun={7}
       />,
     )
 
@@ -163,6 +170,7 @@ describe('BuildingModel', () => {
     expect(fragments[0]).toHaveAttribute('data-animate', 'false')
     expect(fragments[1]).toHaveAttribute('data-animate', 'false')
     expect(fragments[2]).toHaveAttribute('data-animate', 'true')
+    expect(fragments[2]).toHaveAttribute('data-animation-run', '7')
     expect(fragments[3]).toHaveAttribute('data-animate', 'false')
     expect(fragments[4]).toHaveAttribute('data-animate', 'false')
   })
