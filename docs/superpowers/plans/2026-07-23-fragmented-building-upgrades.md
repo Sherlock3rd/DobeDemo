@@ -100,13 +100,13 @@ interface CityState {
 }
 ```
 
-- [ ] **Step 1:** 提取 safe storage 测试，覆盖 get/set/remove 任一异常后 sticky fallback。
-- [ ] **Step 2:** 实现共享 safe storage，`useGangStore` 重导出兼容名称。
-- [ ] **Step 3:** 写迁移测试：旧数字等级、部分对象、缺失建筑、NaN/Infinity、碎片越界、Lv.10 清零。
-- [ ] **Step 4:** 实现归一化与初始进度。
-- [ ] **Step 5:** 写 store RED：默认、目标隔离、未知 ID 引用不变、碎片到确认、reset、persist partialize、rehydrate 半完成进度。
-- [ ] **Step 6:** 用 Zustand persist 实现 store，selected/动画状态不持久化。
-- [ ] **Step 7:** 运行 store 全套、typecheck、lint。
+- [x] **Step 1:** 提取 safe storage 测试，覆盖 get/set/remove 任一异常后 sticky fallback。
+- [x] **Step 2:** 实现共享 safe storage，`useGangStore` 重导出兼容名称。
+- [x] **Step 3:** 写迁移测试：旧数字等级、部分对象、缺失建筑、NaN/Infinity、碎片越界、Lv.10 清零。
+- [x] **Step 4:** 实现归一化与初始进度。
+- [x] **Step 5:** 写 store RED：默认、目标隔离、未知 ID 引用不变、碎片到确认、reset、persist partialize、rehydrate 半完成进度。
+- [x] **Step 6:** 用 Zustand persist 实现 store，selected/动画状态不持久化。
+- [x] **Step 7:** 运行 store 全套、typecheck、lint。
 
 ### Task 3: 六类十槽子建筑蓝图
 

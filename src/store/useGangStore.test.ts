@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { MAX_REPUTATION } from '../game/gangProgression'
+import { createSafeStorage as createSafeStorageSource } from './safeStorage'
 import {
   GANG_STORAGE_KEY,
   createSafeStorage,
@@ -172,64 +173,12 @@ describe('useGangStore persistence', () => {
   })
 })
 
-describe('createSafeStorage fallback', () => {
-  function createThrowingStorage(): Storage {
-    return {
-      length: 0,
-      clear: () => {
-        throw new Error('storage unavailable')
-      },
-      key: () => {
-        throw new Error('storage unavailable')
-      },
-      getItem: () => {
-        throw new Error('storage unavailable')
-      },
-      setItem: () => {
-        throw new Error('storage unavailable')
-      },
-      removeItem: () => {
-        throw new Error('storage unavailable')
-      },
-    }
-  }
-
-  it('falls back to an in-memory store when the underlying storage throws', () => {
-    const safeStorage = createSafeStorage(() => createThrowingStorage())
-
-    expect(safeStorage.getItem('missing')).toBeNull()
-
-    safeStorage.setItem('key', 'value')
-    expect(safeStorage.getItem('key')).toBe('value')
-
-    safeStorage.removeItem('key')
-    expect(safeStorage.getItem('key')).toBeNull()
+describe('createSafeStorage re-export', () => {
+  it('re-exports the shared safe storage factory for API compatibility', () => {
+    expect(createSafeStorage).toBe(createSafeStorageSource)
   })
 
-  it('sticks to the same memory store after only setItem throws', () => {
-    const readableValues = new Map<string, string>()
-    const partiallyFailingStorage: Storage = {
-      length: 0,
-      clear: () => readableValues.clear(),
-      key: () => null,
-      getItem: (name) => readableValues.get(name) ?? null,
-      setItem: () => {
-        throw new Error('storage is read-only')
-      },
-      removeItem: (name) => {
-        readableValues.delete(name)
-      },
-    }
-    const safeStorage = createSafeStorage(() => partiallyFailingStorage)
-
-    safeStorage.setItem('key', 'memory-value')
-
-    expect(safeStorage.getItem('key')).toBe('memory-value')
-    safeStorage.removeItem('key')
-    expect(safeStorage.getItem('key')).toBeNull()
-  })
-
-  it('falls back to an in-memory store when accessing the storage itself throws', () => {
+  it('still produces a working sticky in-memory fallback through the re-export', () => {
     const safeStorage = createSafeStorage(() => {
       throw new Error('window.localStorage is unavailable')
     })
@@ -239,17 +188,5 @@ describe('createSafeStorage fallback', () => {
 
     safeStorage.removeItem('key')
     expect(safeStorage.getItem('key')).toBeNull()
-  })
-
-  it('uses the real storage when it is available', () => {
-    window.localStorage.clear()
-    const safeStorage = createSafeStorage(() => window.localStorage)
-
-    safeStorage.setItem('probe-key', 'probe-value')
-    expect(window.localStorage.getItem('probe-key')).toBe('probe-value')
-    expect(safeStorage.getItem('probe-key')).toBe('probe-value')
-
-    safeStorage.removeItem('probe-key')
-    expect(window.localStorage.getItem('probe-key')).toBeNull()
   })
 })

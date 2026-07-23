@@ -1,13 +1,15 @@
 import { create } from 'zustand'
-import {
-  createJSONStorage,
-  persist,
-  type StateStorage,
-} from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import {
   MAX_REPUTATION,
   calculateIdleSettlement,
 } from '../game/gangProgression'
+import { createSafeStorage } from './safeStorage'
+
+// Re-exported for API/back-compat: existing imports and tests reference
+// `createSafeStorage` from this module. The implementation now lives in
+// ./safeStorage so the city store can share it.
+export { createSafeStorage }
 
 export const GANG_STORAGE_KEY = 'gang-progression-v1'
 
@@ -16,55 +18,6 @@ interface GangState {
   lastUpdatedAt: number
   syncIdleProgress: (now: number) => void
   reset: (now: number) => void
-}
-
-export function createSafeStorage(
-  getStorage: () => Storage = () => window.localStorage,
-): StateStorage {
-  const memoryStore = new Map<string, string>()
-  let useMemoryStore = false
-
-  const withFallback = <T>(
-    operation: (storage: Storage) => T,
-    fallback: () => T,
-  ): T => {
-    if (useMemoryStore) {
-      return fallback()
-    }
-
-    try {
-      return operation(getStorage())
-    } catch {
-      useMemoryStore = true
-      return fallback()
-    }
-  }
-
-  return {
-    getItem: (name) =>
-      withFallback(
-        (storage) => storage.getItem(name),
-        () => memoryStore.get(name) ?? null,
-      ),
-    setItem: (name, value) =>
-      withFallback(
-        (storage) => {
-          storage.setItem(name, value)
-        },
-        () => {
-          memoryStore.set(name, value)
-        },
-      ),
-    removeItem: (name) =>
-      withFallback(
-        (storage) => {
-          storage.removeItem(name)
-        },
-        () => {
-          memoryStore.delete(name)
-        },
-      ),
-  }
 }
 
 export const useGangStore = create<GangState>()(
