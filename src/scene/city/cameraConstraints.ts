@@ -1,4 +1,16 @@
+import { MOUSE, TOUCH } from 'three'
 import { CAMERA_CONFIG } from '../../game/cityLayout'
+
+export const CAMERA_MOUSE_BUTTONS = {
+  LEFT: MOUSE.PAN,
+  MIDDLE: MOUSE.DOLLY,
+  RIGHT: MOUSE.PAN,
+} as const
+
+export const CAMERA_TOUCHES = {
+  ONE: TOUCH.PAN,
+  TWO: TOUCH.DOLLY_PAN,
+} as const
 
 export const CAMERA_CONTROL_FLAGS = {
   enableRotate: false,

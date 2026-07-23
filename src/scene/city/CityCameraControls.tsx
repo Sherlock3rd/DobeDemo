@@ -1,7 +1,12 @@
 import { OrbitControls } from '@react-three/drei'
 import { useRef, type ElementRef, type JSX } from 'react'
 import { CAMERA_CONFIG } from '../../game/cityLayout'
-import { CAMERA_CONTROL_FLAGS, clampPanTarget } from './cameraConstraints'
+import {
+  CAMERA_CONTROL_FLAGS,
+  CAMERA_MOUSE_BUTTONS,
+  CAMERA_TOUCHES,
+  clampPanTarget,
+} from './cameraConstraints'
 
 export function CityCameraControls(): JSX.Element {
   const controlsRef = useRef<ElementRef<typeof OrbitControls>>(null)
@@ -33,6 +38,8 @@ export function CityCameraControls(): JSX.Element {
       ref={controlsRef}
       target={[...CAMERA_CONFIG.target]}
       {...CAMERA_CONTROL_FLAGS}
+      mouseButtons={CAMERA_MOUSE_BUTTONS}
+      touches={CAMERA_TOUCHES}
       minZoom={CAMERA_CONFIG.minZoom}
       maxZoom={CAMERA_CONFIG.maxZoom}
       onChange={handleChange}

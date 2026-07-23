@@ -8,28 +8,13 @@ import {
 import type { BuildingId } from '../../game/cityTypes'
 import { useCityStore } from '../../store/useCityStore'
 import { BuildingVisual } from './BuildingVisual'
+import { cityCursorController } from './cityCursorController'
+import { consumePointerDrag, markPointerEventHandled } from './pointerDragClick'
 
 interface InteractiveBuildingProps {
   id: BuildingId
   position: readonly [number, number, number]
   rotation?: number
-}
-
-const hoveredBuildingIds = new Set<BuildingId>()
-
-function syncHoverCursor() {
-  document.body.style.cursor =
-    hoveredBuildingIds.size > 0 ? 'pointer' : 'default'
-}
-
-function registerHoveredBuilding(id: BuildingId) {
-  hoveredBuildingIds.add(id)
-  syncHoverCursor()
-}
-
-function unregisterHoveredBuilding(id: BuildingId) {
-  hoveredBuildingIds.delete(id)
-  syncHoverCursor()
 }
 
 export function InteractiveBuilding({
@@ -50,25 +35,33 @@ export function InteractiveBuilding({
 
   useEffect(
     () => () => {
-      unregisterHoveredBuilding(id)
+      cityCursorController.setBuildingHovered(id, false)
     },
     [id],
   )
 
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation()
+    // Claim the native event so the background handler bails out even if
+    // pointer-event propagation is not stopped for some reason.
+    markPointerEventHandled(event.nativeEvent)
+
+    if (consumePointerDrag(event.nativeEvent)) {
+      return
+    }
+
     selectBuilding(id)
   }
 
   const handlePointerOver = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation()
-    registerHoveredBuilding(id)
+    cityCursorController.setBuildingHovered(id, true)
     setHovered(true)
   }
 
   const handlePointerOut = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation()
-    unregisterHoveredBuilding(id)
+    cityCursorController.setBuildingHovered(id, false)
     setHovered(false)
   }
 

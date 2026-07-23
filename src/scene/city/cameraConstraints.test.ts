@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import { MOUSE, TOUCH } from 'three'
 import { CAMERA_CONFIG } from '../../game/cityLayout'
-import { CAMERA_CONTROL_FLAGS, clampPanTarget } from './cameraConstraints'
+import {
+  CAMERA_CONTROL_FLAGS,
+  CAMERA_MOUSE_BUTTONS,
+  CAMERA_TOUCHES,
+  clampPanTarget,
+} from './cameraConstraints'
 
 describe('CAMERA_CONTROL_FLAGS', () => {
   it('keeps rotation disabled while pan and zoom remain enabled', () => {
@@ -9,6 +15,23 @@ describe('CAMERA_CONTROL_FLAGS', () => {
       enablePan: true,
       enableZoom: true,
       screenSpacePanning: false,
+    })
+  })
+})
+
+describe('camera input mappings', () => {
+  it('maps every mouse button to pan or dolly without rotation', () => {
+    expect(CAMERA_MOUSE_BUTTONS).toEqual({
+      LEFT: MOUSE.PAN,
+      MIDDLE: MOUSE.DOLLY,
+      RIGHT: MOUSE.PAN,
+    })
+  })
+
+  it('maps one-finger pan and two-finger dolly-pan', () => {
+    expect(CAMERA_TOUCHES).toEqual({
+      ONE: TOUCH.PAN,
+      TWO: TOUCH.DOLLY_PAN,
     })
   })
 })
