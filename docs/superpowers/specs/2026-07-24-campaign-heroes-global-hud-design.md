@@ -219,14 +219,15 @@ type ActiveOverlay =
   | { kind: 'gangTree' }
   | { kind: 'settings' }
   | { kind: 'adventure' }
+  | { kind: 'formation'; stage: number }
   | { kind: 'heroes' }
   | { kind: 'battle'; stage: number }
 ```
 
 规则：
 - **同一时刻至多一个 overlay**。打开任一 overlay 前先关闭当前 overlay。
-- 打开**全屏玩法**（`adventure` / `heroes` / `battle`）会**关闭建筑详情**（清空 `selectedBuildingId`）。
-- 打开 `battle` 只能从 `adventure` 的关卡挑战发起；`battle` 退出/结算回到 `adventure`。
+- 打开**全屏玩法**（`adventure` / `formation` / `heroes` / `battle`）会**关闭建筑详情**（清空 `selectedBuildingId`）。
+- `formation` 只能从 `adventure` 的关卡挑战发起；`battle` 只能从 `formation` 的 Start 发起；取消编队或战斗退出/结算都回到 `adventure`。
 - **挂机继续**：无论当前 overlay 为何，`GangIdleController`、`EconomyIdleController` 与新增 `AdventureIdleClock` 均照常运行；overlay 只影响视图，不暂停时钟。
 - `Escape` 关闭当前非 `none` overlay（`battle` 的 Escape 等价「退出战斗」，需二次确认，见 §14.3）。
 - `buildingDetail` 由点击城市建筑触发（沿用 `selectBuilding`），映射为 `activeOverlay.kind==='buildingDetail'`。
@@ -294,7 +295,7 @@ useAdventureStore.getState().reset(now)   // 新增：回到 §7.3 初始态
   - `formation`：过滤非法 heroId / 非法槽；去重（同 heroId 或同槽只留首个）；长度截到 ≤5；行/索引越界丢弃；结果为空则回退为 `[{ foreman, back, 1 }]`。
   - `highestClearedStage`：`clampInt(value, 0, 20)`。
   - `idleClock`：`finite(value) ? value : now`。
-- 跨 Store 约束由 `reconcileAdventureWithGang(gangLevel)` 在 Adventure hydrate 完成及帮派等级变化后幂等执行：把所有 `heroLevels[id]` 夹到 `1..min(50, gangLevel)`，并从阵容移除当前未解锁英雄；若阵容为空则回退本体默认位。正常游戏中帮派等级只增不减，唯一降级入口是三 Store 同时 reset；该协调主要防御手改/损坏存档。
+- 跨 Store 约束由 `reconcileAdventureWithGang(gangLevel)` 在 **Adventure 与 Gang 两个 persist 都完成 hydrate 后**及后续帮派等级变化时幂等执行，禁止以 Gang 尚未 hydrate 的默认 Lv.1 提前夹低合法英雄等级：把所有 `heroLevels[id]` 夹到 `1..min(50, gangLevel)`，并从阵容移除当前未解锁英雄；若阵容为空则回退本体默认位。正常游戏中帮派等级只增不减，唯一降级入口是三 Store 同时 reset；该协调主要防御手改/损坏存档。
 
 ---
 
