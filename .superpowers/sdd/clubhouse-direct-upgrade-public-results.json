@@ -1,0 +1,332 @@
+{
+  "generatedAt": "2026-07-24T14:09:24.577Z",
+  "script": "clubhouse-direct-upgrade-public-cdp.mjs",
+  "release": {
+    "mainCommit": "9e063c8",
+    "pagesCommit": "9f7844863443d084d23425d77a0940f99b5a61bc",
+    "url": "?release=9f78448"
+  },
+  "preflight": {
+    "strategy": "Chrome assigns port 0; trust only isolated-profile DevToolsActivePort",
+    "cdpPortSource": "DevToolsActivePort",
+    "cdpPortAssigned": true,
+    "cdpOwnedProfile": true,
+    "cdpBrowserWsPathValidated": true
+  },
+  "processSafety": {
+    "registeredProcesses": [
+      {
+        "label": "chrome",
+        "owned": true
+      }
+    ],
+    "childErrors": [],
+    "killAttempts": [
+      {
+        "label": "chrome",
+        "owned": true,
+        "active": true
+      }
+    ],
+    "unknownProcessesTerminated": false,
+    "chromeExecutable": "chrome.exe",
+    "profilePrefixVerified": true
+  },
+  "http": {
+    "fetchTimeoutMs": 10000,
+    "url": "?release=9f78448",
+    "htmlStatus": 200,
+    "htmlBytes": 415,
+    "assetRefs": [
+      "/DobeDemo/assets/index-781xcY6f.js",
+      "/DobeDemo/assets/index-CoMhGqEJ.css"
+    ],
+    "jsRef": "/DobeDemo/assets/index-781xcY6f.js",
+    "cssRef": "/DobeDemo/assets/index-CoMhGqEJ.css",
+    "jsStatus": 200,
+    "cssStatus": 200,
+    "jsBytes": 1220278,
+    "cssBytes": 25511,
+    "jsMatchesExpected": true,
+    "cssMatchesExpected": true,
+    "baseOk": true
+  },
+  "fresh": {
+    "injectedCityVersion": 4,
+    "injectedGangReputation": 1170,
+    "injectedWallet": {
+      "money": 100000,
+      "oil": 0,
+      "materials": 0
+    },
+    "cityVersion": 4,
+    "gangReputation": 1171,
+    "wallet": {
+      "money": 100003,
+      "oil": 1,
+      "materials": 1
+    },
+    "productionSincePreset": {
+      "money": 3,
+      "oil": 1,
+      "materials": 1
+    },
+    "clubhouse": {
+      "level": 1,
+      "childLevels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "panel": {
+      "present": true,
+      "title": "Clubhouse",
+      "level": "等级 1 / 10",
+      "text": "关闭Clubhouse等级 1 / 10本建筑暂无产出钱 100003油 1物资 1当前建筑战力 250本次战力 +60升级后战力 310钱 25油 0物资 0直接升级 Clubhouse 至 Lv.2 · 钱 25",
+      "radioCount": 0,
+      "radiogroupCount": 0,
+      "progressbarCount": 0,
+      "childOptionCount": 0,
+      "sharedUpgradeCount": 0,
+      "mainButtonLabel": "直接升级 Clubhouse 至 Lv.2 · 钱 25",
+      "mainButtonDisabled": false,
+      "mainButtonRect": {
+        "width": 270,
+        "height": 44,
+        "left": 1124.2811279296875,
+        "right": 1394.2811279296875,
+        "top": 557.59375,
+        "bottom": 601.59375
+      },
+      "confirmSubmitCount": 0,
+      "confirmBackCount": 0,
+      "confirmTitleCount": 0,
+      "cost": ["钱 25", "油 0", "物资 0"],
+      "powers": ["当前建筑战力 250", "本次战力 +60", "升级后战力 310"]
+    }
+  },
+  "firstUpgrade": {
+    "levelBefore": 1,
+    "levelAfter": 2,
+    "walletBefore": {
+      "money": 100003,
+      "oil": 1,
+      "materials": 1
+    },
+    "walletAfter": {
+      "money": 99978,
+      "oil": 1,
+      "materials": 1
+    },
+    "spent": {
+      "money": 25,
+      "oil": 0,
+      "materials": 0
+    },
+    "children": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "panel": {
+      "present": true,
+      "title": "Clubhouse",
+      "level": "等级 2 / 10",
+      "text": "关闭Clubhouse等级 2 / 10本建筑暂无产出钱 99978油 1物资 1当前建筑战力 310本次战力 +70升级后战力 380钱 60油 0物资 0直接升级 Clubhouse 至 Lv.3 · 钱 60",
+      "radioCount": 0,
+      "radiogroupCount": 0,
+      "progressbarCount": 0,
+      "childOptionCount": 0,
+      "sharedUpgradeCount": 0,
+      "mainButtonLabel": "直接升级 Clubhouse 至 Lv.3 · 钱 60",
+      "mainButtonDisabled": false,
+      "mainButtonRect": {
+        "width": 270,
+        "height": 44,
+        "left": 1117,
+        "right": 1387,
+        "top": 557.59375,
+        "bottom": 601.59375
+      },
+      "confirmSubmitCount": 0,
+      "confirmBackCount": 0,
+      "confirmTitleCount": 0,
+      "cost": ["钱 60", "油 0", "物资 0"],
+      "powers": ["当前建筑战力 310", "本次战力 +70", "升级后战力 380"]
+    }
+  },
+  "persistence": {
+    "cityVersion": 4,
+    "level": 2,
+    "wallet": {
+      "money": 99978,
+      "oil": 1,
+      "materials": 1
+    },
+    "productionSinceClick": {
+      "money": 0,
+      "oil": 0,
+      "materials": 0
+    },
+    "children": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  "layout": {
+    "mobile": {
+      "present": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "noHorizontalOverflow": true,
+      "withinHorizontalBounds": true,
+      "scrollableOrFits": true,
+      "button": {
+        "width": 324,
+        "height": 44,
+        "left": 33,
+        "right": 357,
+        "top": 776.609375,
+        "bottom": 820.609375,
+        "withinViewport": true
+      }
+    }
+  },
+  "screenshots": {
+    "clubhouse-public-desktop-before.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 128457,
+      "sha256": "ce1b8d4bf214b733cf39c6ec0b9b74a421e2c2eb7011e1ac9664139ca0f90a0d",
+      "viewport": "1440x900",
+      "level": 1
+    },
+    "clubhouse-public-desktop-after.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 129076,
+      "sha256": "3e32f057a4f434595215d49b58765123bbfdcb59c558c7d4c6969c1e114be794",
+      "viewport": "1440x900",
+      "level": 2
+    },
+    "clubhouse-public-mobile.png": {
+      "width": 390,
+      "height": 844,
+      "bytes": 70613,
+      "sha256": "7fe0722730748a97d00a7e36eaf1e831ba0b6ac415785d4c4b1c9bd75bfff532",
+      "viewport": "390x844",
+      "level": 2
+    }
+  },
+  "teardown": {
+    "cdpPortReleased": true,
+    "tempProfileRemoved": true
+  },
+  "assertionSelfTest": {
+    "ok": true,
+    "checked": 27,
+    "failuresOnGoodData": [],
+    "passesOnEmptyData": [],
+    "pathRedaction": {
+      "ok": true,
+      "outputs": [
+        {
+          "name": "Error",
+          "code": "ENOENT"
+        },
+        {
+          "name": "TypeError"
+        }
+      ],
+      "forbiddenDataPresent": false
+    },
+    "transportSafety": {
+      "ok": true,
+      "checked": 10,
+      "sendTimeout": true,
+      "socketClose": true,
+      "connectionTimeout": true,
+      "httpFetchTimeout": true,
+      "inactiveChildSkipped": true,
+      "childProcessErrorBoundary": true,
+      "writeBoundary": true,
+      "topLevelBoundary": true,
+      "childProcessErrorStructure": true,
+      "httpFetchStructure": true
+    }
+  },
+  "assertions": [
+    {
+      "name": "R1. release identity matches main and built gh-pages commits",
+      "pass": true,
+      "detail": "{\"mainCommit\":\"9e063c8\",\"pagesCommit\":\"9f7844863443d084d23425d77a0940f99b5a61bc\",\"url\":\"?release=9f78448\"}"
+    },
+    {
+      "name": "S1. dynamic CDP belongs to isolated owned profile",
+      "pass": true,
+      "detail": "{\"strategy\":\"Chrome assigns port 0; trust only isolated-profile DevToolsActivePort\",\"cdpPortSource\":\"DevToolsActivePort\",\"cdpPortAssigned\":true,\"cdpOwnedProfile\":true,\"cdpBrowserWsPathValidated\":true}"
+    },
+    {
+      "name": "H1. public HTML/current JS/current CSS return exact HTTP 200",
+      "pass": true,
+      "detail": "{\"html\":200,\"js\":200,\"css\":200}"
+    },
+    {
+      "name": "H2. public asset names exactly match the Clubhouse release",
+      "pass": true,
+      "detail": "{\"refs\":[\"/DobeDemo/assets/index-781xcY6f.js\",\"/DobeDemo/assets/index-CoMhGqEJ.css\"],\"js\":\"/DobeDemo/assets/index-781xcY6f.js\",\"css\":\"/DobeDemo/assets/index-CoMhGqEJ.css\"}"
+    },
+    {
+      "name": "1. isolated profile rehydrates legal v4 wallet and gang Lv.40 preset",
+      "pass": true,
+      "detail": "{\"version\":4,\"reputation\":1171,\"wallet\":{\"money\":100003,\"oil\":1,\"materials\":1},\"clubhouse\":{\"level\":1,\"childLevels\":[0,0,0,0,0,0,0,0,0,0]}}"
+    },
+    {
+      "name": "2. real Clubhouse open has no child, progress, radio or confirmation UI",
+      "pass": true,
+      "detail": "{\"present\":true,\"title\":\"Clubhouse\",\"level\":\"等级 1 / 10\",\"text\":\"关闭Clubhouse等级 1 / 10本建筑暂无产出钱 100003油 1物资 1当前建筑战力 250本次战力 +60升级后战力 310钱 25油 0物资 0直接升级 Clubhouse 至 Lv.2 · 钱 25\",\"radioCount\":0,\"radiogroupCount\":0,\"progressbarCount\":0,\"childOptionCount\":0,\"sharedUpgradeCount\":0,\"mainButtonLabel\":\"直接升级 Clubhouse 至 Lv.2 · 钱 25\",\"mainButtonDisabled\":false,\"mainButtonRect\":{\"width\":270,\"height\":44,\"left\":1124.2811279296875,\"right\":1394.2811279296875,\"top\":557.59375,\"bottom\":601.59375},\"confirmSubmitCount\":0,\"confirmBackCount\":0,\"confirmTitleCount\":0,\"cost\":[\"钱 25\",\"油 0\",\"物资 0\"],\"powers\":[\"当前建筑战力 250\",\"本次战力 +60\",\"升级后战力 310\"]}"
+    },
+    {
+      "name": "2b. public Clubhouse shows exact direct target-2 cost and power",
+      "pass": true,
+      "detail": "{\"powers\":[\"当前建筑战力 250\",\"本次战力 +60\",\"升级后战力 310\"],\"cost\":[\"钱 25\",\"油 0\",\"物资 0\"],\"button\":\"直接升级 Clubhouse 至 Lv.2 · 钱 25\"}"
+    },
+    {
+      "name": "3. one real click upgrades 1->2, deducts exactly 25 and keeps children zero",
+      "pass": true,
+      "detail": "{\"before\":1,\"after\":2,\"spent\":{\"money\":25,\"oil\":0,\"materials\":0},\"children\":[0,0,0,0,0,0,0,0,0,0]}"
+    },
+    {
+      "name": "3b. direct click opens no confirmation and stays on Lv.2 details",
+      "pass": true,
+      "detail": "{\"present\":true,\"title\":\"Clubhouse\",\"level\":\"等级 2 / 10\",\"text\":\"关闭Clubhouse等级 2 / 10本建筑暂无产出钱 99978油 1物资 1当前建筑战力 310本次战力 +70升级后战力 380钱 60油 0物资 0直接升级 Clubhouse 至 Lv.3 · 钱 60\",\"radioCount\":0,\"radiogroupCount\":0,\"progressbarCount\":0,\"childOptionCount\":0,\"sharedUpgradeCount\":0,\"mainButtonLabel\":\"直接升级 Clubhouse 至 Lv.3 · 钱 60\",\"mainButtonDisabled\":false,\"mainButtonRect\":{\"width\":270,\"height\":44,\"left\":1117,\"right\":1387,\"top\":557.59375,\"bottom\":601.59375},\"confirmSubmitCount\":0,\"confirmBackCount\":0,\"confirmTitleCount\":0,\"cost\":[\"钱 60\",\"油 0\",\"物资 0\"],\"powers\":[\"当前建筑战力 310\",\"本次战力 +70\",\"升级后战力 380\"]}"
+    },
+    {
+      "name": "4. refresh persists Lv.2 and ten zero children with only legal production",
+      "pass": true,
+      "detail": "{\"cityVersion\":4,\"level\":2,\"wallet\":{\"money\":99978,\"oil\":1,\"materials\":1},\"productionSinceClick\":{\"money\":0,\"oil\":0,\"materials\":0},\"children\":[0,0,0,0,0,0,0,0,0,0]}"
+    },
+    {
+      "name": "5. mobile 390x844 has no horizontal overflow and a reachable 44x44 button",
+      "pass": true,
+      "detail": "{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"noHorizontalOverflow\":true,\"withinHorizontalBounds\":true,\"scrollableOrFits\":true,\"button\":{\"width\":324,\"height\":44,\"left\":33,\"right\":357,\"top\":776.609375,\"bottom\":820.609375,\"withinViewport\":true}}"
+    },
+    {
+      "name": "E1. all public screenshots are nonempty valid PNG files",
+      "pass": true,
+      "detail": "{\"clubhouse-public-desktop-before.png\":{\"width\":1440,\"height\":900,\"bytes\":128457,\"sha256\":\"ce1b8d4bf214b733cf39c6ec0b9b74a421e2c2eb7011e1ac9664139ca0f90a0d\",\"viewport\":\"1440x900\",\"level\":1},\"clubhouse-public-desktop-after.png\":{\"width\":1440,\"height\":900,\"bytes\":129076,\"sha256\":\"3e32f057a4f434595215d49b58765123bbfdcb59c558c7d4c6969c1e114be794\",\"viewport\":\"1440x900\",\"level\":2},\"clubhouse-public-mobile.png\":{\"width\":390,\"height\":844,\"bytes\":70613,\"sha256\":\"7fe0722730748a97d00a7e36eaf1e831ba0b6ac415785d4c4b1c9bd75bfff532\",\"viewport\":\"390x844\",\"level\":2}}"
+    },
+    {
+      "name": "E2. persisted evidence contains no absolute paths or raw errors",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "T1. teardown targeted only the owned active Chrome child",
+      "pass": true,
+      "detail": "{\"registeredProcesses\":[{\"label\":\"chrome\",\"owned\":true}],\"childErrors\":[],\"killAttempts\":[{\"label\":\"chrome\",\"owned\":true,\"active\":true}],\"unknownProcessesTerminated\":false,\"chromeExecutable\":\"chrome.exe\",\"profilePrefixVerified\":true}"
+    },
+    {
+      "name": "T2. owned CDP port was released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "T3. isolated temporary Chrome profile was removed",
+      "pass": true,
+      "detail": "true"
+    }
+  ]
+}

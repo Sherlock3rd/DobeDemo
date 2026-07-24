@@ -2,11 +2,11 @@
 
 ## 当前目标
 
-完成 Clubhouse 特殊直接升级的本地验收交付：帮派 Lv.40 解锁、Lv.1–10 主等级、复用主建筑成本与战力，一次真实点击直接结算生产/扣费/升级；不显示子建筑、进度或确认页；City persist v4 一次性退还 v3 Clubhouse 子投入并清零；3D 按主等级直接渲染完成态视觉层。当前范围只包含安全可重复 Chrome/CDP、真实结果、报告及 README/session 证据，不修改产品源码，不 commit、push 或发布 Pages。
+完成 Clubhouse 特殊直接升级的本地与公开验收交付：帮派 Lv.40 解锁、Lv.1–10 主等级、复用主建筑成本与战力，一次真实点击直接结算生产/扣费/升级；不显示子建筑、进度或确认页；City persist v4 一次性退还 v3 Clubhouse 子投入并清零；3D 按主等级直接渲染完成态视觉层。当前范围只包含安全可重复 Chrome/CDP、真实结果、报告及 README/session 证据，不修改产品源码，不 commit、push；公开环节只复验用户已发布的 Pages。
 
 ## 当前状态
 
-已完成本地 CDP 与文档；待用户决定后续版本管理或发布，本次未执行。
+已完成本地 CDP、公开 CDP 与发布证据文档；本轮未执行 commit、push 或 Pages 发布。
 
 ## 角色
 
@@ -51,3 +51,4 @@
 | 2026-07-24 | 渐进式升级发布与公开复验：`main` 功能提交已普通 push 至 `207735b`；fresh `dist` 经独立临时 index 快进发布为 `gh-pages` 提交 `0425b41`，Pages build `1112004349` 精确匹配且状态 `built`。公开 `?release=0425b41` 无缓存 HTML 及当前 `index-BYWUWufE.js`/`index-WW1HS-D7.css` 均 HTTP 200、路径 `/DobeDemo/`。安全公开 Chrome/CDP（`progressive-building-upgrade-flow-public-cdp.mjs`，文档启动阶段注入准备状态、真实鼠标点击、仅杀自建 PID、profile 前缀校验+清理重试、脱敏）经父代理最终复跑 self-test 16 + 运行 16/16 全通过：fresh 10000 仅首槽、调试资源两次 +20000、真实公用升级 50%→75%+ROI 206px、100% 换主按钮、确认不早扣、确认一次扣 60 与新槽自动选、v2 一次退款两次 reload 不重复、二次确认重置、390×844 无溢出可滚动 44px。公开脱敏结果与脚本随最终证据提交普通推送，9 张非空截图保留本地 | GitHub Pages   |
 | 2026-07-24 | 战役/英雄/GlobalHud Task 7 本地验收与最终分支审查：功能 HEAD 起点 `600f2aa`、Task 6 终审 Approved。安全 CDP 使用 `--remote-debugging-port=0` + 独立 profile `DevToolsActivePort`、owned Vite 特征校验、真实鼠标、脱敏 JSON、单 overlay、null/坏存档、宝箱余量、双轴 44×44 与进程清理；热区 RED 45/47 后修复尺寸下限和 `scale(0.98)`，再补英雄入口互斥。最终分支审查继续 TDD 修复：退出确认冻结且阻止发奖；真实 `useFrame` 走位/lunge/死亡 tween、basic 枪火/命中、skill 金色齐射拖尾和 reduced motion；Store 拒绝锁定英雄/非法 gangLevel；配置 safe integer/defaultSlot/派生溢出；Overlay 标题聚焦/inert/焦点恢复；GlobalHud 以 z22 在非 battle overlay 常驻且可指针导航、非 battle dialog 移除 `aria-modal`、battle 仍 hidden/inert；BattleEffects mounted callback 写回 BattleScreen `data-presented-*` 与累计事件计数。最终 format/typecheck/lint/build exit 0，65 测试文件/655 项全绿，dist 为 `index-C010nH2x.js` / `index-CoMhGqEJ.css`；CDP 动态端口 4404，stage 1 basic 7/damage 7/death 1/`presentedBasic`，stage 20 basic 30/skill-main 5/splash 11/damage 46/death 1/`currentPresentedSkill`，`campaign-skill.png` 与 basic 截图 hash 不同，self-test 11/11、runtime 50/50、exit 0。未 commit/push/发布 Pages | 本地集成验收   |
 | 2026-07-24 | Clubhouse Direct Upgrade 本地验收：功能 HEAD `5f909af`，未改产品源码。新增安全 CDP（owned Vite `--strictPort` + 存活/应用特征、Chrome port 0 + 独立 profile `DevToolsActivePort`、真实 `Input.dispatchMouseEvent`、有限 HTTP/CDP/WebSocket 超时、ChildProcess 错误与 PID 复用防护、脱敏与失败/清理/截图非零）；覆盖无 radio/progress/子升级/确认页，战力 `250/+60/310` 与 target 2 主成本 25，两次真实点击 `1→2→3` 精确扣 25/60、刷新持久、资源不足/Lv.10/Lv.39、v3→v4 退款 55 一次、children 恒 10 个 0、3D `1→2` 完成层且 ROI 变化 282px/无 scaffold、修车厂确认流回归、桌面/移动无横溢出与按钮 `270×44`/`324×44`。最终 self-test 23/23、运行期 28/28、9 张截图与清理全绿、exit 0；最终五门禁 65 文件/693 测试全绿，dist `index-781xcY6f.js` / `index-CoMhGqEJ.css`。未 commit/push/发布 Pages | 本地集成验收   |
+| 2026-07-24 | Clubhouse Direct Upgrade 公开复验：用户提供 `main` `9e063c8`、`gh-pages` `9f7844863443d084d23425d77a0940f99b5a61bc` built。新增公开安全 CDP，继承 HTTP/CDP/WebSocket timeout、spawn error/PID 活性、统一脱敏写盘和失败非零边界；公开 HTML 与当前 `index-781xcY6f.js`/`index-CoMhGqEJ.css` 精确 200。fresh 隔离 profile document-start 预置 v4/帮派 Lv.40/钱包后真实开 Clubhouse，无 child/progress/radio/confirm；真实点击 `1→2` 精确扣 25、children 全 0，刷新持久；390×844 无横溢出，按钮 `324×44`；三张 PNG 非空并记录脱敏 basename/尺寸/bytes/SHA-256。首次真实运行 14/16 暴露断言误把合法 `3/1/1` 生产与 `+1` 声望当失败，修正证据后 self-test 27/27、运行 16/16、端口/profile teardown 全绿、exit 0。未改产品源码，未 commit/push/发布 | 公开发布复验   |

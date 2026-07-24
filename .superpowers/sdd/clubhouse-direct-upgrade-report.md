@@ -1,4 +1,4 @@
-# Clubhouse Direct Upgrade 本地 CDP 验收报告
+# Clubhouse Direct Upgrade 本地与公开 CDP 验收报告
 
 ## 结论
 
@@ -6,7 +6,8 @@
 - 最终 CDP：self-test `23/23`，运行断言 `28/28`，exit `0`
 - 工程基线：65 个测试文件、693 项测试；最终五门禁均 exit `0`
 - 构建资产：`/DobeDemo/assets/index-781xcY6f.js`、`/DobeDemo/assets/index-CoMhGqEJ.css`
-- 范围：只新增本地 CDP、结果、报告及更新文档；未修改产品源码，未 commit、未 push、未发布 Pages
+- 公开发布：`main` `9e063c8`；`gh-pages` `9f7844863443d084d23425d77a0940f99b5a61bc`，Pages 状态 `built`；公开 CDP self-test `27/27`、运行断言 `16/16`、exit `0`
+- 范围：新增本地/公开 CDP、结果、报告及更新文档；未修改产品源码，未 commit、未 push；本轮只复验用户已发布的 Pages，没有执行发布
 
 ## 安全模型
 
@@ -68,6 +69,26 @@
 - 首次 GREEN 尝试发现自测假 fetch 没有活动句柄，而 `AbortSignal.timeout()` 内部 timer 为 unref，导致 Node 在 790ms 提前 exit `0` 且未执行断言/写结果。修正仅限自测夹具：增加 1 秒保活 timer，并在 abort 时清除。
 - 最终将三处 fetch 全部替换为 10 秒 `fetchWithTimeout()` 后完整重跑：self-test `23/23`、运行期 `28/28`、9 张截图、端口/profile cleanup 全绿，exit `0`；结果记录 `http.fetchTimeoutMs: 10000`。
 
+## 公开发布复验
+
+- 发布身份：`main` `9e063c8`；`gh-pages` 完整提交 `9f7844863443d084d23425d77a0940f99b5a61bc`，用户确认 Pages build 为 `built`；复验 URL 为 `https://sherlock3rd.github.io/DobeDemo/?release=9f78448`。
+- 无缓存真实 HTTP：HTML `200`（415 bytes）、当前 JS `/DobeDemo/assets/index-781xcY6f.js` `200`（1,220,278 bytes）、当前 CSS `/DobeDemo/assets/index-CoMhGqEJ.css` `200`（25,511 bytes）；HTML 中仅有这两个 `/DobeDemo/` asset 引用且名称精确匹配。
+- `.superpowers/sdd/clubhouse-direct-upgrade-public-cdp.mjs` 使用独立 fresh profile、Chrome port 0 与该 profile 的 `DevToolsActivePort`；HTTP/CDP 请求和 WebSocket 建连均为 10 秒有限超时，socket 失败拒绝并清空 pending。
+- spawn `error` listener 在 PID/活性检查前注册；cleanup 只允许终止本轮登记且仍 active 的 Chrome `ChildProcess`，失活或无 PID 对象安全跳过；临时 profile 只在完整前缀校验后有限重试删除。
+- self-test 真实覆盖 CDP timeout 清 pending、socket close、WebSocket 建连 timeout/listener 清理、HTTP AbortSignal timeout、inactive child 跳过、spawn error 脱敏、写盘失败脱敏、统一顶层 catch/finally/write 边界及 HTTP/child 调用结构。
+- JSON 与 stderr 统一只保留白名单 error name/code；结果不含绝对路径、raw message 或 stack。截图证据只记录 basename、尺寸、bytes、SHA-256；任一断言、截图、运行、写盘或 teardown 失败均非零退出。
+- fresh profile 通过 document-start seed 预置 city persist v4、钱包 `100000/0/0`、帮派声望 `1170`。真实扫描开 Clubhouse 时仅出现合法挂机增量 `3/1/1` 和声望 `+1`；面板 `radio/radiogroup/progressbar/child/shared/confirm` 全为 `0`。
+- 第一次真实 `Input.dispatchMouseEvent` 点击使 Clubhouse `Lv.1→Lv.2`，钱包 `100003/1/1→99978/1/1`，精确扣 `25/0/0`，10 个 children 全 0，无确认页；刷新后仍为 v4/Lv.2、children 全 0、钱包保持 `99978/1/1`。
+- 移动 `390×844` 无页面或面板横向溢出，面板可滚动/可容纳；直接升级按钮 `324×44`，双轴均不小于 44px 且完整位于视口。
+- 三张真实 PNG 均非空且结果脱敏：desktop-before `1440×900 / 128457 bytes`、desktop-after `1440×900 / 129076 bytes`、mobile `390×844 / 70613 bytes`；对应 SHA-256 已写入公开结果 JSON。
+
+### 公开运行与重试记录
+
+- 第 1 次真实公开 CDP：self-test `27/27`；运行 `14/16`，exit `1`。HTTP、资产、真实点击精确扣费、无确认、children、移动布局、截图与全部 teardown 均通过；两项失败来自验收断言错误地要求扫描和刷新期间钱包/声望绝对不增长，忽略合法 `3/1/1` 生产 tick 与 `+1` 声望。
+- 修正只涉及验收证据：显式记录 seed 的 v4/1170/`100000/0/0`，fresh 观察值只允许符合 `钱=油×3、物资=油` 的非负生产；点击扣费仍用点击前后钱包精确断言 `25/0/0`；刷新只允许同样比例的合法非负生产。
+- 一次复跑组合命令在 Windows PowerShell 解析阶段因不支持 `&&` 退出 `1`，脚本未启动、没有 Chrome 或 CDP 副作用；随后将格式化、语法检查与运行拆为独立命令。
+- 第 2 次真实公开 CDP：self-test `27/27`、运行 `16/16`、三张截图、CDP 端口释放与临时 profile 删除全部通过，exit `0`。父流程随后用独立 fresh profile 再完整复跑一次，同样为 `27/27`、`16/16`、exit `0`；产品源码无需修改。
+
 ## 命令
 
 ```powershell
@@ -77,6 +98,7 @@ npm.cmd run lint
 npm.cmd test
 npm.cmd run build
 node .superpowers/sdd/clubhouse-direct-upgrade-cdp.mjs
+node .superpowers/sdd/clubhouse-direct-upgrade-public-cdp.mjs
 ```
 
-本报告不声称存在 commit、push、GitHub Pages 发布或公开站点复验。
+本报告记录用户提供的已发布 commit/build 身份与本轮公开站点真实复验；本轮没有执行 commit、push 或 GitHub Pages 发布。
