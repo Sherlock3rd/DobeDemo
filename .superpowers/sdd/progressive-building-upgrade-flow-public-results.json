@@ -1,0 +1,418 @@
+{
+  "generatedAt": "2026-07-24T05:44:37.337Z",
+  "script": "progressive-building-upgrade-flow-public-cdp.mjs",
+  "release": {
+    "commit": "0425b41ca9dfc1b5bfaae111860aab1e6b6a489a",
+    "url": "?release=0425b41ca9dfc1b5bfaae111860aab1e6b6a489a"
+  },
+  "preflight": {
+    "portCheckPerformed": true,
+    "strategy": "skip occupied preferred port; never terminate unknown PID",
+    "attemptedCdpPorts": [
+      {
+        "port": 9411,
+        "free": true
+      }
+    ],
+    "cdpPort": 9411,
+    "cdpPortFree": true,
+    "ok": true
+  },
+  "processSafety": {
+    "ownedPids": [
+      {
+        "label": "chrome",
+        "pid": 40484
+      }
+    ],
+    "killAttempts": [
+      {
+        "label": "chrome",
+        "pid": 40484,
+        "owned": true
+      }
+    ],
+    "unknownProcessesTerminated": false,
+    "chromeExecutable": "chrome.exe",
+    "tempProfileName": "dobe-progressive-upgrade-public-cdp-O2FEsL"
+  },
+  "http": {
+    "url": "?release=0425b41ca9dfc1b5bfaae111860aab1e6b6a489a",
+    "htmlStatus": 200,
+    "assetRefs": [
+      "/DobeDemo/assets/index-BYWUWufE.js",
+      "/DobeDemo/assets/index-WW1HS-D7.css"
+    ],
+    "jsRef": "/DobeDemo/assets/index-BYWUWufE.js",
+    "cssRef": "/DobeDemo/assets/index-WW1HS-D7.css",
+    "jsStatus": 200,
+    "cssStatus": 200,
+    "jsMatchesExpected": true,
+    "cssMatchesExpected": true,
+    "baseOk": true
+  },
+  "fresh": {
+    "storage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "recycling-yard": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "commercial-street": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "gas-station": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "clubhouse": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "resources": {
+            "money": 10000,
+            "oil": 0,
+            "materials": 0
+          },
+          "lastResourceUpdatedAt": 1784871883715,
+          "activeProducerIds": [
+            "repair-shop"
+          ]
+        },
+        "version": 3
+      },
+      "gang": null
+    },
+    "hud": {
+      "level": "Lv. 1",
+      "rate": "+1 声望/10秒"
+    },
+    "repairPanel": {
+      "present": true,
+      "unlocked": true,
+      "view": "details",
+      "title": "修车厂",
+      "level": "等级 1 / 10",
+      "childCount": 1,
+      "options": [
+        {
+          "name": "基础维修棚",
+          "status": "Lv.0 / Lv.1",
+          "checked": true
+        }
+      ],
+      "selectedIndex": 0,
+      "progressPresent": true,
+      "progressNow": 0,
+      "sharedButtonPresent": true,
+      "mainButtonPresent": false,
+      "mainButtonLabel": null,
+      "confirmCost": [],
+      "confirmPower": [],
+      "confirmSubmitDisabled": null
+    }
+  },
+  "grant": {
+    "oilDelta": 20000,
+    "materialsDelta": 20000,
+    "moneyDelta": 20000,
+    "panelStillOpen": true,
+    "feedback": "钱、油、物资各增加 10000"
+  },
+  "slotUpgrade": {
+    "progressBefore": 50,
+    "progressAfter": 75,
+    "canvasTarget": {
+      "changedPixels": 206,
+      "consideredPixels": 125320,
+      "roiClipped": {
+        "x": 248,
+        "y": 40,
+        "w": 400,
+        "h": 390
+      },
+      "changedPct": 0.164
+    },
+    "canvasControl": {
+      "changedPixels": 0,
+      "consideredPixels": 748760,
+      "roiClipped": {
+        "x": 0,
+        "y": 0,
+        "w": 1424,
+        "h": 805
+      },
+      "changedPct": 0
+    }
+  },
+  "hundred": {
+    "progressPresent": false,
+    "sharedButtonPresent": false,
+    "mainButtonPresent": true,
+    "mainButtonLabel": "升级主建筑至 Lv.3"
+  },
+  "confirmView": {
+    "view": "confirm",
+    "confirmCost": [
+      "钱 60",
+      "油 0",
+      "物资 0"
+    ],
+    "confirmPower": [
+      "当前建筑战力 130",
+      "本次战力 +35",
+      "升级后战力 165"
+    ],
+    "walletUnchanged": true,
+    "levelUnchanged": true
+  },
+  "confirmApply": {
+    "moneySpent": 60,
+    "levelAfter": 3,
+    "childCountAfter": 3,
+    "newSlotStatus": "Lv.0 / Lv.3",
+    "selectedIndexAfter": 2
+  },
+  "migration": {
+    "moneyFirst": 140,
+    "repairChildFirst": [
+      2,
+      1,
+      0,
+      0,
+      0
+    ],
+    "commercialChildFirst": [
+      3,
+      2,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "versionFirst": 3,
+    "moneySecond": 140,
+    "versionSecond": 3
+  },
+  "reset": {
+    "money": 10000,
+    "oil": 0,
+    "materials": 0,
+    "allLevelsOne": true,
+    "repairChildLevels": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "panelClosed": true
+  },
+  "layout": {
+    "mobile": {
+      "present": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "withinBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "control44": true
+    }
+  },
+  "screenshots": {
+    "public-initial.png": "public-initial.png",
+    "public-grant.png": "public-grant.png",
+    "public-slot-before.png": "public-slot-before.png",
+    "public-slot-after.png": "public-slot-after.png",
+    "public-confirm.png": "public-confirm.png",
+    "public-new-slot.png": "public-new-slot.png",
+    "public-migration.png": "public-migration.png",
+    "public-reset.png": "public-reset.png",
+    "public-mobile.png": "public-mobile.png"
+  },
+  "teardown": {
+    "cdpPortReleased": true,
+    "tempProfileRemoved": true
+  },
+  "assertionSelfTest": {
+    "ok": true,
+    "checked": 16,
+    "failuresOnGoodData": [],
+    "passesOnBadData": [],
+    "errorSanitization": {
+      "ok": true,
+      "checked": 1,
+      "outputs": [
+        {
+          "name": "Error",
+          "code": "ENOENT"
+        },
+        {
+          "name": "TypeError"
+        }
+      ],
+      "forbiddenDataPresent": false
+    }
+  },
+  "assertions": [
+    {
+      "name": "preflight selected free CDP port",
+      "pass": true,
+      "detail": "9411"
+    },
+    {
+      "name": "H1. public HTML/JS/CSS all return HTTP 200",
+      "pass": true,
+      "detail": "{\"html\":200,\"js\":200,\"css\":200}"
+    },
+    {
+      "name": "H2. assets use /DobeDemo/ and match current hashes",
+      "pass": true,
+      "detail": "{\"js\":\"/DobeDemo/assets/index-BYWUWufE.js\",\"css\":\"/DobeDemo/assets/index-WW1HS-D7.css\"}"
+    },
+    {
+      "name": "1. fresh v3 wallet {10000,0,0}, repair Lv.1 only first slot in UI",
+      "pass": true,
+      "detail": "{\"version\":3,\"fr\":{\"level\":1,\"childLevels\":[0,0,0,0,0]},\"fw\":{\"money\":10000,\"oil\":0,\"materials\":0},\"panel\":{\"present\":true,\"unlocked\":true,\"view\":\"details\",\"title\":\"修车厂\",\"level\":\"等级 1 / 10\",\"childCount\":1,\"options\":[{\"name\":\"基础维修棚\",\"status\":\"Lv.0 / Lv.1\",\"checked\":true}],\"selectedIndex\":0,\"progressPresent\":true,\"progressNow\":0,\"sharedButtonPresent\":true,\"mainButtonPresent\":false,\"mainButtonLabel\":null,\"confirmCost\":[],\"confirmPower\":[],\"confirmSubmitDisabled\":null}}"
+    },
+    {
+      "name": "2. 钱/油/物资各 +10000 twice adds +20000 oil & materials, panel open",
+      "pass": true,
+      "detail": "{\"oilDelta\":20000,\"materialsDelta\":20000,\"moneyDelta\":20000,\"panelStillOpen\":true,\"feedback\":\"钱、油、物资各增加 10000\"}"
+    },
+    {
+      "name": "3. shared button advanced progress and only target 3D ROI changed",
+      "pass": true,
+      "detail": "{\"before\":50,\"after\":75,\"target\":206,\"controlPct\":0}"
+    },
+    {
+      "name": "4. at 100% the region is replaced by 升级主建筑至 Lv.3",
+      "pass": true,
+      "detail": "{\"progressPresent\":false,\"sharedButtonPresent\":false,\"mainButtonPresent\":true,\"mainButtonLabel\":\"升级主建筑至 Lv.3\"}"
+    },
+    {
+      "name": "5. main button opens confirm with no wallet/level change",
+      "pass": true,
+      "detail": "{\"view\":\"confirm\",\"confirmCost\":[\"钱 60\",\"油 0\",\"物资 0\"],\"confirmPower\":[\"当前建筑战力 130\",\"本次战力 +35\",\"升级后战力 165\"],\"walletUnchanged\":true,\"levelUnchanged\":true}"
+    },
+    {
+      "name": "6. confirm deducts 60 once, repair -> Lv.3, new Lv.0 slot auto-selected",
+      "pass": true,
+      "detail": "{\"moneySpent\":60,\"levelAfter\":3,\"childCountAfter\":3,\"newSlotStatus\":\"Lv.0 / Lv.3\",\"selectedIndexAfter\":2}"
+    },
+    {
+      "name": "7. v2 injection refunds 40 money once and zeroes hidden slots",
+      "pass": true,
+      "detail": "{\"moneyFirst\":140,\"repairChildFirst\":[2,1,0,0,0],\"commercialChildFirst\":[3,2,1,0,0,0,0,0,0,0],\"versionFirst\":3,\"moneySecond\":140,\"versionSecond\":3}"
+    },
+    {
+      "name": "8. reset restores wallet 10000/0/0, all Lv.1, repair childLevels zero",
+      "pass": true,
+      "detail": "{\"money\":10000,\"oil\":0,\"materials\":0,\"allLevelsOne\":true,\"repairChildLevels\":[0,0,0,0,0],\"panelClosed\":true}"
+    },
+    {
+      "name": "9. 390x844 panel scrolls without overflow and 44px controls reachable",
+      "pass": true,
+      "detail": "{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"control44\":true}"
+    },
+    {
+      "name": "all expected screenshots written and nonempty",
+      "pass": true,
+      "detail": "[\"public-initial.png\",\"public-grant.png\",\"public-slot-before.png\",\"public-slot-after.png\",\"public-confirm.png\",\"public-new-slot.png\",\"public-migration.png\",\"public-reset.png\",\"public-mobile.png\"]"
+    },
+    {
+      "name": "teardown: only owned PIDs targeted",
+      "pass": true,
+      "detail": "[{\"label\":\"chrome\",\"pid\":40484,\"owned\":true}]"
+    },
+    {
+      "name": "teardown: CDP port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "teardown: temporary Chrome profile removed",
+      "pass": true,
+      "detail": "true"
+    }
+  ]
+}

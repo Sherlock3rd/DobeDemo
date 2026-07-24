@@ -1370,7 +1370,7 @@ Review the complete range from the pre-feature base through HEAD, not just the l
 
 Fix every Critical/Important actionable finding with a focused failing test, commit the fix separately, rerun the full engineering gate and local CDP, then re-review the fix range. Expected final review: approved with no Critical/Important findings.
 
-- [ ] **Step 8: Ordinary push main**
+- [x] **Step 8: Ordinary push main**
 
 Verify clean intended history and then use:
 
@@ -1380,7 +1380,7 @@ git push origin main
 
 Expected: ordinary fast-forward push succeeds. Do not use `--force` or `--force-with-lease`.
 
-- [ ] **Step 9: Publish fresh dist through an independent temporary index**
+- [x] **Step 9: Publish fresh dist through an independent temporary index**
 
 After the pushed main commit passes the fresh gate, rebuild. Create a temporary index with:
 
@@ -1425,7 +1425,7 @@ try {
 
 The normal working index must remain untouched. Expected published tree contains only `index.html` and current assets, and push is fast-forward.
 
-- [ ] **Step 10: Wait for the exact Pages commit to become built**
+- [x] **Step 10: Wait for the exact Pages commit to become built**
 
 Use GitHub CLI/API to poll the Pages deployment/build for the exact `gh-pages` commit from Step 9. Accept only:
 
@@ -1436,7 +1436,7 @@ status == built
 
 An older successful build does not satisfy this step. Stop and report a definitive auth/permission failure rather than altering credentials or force-pushing.
 
-- [ ] **Step 11: Verify public HTTP and Chrome key flows**
+- [x] **Step 11: Verify public HTTP and Chrome key flows**
 
 Fetch public HTML without cache, extract its current hashed JS/CSS references, and assert HTML, JS and CSS each return HTTP 200 and use `/DobeDemo/`.
 
@@ -1458,7 +1458,7 @@ node .superpowers/sdd/progressive-building-upgrade-flow-public-cdp.mjs
 
 Expected: exit 0, all public assertions pass, result JSON and nonempty local screenshot are generated, and profile cleanup succeeds.
 
-- [ ] **Step 12: Commit final evidence and ordinary-push main again**
+- [x] **Step 12: Commit final evidence and ordinary-push main again**
 
 Update the report and session ledger with actual main commit, gh-pages commit, Pages build ID/status, public asset URLs/statuses, public CDP assertions and screenshot basename/size.
 

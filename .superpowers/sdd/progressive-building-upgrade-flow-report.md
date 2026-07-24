@@ -101,10 +101,40 @@
 - 完整范围 `9d87ff8..22a82e0` 的发布前终审结论为 **Approved**，无 Critical/Important。终审逐项确认迁移/merge、门槛短路、修车厂 Lv.5→6、确认原子重查、会话选择、隐藏槽与动画、调试不追溯、初始 10000、重置与安全 CDP 均符合设计。
 - 父代理在终审后 fresh 重跑 `format:check`、`typecheck`、`lint`、38 文件/479 项测试、production build，全部退出 0；随后重跑本地 CDP，self-test 43 项与运行期 43/43 断言全部 PASS。
 
-## 8. 待发布步骤（未完成，未声明完成）
+## 8. 发布与公开复验（计划 Step 8–11，已完成）
 
-- 计划 Step 8 普通 push `main`（禁止 force）。
-- 计划 Step 9 用 fresh `dist` 经独立临时 index 发布 `gh-pages`。
-- 计划 Step 10 等待精确 `gh-pages` 提交 Pages 状态 `built`。
-- 计划 Step 11 公开 HTTP + `progressive-building-upgrade-flow-public-cdp.mjs` 复验。
-- 计划 Step 12 记录最终证据并再次普通 push。
+发布事实：
+
+- `main` 已普通 push：`207735bedf1af9fbcb04d72bafa2a8eed94c6703`。
+- `gh-pages` 已普通快进发布：`0425b41ca9dfc1b5bfaae111860aab1e6b6a489a`。
+- Pages build ID `1112004349` 精确匹配该 `gh-pages` 提交且 status `built`。
+
+**公开 HTTP（一句）**：对 `https://sherlock3rd.github.io/DobeDemo/?release=0425b41…` 无缓存取 HTML，解析出的当前资产 `/DobeDemo/assets/index-BYWUWufE.js` 与 `/DobeDemo/assets/index-WW1HS-D7.css` 精确匹配，HTML/JS/CSS 均返回 HTTP 200，路径均以 `/DobeDemo/` 开头。
+
+**公开 CDP（一句）**：`progressive-building-upgrade-flow-public-cdp.mjs` 退出 0，纯数据 self-test 16 + 运行断言 16/16 全 PASS，独立 fresh profile 真机 `Input.dispatchMouseEvent`（无 `DOM.click`），仅终止自建 Chrome PID、释放 CDP 端口、清理临时 profile。
+
+公开脚本安全模型：动态选择空闲 CDP 端口（本次 `9411`）、绝不连接/终止预检发现的监听者、仅追踪并终止自建 Chrome PID、独立 profile 前缀 `dobe-progressive-upgrade-public-cdp-` 删除前校验并带最多 5 次清理重试、结果 JSON 仅记录 basename/HTTP 状态/数值、错误只记录白名单 `name`/`code`、纯数据 + Windows/Unix 路径脱敏 self-test、失败非零退出。localStorage 通过 `Page.addScriptToEvaluateOnNewDocument` 在文档启动阶段（应用 bundle 之前）注入以准备昂贵状态，但每个断言转变均由真实鼠标点击触发。
+
+公开编号断言（全部 PASS，关键实测值）：
+
+1. H1/H2：HTML/JS/CSS 均 200；资产 hash 精确为 `index-BYWUWufE.js` / `index-WW1HS-D7.css`、路径 `/DobeDemo/`。
+2. fresh v3 钱包 `{10000,0,0}`、修车厂 Lv.1 仅首槽 `Lv.0 / Lv.1` 可见。
+3. `钱/油/物资各 +10000` 真机点两次：油/物资各 +20000、钱 +20000、面板保持打开、`钱、油、物资各增加 10000`。
+4. 真实公用子升级：进度 `50% → 75%`，目标 3D ROI 变化 206 px，控制区 0%。
+5. 再次真实公用子升级到 100%，进度区替换为 `升级主建筑至 Lv.3`。
+6. 真实点主按钮进入确认页且钱包/等级不变，成本 `钱 60 / 油 0 / 物资 0`、战力 `当前 130 / 本次 +35 / 升级后 165`。
+7. 真实 `确认升级` 只扣 60、修车厂 → Lv.3、新 `Lv.0 / Lv.3` 槽自动选中（index 2）。
+8. 代表性 v2 注入后：钱 `100 → 140`、修车厂 `[2,1,0,0,0]`、商业街 `[3,2,1,0,0,0,0,0,0,0]`、版本 3；再次 reload 仍版本 3、钱仍 140（不重复退款）。
+9. 二次确认重置恢复 `10000/0/0`、全 Lv.1、修车厂 `[0,0,0,0,0]`、面板关闭。
+10. 390×844：面板在视口内、无横向溢出、可滚动、44px 控件可触达。
+
+进程/清理断言：仅 owned Chrome PID 被终止、CDP 端口释放、临时 profile 删除、9 张截图非空。
+
+脚本重试记录（如实）：子代理首跑失败 3 项——(a) 断言 3 因注入状态一次点击即达 100% 使进度条被主按钮替换（`progressAfter` 为 null，3D ROI 实测已变化），(b) 移动步骤用桌面坐标在 390px 视口扫描建筑导致 `findBuilding` 抛错并缺失移动截图；改用 `[1,1,0,0,0]` 起点（两次真实点击：先 50%→75% 再至 100%）并在切到移动视口前先打开面板后修复。第二跑断言 7 失败：注入的 v2 存档被运行中应用（约每秒重写 localStorage）覆盖为确认流程后的状态；改用 `Page.addScriptToEvaluateOnNewDocument` 在文档启动阶段注入后修复。第三跑全绿。父代理复跑时恰逢 10 秒钱产出，确认成本 60 被 +1 产出抵消为净变化 59，证明原断言存在时间竞争；脚本把该确认场景的资源结算时钟推进到短窗口之外后再次复跑，精确扣费 60 与全部 16/16 断言通过。所有失败均为验收脚本隔离问题，未发现已发布产品缺陷，未改动已发布代码。
+
+公开脱敏结果：`progressive-building-upgrade-flow-public-results.json`（11,276 bytes）。公开截图（本地，保持 gitignore）：`public-initial.png`(158,920)、`public-grant.png`(123,431)、`public-slot-before.png`(164,819)、`public-slot-after.png`(168,246)、`public-confirm.png`(158,080)、`public-new-slot.png`(170,191)、`public-migration.png`(131,226)、`public-reset.png`(130,155)、`public-mobile.png`(97,008)。
+
+## 9. 最终证据
+
+- 最终公开脚本由父代理复跑，self-test 16 项与运行期 16/16 断言全部 PASS；当前脱敏结果 JSON 来自该次成功复跑。
+- 最终证据提交包含公开脚本、脱敏结果、报告、计划和会话总账，并以普通 fast-forward push 更新 `main`；不提交 PNG、`dist`、临时 profile/index 或用户未跟踪文件。
