@@ -23,19 +23,29 @@ describe('AdventurePanel', () => {
     expect(title).toHaveFocus()
   })
 
-  it('renders 20 stage nodes across two chapters', () => {
+  it('shows only the single current challenge stage for a fresh account', () => {
     render(<AdventurePanel onClose={() => {}} onChallenge={() => {}} />)
-    expect(screen.getByRole('button', { name: /^1-1 ·/ })).toBeEnabled()
-    expect(screen.getByRole('button', { name: /^2-10 ·/ })).toBeDisabled()
+    expect(screen.getByText('当前关卡 1-1')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '挑战 1-1' })).toBeEnabled()
+    expect(screen.queryByText(/1-2/)).toBeNull()
   })
 
-  it('only allows challenging unlocked stages', async () => {
+  it('advances to the next uncleared stage and never renders cleared stages', async () => {
     const onChallenge = vi.fn()
     useAdventureStore.setState({ highestClearedStage: 2 })
     render(<AdventurePanel onClose={() => {}} onChallenge={onChallenge} />)
-    await userEvent.click(screen.getByRole('button', { name: /^1-3 ·/ }))
-    await userEvent.click(screen.getByRole('button', { name: /^挑战/ }))
+    expect(screen.queryByText(/1-1/)).toBeNull()
+    expect(screen.queryByText(/1-2/)).toBeNull()
+    expect(screen.getByText('当前关卡 1-3')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '挑战 1-3' }))
     expect(onChallenge).toHaveBeenCalledWith(3)
+  })
+
+  it('shows campaign completion without a challenge button after stage 20', () => {
+    useAdventureStore.setState({ highestClearedStage: 20 })
+    render(<AdventurePanel onClose={() => {}} onChallenge={() => {}} />)
+    expect(screen.getByText('全部关卡已通关')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^挑战/ })).toBeNull()
   })
 
   it('claims the idle chest into the shared pool', async () => {

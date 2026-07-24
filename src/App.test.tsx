@@ -138,42 +138,44 @@ describe('App', () => {
     expect(props.orthographic).toBe(true)
   })
 
-  it('opens at most one overlay and closes building detail when opening a full-screen play', async () => {
+  it('hides the global HUD for building detail and restores it after closing', async () => {
     useCityStore.getState().selectBuilding('repair-shop')
     render(<App />)
     expect(screen.getByRole('heading', { name: '修车厂' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: '推关' }))
-    expect(screen.getByRole('dialog', { name: '推关地图' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: '修车厂' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '推关' })).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: '关闭建筑面板' }))
+
     expect(useCityStore.getState().selectedBuildingId).toBeNull()
+    expect(screen.getByRole('button', { name: '推关' })).toBeInTheDocument()
   })
 
-  it('keeps the global HUD available while isolating the city canvas', async () => {
+  it('hides the global HUD while an overlay is open and isolates the city canvas', async () => {
     render(<App />)
 
-    await userEvent.click(screen.getByRole('button', { name: '推关' }))
+    const trigger = screen.getByRole('button', { name: '推关' })
+    const hudBackground = trigger.closest('nav')?.parentElement
+    await userEvent.click(trigger)
 
-    const visibleTrigger = screen.getByRole('button', { name: '推关' })
-    const hudBackground = visibleTrigger.closest('nav')?.parentElement
     const canvasBackground = screen.getByTestId('canvas-mock').parentElement
-    expect(hudBackground).not.toHaveAttribute('aria-hidden')
-    expect(hudBackground).not.toHaveAttribute('inert')
+    expect(hudBackground).toHaveAttribute('aria-hidden', 'true')
+    expect(hudBackground).toHaveAttribute('inert')
+    expect(hudBackground).toHaveAttribute('hidden')
+    expect(screen.queryByRole('button', { name: '推关' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '英雄' })).toBeNull()
     expect(canvasBackground).toHaveAttribute('aria-hidden', 'true')
     expect(canvasBackground).toHaveAttribute('inert')
     expect(screen.getByRole('heading', { name: '推关战役' })).toHaveFocus()
   })
 
-  it('switches from adventure to heroes through the visible global HUD', async () => {
+  it('restores the global HUD after closing an overlay', async () => {
     render(<App />)
 
     await userEvent.click(screen.getByRole('button', { name: '推关' }))
     expect(screen.getByRole('dialog', { name: '推关地图' })).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: '英雄' }))
-
-    expect(screen.queryByRole('dialog', { name: '推关地图' })).toBeNull()
-    expect(screen.getByRole('dialog', { name: '英雄培养' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '英雄培养' })).toHaveFocus()
+    expect(screen.queryByRole('button', { name: '英雄' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: '关闭推关' }))
+    expect(screen.getByRole('button', { name: '英雄' })).toBeInTheDocument()
   })
 
   it('restores focus to the city trigger after closing an overlay', async () => {

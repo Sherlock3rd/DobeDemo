@@ -57,12 +57,12 @@
 
 ### 战役、英雄与全局 HUD
 
-- 战役共 2 章 20 关；每关敌人从 1 名递增到 5 名，编队固定为前排 2 个、后排 3 个阵位。
+- 战役共 2 章 20 关；推关面板始终只显示唯一的下一关，已通关关卡不能重复挑战；每关敌人从 1 名递增到 5 名，编队固定为前排 2 个、后排 3 个阵位。
 - 战斗由确定性的 100ms tick 引擎预演；走位、普攻与技能施放全部自动完成，没有 `Auto` 开关或手动施法按钮，同一输入始终得到同一结果。真实 `useFrame` 表现覆盖走位、lunge、死亡 tween、basic 枪火/命中和 skill 金色齐射拖尾；reduced motion 关闭非必要 tween 但不改变事件与结果。
 - 首版三名英雄分别在帮派 Lv.1、Lv.12、Lv.28 解锁；英雄等级最高 Lv.50 且不能超过当前帮派等级。首通奖励与挂机收益进入共享英雄经验池，培养页从共享池扣费升级。
 - 通关后开启英雄经验挂机：每 10 秒结算一次，离线最多累计 8 小时；推关页宝箱按已通关进度派生可领取经验，领取时保留不足一个 tick 的时间余量。
 - `PROGRESSION_UNLOCKS` 是建筑、英雄和玩法入口的统一解锁来源；`解锁帮派树` 调试动作升至 Lv.50 后，英雄与建筑 UI 都从同一规则即时派生解锁。
-- 全局 `GlobalHud` 以 `z-index:22` 在所有非 battle overlay 上方常驻显示钱、油、物资、英雄经验及推关/英雄红点，并保持可指针导航；这些非 battle dialog 不声明 `aria-modal`。进入 battle 后 HUD 隐藏并 inert，退出后恢复。应用只允许一个 `activeOverlay`，推关、编队、英雄、战斗和建筑详情互斥。
+- 全局 `GlobalHud` 在城市主界面显示钱、油、物资、英雄经验及推关/英雄红点；打开建筑详情、推关、编队、英雄、帮派树、设置或战斗覆盖层时，HUD 会隐藏并 inert，关闭覆盖层后恢复。应用只允许一个 `activeOverlay`，各覆盖层互斥。
 - 战斗退出需要二次确认；确认态会冻结战斗并阻止胜利/首通/经验发奖。Overlay 打开时标题获得焦点、背景变为 `inert`，关闭后焦点恢复到触发点。
 - 英雄战役存档键为 `dobe-adventure-progression-v1`（persist v1），保存英雄等级、共享经验、阵容、最高通关与挂机时钟；坏存档在 rehydrate 时夹紧并丢弃非法阵位。
 - Store 拒绝锁定英雄和非法帮派等级请求；配置及派生计算校验 safe integer、英雄 `defaultSlot` 与数值溢出。
@@ -90,7 +90,7 @@
 - 点击“升级主建筑至 Lv.N”进入确认页（不扣费）；在确认页查看成本与战力后点击“确认升级”才真正扣费并把主建筑 +1，或点击“返回”不做任何更改。
 - Clubhouse 解锁后不走上述子建筑/确认流程；点击“直接升级 Clubhouse 至 Lv.N”会立即按目标等级主成本扣费并升级。
 - 点击“打开帮派树”：查看 50 级完整进度。
-- 点击“推关”：选择 2 章 20 关中的已解锁关卡，进入 2 前 3 后的五阵位编队并开始全自动战斗；胜利后领取首通与挂机英雄经验。
+- 点击“推关”：直接查看并挑战唯一的下一关，已通关关卡不会显示且不能重复挑战；随后进入 2 前 3 后的五阵位编队并开始全自动战斗，胜利后领取首通与挂机英雄经验。
 - 点击“英雄”或玩家头像：查看三名英雄、共享经验和当前帮派等级上限，并真实扣除经验升级英雄。
 - 点击“设置”：打开调试设置。设置面板提供两个点击即执行、无需二次确认的调试按钮——“解锁帮派树”（声望直接置为 1470/Lv.50 并同步生产者，可重复且幂等）与“钱/油/物资各 +10000”（可重复累加、饱和不溢出），执行后面板保持打开并以 `aria-live` 提示。“重置账号”后还需点击“确认重置账号”，才会把帮派声望、挂机时间、建筑解锁、主/子建筑等级和资源钱包恢复为初始账号（钱 10000 / 油 0 / 物资 0）。
 - Escape：关闭已打开的帮派树或调试设置。
@@ -127,7 +127,7 @@ npm test
 npm run build
 ```
 
-当前验收基线：65 个测试文件、693 项测试。最终本地构建资产为 `/DobeDemo/assets/index-781xcY6f.js` 与 `/DobeDemo/assets/index-CoMhGqEJ.css`。
+当前验收基线：65 个测试文件、694 项测试。最终本地构建资产为 `/DobeDemo/assets/index-0UEHpLsB.js` 与 `/DobeDemo/assets/index-CoMhGqEJ.css`。
 
 Clubhouse 直接升级的本地验收脚本为 `.superpowers/sdd/clubhouse-direct-upgrade-cdp.mjs`。它使用 owned Vite `--strictPort`、Chrome `--remote-debugging-port=0`、隔离 profile `DevToolsActivePort`、真实 `Input.dispatchMouseEvent`、有限 HTTP/CDP/WebSocket 超时、ChildProcess 错误与 PID 复用防护、脱敏结果及失败/清理/截图非零退出；覆盖 fresh v4/Lv.40 真实开面板、无 radio/progress/子升级/确认页、战力和主成本、两次连续真实直接升级与精确 target 2/3 扣费、刷新持久、资源不足/Lv.10/Lv.39、v3→v4 一次退款、UI 与持久状态交叉证明无 Clubhouse child 路径、3D ROI/层数/无 scaffold、修车厂回归，以及 1440×900/390×844 布局与双轴 44px。最终 self-test 23/23、运行期 28/28。公开复验脚本 `.superpowers/sdd/clubhouse-direct-upgrade-public-cdp.mjs` 继承相同的 HTTP/CDP/WebSocket timeout、spawn error/PID 活性和统一脱敏写盘边界；对 `main` `9e063c8`、已 built 的 `gh-pages` `9f7844863443d084d23425d77a0940f99b5a61bc` 真实复验 HTML 与 `index-781xcY6f.js`/`index-CoMhGqEJ.css` 精确 200、fresh v4/Lv.40、真实直接 `1→2` 精确扣钱 25 且无确认/children 全 0、刷新持久和 390×844 双轴 44px 无横溢出，最终 self-test 27/27、运行期 16/16、exit 0。结果与报告见 `.superpowers/sdd/clubhouse-direct-upgrade-*`；本轮未修改产品源码，未 commit、未 push。
 

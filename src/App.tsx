@@ -176,7 +176,7 @@ export default function App(): JSX.Element {
 
   const hideCityCanvas = FULLSCREEN_KINDS.has(activeOverlay.kind)
   const isolateCityBackground = MODAL_KINDS.has(activeOverlay.kind)
-  const isolateHud = activeOverlay.kind === 'battle'
+  const isolateHud = activeOverlay.kind !== 'none'
 
   return (
     <AppErrorBoundary>
