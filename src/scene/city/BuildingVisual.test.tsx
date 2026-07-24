@@ -102,6 +102,7 @@ describe('BuildingVisual', () => {
     })
 
     afterEach(() => {
+      vi.restoreAllMocks()
       vi.useRealTimers()
     })
 
@@ -339,7 +340,22 @@ describe('BuildingVisual', () => {
       useGangStore.setState({
         totalReputation: getTotalReputationForLevel(16),
       })
+      useCityStore.setState((state) => ({
+        buildingProgress: {
+          ...state.buildingProgress,
+          'commercial-street': {
+            level: 2,
+            childLevels: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          },
+        },
+      }))
       render(<BuildingVisual id="commercial-street" highlighted={false} />)
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animation-run',
+        '0',
+      )
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+      setTimeoutSpy.mockClear()
 
       act(() => {
         useCityStore.setState((state) => ({
@@ -357,6 +373,11 @@ describe('BuildingVisual', () => {
         'data-animated',
         '',
       )
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animation-run',
+        '0',
+      )
+      expect(setTimeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 400)
     })
 
     it('does not animate the repair level-five to six main transition', () => {
