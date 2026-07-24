@@ -17,6 +17,7 @@ interface GangState {
   totalReputation: number
   lastUpdatedAt: number
   syncIdleProgress: (now: number) => void
+  unlockForDebug: (now: number) => void
   reset: (now: number) => void
 }
 
@@ -54,6 +55,12 @@ export const useGangStore = create<GangState>()(
           ),
           lastUpdatedAt: settlement.nextUpdatedAt,
         })
+      },
+      unlockForDebug: (now) => {
+        if (!Number.isFinite(now)) {
+          return
+        }
+        set({ totalReputation: 1470, lastUpdatedAt: now })
       },
       reset: (now) => {
         set({

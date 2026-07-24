@@ -1,4 +1,8 @@
 import { useEffect, useState, type JSX } from 'react'
+import {
+  grantAllResourcesForDebug,
+  unlockGangTreeForDebug,
+} from '../game/debugActions'
 import { resetAccount } from '../game/resetAccount'
 
 export interface SettingsPanelProps {
@@ -9,6 +13,7 @@ const TITLE_ID = 'settings-panel-title'
 
 export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
   const [confirming, setConfirming] = useState(false)
+  const [feedback, setFeedback] = useState('')
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -31,6 +36,18 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
   const confirmReset = (): void => {
     resetAccount(Date.now())
     onClose()
+  }
+
+  const unlockGangTree = (): void => {
+    if (unlockGangTreeForDebug(Date.now())) {
+      setFeedback('帮派树已解锁')
+    }
+  }
+
+  const grantAllResources = (): void => {
+    if (grantAllResourcesForDebug(Date.now())) {
+      setFeedback('钱、油、物资各增加 10000')
+    }
   }
 
   return (
@@ -61,7 +78,32 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
         <p className="settings-panel__description">
           仅用于 Demo 调试，管理当前浏览器中的账号进度。
         </p>
-        <div className="settings-panel__item">
+        <div className="settings-panel__item settings-panel__item--debug">
+          <h3 className="settings-panel__item-title">快捷调试</h3>
+          <p className="settings-panel__item-description">
+            调整当前进度，操作会立即生效并保留此面板。
+          </p>
+          <div className="settings-panel__debug-actions">
+            <button
+              type="button"
+              className="settings-panel__debug-action"
+              onClick={unlockGangTree}
+            >
+              解锁帮派树
+            </button>
+            <button
+              type="button"
+              className="settings-panel__debug-action"
+              onClick={grantAllResources}
+            >
+              钱/油/物资各 +10000
+            </button>
+          </div>
+          <p className="settings-panel__feedback" aria-live="polite">
+            {feedback}
+          </p>
+        </div>
+        <div className="settings-panel__item settings-panel__item--danger">
           <h3 className="settings-panel__item-title">账号进度</h3>
           <p className="settings-panel__item-description">
             声望、职位、建筑解锁、建筑等级和碎片进度都会恢复初始状态，且无法撤销。

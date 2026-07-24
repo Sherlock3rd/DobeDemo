@@ -116,6 +116,23 @@ describe('useGangStore idle sync', () => {
     expect(lastUpdatedAt).toBeGreaterThanOrEqual(before)
     expect(lastUpdatedAt).toBeLessThanOrEqual(after)
   })
+
+  it('unlocks level 50 at the provided debug timestamp', () => {
+    useGangStore.getState().unlockForDebug(BASE_TIME + 50_000)
+
+    expect(useGangStore.getState()).toMatchObject({
+      totalReputation: 1470,
+      lastUpdatedAt: BASE_TIME + 50_000,
+    })
+  })
+
+  it('ignores a debug unlock with a non-finite timestamp', () => {
+    const before = useGangStore.getState()
+
+    useGangStore.getState().unlockForDebug(Number.NaN)
+
+    expect(useGangStore.getState()).toBe(before)
+  })
 })
 
 describe('useGangStore persistence', () => {

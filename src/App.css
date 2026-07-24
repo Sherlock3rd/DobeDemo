@@ -580,8 +580,8 @@
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
-  min-width: 2.5rem;
-  min-height: 2.5rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0.4rem 0.9rem;
   border: 1px solid rgba(248, 250, 252, 0.2);
   border-radius: 0.5rem;
@@ -616,8 +616,17 @@
 
 .settings-panel__item {
   padding: 1rem;
-  border: 1px solid rgba(248, 113, 113, 0.3);
+  border: 1px solid rgba(248, 250, 252, 0.16);
   border-radius: 0.7rem;
+  background: rgba(248, 250, 252, 0.04);
+}
+
+.settings-panel__item + .settings-panel__item {
+  margin-top: 0.85rem;
+}
+
+.settings-panel__item--danger {
+  border-color: rgba(248, 113, 113, 0.3);
   background: rgba(127, 29, 29, 0.12);
 }
 
@@ -630,15 +639,58 @@
 
 .settings-panel__item-description {
   margin: 0 0 1rem;
-  color: #fecaca;
+  color: #cbd5e1;
   font-size: 0.84rem;
   line-height: 1.55;
+}
+
+.settings-panel__item--danger .settings-panel__item-description {
+  color: #fecaca;
+}
+
+.settings-panel__debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.settings-panel__debug-action {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.9rem;
+  border: 2px solid #ffd43b;
+  border-radius: 0.55rem;
+  color: #1b1206;
+  background: #ffd43b;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.settings-panel__debug-action:hover {
+  background: #ffe27a;
+  box-shadow: 0 0.5rem 1.4rem rgba(255, 212, 59, 0.22);
+}
+
+.settings-panel__debug-action:active {
+  transform: translateY(2px);
+}
+
+.settings-panel__feedback {
+  min-height: 1.4em;
+  margin: 0.75rem 0 0;
+  color: #a8f0c6;
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .settings-panel__reset,
 .settings-panel__confirm-reset,
 .settings-panel__cancel-reset {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: 0.55rem 0.9rem;
   border: 2px solid #f87171;
   border-radius: 0.55rem;
@@ -666,6 +718,7 @@
 }
 
 .settings-panel__close:focus-visible,
+.settings-panel__debug-action:focus-visible,
 .settings-panel__reset:focus-visible,
 .settings-panel__confirm-reset:focus-visible,
 .settings-panel__cancel-reset:focus-visible {
@@ -1024,6 +1077,7 @@
   .city-hud__open-gang-tree,
   .city-hud__open-settings,
   .settings-panel__close,
+  .settings-panel__debug-action,
   .settings-panel__reset,
   .settings-panel__confirm-reset,
   .settings-panel__cancel-reset,

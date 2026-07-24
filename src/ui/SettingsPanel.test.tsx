@@ -10,9 +10,60 @@ const BASE_TIME = 1_700_000_000_000
 describe('SettingsPanel', () => {
   beforeEach(() => {
     window.localStorage.clear()
-    useCityStore.getState().reset()
+    useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
     vi.restoreAllMocks()
+  })
+
+  it('unlocks the gang tree immediately, keeps the panel open, and announces success', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    vi.spyOn(Date, 'now').mockReturnValue(BASE_TIME + 80_000_000)
+    render(<SettingsPanel onClose={onClose} />)
+
+    await user.click(screen.getByRole('button', { name: '解锁帮派树' }))
+
+    expect(useGangStore.getState()).toMatchObject({
+      totalReputation: 1470,
+      lastUpdatedAt: BASE_TIME + 80_000_000,
+    })
+    expect(screen.getByRole('dialog', { name: '调试设置' })).toBeInTheDocument()
+    expect(screen.getByText('帮派树已解锁')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    )
+    expect(
+      screen.queryByRole('button', { name: '确认重置账号' }),
+    ).not.toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('repeatedly grants every resource, keeps the panel open, and announces success', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    vi.spyOn(Date, 'now').mockReturnValue(BASE_TIME)
+    render(<SettingsPanel onClose={onClose} />)
+    const grantButton = screen.getByRole('button', {
+      name: '钱/油/物资各 +10000',
+    })
+
+    await user.click(grantButton)
+    await user.click(grantButton)
+
+    expect(useCityStore.getState().resources).toEqual({
+      money: 30_000,
+      oil: 20_000,
+      materials: 20_000,
+    })
+    expect(screen.getByText('钱、油、物资各增加 10000')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    )
+    expect(screen.getByRole('dialog', { name: '调试设置' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: '确认重置账号' }),
+    ).not.toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   it('requires a second confirmation before resetting', async () => {

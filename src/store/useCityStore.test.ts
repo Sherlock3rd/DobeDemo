@@ -214,6 +214,35 @@ describe('useCityStore atomic economy', () => {
     expect(useCityStore.getState().lastResourceUpdatedAt).toBe(START)
   })
 
+  it('settles current production before adding 10000 to every resource', () => {
+    useCityStore.getState().grantDebugResources(START + 10_000)
+
+    expect(useCityStore.getState().resources).toEqual({
+      money: 20_001,
+      oil: 10_000,
+      materials: 10_000,
+    })
+    expect(useCityStore.getState().lastResourceUpdatedAt).toBe(START + 10_000)
+  })
+
+  it('saturates every debug-granted resource at the safe integer limit', () => {
+    useCityStore.setState({
+      resources: {
+        money: Number.MAX_SAFE_INTEGER - 1,
+        oil: Number.MAX_SAFE_INTEGER - 2,
+        materials: Number.MAX_SAFE_INTEGER - 3,
+      },
+    })
+
+    useCityStore.getState().grantDebugResources(START)
+
+    expect(useCityStore.getState().resources).toEqual({
+      money: Number.MAX_SAFE_INTEGER,
+      oil: Number.MAX_SAFE_INTEGER,
+      materials: Number.MAX_SAFE_INTEGER,
+    })
+  })
+
   it('ignores a debug resource grant with non-finite time', () => {
     const before = useCityStore.getState()
     useCityStore.getState().grantDebugResources(Number.NaN)

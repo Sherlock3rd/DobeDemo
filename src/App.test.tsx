@@ -156,6 +156,21 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: '重置账号' })).toBeInTheDocument()
   })
 
+  it('keeps debug settings open after either immediate action', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: '打开调试设置' }))
+    await user.click(screen.getByRole('button', { name: '解锁帮派树' }))
+    expect(screen.getByText('帮派树已解锁')).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: '钱/油/物资各 +10000' }),
+    )
+    expect(screen.getByText('钱、油、物资各增加 10000')).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: '调试设置' })).toBeInTheDocument()
+  })
+
   it('closes the gang tree when debug settings opens', async () => {
     const user = userEvent.setup()
     render(<App />)
