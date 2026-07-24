@@ -40,6 +40,8 @@ export interface UnitSnapshot {
   side: Side
   globalIndex: number
   row: Row
+  index: number
+  heroId?: HeroId
   hp: number
   maxHp: number
   cooldownRemaining: number
@@ -353,6 +355,8 @@ export function simulateBattle(input: BattleInput): BattleResult {
       side: u.input.side,
       globalIndex: u.globalIndex,
       row: u.input.row,
+      index: u.input.index,
+      heroId: u.input.heroId,
       hp: u.hp,
       maxHp: u.maxHp,
       cooldownRemaining: Math.max(0, u.cooldown),

@@ -1,4 +1,5 @@
-import { useSyncExternalStore, type JSX } from 'react'
+import type { JSX } from 'react'
+import { useChestTick } from '../game/chestTick'
 import { getGangLevel, getGangRole } from '../game/gangProgression'
 import { getCurrentProductionRates } from '../game/resourceEconomy'
 import {
@@ -16,46 +17,6 @@ export interface GlobalHudProps {
   onOpenSettings: () => void
 }
 
-const HUD_CLOCK_MS = 1000
-
-let hudClockNow = 0
-let hudClockIntervalId: number | null = null
-const hudClockListeners = new Set<() => void>()
-
-function ensureHudClock(): void {
-  if (hudClockIntervalId !== null) return
-  hudClockNow = Date.now()
-  hudClockIntervalId = window.setInterval(() => {
-    hudClockNow = Date.now()
-    for (const listener of hudClockListeners) {
-      listener()
-    }
-  }, HUD_CLOCK_MS)
-}
-
-function subscribeHudClock(onStoreChange: () => void): () => void {
-  ensureHudClock()
-  hudClockListeners.add(onStoreChange)
-  return () => {
-    hudClockListeners.delete(onStoreChange)
-    if (hudClockListeners.size === 0 && hudClockIntervalId !== null) {
-      window.clearInterval(hudClockIntervalId)
-      hudClockIntervalId = null
-    }
-  }
-}
-
-function getHudClockSnapshot(): number {
-  if (hudClockNow === 0) {
-    hudClockNow = Date.now()
-  }
-  return hudClockNow
-}
-
-function getHudClockServerSnapshot(): number {
-  return 0
-}
-
 export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const resources = useCityStore((s) => s.resources)
   const buildingProgress = useCityStore((s) => s.buildingProgress)
@@ -65,15 +26,17 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const sharedExp = useAdventureStore((s) => s.sharedExp)
   const highestClearedStage = useAdventureStore((s) => s.highestClearedStage)
   const idleClock = useAdventureStore((s) => s.idleClock)
-  const now = useSyncExternalStore(
-    subscribeHudClock,
-    getHudClockSnapshot,
-    getHudClockServerSnapshot,
-  )
+  const tick = useChestTick((s) => s.tick)
+  const now = useChestTick((s) => s.now)
   const gangLevel = getGangLevel(totalReputation)
   const role = getGangRole(gangLevel)
   const rates = getCurrentProductionRates(buildingProgress, activeProducerIds)
-  const claimable = getClaimableIdleExp(idleClock, highestClearedStage, now)
+  // tick subscription forces a recompute when AdventureIdleClock advances.
+  const claimable = getClaimableIdleExp(
+    idleClock,
+    highestClearedStage,
+    tick > 0 || now > 0 ? now : idleClock,
+  )
   const adventureDot = hasAdventureRedDot(highestClearedStage, claimable)
   const heroesDot = hasHeroesRedDot(heroLevels, sharedExp, gangLevel)
 

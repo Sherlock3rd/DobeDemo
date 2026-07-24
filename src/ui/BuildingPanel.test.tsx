@@ -248,14 +248,12 @@ describe('BuildingPanel', () => {
 
       render(<BuildingPanel />)
 
+      // Stage progress at M=3 with [3,2,1]: 2/5 → 40%
       const progressbar = screen.getByRole('progressbar')
-      expect(progressbar).toHaveAttribute(
-        'aria-valuenow',
-        String((6 / 9) * 100),
-      )
+      expect(progressbar).toHaveAttribute('aria-valuenow', '40')
       expect(progressbar).toHaveAttribute('aria-valuemin', '0')
       expect(progressbar).toHaveAttribute('aria-valuemax', '100')
-      expect(screen.getByText('66%')).toBeInTheDocument()
+      expect(screen.getByText('40%')).toBeInTheDocument()
 
       const secondName = commercialFragments[1].name
       expect(
@@ -310,7 +308,7 @@ describe('BuildingPanel', () => {
       expect(screen.getByText('资源不足，还需 钱 5')).toBeInTheDocument()
     })
 
-    it('replaces the progress region with the main upgrade button once every visible slot is caught up', () => {
+    it('keeps the completed 100% progress beside the main upgrade button', () => {
       useGangStore.setState({ totalReputation: getTotalReputationForLevel(40) })
       useCityStore.getState().selectBuilding('commercial-street')
       setProgress('commercial-street', 3, [3, 3, 3, 0, 0, 0, 0, 0, 0, 0])
@@ -319,7 +317,11 @@ describe('BuildingPanel', () => {
 
       render(<BuildingPanel />)
 
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+      expect(screen.getByRole('progressbar')).toHaveAttribute(
+        'aria-valuenow',
+        '100',
+      )
+      expect(screen.getByText('100%')).toBeInTheDocument()
       expect(
         screen.queryByRole('button', { name: /升级「/ }),
       ).not.toBeInTheDocument()
@@ -339,7 +341,11 @@ describe('BuildingPanel', () => {
       expect(
         screen.queryByRole('button', { name: /升级主建筑/ }),
       ).not.toBeInTheDocument()
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+      expect(screen.getByRole('progressbar')).toHaveAttribute(
+        'aria-valuenow',
+        '100',
+      )
+      expect(screen.getByText('100%')).toBeInTheDocument()
     })
   })
 
@@ -710,6 +716,51 @@ describe('pure BuildingPanel helpers', () => {
           1,
         ),
       ).toBeNull()
+    })
+  })
+
+  describe('stage progress display', () => {
+    it('shows 0% → 33% → 66% → 100% for commercial Lv2 [1,0] stage steps', () => {
+      useGangStore.setState({ totalReputation: getTotalReputationForLevel(16) })
+      useCityStore.getState().selectBuilding('commercial-street')
+      setProgress('commercial-street', 2, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+      setResources(1000)
+      const { rerender } = render(<BuildingPanel />)
+      expect(screen.getByText('0%')).toBeInTheDocument()
+
+      setProgress('commercial-street', 2, [2, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+      rerender(<BuildingPanel />)
+      expect(screen.getByText('33%')).toBeInTheDocument()
+
+      setProgress('commercial-street', 2, [2, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+      rerender(<BuildingPanel />)
+      expect(screen.getByText('66%')).toBeInTheDocument()
+
+      setProgress('commercial-street', 2, [2, 2, 0, 0, 0, 0, 0, 0, 0, 0])
+      setProgress('repair-shop', 2, [2, 2, 2, 2, 2])
+      rerender(<BuildingPanel />)
+      expect(screen.getByRole('progressbar')).toHaveAttribute(
+        'aria-valuenow',
+        '100',
+      )
+      expect(screen.getByText('100%')).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: '升级主建筑至 Lv.3' }),
+      ).toBeInTheDocument()
+    })
+
+    it('shows 20% steps for repair-shop Lv5→6 stage', () => {
+      useGangStore.setState({ totalReputation: getTotalReputationForLevel(40) })
+      useCityStore.getState().selectBuilding('repair-shop')
+      setProgress('repair-shop', 6, [5, 5, 5, 5, 5])
+      setProgress('clubhouse', 6, [6, 6, 6, 6, 6, 6, 6, 6, 6, 6])
+      setResources(10_000)
+      const { rerender } = render(<BuildingPanel />)
+      expect(screen.getByText('0%')).toBeInTheDocument()
+
+      setProgress('repair-shop', 6, [6, 5, 5, 5, 5])
+      rerender(<BuildingPanel />)
+      expect(screen.getByText('20%')).toBeInTheDocument()
     })
   })
 })

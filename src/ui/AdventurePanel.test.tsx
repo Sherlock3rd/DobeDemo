@@ -1,6 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useChestTick } from '../game/chestTick'
+import { ADVENTURE_STORAGE_KEY } from '../store/adventureMigration'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { AdventurePanel } from './AdventurePanel'
 
@@ -10,6 +12,7 @@ describe('AdventurePanel', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useAdventureStore.getState().reset(BASE_TIME)
+    useChestTick.setState({ tick: 0, now: 0 })
   })
 
   it('renders 20 stage nodes across two chapters', () => {
@@ -34,5 +37,22 @@ describe('AdventurePanel', () => {
     await userEvent.click(screen.getByRole('button', { name: /领取宝箱/ }))
     expect(useAdventureStore.getState().sharedExp).toBe(4)
     vi.restoreAllMocks()
+  })
+
+  it('updates claimable display from useChestTick without writing adventure state', () => {
+    useAdventureStore.setState({
+      highestClearedStage: 1,
+      idleClock: BASE_TIME,
+    })
+    const before = localStorage.getItem(ADVENTURE_STORAGE_KEY)
+    render(<AdventurePanel onClose={() => {}} onChallenge={() => {}} />)
+    expect(screen.getByText('当前可领取 0')).toBeInTheDocument()
+    act(() => {
+      useChestTick.setState({ tick: 1, now: BASE_TIME + 25_000 })
+    })
+    expect(screen.getByText('当前可领取 4')).toBeInTheDocument()
+    expect(useAdventureStore.getState().idleClock).toBe(BASE_TIME)
+    expect(localStorage.getItem(ADVENTURE_STORAGE_KEY)).toBe(before)
+    expect(ADVENTURE_STORAGE_KEY).toBeTruthy()
   })
 })

@@ -1,9 +1,10 @@
-import { useEffect, useState, useSyncExternalStore, type JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
 import {
   campaignConfig,
   getFirstClearReward,
   isStageUnlocked,
 } from '../config/campaignConfig'
+import { useChestTick } from '../game/chestTick'
 import {
   getClaimableIdleExp,
   useAdventureStore,
@@ -15,52 +16,6 @@ export interface AdventurePanelProps {
 }
 
 const TITLE_ID = 'adventure-panel-title'
-const CLOCK_MS = 1000
-
-let adventureClockNow = 0
-let adventureClockIntervalId: number | null = null
-const adventureClockListeners = new Set<() => void>()
-
-function ensureAdventureClock(): void {
-  if (adventureClockIntervalId !== null) return
-  adventureClockNow = Date.now()
-  adventureClockIntervalId = window.setInterval(() => {
-    adventureClockNow = Date.now()
-    for (const listener of adventureClockListeners) {
-      listener()
-    }
-  }, CLOCK_MS)
-}
-
-function subscribeAdventureClock(onStoreChange: () => void): () => void {
-  ensureAdventureClock()
-  adventureClockListeners.add(onStoreChange)
-  return () => {
-    adventureClockListeners.delete(onStoreChange)
-    if (
-      adventureClockListeners.size === 0 &&
-      adventureClockIntervalId !== null
-    ) {
-      window.clearInterval(adventureClockIntervalId)
-      adventureClockIntervalId = null
-    }
-  }
-}
-
-function getAdventureClockSnapshot(): number {
-  if (adventureClockNow === 0) {
-    adventureClockNow = Date.now()
-  }
-  return adventureClockNow
-}
-
-function getAdventureClockServerSnapshot(): number {
-  return 0
-}
-
-function readNow(): number {
-  return Date.now()
-}
 
 export function AdventurePanel({
   onClose,
@@ -71,12 +26,13 @@ export function AdventurePanel({
   const claimIdleChest = useAdventureStore((s) => s.claimIdleChest)
   const [selectedStage, setSelectedStage] = useState(1)
   const [status, setStatus] = useState('')
-  const now = useSyncExternalStore(
-    subscribeAdventureClock,
-    getAdventureClockSnapshot,
-    getAdventureClockServerSnapshot,
+  const tick = useChestTick((s) => s.tick)
+  const now = useChestTick((s) => s.now)
+  const claimable = getClaimableIdleExp(
+    idleClock,
+    highestClearedStage,
+    tick > 0 || now > 0 ? now : idleClock,
   )
-  const claimable = getClaimableIdleExp(idleClock, highestClearedStage, now)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -102,7 +58,7 @@ export function AdventurePanel({
     isStageUnlocked(selected.global, highestClearedStage)
 
   const claimChest = (): void => {
-    const claimed = claimIdleChest(readNow())
+    const claimed = claimIdleChest(Date.now())
     setStatus(claimed > 0 ? `已领取英雄经验 ${claimed}` : '暂无可领取经验')
   }
 
@@ -135,6 +91,7 @@ export function AdventurePanel({
         role="dialog"
         aria-modal="true"
         aria-labelledby={TITLE_ID}
+        aria-label="推关地图"
         onPointerDown={stopPropagation}
         onClick={stopPropagation}
       >

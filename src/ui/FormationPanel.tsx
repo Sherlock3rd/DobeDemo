@@ -171,6 +171,7 @@ export function FormationPanel({
         className="formation-panel"
         role="dialog"
         aria-modal="true"
+        aria-label="编队"
         aria-labelledby={TITLE_ID}
         onPointerDown={stopPropagation}
         onClick={stopPropagation}

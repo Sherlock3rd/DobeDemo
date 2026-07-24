@@ -14,7 +14,7 @@ import {
 import { buildingCatalogById } from '../game/buildingCatalog'
 import {
   BUILDING_MAX_LEVEL,
-  getBuildingUpgradeProgress,
+  getBuildingStageProgress,
   getChildUpgradeDecision,
   getMainUpgradeDecision,
   getUnlockedChildCount,
@@ -226,10 +226,7 @@ function BuildingPanelSession({
     selectedBuildingId,
     progress.childLevels,
   )
-  const upgradeProgress = getBuildingUpgradeProgress(
-    selectedBuildingId,
-    progress,
-  )
+  const upgradeProgress = getBuildingStageProgress(selectedBuildingId, progress)
 
   const selectChild = (index: number): void => {
     setSession((current) =>
@@ -531,6 +528,43 @@ function BuildingPanelSession({
         })}
       </div>
 
+      <section className="building-panel__progress" aria-label="子建筑升级进度">
+        <div
+          className="building-panel__progress-bar"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={upgradeProgress.percent}
+        >
+          <span
+            className="building-panel__progress-fill"
+            style={{ width: `${upgradeProgress.percent}%` }}
+          />
+        </div>
+        <span className="building-panel__progress-label">
+          {upgradeProgress.complete
+            ? '100%'
+            : `${Math.floor(upgradeProgress.percent)}%`}
+        </span>
+        {!upgradeProgress.complete ? (
+          <>
+            <button
+              type="button"
+              className="building-panel__shared-upgrade"
+              disabled={childDecision.reason !== 'ready'}
+              onClick={handleChildUpgrade}
+            >
+              {childButtonLabel}
+            </button>
+            {childDecision.reason === 'insufficient-resources' ? (
+              <p className="building-panel__child-shortfall" role="alert">
+                {`资源不足，还需 ${formatNonZeroCost(childDecision.missingResources)}`}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </section>
+
       {upgradeProgress.complete ? (
         level < BUILDING_MAX_LEVEL ? (
           <button
@@ -546,43 +580,7 @@ function BuildingPanelSession({
             {`已达到最高等级 Lv.${BUILDING_MAX_LEVEL}`}
           </p>
         )
-      ) : (
-        <section
-          className="building-panel__progress"
-          aria-label="子建筑升级进度"
-        >
-          <div
-            className="building-panel__progress-bar"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={upgradeProgress.percent}
-          >
-            <span
-              className="building-panel__progress-fill"
-              style={{ width: `${upgradeProgress.percent}%` }}
-            />
-          </div>
-          <span className="building-panel__progress-label">
-            {upgradeProgress.complete
-              ? '100%'
-              : `${Math.floor(upgradeProgress.percent)}%`}
-          </span>
-          <button
-            type="button"
-            className="building-panel__shared-upgrade"
-            disabled={childDecision.reason !== 'ready'}
-            onClick={handleChildUpgrade}
-          >
-            {childButtonLabel}
-          </button>
-          {childDecision.reason === 'insufficient-resources' ? (
-            <p className="building-panel__child-shortfall" role="alert">
-              {`资源不足，还需 ${formatNonZeroCost(childDecision.missingResources)}`}
-            </p>
-          ) : null}
-        </section>
-      )}
+      ) : null}
     </section>
   )
 }
