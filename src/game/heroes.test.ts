@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getHeroLevelCap, getHeroStats, isHeroId } from './heroes'
+import { HERO_IDS, getHeroLevelCap, getHeroStats, isHeroId } from './heroes'
+import { PROGRESSION_UNLOCKS } from './progressionUnlocks'
 
 describe('heroes', () => {
   it('derives level-1 stats from config base values', () => {
@@ -20,5 +21,18 @@ describe('heroes', () => {
   it('narrows hero ids', () => {
     expect(isHeroId('anvil')).toBe(true)
     expect(isHeroId('nobody')).toBe(false)
+  })
+
+  it('keeps HERO_IDS in exact sync with the PROGRESSION_UNLOCKS hero set', () => {
+    const unlockHeroIds = PROGRESSION_UNLOCKS.filter(
+      (
+        unlock,
+      ): unlock is (typeof PROGRESSION_UNLOCKS)[number] & {
+        kind: 'hero'
+      } => unlock.kind === 'hero',
+    ).map((unlock) => unlock.heroId)
+
+    expect(new Set(HERO_IDS)).toEqual(new Set(unlockHeroIds))
+    expect(HERO_IDS).toHaveLength(unlockHeroIds.length)
   })
 })

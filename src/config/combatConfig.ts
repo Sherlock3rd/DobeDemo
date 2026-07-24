@@ -21,6 +21,38 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function assertKnownKeys(
+  value: Record<string, unknown>,
+  allowedKeys: readonly string[],
+  path: string,
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowedKeys.includes(key)) {
+      invalidConfig(path === '' ? key : `${path}.${key}`)
+    }
+  }
+}
+
+const COMBAT_TOP_LEVEL_KEYS = [
+  'version',
+  'tickMs',
+  'maxBattleTicks',
+  'attackIntervalTicks',
+  'defenseConstant',
+  'positionModifiers',
+  'powerWeights',
+  'skillDefaults',
+  'enemySkillCooldownTicks',
+] as const
+const SKILL_KEYS = [
+  'targetMultiplier',
+  'splashMultiplier',
+  'initialCooldownTicks',
+  'cooldownTicks',
+] as const
+const POSITION_MODIFIER_KEYS = ['atkMul', 'defMul', 'aggro'] as const
+const POWER_WEIGHTS_KEYS = ['hp', 'atk', 'def'] as const
+
 function parsePositiveMultiplier(value: unknown, path: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     invalidConfig(path)
@@ -39,6 +71,7 @@ function parseSkill(value: unknown, path: string): SkillConfig {
   if (!isRecord(value)) {
     invalidConfig(path)
   }
+  assertKnownKeys(value, SKILL_KEYS, path)
   return {
     targetMultiplier: parsePositiveMultiplier(
       value.targetMultiplier,
@@ -63,6 +96,7 @@ function parsePositionModifier(value: unknown, path: string): PositionModifier {
   if (!isRecord(value)) {
     invalidConfig(path)
   }
+  assertKnownKeys(value, POSITION_MODIFIER_KEYS, path)
   if (typeof value.aggro !== 'boolean') {
     invalidConfig(`${path}.aggro`)
   }
@@ -96,6 +130,7 @@ export function parseCombatConfig(value: unknown): CombatConfig {
   if (!isRecord(value) || value.version !== 1) {
     invalidConfig('version')
   }
+  assertKnownKeys(value, COMBAT_TOP_LEVEL_KEYS, '')
   if (value.tickMs !== 100) {
     invalidConfig('tickMs')
   }
@@ -120,6 +155,7 @@ export function parseCombatConfig(value: unknown): CombatConfig {
   if (!isRecord(weights)) {
     invalidConfig('powerWeights')
   }
+  assertKnownKeys(weights, POWER_WEIGHTS_KEYS, 'powerWeights')
 
   return {
     version: 1,

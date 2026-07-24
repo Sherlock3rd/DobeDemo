@@ -30,6 +30,34 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function assertKnownKeys(
+  value: Record<string, unknown>,
+  allowedKeys: readonly string[],
+  path: string,
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowedKeys.includes(key)) {
+      invalidConfig(path === '' ? key : `${path}.${key}`)
+    }
+  }
+}
+
+const CAMPAIGN_TOP_LEVEL_KEYS = [
+  'version',
+  'chapters',
+  'stagesPerChapter',
+  'stages',
+] as const
+const STAGE_KEYS = [
+  'id',
+  'global',
+  'enemyCount',
+  'enemy',
+  'firstClearReward',
+] as const
+const ENEMY_KEYS = ['level', 'hp', 'atk', 'def'] as const
+const FIRST_CLEAR_REWARD_KEYS = ['sharedExp'] as const
+
 export function getEnemyCount(g: number): number {
   if (!Number.isInteger(g) || g < 1 || g > 20) {
     invalidConfig(`getEnemyCount.${g}`)
@@ -58,6 +86,7 @@ export function parseCampaignConfig(value: unknown): CampaignConfig {
   if (value.stagesPerChapter !== 10) {
     invalidConfig('stagesPerChapter')
   }
+  assertKnownKeys(value, CAMPAIGN_TOP_LEVEL_KEYS, '')
 
   const stages = value.stages
   if (!Array.isArray(stages) || stages.length !== 20) {
@@ -68,6 +97,7 @@ export function parseCampaignConfig(value: unknown): CampaignConfig {
     if (!isRecord(entry)) {
       invalidConfig(`stages.${index}`)
     }
+    assertKnownKeys(entry, STAGE_KEYS, `stages.${index}`)
     const global = entry.global
     if (global !== index + 1) {
       invalidConfig(`stages.${index}.global`)
@@ -85,10 +115,16 @@ export function parseCampaignConfig(value: unknown): CampaignConfig {
     if (!isRecord(enemy)) {
       invalidConfig(`stages.${index}.enemy`)
     }
+    assertKnownKeys(enemy, ENEMY_KEYS, `stages.${index}.enemy`)
     const reward = entry.firstClearReward
     if (!isRecord(reward)) {
       invalidConfig(`stages.${index}.firstClearReward`)
     }
+    assertKnownKeys(
+      reward,
+      FIRST_CLEAR_REWARD_KEYS,
+      `stages.${index}.firstClearReward`,
+    )
 
     return {
       id: entry.id as string,

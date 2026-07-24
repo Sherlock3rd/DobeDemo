@@ -55,6 +55,49 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function assertKnownKeys(
+  value: Record<string, unknown>,
+  allowedKeys: readonly string[],
+  path: string,
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowedKeys.includes(key)) {
+      invalidConfig(path === '' ? key : `${path}.${key}`)
+    }
+  }
+}
+
+const HEROES_TOP_LEVEL_KEYS = ['version', 'expToLevel', 'heroes'] as const
+const HERO_KEYS = [
+  'name',
+  'alias',
+  'role',
+  'defaultSlot',
+  'unlockGangLevel',
+  'baseHp',
+  'baseAtk',
+  'baseDef',
+  'hpPerLevel',
+  'atkPerLevel',
+  'defPerLevel',
+  'skill',
+  'appearance',
+] as const
+const DEFAULT_SLOT_KEYS = ['row', 'index'] as const
+const HERO_SKILL_KEYS = [
+  'name',
+  'targetMultiplier',
+  'splashMultiplier',
+  'initialCooldownTicks',
+  'cooldownTicks',
+] as const
+const APPEARANCE_KEYS = [
+  'primaryColor',
+  'accentColor',
+  'silhouette',
+  'weapon',
+] as const
+
 function parseNonNegSafeInt(value: unknown, path: string): number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
     invalidConfig(path)
@@ -95,6 +138,7 @@ function parseSkill(value: unknown, path: string): HeroSkillConfig {
   if (!isRecord(value)) {
     invalidConfig(path)
   }
+  assertKnownKeys(value, HERO_SKILL_KEYS, path)
   return {
     name: parseString(value.name, `${path}.name`),
     targetMultiplier: parsePositiveNumber(
@@ -120,6 +164,7 @@ function parseAppearance(value: unknown, path: string): HeroAppearance {
   if (!isRecord(value)) {
     invalidConfig(path)
   }
+  assertKnownKeys(value, APPEARANCE_KEYS, path)
   if (
     value.silhouette !== 'capsule' &&
     value.silhouette !== 'bulk' &&
@@ -146,6 +191,7 @@ export function parseHeroesConfig(value: unknown): HeroesConfig {
   if (!isRecord(value) || value.version !== 1) {
     invalidConfig('version')
   }
+  assertKnownKeys(value, HEROES_TOP_LEVEL_KEYS, '')
 
   const expRaw = value.expToLevel
   if (!isRecord(expRaw)) {
@@ -182,6 +228,7 @@ export function parseHeroesConfig(value: unknown): HeroesConfig {
     if (!isRecord(h)) {
       invalidConfig(`heroes.${id}`)
     }
+    assertKnownKeys(h, HERO_KEYS, `heroes.${id}`)
     const role = parseRow(h.role, `heroes.${id}.role`)
     const unlockGangLevel = parsePositiveSafeInt(
       h.unlockGangLevel,
@@ -194,6 +241,7 @@ export function parseHeroesConfig(value: unknown): HeroesConfig {
     if (!isRecord(slot)) {
       invalidConfig(`heroes.${id}.defaultSlot`)
     }
+    assertKnownKeys(slot, DEFAULT_SLOT_KEYS, `heroes.${id}.defaultSlot`)
     heroes[id] = {
       name: parseString(h.name, `heroes.${id}.name`),
       alias: parseString(h.alias, `heroes.${id}.alias`),

@@ -8,6 +8,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function assertKnownKeys(
+  value: Record<string, unknown>,
+  allowedKeys: readonly string[],
+  path: string,
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowedKeys.includes(key)) {
+      invalidConfig(path === '' ? key : `${path}.${key}`)
+    }
+  }
+}
+
+const IDLE_TOP_LEVEL_KEYS = [
+  'version',
+  'tickSeconds',
+  'maxOfflineSeconds',
+  'ratePerTickByHighestStage',
+] as const
+
 export interface IdleExperienceConfig {
   version: 1
   tickSeconds: 10
@@ -15,10 +34,13 @@ export interface IdleExperienceConfig {
   ratePerTickByHighestStage: Record<number, number>
 }
 
-function parseConfig(value: unknown): IdleExperienceConfig {
+export function parseIdleExperienceConfig(
+  value: unknown,
+): IdleExperienceConfig {
   if (!isRecord(value) || value.version !== 1) {
     invalidConfig('version')
   }
+  assertKnownKeys(value, IDLE_TOP_LEVEL_KEYS, '')
   if (value.tickSeconds !== 10) {
     invalidConfig('tickSeconds')
   }
@@ -55,7 +77,7 @@ function parseConfig(value: unknown): IdleExperienceConfig {
   }
 }
 
-export const idleExperienceConfig = parseConfig(raw)
+export const idleExperienceConfig = parseIdleExperienceConfig(raw)
 
 export function ratePerTick(highestClearedStage: number): number {
   if (!Number.isFinite(highestClearedStage) || highestClearedStage < 1) {
@@ -88,7 +110,7 @@ export function settleIdleExperience({
   ) {
     return { earnedExp: 0, nextUpdatedAt: lastUpdatedAt }
   }
-  if (highestClearedStage < 1) {
+  if (!Number.isFinite(highestClearedStage) || highestClearedStage < 1) {
     return { earnedExp: 0, nextUpdatedAt: lastUpdatedAt }
   }
 

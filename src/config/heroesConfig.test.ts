@@ -40,4 +40,66 @@ describe('heroes config', () => {
       'Invalid heroes config: heroes.foreman.baseHp',
     )
   })
+
+  it('rejects an unknown top-level key', () => {
+    const bad = structuredClone(heroesConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    bad.extra = 1
+    expect(() => parseHeroesConfig(bad)).toThrow('Invalid heroes config: extra')
+  })
+
+  it('rejects an unknown hero key', () => {
+    const bad = structuredClone(heroesConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(bad.heroes as Record<string, Record<string, unknown>>).foreman.extra = 1
+    expect(() => parseHeroesConfig(bad)).toThrow(
+      'Invalid heroes config: heroes.foreman.extra',
+    )
+  })
+
+  it('rejects an unknown defaultSlot key', () => {
+    const bad = structuredClone(heroesConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(
+      (bad.heroes as Record<string, Record<string, unknown>>).foreman
+        .defaultSlot as Record<string, unknown>
+    ).extra = 1
+    expect(() => parseHeroesConfig(bad)).toThrow(
+      'Invalid heroes config: heroes.foreman.defaultSlot.extra',
+    )
+  })
+
+  it('rejects an unknown skill key', () => {
+    const bad = structuredClone(heroesConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(
+      (bad.heroes as Record<string, Record<string, unknown>>).foreman
+        .skill as Record<string, unknown>
+    ).extra = 1
+    expect(() => parseHeroesConfig(bad)).toThrow(
+      'Invalid heroes config: heroes.foreman.skill.extra',
+    )
+  })
+
+  it('rejects an unknown appearance key', () => {
+    const bad = structuredClone(heroesConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(
+      (bad.heroes as Record<string, Record<string, unknown>>).foreman
+        .appearance as Record<string, unknown>
+    ).extra = 1
+    expect(() => parseHeroesConfig(bad)).toThrow(
+      'Invalid heroes config: heroes.foreman.appearance.extra',
+    )
+  })
 })

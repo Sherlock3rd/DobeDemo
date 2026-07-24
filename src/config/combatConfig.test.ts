@@ -30,4 +30,51 @@ describe('combat config', () => {
       'Invalid combat config: defenseConstant',
     )
   })
+
+  it('rejects an unknown top-level key', () => {
+    const bad = structuredClone(combatConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    bad.extra = 1
+    expect(() => parseCombatConfig(bad)).toThrow('Invalid combat config: extra')
+  })
+
+  it('rejects an unknown skillDefaults key', () => {
+    const bad = structuredClone(combatConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(bad.skillDefaults as Record<string, unknown>).extra = 1
+    expect(() => parseCombatConfig(bad)).toThrow(
+      'Invalid combat config: skillDefaults.extra',
+    )
+  })
+
+  it('rejects an unknown positionModifier key', () => {
+    const bad = structuredClone(combatConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(
+      (bad.positionModifiers as Record<string, unknown>).front as Record<
+        string,
+        unknown
+      >
+    ).extra = 1
+    expect(() => parseCombatConfig(bad)).toThrow(
+      'Invalid combat config: positionModifiers.front.extra',
+    )
+  })
+
+  it('rejects an unknown powerWeights key', () => {
+    const bad = structuredClone(combatConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(bad.powerWeights as Record<string, unknown>).extra = 1
+    expect(() => parseCombatConfig(bad)).toThrow(
+      'Invalid combat config: powerWeights.extra',
+    )
+  })
 })

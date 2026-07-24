@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { ratePerTick, settleIdleExperience } from './idleExperienceConfig'
+import {
+  idleExperienceConfig,
+  parseIdleExperienceConfig,
+  ratePerTick,
+  settleIdleExperience,
+} from './idleExperienceConfig'
 
 describe('idle experience config', () => {
   it('scales rate as 2 * highestClearedStage and 0 when unopened', () => {
@@ -53,5 +58,34 @@ describe('idle experience config', () => {
     })
     expect(r.earnedExp).toBe(2 * 2880) // 8h / 10s = 2880 ticks
     expect(r.nextUpdatedAt).toBe(base + nineHours)
+  })
+
+  it('no-ops and does not advance the clock for a non-finite highestClearedStage', () => {
+    const base = 1_000_000
+    expect(
+      settleIdleExperience({
+        lastUpdatedAt: base,
+        now: base + 25_000,
+        highestClearedStage: Number.NaN,
+      }),
+    ).toEqual({ earnedExp: 0, nextUpdatedAt: base })
+    expect(
+      settleIdleExperience({
+        lastUpdatedAt: base,
+        now: base + 25_000,
+        highestClearedStage: Number.POSITIVE_INFINITY,
+      }),
+    ).toEqual({ earnedExp: 0, nextUpdatedAt: base })
+  })
+
+  it('rejects an unknown top-level key', () => {
+    const bad = structuredClone(idleExperienceConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    bad.extra = 1
+    expect(() => parseIdleExperienceConfig(bad)).toThrow(
+      'Invalid idle-experience config: extra',
+    )
   })
 })

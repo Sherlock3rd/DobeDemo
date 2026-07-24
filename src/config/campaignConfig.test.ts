@@ -59,4 +59,58 @@ describe('campaign config', () => {
       'Invalid campaign config: stages.0.enemyCount',
     )
   })
+
+  it('rejects an unknown top-level key', () => {
+    const bad = structuredClone(campaignConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    bad.extra = 1
+    expect(() => parseCampaignConfig(bad)).toThrow(
+      'Invalid campaign config: extra',
+    )
+  })
+
+  it('rejects an unknown stage key', () => {
+    const bad = structuredClone(campaignConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(bad.stages as Record<string, unknown>[])[0].extra = 1
+    expect(() => parseCampaignConfig(bad)).toThrow(
+      'Invalid campaign config: stages.0.extra',
+    )
+  })
+
+  it('rejects an unknown enemy key', () => {
+    const bad = structuredClone(campaignConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(
+      (bad.stages as Record<string, unknown>[])[0].enemy as Record<
+        string,
+        unknown
+      >
+    ).extra = 1
+    expect(() => parseCampaignConfig(bad)).toThrow(
+      'Invalid campaign config: stages.0.enemy.extra',
+    )
+  })
+
+  it('rejects an unknown firstClearReward key', () => {
+    const bad = structuredClone(campaignConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(
+      (bad.stages as Record<string, unknown>[])[0].firstClearReward as Record<
+        string,
+        unknown
+      >
+    ).extra = 1
+    expect(() => parseCampaignConfig(bad)).toThrow(
+      'Invalid campaign config: stages.0.firstClearReward.extra',
+    )
+  })
 })
