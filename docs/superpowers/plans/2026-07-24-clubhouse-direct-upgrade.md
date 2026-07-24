@@ -22,12 +22,14 @@
 ### Task 1: 领域规则与 Store 原子升级
 
 **Files:**
+
 - Modify: `src/game/buildingUpgrade.ts`
 - Modify: `src/game/buildingUpgrade.test.ts`
 - Modify: `src/store/useCityStore.ts`
 - Modify: `src/store/useCityStore.test.ts`
 
 **Interfaces:**
+
 - Produces: `isDirectUpgradeBuilding(id: BuildingId): boolean`
 - `getChildUpgradeDecision()` 对 Clubhouse 返回 `direct-main-upgrade-only`
 - `getMainUpgradeDecision()` 对 Clubhouse 跳过 `children-not-caught-up`
@@ -41,14 +43,16 @@ expect(isDirectUpgradeBuilding('repair-shop')).toBe(false)
 expect(getChildUpgradeDecision(clubhouseInput).reason).toBe(
   'direct-main-upgrade-only',
 )
-expect(getMainUpgradeDecision({
-  buildingId: 'clubhouse',
-  progress: { level: 1, childLevels: Array(10).fill(0) },
-  wallet: richWallet,
-  gangLevel: 40,
-  repairShopProgress,
-  clubhouseProgress,
-}).reason).toBe('ready')
+expect(
+  getMainUpgradeDecision({
+    buildingId: 'clubhouse',
+    progress: { level: 1, childLevels: Array(10).fill(0) },
+    wallet: richWallet,
+    gangLevel: 40,
+    repairShopProgress,
+    clubhouseProgress,
+  }).reason,
+).toBe('ready')
 ```
 
 - [ ] **Step 2: 运行 RED**
@@ -104,12 +108,14 @@ git commit -m "feat: add direct Clubhouse upgrade rule"
 ### Task 2: City persist v4 迁移
 
 **Files:**
+
 - Modify: `src/store/cityProgressMigration.ts`
 - Modify: `src/store/cityProgressMigration.test.ts`
 - Modify: `src/store/useCityStore.ts`
 - Modify: `src/store/useCityStore.test.ts`
 
 **Interfaces:**
+
 - City persist `version: 4`
 - Produces: v3→v4 Clubhouse 子投入一次退款与清零
 
@@ -181,11 +187,13 @@ git commit -m "feat: migrate Clubhouse child progress to direct upgrades"
 ### Task 3: Clubhouse 专属 UI
 
 **Files:**
+
 - Modify: `src/ui/BuildingPanel.tsx`
 - Modify: `src/ui/BuildingPanel.test.tsx`
 - Modify: `src/App.css`
 
 **Interfaces:**
+
 - Clubhouse details button accessible name:
   `直接升级 Clubhouse 至 Lv.N · <cost>`
 - 点击直接调用 `upgradeMainBuilding('clubhouse', gangLevel, Date.now())`
@@ -241,6 +249,7 @@ git commit -m "feat: add one-click Clubhouse upgrade panel"
 ### Task 4: 3D 主等级视觉与验收发布
 
 **Files:**
+
 - Modify: `src/scene/city/buildingFragmentCatalog.ts`
 - Modify: `src/scene/city/buildingFragmentCatalog.test.ts`
 - Modify: `src/scene/city/BuildingModel.test.tsx`
@@ -251,6 +260,7 @@ git commit -m "feat: add one-click Clubhouse upgrade panel"
 - Create: `.superpowers/sdd/clubhouse-direct-upgrade-report.md`
 
 **Interfaces:**
+
 - `getRenderedBuildingFragments('clubhouse', progress)` 忽略 childLevels，按 main level 返回前 N 个 `current` 视觉层
 
 - [ ] **Step 1: 写 3D RED 测试**

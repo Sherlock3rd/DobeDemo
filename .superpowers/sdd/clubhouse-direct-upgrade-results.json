@@ -1,0 +1,778 @@
+{
+  "generatedAt": "2026-07-24T13:53:51.199Z",
+  "script": "clubhouse-direct-upgrade-cdp.mjs",
+  "preflight": {
+    "strategy": "strict owned Vite port; Chrome port 0 read from isolated-profile DevToolsActivePort",
+    "attemptedDevPorts": [
+      {
+        "port": 5332,
+        "free": true
+      }
+    ],
+    "cdpPortSource": "DevToolsActivePort",
+    "devPort": 5332,
+    "devPortFree": true,
+    "cdpPort": 7066,
+    "cdpOwnedProfile": true,
+    "cdpBrowserWsPathValidated": true
+  },
+  "processSafety": {
+    "registeredProcesses": [
+      {
+        "label": "vite",
+        "owned": true
+      },
+      {
+        "label": "chrome",
+        "owned": true
+      }
+    ],
+    "childErrors": [],
+    "killAttempts": [
+      {
+        "label": "chrome",
+        "owned": true,
+        "active": true
+      },
+      {
+        "label": "vite",
+        "owned": true,
+        "active": true
+      }
+    ],
+    "unknownProcessesTerminated": false,
+    "chromeExecutable": "chrome.exe",
+    "tempProfileName": "dobe-clubhouse-direct-cdp-jsu7gI"
+  },
+  "dist": {
+    "index": "dist/index.html",
+    "assetRefs": [
+      "/DobeDemo/assets/index-781xcY6f.js",
+      "/DobeDemo/assets/index-CoMhGqEJ.css"
+    ],
+    "baseOk": true,
+    "expectedAssetsExact": true
+  },
+  "http": {
+    "fetchTimeoutMs": 10000,
+    "ownedProcessAlive": true,
+    "appFeatureVerified": true,
+    "status": 200,
+    "hasRoot": true,
+    "hasMainTsx": true
+  },
+  "fresh": {
+    "cityVersion": 4,
+    "injectedGangReputation": 1170,
+    "gangReputation": 1171,
+    "clubhouse": {
+      "level": 1,
+      "childLevels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "panel": {
+      "present": true,
+      "title": "Clubhouse",
+      "level": "等级 1 / 10",
+      "text": "关闭Clubhouse等级 1 / 10本建筑暂无产出钱 100003油 1物资 1当前建筑战力 250本次战力 +60升级后战力 310钱 25油 0物资 0直接升级 Clubhouse 至 Lv.2 · 钱 25",
+      "radioCount": 0,
+      "radiogroupCount": 0,
+      "progressbarCount": 0,
+      "childOptionCount": 0,
+      "sharedUpgradeCount": 0,
+      "mainButtonCount": 1,
+      "mainButtonLabel": "直接升级 Clubhouse 至 Lv.2 · 钱 25",
+      "mainButtonDisabled": false,
+      "mainButtonRect": {
+        "width": 270,
+        "height": 44,
+        "left": 1120.3487548828125,
+        "right": 1390.3487548828125,
+        "top": 557.59375,
+        "bottom": 601.59375
+      },
+      "confirmSubmitCount": 0,
+      "confirmBackCount": 0,
+      "confirmTitleCount": 0,
+      "cost": ["钱 25", "油 0", "物资 0"],
+      "powers": ["当前建筑战力 250", "本次战力 +60", "升级后战力 310"],
+      "blocker": null,
+      "status": null,
+      "lockStatus": null,
+      "lockRequirement": null
+    },
+    "renderProbe": {
+      "level": 1,
+      "childLevels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "fragmentCount": 1,
+      "states": ["current"],
+      "scaffoldCount": 0,
+      "animatedCount": 0
+    }
+  },
+  "firstUpgrade": {
+    "levelBefore": 1,
+    "levelAfter": 2,
+    "walletBefore": {
+      "money": 100003,
+      "oil": 1,
+      "materials": 1
+    },
+    "walletAfter": {
+      "money": 99978,
+      "oil": 1,
+      "materials": 1
+    },
+    "spent": {
+      "money": 25,
+      "oil": 0,
+      "materials": 0
+    },
+    "children": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "childrenAllZero": true,
+    "panel": {
+      "present": true,
+      "title": "Clubhouse",
+      "level": "等级 2 / 10",
+      "text": "关闭Clubhouse等级 2 / 10本建筑暂无产出钱 99978油 1物资 1当前建筑战力 310本次战力 +70升级后战力 380钱 60油 0物资 0直接升级 Clubhouse 至 Lv.3 · 钱 60",
+      "radioCount": 0,
+      "radiogroupCount": 0,
+      "progressbarCount": 0,
+      "childOptionCount": 0,
+      "sharedUpgradeCount": 0,
+      "mainButtonCount": 1,
+      "mainButtonLabel": "直接升级 Clubhouse 至 Lv.3 · 钱 60",
+      "mainButtonDisabled": false,
+      "mainButtonRect": {
+        "width": 270,
+        "height": 44,
+        "left": 1117,
+        "right": 1387,
+        "top": 557.59375,
+        "bottom": 601.59375
+      },
+      "confirmSubmitCount": 0,
+      "confirmBackCount": 0,
+      "confirmTitleCount": 0,
+      "cost": ["钱 60", "油 0", "物资 0"],
+      "powers": ["当前建筑战力 310", "本次战力 +70", "升级后战力 380"],
+      "blocker": null,
+      "status": null,
+      "lockStatus": null,
+      "lockRequirement": null
+    },
+    "persistedAfterReload": {
+      "version": 4,
+      "level": 2,
+      "children": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "wallet": {
+        "money": 99981,
+        "oil": 2,
+        "materials": 2
+      },
+      "productionSinceClick": {
+        "money": 3,
+        "oil": 1,
+        "materials": 1
+      }
+    }
+  },
+  "consecutive": {
+    "levelBefore": 2,
+    "levelAfter": 3,
+    "walletBefore": {
+      "money": 99981,
+      "oil": 2,
+      "materials": 2
+    },
+    "walletAfter": {
+      "money": 99921,
+      "oil": 2,
+      "materials": 2
+    },
+    "spent": {
+      "money": 60,
+      "oil": 0,
+      "materials": 0
+    },
+    "children": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "panel": {
+      "present": true,
+      "title": "Clubhouse",
+      "level": "等级 3 / 10",
+      "text": "关闭Clubhouse等级 3 / 10本建筑暂无产出钱 99921油 2物资 2当前建筑战力 380本次战力 +80升级后战力 460钱 120油 0物资 0直接升级 Clubhouse 至 Lv.4 · 钱 120",
+      "radioCount": 0,
+      "radiogroupCount": 0,
+      "progressbarCount": 0,
+      "childOptionCount": 0,
+      "sharedUpgradeCount": 0,
+      "mainButtonCount": 1,
+      "mainButtonLabel": "直接升级 Clubhouse 至 Lv.4 · 钱 120",
+      "mainButtonDisabled": false,
+      "mainButtonRect": {
+        "width": 270,
+        "height": 44,
+        "left": 1117,
+        "right": 1387,
+        "top": 557.59375,
+        "bottom": 601.59375
+      },
+      "confirmSubmitCount": 0,
+      "confirmBackCount": 0,
+      "confirmTitleCount": 0,
+      "cost": ["钱 120", "油 0", "物资 0"],
+      "powers": ["当前建筑战力 380", "本次战力 +80", "升级后战力 460"],
+      "blocker": null,
+      "status": null,
+      "lockStatus": null,
+      "lockRequirement": null
+    }
+  },
+  "blocked": {
+    "insufficient": {
+      "present": true,
+      "title": "Clubhouse",
+      "level": "等级 1 / 10",
+      "text": "关闭Clubhouse等级 1 / 10本建筑暂无产出钱 0油 0物资 0当前建筑战力 250本次战力 +60升级后战力 310钱 25油 0物资 0直接升级 Clubhouse 至 Lv.2 · 钱 25资源不足，还需 钱 25",
+      "radioCount": 0,
+      "radiogroupCount": 0,
+      "progressbarCount": 0,
+      "childOptionCount": 0,
+      "sharedUpgradeCount": 0,
+      "mainButtonCount": 1,
+      "mainButtonLabel": "直接升级 Clubhouse 至 Lv.2 · 钱 25",
+      "mainButtonDisabled": true,
+      "mainButtonRect": {
+        "width": 270,
+        "height": 44,
+        "left": 1121.5345458984375,
+        "right": 1391.5345458984375,
+        "top": 543.3984375,
+        "bottom": 587.3984375
+      },
+      "confirmSubmitCount": 0,
+      "confirmBackCount": 0,
+      "confirmTitleCount": 0,
+      "cost": ["钱 25", "油 0", "物资 0"],
+      "powers": ["当前建筑战力 250", "本次战力 +60", "升级后战力 310"],
+      "blocker": "资源不足，还需 钱 25",
+      "status": null,
+      "lockStatus": null,
+      "lockRequirement": null,
+      "stateUnchanged": true
+    },
+    "maxed": {
+      "panel": {
+        "present": true,
+        "title": "Clubhouse",
+        "level": "等级 10 / 10",
+        "text": "关闭Clubhouse等级 10 / 10本建筑暂无产出钱 100000油 0物资 0当前建筑战力 1150已达到最高等级 Lv.10",
+        "radioCount": 0,
+        "radiogroupCount": 0,
+        "progressbarCount": 0,
+        "childOptionCount": 0,
+        "sharedUpgradeCount": 0,
+        "mainButtonCount": 0,
+        "mainButtonLabel": null,
+        "mainButtonDisabled": null,
+        "mainButtonRect": null,
+        "confirmSubmitCount": 0,
+        "confirmBackCount": 0,
+        "confirmTitleCount": 0,
+        "cost": [],
+        "powers": ["当前建筑战力 1150"],
+        "blocker": null,
+        "status": "已达到最高等级 Lv.10",
+        "lockStatus": null,
+        "lockRequirement": null
+      },
+      "persisted": {
+        "level": 10,
+        "childLevels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      }
+    },
+    "locked": {
+      "present": true,
+      "title": "Clubhouse",
+      "level": null,
+      "text": "关闭Clubhouse尚未解锁需要 Lv. 40 · V. PRESIDENT（副主席）当前 Lv. 39 / 40",
+      "radioCount": 0,
+      "radiogroupCount": 0,
+      "progressbarCount": 0,
+      "childOptionCount": 0,
+      "sharedUpgradeCount": 0,
+      "mainButtonCount": 0,
+      "mainButtonLabel": null,
+      "mainButtonDisabled": null,
+      "mainButtonRect": null,
+      "confirmSubmitCount": 0,
+      "confirmBackCount": 0,
+      "confirmTitleCount": 0,
+      "cost": [],
+      "powers": [],
+      "blocker": null,
+      "status": null,
+      "lockStatus": "尚未解锁",
+      "lockRequirement": "需要 Lv. 40 · V. PRESIDENT（副主席）"
+    }
+  },
+  "migration": {
+    "sourceVersion": 3,
+    "sourceChildren": [1, 2, 3, 0, 0, 0, 0, 0, 0, 0],
+    "expectedRefund": 55,
+    "versionFirst": 4,
+    "walletFirst": {
+      "money": 155,
+      "oil": 7,
+      "materials": 9
+    },
+    "clubhouseFirst": {
+      "level": 3,
+      "childLevels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "versionSecond": 4,
+    "walletSecond": {
+      "money": 155,
+      "oil": 7,
+      "materials": 9
+    },
+    "clubhouseSecond": {
+      "level": 3,
+      "childLevels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    }
+  },
+  "storeUiBoundary": {
+    "clubhouseChildControlsObserved": 0,
+    "durableChildArrays": [
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ],
+    "allDurableChildrenZero": true,
+    "upgradeTransitionsUsedRealPointerOnly": true
+  },
+  "visual": {
+    "roi": {
+      "x": 720,
+      "y": 82,
+      "w": 420,
+      "h": 390
+    },
+    "before": {
+      "level": 1,
+      "childLevels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "fragmentCount": 1,
+      "states": ["current"],
+      "scaffoldCount": 0,
+      "animatedCount": 0
+    },
+    "after": {
+      "level": 2,
+      "childLevels": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "fragmentCount": 2,
+      "states": ["current", "current"],
+      "scaffoldCount": 0,
+      "animatedCount": 0
+    },
+    "targetDiff": {
+      "changedPixels": 282,
+      "consideredPixels": 75200,
+      "changedPct": 0.375,
+      "roiClipped": {
+        "x": 720,
+        "y": 82,
+        "w": 420,
+        "h": 390
+      }
+    },
+    "controlDiff": {
+      "changedPixels": 0,
+      "consideredPixels": 755320,
+      "changedPct": 0,
+      "roiClipped": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "screenshotBefore": "clubhouse-desktop-before.png",
+    "screenshotAfter": "clubhouse-desktop-after.png"
+  },
+  "regression": {
+    "details": {
+      "present": true,
+      "title": "修车厂",
+      "level": "等级 2 / 10",
+      "text": "关闭修车厂等级 2 / 10本建筑产出 钱 +1/10秒钱 100003油 1物资 1○基础维修棚单跨维修棚，承担日常保养作业。Lv.2 / Lv.2○零件货架户外零件货架，分层存放常用配件。Lv.2 / Lv.2100%升级主建筑至 Lv.3",
+      "radioCount": 2,
+      "radiogroupCount": 1,
+      "progressbarCount": 1,
+      "childOptionCount": 2,
+      "sharedUpgradeCount": 0,
+      "mainButtonCount": 1,
+      "mainButtonLabel": "升级主建筑至 Lv.3",
+      "mainButtonDisabled": false,
+      "mainButtonRect": {
+        "width": 270,
+        "height": 44,
+        "left": 1121.53125,
+        "right": 1391.53125,
+        "top": 636.25,
+        "bottom": 680.25
+      },
+      "confirmSubmitCount": 0,
+      "confirmBackCount": 0,
+      "confirmTitleCount": 0,
+      "cost": [],
+      "powers": [],
+      "blocker": null,
+      "status": null,
+      "lockStatus": null,
+      "lockRequirement": null
+    },
+    "confirm": {
+      "present": true,
+      "title": "修车厂 · 目标等级 Lv.3",
+      "level": null,
+      "text": "关闭修车厂 · 目标等级 Lv.3钱 60油 0物资 0当前建筑战力 130本次战力 +35升级后战力 165返回确认升级",
+      "radioCount": 0,
+      "radiogroupCount": 0,
+      "progressbarCount": 0,
+      "childOptionCount": 0,
+      "sharedUpgradeCount": 0,
+      "mainButtonCount": 0,
+      "mainButtonLabel": null,
+      "mainButtonDisabled": null,
+      "mainButtonRect": null,
+      "confirmSubmitCount": 1,
+      "confirmBackCount": 1,
+      "confirmTitleCount": 1,
+      "cost": ["钱 60", "油 0", "物资 0"],
+      "powers": ["当前建筑战力 130", "本次战力 +35", "升级后战力 165"],
+      "blocker": null,
+      "status": null,
+      "lockStatus": null,
+      "lockRequirement": null
+    }
+  },
+  "layout": {
+    "desktop": {
+      "present": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panel": {
+        "left": 1096.5302734375,
+        "right": 1416.5302734375,
+        "top": 277.40625,
+        "bottom": 622.59375,
+        "width": 320,
+        "height": 345.1875,
+        "clientWidth": 318,
+        "scrollWidth": 318,
+        "clientHeight": 343,
+        "scrollHeight": 343
+      },
+      "noHorizontalOverflow": true,
+      "withinHorizontalBounds": true,
+      "scrollable": true,
+      "button": {
+        "width": 270,
+        "height": 44,
+        "left": 1121.5302734375,
+        "right": 1391.5302734375,
+        "top": 557.59375,
+        "bottom": 601.59375,
+        "withinViewport": true
+      }
+    },
+    "mobile": {
+      "present": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "panel": {
+        "left": 12,
+        "right": 378,
+        "top": 502.828125,
+        "bottom": 844,
+        "width": 366,
+        "height": 341.171875,
+        "clientWidth": 364,
+        "scrollWidth": 364,
+        "clientHeight": 339,
+        "scrollHeight": 339
+      },
+      "noHorizontalOverflow": true,
+      "withinHorizontalBounds": true,
+      "scrollable": true,
+      "button": {
+        "width": 324,
+        "height": 44,
+        "left": 33,
+        "right": 357,
+        "top": 776.609375,
+        "bottom": 820.609375,
+        "withinViewport": true
+      }
+    }
+  },
+  "screenshots": {
+    "clubhouse-desktop-before.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 124949,
+      "sha256": "376018641402dd1a5fe5fe3d650591e4003ae189e3255e6afde5bf9115ae4b90",
+      "viewport": "1440x900",
+      "level": 1
+    },
+    "clubhouse-desktop-after.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 129076,
+      "sha256": "3e32f057a4f434595215d49b58765123bbfdcb59c558c7d4c6969c1e114be794",
+      "viewport": "1440x900",
+      "level": 2
+    },
+    "clubhouse-consecutive.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 130067,
+      "sha256": "ee7fd51f3c9c5148aee5076f0b84fbd2c28b86a29124e2d492250c8e1f1b3f18",
+      "viewport": "1440x900",
+      "level": 3
+    },
+    "clubhouse-insufficient.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 126505,
+      "sha256": "c0dad0f10095950d9bf3f21530f50830c2d93f09a43610353d33a0bc44a17279",
+      "viewport": "1440x900",
+      "state": "insufficient"
+    },
+    "clubhouse-maxed.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 124982,
+      "sha256": "9e6c89bd73631074e62526aa49daeb0cce14db5d8b50b71126ab5c44e3e93ec6",
+      "viewport": "1440x900",
+      "state": "maxed"
+    },
+    "clubhouse-locked.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 118455,
+      "sha256": "210060760f52cfc3975912a0f5b311be7331827e6f23dee65c53ae398b9c075b",
+      "viewport": "1440x900",
+      "state": "gang-lv39"
+    },
+    "clubhouse-migration.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 94997,
+      "sha256": "1f002e185cda2828e50856e021645c3c5999399d312a2f0bb6d44450c67f464e",
+      "viewport": "1440x900",
+      "state": "v3-to-v4"
+    },
+    "clubhouse-repair-regression.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 123073,
+      "sha256": "c7c3dcac9bfb7169819bcb94989f5381f55f37c434b213b3b93cb2dc9735aa59",
+      "viewport": "1440x900",
+      "state": "repair-confirm"
+    },
+    "clubhouse-mobile.png": {
+      "width": 390,
+      "height": 844,
+      "bytes": 70738,
+      "sha256": "e91965d0c83a8006db1e03591157a74ed36d0d66cd3c1c89d0d5645eb59f2637",
+      "viewport": "390x844",
+      "state": "direct-upgrade"
+    }
+  },
+  "teardown": {
+    "cdpPortReleased": true,
+    "devPortReleased": true,
+    "tempProfileRemoved": true
+  },
+  "assertionSelfTest": {
+    "ok": true,
+    "checked": 23,
+    "failuresOnGoodData": [],
+    "passesOnEmptyData": [],
+    "pathRedaction": {
+      "ok": true,
+      "outputs": [
+        {
+          "name": "Error",
+          "code": "ENOENT"
+        },
+        {
+          "name": "TypeError"
+        }
+      ],
+      "forbiddenDataPresent": false
+    },
+    "transportSafety": {
+      "ok": true,
+      "checked": 10,
+      "sendTimeout": true,
+      "socketClose": true,
+      "inactiveChildSkipped": true,
+      "connectionTimeout": true,
+      "writeBoundary": true,
+      "topLevelBoundary": true,
+      "childProcessErrorBoundary": true,
+      "childProcessErrorStructure": true,
+      "httpFetchTimeout": true,
+      "httpFetchStructure": true
+    }
+  },
+  "assertions": [
+    {
+      "name": "preflight selected a free dev port",
+      "pass": true,
+      "detail": "5332"
+    },
+    {
+      "name": "dist contains the expected JS/CSS assets under /DobeDemo/",
+      "pass": true,
+      "detail": "[\"/DobeDemo/assets/index-781xcY6f.js\",\"/DobeDemo/assets/index-CoMhGqEJ.css\"]"
+    },
+    {
+      "name": "owned Vite is alive and serves the expected app",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "Chrome uses owned port-0 DevToolsActivePort",
+      "pass": true,
+      "detail": "7066"
+    },
+    {
+      "name": "1. legal fresh v4 Clubhouse opens at gang Lv.40",
+      "pass": true,
+      "detail": "{\"version\":4,\"reputation\":1171,\"title\":\"Clubhouse\",\"level\":\"等级 1 / 10\"}"
+    },
+    {
+      "name": "1b. Clubhouse has no child, radio, progress, or confirmation controls",
+      "pass": true,
+      "detail": "{\"radio\":0,\"radiogroup\":0,\"progress\":0,\"child\":0,\"confirm\":0}"
+    },
+    {
+      "name": "2. Clubhouse shows current/delta/target power, main cost, and direct button",
+      "pass": true,
+      "detail": "{\"powers\":[\"当前建筑战力 250\",\"本次战力 +60\",\"升级后战力 310\"],\"cost\":[\"钱 25\",\"油 0\",\"物资 0\"],\"button\":\"直接升级 Clubhouse 至 Lv.2 · 钱 25\"}"
+    },
+    {
+      "name": "3. one real click upgrades Clubhouse Lv.1 to Lv.2 and charges target-2 cost",
+      "pass": true,
+      "detail": "{\"level\":2,\"spent\":{\"money\":25,\"oil\":0,\"materials\":0},\"children\":[0,0,0,0,0,0,0,0,0,0]}"
+    },
+    {
+      "name": "3b. direct click remains on details and opens no confirmation page",
+      "pass": true,
+      "detail": "{\"level\":\"等级 2 / 10\",\"confirm\":0,\"button\":\"直接升级 Clubhouse 至 Lv.3 · 钱 60\"}"
+    },
+    {
+      "name": "8. Clubhouse main upgrade adds one completed visual layer with no scaffold",
+      "pass": true,
+      "detail": "{\"before\":{\"level\":1,\"childLevels\":[0,0,0,0,0,0,0,0,0,0],\"fragmentCount\":1,\"states\":[\"current\"],\"scaffoldCount\":0,\"animatedCount\":0},\"after\":{\"level\":2,\"childLevels\":[0,0,0,0,0,0,0,0,0,0],\"fragmentCount\":2,\"states\":[\"current\",\"current\"],\"scaffoldCount\":0,\"animatedCount\":0}}"
+    },
+    {
+      "name": "8b. Clubhouse canvas ROI changes visibly (>=30 pixels)",
+      "pass": true,
+      "detail": "{\"targetChangedPixels\":282,\"targetChangedPct\":0.375,\"controlChangedPct\":0}"
+    },
+    {
+      "name": "3c. refresh persists Lv.2 and ten zero children with only legal production",
+      "pass": true,
+      "detail": "{\"version\":4,\"level\":2,\"children\":[0,0,0,0,0,0,0,0,0,0],\"wallet\":{\"money\":99981,\"oil\":2,\"materials\":2},\"productionSinceClick\":{\"money\":3,\"oil\":1,\"materials\":1}}"
+    },
+    {
+      "name": "4. second real click upgrades Lv.2 to Lv.3 and charges target-3 cost",
+      "pass": true,
+      "detail": "{\"before\":2,\"after\":3,\"spent\":{\"money\":60,\"oil\":0,\"materials\":0}}"
+    },
+    {
+      "name": "5. insufficient resources disables direct upgrade with exact shortfall",
+      "pass": true,
+      "detail": "{\"disabled\":true,\"blocker\":\"资源不足，还需 钱 25\",\"unchanged\":true}"
+    },
+    {
+      "name": "5b. Lv.10 is maxed with no direct button and normalized zero children",
+      "pass": true,
+      "detail": "{\"status\":\"已达到最高等级 Lv.10\",\"buttonCount\":0,\"children\":[0,0,0,0,0,0,0,0,0,0]}"
+    },
+    {
+      "name": "5c. gang Lv.39 keeps Clubhouse locked with no direct button",
+      "pass": true,
+      "detail": "{\"status\":\"尚未解锁\",\"requirement\":\"需要 Lv. 40 · V. PRESIDENT（副主席）\",\"buttonCount\":0}"
+    },
+    {
+      "name": "6. v3 reload migrates to v4, refunds 55 once, and clears children",
+      "pass": true,
+      "detail": "{\"version\":4,\"wallet\":{\"money\":155,\"oil\":7,\"materials\":9},\"clubhouse\":{\"level\":3,\"childLevels\":[0,0,0,0,0,0,0,0,0,0]}}"
+    },
+    {
+      "name": "6b. second reload stays v4 and does not refund again",
+      "pass": true,
+      "detail": "{\"version\":4,\"wallet\":{\"money\":155,\"oil\":7,\"materials\":9}}"
+    },
+    {
+      "name": "7. no Clubhouse child path is exposed and every durable observation stays zero",
+      "pass": true,
+      "detail": "{\"childControls\":0,\"arraysZero\":true,\"realPointerOnly\":true}"
+    },
+    {
+      "name": "9. repair shop still has radios, progress, and a confirmation page",
+      "pass": true,
+      "detail": "{\"radio\":2,\"radiogroup\":1,\"progress\":1,\"main\":\"升级主建筑至 Lv.3\",\"confirm\":1}"
+    },
+    {
+      "name": "10. desktop 1440x900 Clubhouse panel fits and button is at least 44x44",
+      "pass": true,
+      "detail": "{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"panel\":{\"left\":1096.5302734375,\"right\":1416.5302734375,\"top\":277.40625,\"bottom\":622.59375,\"width\":320,\"height\":345.1875,\"clientWidth\":318,\"scrollWidth\":318,\"clientHeight\":343,\"scrollHeight\":343},\"noHorizontalOverflow\":true,\"withinHorizontalBounds\":true,\"scrollable\":true,\"button\":{\"width\":270,\"height\":44,\"left\":1121.5302734375,\"right\":1391.5302734375,\"top\":557.59375,\"bottom\":601.59375,\"withinViewport\":true}}"
+    },
+    {
+      "name": "10b. mobile 390x844 has no horizontal overflow and remains scrollable",
+      "pass": true,
+      "detail": "{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"panel\":{\"left\":12,\"right\":378,\"top\":502.828125,\"bottom\":844,\"width\":366,\"height\":341.171875,\"clientWidth\":364,\"scrollWidth\":364,\"clientHeight\":339,\"scrollHeight\":339},\"noHorizontalOverflow\":true,\"withinHorizontalBounds\":true,\"scrollable\":true,\"button\":{\"width\":324,\"height\":44,\"left\":33,\"right\":357,\"top\":776.609375,\"bottom\":820.609375,\"withinViewport\":true}}"
+    },
+    {
+      "name": "10c. mobile direct-upgrade button is reachable and at least 44x44 on both axes",
+      "pass": true,
+      "detail": "{\"width\":324,\"height\":44,\"left\":33,\"right\":357,\"top\":776.609375,\"bottom\":820.609375,\"withinViewport\":true}"
+    },
+    {
+      "name": "teardown: only owned PIDs targeted",
+      "pass": true,
+      "detail": "[{\"label\":\"chrome\",\"owned\":true,\"active\":true},{\"label\":\"vite\",\"owned\":true,\"active\":true}]"
+    },
+    {
+      "name": "teardown: dev port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "teardown: CDP port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "teardown: temporary Chrome profile removed",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "all expected screenshots are nonempty PNG files with recorded dimensions",
+      "pass": true,
+      "detail": "[{\"name\":\"clubhouse-desktop-before.png\",\"width\":1440,\"height\":900,\"bytes\":124949},{\"name\":\"clubhouse-desktop-after.png\",\"width\":1440,\"height\":900,\"bytes\":129076},{\"name\":\"clubhouse-consecutive.png\",\"width\":1440,\"height\":900,\"bytes\":130067},{\"name\":\"clubhouse-insufficient.png\",\"width\":1440,\"height\":900,\"bytes\":126505},{\"name\":\"clubhouse-maxed.png\",\"width\":1440,\"height\":900,\"bytes\":124982},{\"name\":\"clubhouse-locked.png\",\"width\":1440,\"height\":900,\"bytes\":118455},{\"name\":\"clubhouse-migration.png\",\"width\":1440,\"height\":900,\"bytes\":94997},{\"name\":\"clubhouse-repair-regression.png\",\"width\":1440,\"height\":900,\"bytes\":123073},{\"name\":\"clubhouse-mobile.png\",\"width\":390,\"height\":844,\"bytes\":70738}]"
+    }
+  ]
+}
