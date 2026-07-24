@@ -1,0 +1,150 @@
+import raw from './combat.config.json'
+
+export interface SkillConfig {
+  targetMultiplier: number
+  splashMultiplier: number
+  initialCooldownTicks: number
+  cooldownTicks: number
+}
+
+export interface PositionModifier {
+  atkMul: number
+  defMul: number
+  aggro: boolean
+}
+
+function invalidConfig(path: string): never {
+  throw new Error(`Invalid combat config: ${path}`)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function parsePositiveMultiplier(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    invalidConfig(path)
+  }
+  return value
+}
+
+function parsePositiveInt(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
+    invalidConfig(path)
+  }
+  return value
+}
+
+function parseSkill(value: unknown, path: string): SkillConfig {
+  if (!isRecord(value)) {
+    invalidConfig(path)
+  }
+  return {
+    targetMultiplier: parsePositiveMultiplier(
+      value.targetMultiplier,
+      `${path}.targetMultiplier`,
+    ),
+    splashMultiplier: parsePositiveMultiplier(
+      value.splashMultiplier,
+      `${path}.splashMultiplier`,
+    ),
+    initialCooldownTicks: parsePositiveInt(
+      value.initialCooldownTicks,
+      `${path}.initialCooldownTicks`,
+    ),
+    cooldownTicks: parsePositiveInt(
+      value.cooldownTicks,
+      `${path}.cooldownTicks`,
+    ),
+  }
+}
+
+function parsePositionModifier(value: unknown, path: string): PositionModifier {
+  if (!isRecord(value)) {
+    invalidConfig(path)
+  }
+  if (typeof value.aggro !== 'boolean') {
+    invalidConfig(`${path}.aggro`)
+  }
+  return {
+    atkMul: parsePositiveMultiplier(value.atkMul, `${path}.atkMul`),
+    defMul: parsePositiveMultiplier(value.defMul, `${path}.defMul`),
+    aggro: value.aggro,
+  }
+}
+
+function parseWeight(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    invalidConfig(path)
+  }
+  return value
+}
+
+export interface CombatConfig {
+  version: 1
+  tickMs: 100
+  maxBattleTicks: 600
+  attackIntervalTicks: number
+  defenseConstant: number
+  positionModifiers: { front: PositionModifier; back: PositionModifier }
+  powerWeights: { hp: number; atk: number; def: number }
+  skillDefaults: SkillConfig
+  enemySkillCooldownTicks: number
+}
+
+export function parseCombatConfig(value: unknown): CombatConfig {
+  if (!isRecord(value) || value.version !== 1) {
+    invalidConfig('version')
+  }
+  if (value.tickMs !== 100) {
+    invalidConfig('tickMs')
+  }
+  if (value.maxBattleTicks !== 600) {
+    invalidConfig('maxBattleTicks')
+  }
+
+  const defenseConstant = value.defenseConstant
+  if (
+    typeof defenseConstant !== 'number' ||
+    !Number.isFinite(defenseConstant) ||
+    defenseConstant <= 0
+  ) {
+    invalidConfig('defenseConstant')
+  }
+
+  const modifiers = value.positionModifiers
+  if (!isRecord(modifiers)) {
+    invalidConfig('positionModifiers')
+  }
+  const weights = value.powerWeights
+  if (!isRecord(weights)) {
+    invalidConfig('powerWeights')
+  }
+
+  return {
+    version: 1,
+    tickMs: 100,
+    maxBattleTicks: 600,
+    attackIntervalTicks: parsePositiveInt(
+      value.attackIntervalTicks,
+      'attackIntervalTicks',
+    ),
+    defenseConstant,
+    positionModifiers: {
+      front: parsePositionModifier(modifiers.front, 'positionModifiers.front'),
+      back: parsePositionModifier(modifiers.back, 'positionModifiers.back'),
+    },
+    powerWeights: {
+      hp: parseWeight(weights.hp, 'powerWeights.hp'),
+      atk: parseWeight(weights.atk, 'powerWeights.atk'),
+      def: parseWeight(weights.def, 'powerWeights.def'),
+    },
+    skillDefaults: parseSkill(value.skillDefaults, 'skillDefaults'),
+    enemySkillCooldownTicks: parsePositiveInt(
+      value.enemySkillCooldownTicks,
+      'enemySkillCooldownTicks',
+    ),
+  }
+}
+
+export const combatConfig = parseCombatConfig(raw)

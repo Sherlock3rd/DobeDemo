@@ -9,7 +9,9 @@ import {
 } from './cityTypes'
 import {
   BUILDING_MAX_LEVEL,
+  childUnlockLevel,
   getBuildingChildCount,
+  getBuildingStageProgress,
   getBuildingUpgradeProgress,
   getChildUpgradeDecision,
   getMainUpgradeDecision,
@@ -387,5 +389,70 @@ describe('main building upgrade decision priority', () => {
     } finally {
       costs[2] = original
     }
+  })
+})
+
+describe('building stage progress', () => {
+  it('childUnlockLevel = index + 1', () => {
+    expect(childUnlockLevel('repair-shop', 0)).toBe(1)
+    expect(childUnlockLevel('repair-shop', 4)).toBe(5)
+    expect(childUnlockLevel('commercial-street', 9)).toBe(10)
+  })
+
+  it('Lv1 needs 1 step', () => {
+    expect(
+      getBuildingStageProgress('commercial-street', {
+        level: 1,
+        childLevels: [0, ...Array(9).fill(0)] as never,
+      }),
+    ).toMatchObject({
+      totalStageSteps: 1,
+      completedStageSteps: 0,
+      complete: false,
+    })
+    expect(
+      getBuildingStageProgress('commercial-street', {
+        level: 1,
+        childLevels: [1, ...Array(9).fill(0)] as never,
+      }).complete,
+    ).toBe(true)
+  })
+
+  it('Lv2 [1,0] progresses 0 -> 33 -> 66 -> 100 across 3 steps', () => {
+    const p = (c: number[]) =>
+      getBuildingStageProgress('commercial-street', {
+        level: 2,
+        childLevels: [...c, ...Array(10 - c.length).fill(0)] as never,
+      })
+    expect(p([1, 0]).totalStageSteps).toBe(3)
+    expect(p([1, 0]).completedStageSteps).toBe(0)
+    expect(Math.floor(p([2, 0]).percent)).toBe(33)
+    expect(Math.floor(p([2, 1]).percent)).toBe(66)
+    expect(p([2, 2]).complete).toBe(true)
+  })
+
+  it('repair Lv5->6 needs 5 steps of 20% (no new slot)', () => {
+    const p = (c: number[]) =>
+      getBuildingStageProgress('repair-shop', {
+        level: 6,
+        childLevels: c as never,
+      })
+    expect(p([5, 5, 5, 5, 5]).totalStageSteps).toBe(5)
+    expect(p([5, 5, 5, 5, 5]).completedStageSteps).toBe(0)
+    expect(p([6, 5, 5, 5, 5]).percent).toBe(20)
+    expect(p([6, 6, 6, 6, 6]).complete).toBe(true)
+  })
+
+  it('is complete-equivalent to getBuildingUpgradeProgress', () => {
+    const buildingProgress = {
+      level: 3,
+      childLevels: [3, 3, 3, ...Array(7).fill(0)],
+    } as never
+    expect(
+      getBuildingStageProgress('commercial-street', buildingProgress).complete,
+    ).toBe(
+      getBuildingUpgradeProgress('commercial-street', buildingProgress)
+        .complete,
+    )
   })
 })

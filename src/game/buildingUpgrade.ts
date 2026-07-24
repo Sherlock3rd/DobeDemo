@@ -106,6 +106,61 @@ export function getBuildingUpgradeProgress(
   }
 }
 
+export interface BuildingStageProgress {
+  unlockedChildCount: number
+  completedStageSteps: number
+  totalStageSteps: number
+  ratio: number
+  percent: number
+  complete: boolean
+}
+
+export function childUnlockLevel(
+  _buildingId: BuildingId,
+  childIndex: number,
+): number {
+  return childIndex + 1
+}
+
+export function getBuildingStageProgress(
+  buildingId: BuildingId,
+  progress: BuildingProgress,
+): BuildingStageProgress {
+  const mainLevel = progress.level
+  const unlockedChildCount = getUnlockedChildCount(buildingId, mainLevel)
+  let completedStageSteps = 0
+  let totalStageSteps = 0
+  let allAtMain = true
+
+  for (let i = 0; i < unlockedChildCount; i += 1) {
+    const baseline =
+      childUnlockLevel(buildingId, i) === mainLevel ? 0 : mainLevel - 1
+    const span = mainLevel - baseline
+    const childLevel = Math.max(0, progress.childLevels[i] ?? 0)
+    completedStageSteps += Math.min(Math.max(childLevel - baseline, 0), span)
+    totalStageSteps += span
+    if (childLevel !== mainLevel) {
+      allAtMain = false
+    }
+  }
+
+  const ratio =
+    totalStageSteps <= 0
+      ? allAtMain
+        ? 1
+        : 0
+      : completedStageSteps / totalStageSteps
+
+  return {
+    unlockedChildCount,
+    completedStageSteps,
+    totalStageSteps,
+    ratio,
+    percent: ratio * 100,
+    complete: completedStageSteps === totalStageSteps && totalStageSteps > 0,
+  }
+}
+
 function getMissingResources(
   cost: ResourceCost,
   wallet?: ResourceWallet,

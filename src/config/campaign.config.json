@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "chapters": 2,
+  "stagesPerChapter": 10,
+  "stages": [
+    {
+      "id": "1-1",
+      "global": 1,
+      "enemyCount": 1,
+      "enemy": { "level": 1, "hp": 400, "atk": 70, "def": 15 },
+      "firstClearReward": { "sharedExp": 500 }
+    },
+    {
+      "id": "1-2",
+      "global": 2,
+      "enemyCount": 1,
+      "enemy": { "level": 1, "hp": 480, "atk": 82, "def": 19 },
+      "firstClearReward": { "sharedExp": 1000 }
+    },
+    {
+      "id": "1-3",
+      "global": 3,
+      "enemyCount": 1,
+      "enemy": { "level": 2, "hp": 560, "atk": 94, "def": 23 },
+      "firstClearReward": { "sharedExp": 1500 }
+    },
+    {
+      "id": "1-4",
+      "global": 4,
+      "enemyCount": 2,
+      "enemy": { "level": 2, "hp": 640, "atk": 106, "def": 27 },
+      "firstClearReward": { "sharedExp": 2000 }
+    },
+    {
+      "id": "1-5",
+      "global": 5,
+      "enemyCount": 2,
+      "enemy": { "level": 3, "hp": 720, "atk": 118, "def": 31 },
+      "firstClearReward": { "sharedExp": 2500 }
+    },
+    {
+      "id": "1-6",
+      "global": 6,
+      "enemyCount": 2,
+      "enemy": { "level": 3, "hp": 800, "atk": 130, "def": 35 },
+      "firstClearReward": { "sharedExp": 3000 }
+    },
+    {
+      "id": "1-7",
+      "global": 7,
+      "enemyCount": 2,
+      "enemy": { "level": 4, "hp": 880, "atk": 142, "def": 39 },
+      "firstClearReward": { "sharedExp": 3500 }
+    },
+    {
+      "id": "1-8",
+      "global": 8,
+      "enemyCount": 3,
+      "enemy": { "level": 4, "hp": 960, "atk": 154, "def": 43 },
+      "firstClearReward": { "sharedExp": 4000 }
+    },
+    {
+      "id": "1-9",
+      "global": 9,
+      "enemyCount": 3,
+      "enemy": { "level": 5, "hp": 1040, "atk": 166, "def": 47 },
+      "firstClearReward": { "sharedExp": 4500 }
+    },
+    {
+      "id": "1-10",
+      "global": 10,
+      "enemyCount": 3,
+      "enemy": { "level": 5, "hp": 1120, "atk": 178, "def": 51 },
+      "firstClearReward": { "sharedExp": 5000 }
+    },
+    {
+      "id": "2-1",
+      "global": 11,
+      "enemyCount": 3,
+      "enemy": { "level": 6, "hp": 1200, "atk": 190, "def": 55 },
+      "firstClearReward": { "sharedExp": 5500 }
+    },
+    {
+      "id": "2-2",
+      "global": 12,
+      "enemyCount": 4,
+      "enemy": { "level": 6, "hp": 1280, "atk": 202, "def": 59 },
+      "firstClearReward": { "sharedExp": 6000 }
+    },
+    {
+      "id": "2-3",
+      "global": 13,
+      "enemyCount": 4,
+      "enemy": { "level": 7, "hp": 1360, "atk": 214, "def": 63 },
+      "firstClearReward": { "sharedExp": 6500 }
+    },
+    {
+      "id": "2-4",
+      "global": 14,
+      "enemyCount": 4,
+      "enemy": { "level": 7, "hp": 1440, "atk": 226, "def": 67 },
+      "firstClearReward": { "sharedExp": 7000 }
+    },
+    {
+      "id": "2-5",
+      "global": 15,
+      "enemyCount": 4,
+      "enemy": { "level": 8, "hp": 1520, "atk": 238, "def": 71 },
+      "firstClearReward": { "sharedExp": 7500 }
+    },
+    {
+      "id": "2-6",
+      "global": 16,
+      "enemyCount": 5,
+      "enemy": { "level": 8, "hp": 1600, "atk": 250, "def": 75 },
+      "firstClearReward": { "sharedExp": 8000 }
+    },
+    {
+      "id": "2-7",
+      "global": 17,
+      "enemyCount": 5,
+      "enemy": { "level": 9, "hp": 1680, "atk": 262, "def": 79 },
+      "firstClearReward": { "sharedExp": 8500 }
+    },
+    {
+      "id": "2-8",
+      "global": 18,
+      "enemyCount": 5,
+      "enemy": { "level": 9, "hp": 1760, "atk": 274, "def": 83 },
+      "firstClearReward": { "sharedExp": 9000 }
+    },
+    {
+      "id": "2-9",
+      "global": 19,
+      "enemyCount": 5,
+      "enemy": { "level": 10, "hp": 1840, "atk": 286, "def": 87 },
+      "firstClearReward": { "sharedExp": 9500 }
+    },
+    {
+      "id": "2-10",
+      "global": 20,
+      "enemyCount": 5,
+      "enemy": { "level": 10, "hp": 1920, "atk": 298, "def": 91 },
+      "firstClearReward": { "sharedExp": 10000 }
+    }
+  ]
+}

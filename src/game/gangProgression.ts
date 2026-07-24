@@ -1,5 +1,3 @@
-import type { BuildingId } from './cityTypes'
-
 export const GANG_MIN_LEVEL = 1
 export const GANG_MAX_LEVEL = 50
 export const REPUTATION_PER_LEVEL = 30
@@ -14,12 +12,6 @@ export interface GangRole {
   chineseTitle: string
 }
 
-export interface BuildingUnlock {
-  buildingId: BuildingId
-  requiredLevel: number
-  roleTitle: string
-}
-
 export const GANG_ROLES: readonly GangRole[] = [
   { threshold: 1, title: 'Prospect', chineseTitle: '见习' },
   { threshold: 8, title: 'Full Patch', chineseTitle: '正式成员' },
@@ -30,34 +22,17 @@ export const GANG_ROLES: readonly GangRole[] = [
   { threshold: 50, title: 'PRESIDENT', chineseTitle: '主席' },
 ]
 
-export const BUILDING_UNLOCKS: readonly BuildingUnlock[] = [
-  { buildingId: 'repair-shop', requiredLevel: 1, roleTitle: 'Prospect' },
-  {
-    buildingId: 'recycling-yard',
-    requiredLevel: 8,
-    roleTitle: 'Full Patch',
-  },
-  {
-    buildingId: 'commercial-street',
-    requiredLevel: 16,
-    roleTitle: 'Wrench',
-  },
-  {
-    buildingId: 'metalworking-plant',
-    requiredLevel: 24,
-    roleTitle: 'Bar Liaison',
-  },
-  {
-    buildingId: 'gas-station',
-    requiredLevel: 32,
-    roleTitle: 'Road Captain',
-  },
-  {
-    buildingId: 'clubhouse',
-    requiredLevel: 40,
-    roleTitle: 'V. PRESIDENT',
-  },
-]
+// Permanent compatibility layer: building unlocks are now derived from the
+// unified PROGRESSION_UNLOCKS array (src/game/progressionUnlocks.ts), which
+// also carries hero/feature unlocks. This re-export keeps every existing
+// importer of gangProgression working unchanged.
+export {
+  BUILDING_UNLOCKS,
+  getBuildingUnlock,
+  isBuildingUnlocked,
+  normalizeGangLevel,
+  type BuildingUnlock,
+} from './progressionUnlocks'
 
 function normalizeLevel(level: number): number {
   if (!Number.isFinite(level)) {
@@ -124,18 +99,6 @@ export function getLevelProgress(totalReputation: number): {
     current: reputation % REPUTATION_PER_LEVEL,
     required: REPUTATION_PER_LEVEL,
   }
-}
-
-export function getBuildingUnlock(buildingId: string): BuildingUnlock | null {
-  return (
-    BUILDING_UNLOCKS.find((unlock) => unlock.buildingId === buildingId) ?? null
-  )
-}
-
-export function isBuildingUnlocked(buildingId: string, level: number): boolean {
-  const unlock = getBuildingUnlock(buildingId)
-
-  return unlock !== null && normalizeLevel(level) >= unlock.requiredLevel
 }
 
 export interface IdleSettlement {

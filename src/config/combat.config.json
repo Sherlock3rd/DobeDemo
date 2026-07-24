@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "tickMs": 100,
+  "maxBattleTicks": 600,
+  "attackIntervalTicks": 8,
+  "defenseConstant": 100,
+  "positionModifiers": {
+    "front": { "atkMul": 1.0, "defMul": 1.25, "aggro": true },
+    "back": { "atkMul": 1.15, "defMul": 0.9, "aggro": false }
+  },
+  "powerWeights": { "hp": 0.5, "atk": 2.0, "def": 1.5 },
+  "skillDefaults": {
+    "targetMultiplier": 2.0,
+    "splashMultiplier": 0.5,
+    "initialCooldownTicks": 30,
+    "cooldownTicks": 90
+  },
+  "enemySkillCooldownTicks": 120
+}
