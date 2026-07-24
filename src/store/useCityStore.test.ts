@@ -19,6 +19,9 @@ describe('useCityStore atomic economy', () => {
       level: 1,
       childLevels: [0, 0, 0, 0, 0],
     })
+    expect(state.buildingProgress.clubhouse.childLevels).toEqual(
+      Array(10).fill(0),
+    )
     expect(state.resources).toEqual({ money: 10_000, oil: 0, materials: 0 })
     expect(state.lastResourceUpdatedAt).toBe(START)
     expect(state.activeProducerIds).toEqual(['repair-shop'])
@@ -342,7 +345,80 @@ describe('useCityStore atomic economy', () => {
     expect(state.activeProducerIds).toEqual(['repair-shop'])
   })
 
-  it('persists only the four durable v3 fields', () => {
+  it('migrates a v3 clubhouse refund once and rehydrates v4 without repeating it', async () => {
+    window.localStorage.setItem(
+      CITY_STORAGE_KEY,
+      JSON.stringify({
+        version: 3,
+        state: {
+          buildingProgress: {
+            clubhouse: {
+              level: 2,
+              childLevels: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            },
+          },
+          resources: { money: 100, oil: 7, materials: 9 },
+          lastResourceUpdatedAt: START,
+          activeProducerIds: ['repair-shop'],
+        },
+      }),
+    )
+
+    await useCityStore.persist.rehydrate()
+    expect(useCityStore.getState().resources).toEqual({
+      money: 105,
+      oil: 7,
+      materials: 9,
+    })
+    expect(useCityStore.getState().buildingProgress.clubhouse).toEqual({
+      level: 2,
+      childLevels: Array(10).fill(0),
+    })
+
+    useCityStore.getState().selectBuilding('clubhouse')
+    const raw = window.localStorage.getItem(CITY_STORAGE_KEY)
+    expect(JSON.parse(raw as string).version).toBe(4)
+
+    await useCityStore.persist.rehydrate()
+    expect(useCityStore.getState().resources).toEqual({
+      money: 105,
+      oil: 7,
+      materials: 9,
+    })
+  })
+
+  it('normalizes a malformed v4 clubhouse without issuing a refund', async () => {
+    window.localStorage.setItem(
+      CITY_STORAGE_KEY,
+      JSON.stringify({
+        version: 4,
+        state: {
+          buildingProgress: {
+            clubhouse: {
+              level: 2,
+              childLevels: [1, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+            },
+          },
+          resources: { money: 100, oil: 7, materials: 9 },
+          lastResourceUpdatedAt: START,
+          activeProducerIds: ['repair-shop'],
+        },
+      }),
+    )
+
+    await useCityStore.persist.rehydrate()
+
+    expect(
+      useCityStore.getState().buildingProgress.clubhouse.childLevels,
+    ).toEqual(Array(10).fill(0))
+    expect(useCityStore.getState().resources).toEqual({
+      money: 100,
+      oil: 7,
+      materials: 9,
+    })
+  })
+
+  it('persists only the four durable v4 fields', () => {
     useCityStore.getState().selectBuilding('repair-shop')
     useCityStore.getState().syncResourceProduction(START + 10_000, 1)
 
@@ -351,7 +427,7 @@ describe('useCityStore atomic economy', () => {
       version: number
       state: Record<string, unknown>
     }
-    expect(persisted.version).toBe(3)
+    expect(persisted.version).toBe(4)
     expect(Object.keys(persisted.state)).toEqual([
       'buildingProgress',
       'resources',

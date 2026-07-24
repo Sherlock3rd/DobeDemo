@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { economyConfig, type ResourceWallet } from '../config/economyConfig'
 import { BUILDING_IDS } from '../game/cityTypes'
 import {
   CITY_STORAGE_KEY,
@@ -8,6 +9,38 @@ import {
 } from './cityProgressMigration'
 
 const MIGRATION_TIME = 1_700_000_000_000
+const ZERO_CLUBHOUSE_CHILDREN = Array(10).fill(0)
+
+function getConfiguredChildRefund(...levels: number[]) {
+  const refund = { money: 0, oil: 0, materials: 0 }
+  for (const level of levels) {
+    for (let targetLevel = 1; targetLevel <= level; targetLevel += 1) {
+      const cost =
+        economyConfig.childUpgradeCostByTargetLevel[
+          targetLevel as keyof typeof economyConfig.childUpgradeCostByTargetLevel
+        ]
+      refund.money += cost.money
+      refund.oil += cost.oil
+      refund.materials += cost.materials
+    }
+  }
+  return refund
+}
+
+function withChildUpgradeCostFixture<T>(
+  targetLevel: keyof typeof economyConfig.childUpgradeCostByTargetLevel,
+  cost: ResourceWallet,
+  run: () => T,
+): T {
+  const costs = economyConfig.childUpgradeCostByTargetLevel
+  const original = costs[targetLevel]
+  costs[targetLevel] = cost
+  try {
+    return run()
+  } finally {
+    costs[targetLevel] = original
+  }
+}
 
 describe('city progress v3 defaults', () => {
   it('keeps the storage key and creates canonical fixed-capacity arrays', () => {
@@ -122,7 +155,159 @@ describe('migrateCityState to v3', () => {
   })
 })
 
-describe('normalize v3 durable state', () => {
+describe('migrateCityState to v4', () => {
+  it('refunds every v3 clubhouse child step and preserves the main level', () => {
+    const migrated = migrateCityState(
+      {
+        buildingProgress: {
+          clubhouse: {
+            level: 3,
+            childLevels: [1, 2, 3, 0, 0, 0, 0, 0, 0, 0],
+          },
+        },
+        resources: { money: 100, oil: 7, materials: 9 },
+      },
+      3,
+      MIGRATION_TIME,
+    )
+    const refund = getConfiguredChildRefund(1, 2, 3)
+
+    expect(migrated.buildingProgress.clubhouse).toEqual({
+      level: 3,
+      childLevels: ZERO_CLUBHOUSE_CHILDREN,
+    })
+    expect(migrated.resources).toEqual({
+      money: 100 + refund.money,
+      oil: 7 + refund.oil,
+      materials: 9 + refund.materials,
+    })
+  })
+
+  it('refunds configured money, oil, and materials without leaking the fixture', () => {
+    const originalCost = economyConfig.childUpgradeCostByTargetLevel[1]
+    const migrated = withChildUpgradeCostFixture(
+      1,
+      { money: 11, oil: 13, materials: 17 },
+      () =>
+        migrateCityState(
+          {
+            buildingProgress: {
+              clubhouse: {
+                level: 1,
+                childLevels: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+              },
+            },
+            resources: { money: 100, oil: 200, materials: 300 },
+          },
+          3,
+          MIGRATION_TIME,
+        ),
+    )
+
+    expect(migrated.resources).toEqual({
+      money: 111,
+      oil: 213,
+      materials: 317,
+    })
+    expect(economyConfig.childUpgradeCostByTargetLevel[1]).toBe(originalCost)
+  })
+
+  it('normalizes v4 clubhouse children without refunding them again', () => {
+    const migrated = migrateCityState(
+      {
+        buildingProgress: {
+          clubhouse: {
+            level: 3,
+            childLevels: [1, 2, 3, 0, 0, 0, 0, 0, 0, 0],
+          },
+        },
+        resources: { money: 100, oil: 7, materials: 9 },
+      },
+      4,
+      MIGRATION_TIME,
+    )
+
+    expect(migrated.buildingProgress.clubhouse.childLevels).toEqual(
+      ZERO_CLUBHOUSE_CHILDREN,
+    )
+    expect(migrated.resources).toEqual({
+      money: 100,
+      oil: 7,
+      materials: 9,
+    })
+  })
+
+  it('does not refund a v2 hidden clubhouse slot twice', () => {
+    const migrated = migrateCityState(
+      {
+        buildingProgress: {
+          clubhouse: {
+            level: 1,
+            childLevels: [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+          },
+        },
+        resources: { money: 0, oil: 0, materials: 0 },
+      },
+      2,
+      MIGRATION_TIME,
+    )
+
+    expect(migrated.buildingProgress.clubhouse.childLevels).toEqual(
+      ZERO_CLUBHOUSE_CHILDREN,
+    )
+    expect(migrated.resources).toEqual({
+      money: 10,
+      oil: 0,
+      materials: 0,
+    })
+  })
+
+  it('clears v1 clubhouse children without issuing an economic refund', () => {
+    const migrated = migrateCityState(
+      {
+        buildingProgress: {
+          clubhouse: { level: 2, completedFragments: 1 },
+        },
+      },
+      1,
+      MIGRATION_TIME,
+    )
+
+    expect(migrated.buildingProgress.clubhouse).toEqual({
+      level: 3,
+      childLevels: ZERO_CLUBHOUSE_CHILDREN,
+    })
+    expect(migrated.resources).toEqual({ money: 0, oil: 0, materials: 0 })
+  })
+
+  it('saturates the v3 clubhouse refund at the safe integer limit', () => {
+    const migrated = migrateCityState(
+      {
+        buildingProgress: {
+          clubhouse: {
+            level: 10,
+            childLevels: [10, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          },
+        },
+        resources: {
+          money: Number.MAX_SAFE_INTEGER - 1,
+          oil: Number.MAX_SAFE_INTEGER,
+          materials: Number.MAX_SAFE_INTEGER,
+        },
+      },
+      3,
+      MIGRATION_TIME,
+    )
+
+    expect(migrated.resources).toEqual({
+      money: Number.MAX_SAFE_INTEGER,
+      oil: Number.MAX_SAFE_INTEGER,
+      materials: Number.MAX_SAFE_INTEGER,
+    })
+  })
+})
+
+describe('normalize v4 durable state', () => {
   it('repairs malformed levels and arrays without the old clubhouse cap', () => {
     const normalized = normalizeCityDurableState(
       {
@@ -139,7 +324,7 @@ describe('normalize v3 durable state', () => {
 
     expect(normalized.buildingProgress.clubhouse).toEqual({
       level: 2,
-      childLevels: [2, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+      childLevels: ZERO_CLUBHOUSE_CHILDREN,
     })
     expect(normalized.buildingProgress['repair-shop']).toEqual({
       level: 8,
@@ -169,5 +354,25 @@ describe('normalize v3 durable state', () => {
       'commercial-street',
     ])
     expect(normalized.lastResourceUpdatedAt).toBe(MIGRATION_TIME)
+  })
+
+  it('produces zeroed clubhouse children from null and malformed saves', () => {
+    expect(
+      normalizeCityDurableState(null, MIGRATION_TIME).buildingProgress.clubhouse
+        .childLevels,
+    ).toEqual(ZERO_CLUBHOUSE_CHILDREN)
+    expect(
+      normalizeCityDurableState(
+        {
+          buildingProgress: {
+            clubhouse: {
+              level: 'bad',
+              childLevels: [10, Number.NaN, -1, 5],
+            },
+          },
+        },
+        MIGRATION_TIME,
+      ).buildingProgress.clubhouse.childLevels,
+    ).toEqual(ZERO_CLUBHOUSE_CHILDREN)
   })
 })

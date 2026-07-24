@@ -63,7 +63,7 @@ export function createInitialBuildingProgress(): BuildingProgressById {
   ) as BuildingProgressById
 }
 
-export function normalizeBuildingProgressById(
+function normalizeLegacyBuildingProgressById(
   value: unknown,
   now: number = Date.now(),
 ): BuildingProgressById {
@@ -88,6 +88,27 @@ export function normalizeBuildingProgressById(
       return [id, { level, childLevels }]
     }),
   ) as BuildingProgressById
+}
+
+function clearClubhouseChildren(
+  progress: BuildingProgressById,
+): BuildingProgressById {
+  return {
+    ...progress,
+    clubhouse: {
+      ...progress.clubhouse,
+      childLevels: Array(getBuildingChildCount('clubhouse')).fill(
+        0,
+      ) as ChildBuildingLevel[],
+    },
+  }
+}
+
+export function normalizeBuildingProgressById(
+  value: unknown,
+  now: number = Date.now(),
+): BuildingProgressById {
+  return clearClubhouseChildren(normalizeLegacyBuildingProgressById(value, now))
 }
 
 function normalizeResources(value: unknown): ResourceWallet {
@@ -121,14 +142,16 @@ function validNow(now: number): number {
   return Number.isFinite(now) ? now : Date.now()
 }
 
-export function normalizeCityDurableState(
+function normalizeLegacyCityDurableState(
   value: unknown,
   now: number = Date.now(),
 ): CityDurableState {
   const source = isRecord(value) ? value : {}
   const fallbackNow = validNow(now)
   return {
-    buildingProgress: normalizeBuildingProgressById(source.buildingProgress),
+    buildingProgress: normalizeLegacyBuildingProgressById(
+      source.buildingProgress,
+    ),
     resources: normalizeResources(source.resources),
     lastResourceUpdatedAt:
       typeof source.lastResourceUpdatedAt === 'number' &&
@@ -136,6 +159,17 @@ export function normalizeCityDurableState(
         ? source.lastResourceUpdatedAt
         : fallbackNow,
     activeProducerIds: normalizeActiveProducerIds(source.activeProducerIds),
+  }
+}
+
+export function normalizeCityDurableState(
+  value: unknown,
+  now: number = Date.now(),
+): CityDurableState {
+  const normalized = normalizeLegacyCityDurableState(value, now)
+  return {
+    ...normalized,
+    buildingProgress: clearClubhouseChildren(normalized.buildingProgress),
   }
 }
 
@@ -179,7 +213,7 @@ function upgradeV2ShapeToV3(
   now: number,
 ): CityDurableState {
   const source = isRecord(value) ? value : {}
-  const normalized = normalizeCityDurableState(source, now)
+  const normalized = normalizeLegacyCityDurableState(source, now)
   if (!refundHiddenChildren) {
     return normalized
   }
@@ -192,6 +226,44 @@ function upgradeV2ShapeToV3(
         source.buildingProgress,
         normalized.buildingProgress,
       ),
+    ),
+  }
+}
+
+function getClubhouseChildRefund(
+  progress: BuildingProgressById,
+): ResourceWallet {
+  let refund: ResourceWallet = { ...EMPTY_RESOURCES }
+
+  for (const oldLevel of progress.clubhouse.childLevels) {
+    for (let targetLevel = 1; targetLevel <= oldLevel; targetLevel += 1) {
+      refund = addWalletSaturated(
+        refund,
+        economyConfig.childUpgradeCostByTargetLevel[
+          targetLevel as keyof typeof economyConfig.childUpgradeCostByTargetLevel
+        ],
+      )
+    }
+  }
+
+  return refund
+}
+
+function upgradeV3ShapeToV4(
+  state: CityDurableState,
+  refundClubhouseChildren: boolean,
+): CityDurableState {
+  const buildingProgress = clearClubhouseChildren(state.buildingProgress)
+  if (!refundClubhouseChildren) {
+    return { ...state, buildingProgress }
+  }
+
+  return {
+    ...state,
+    buildingProgress,
+    resources: addWalletSaturated(
+      state.resources,
+      getClubhouseChildRefund(state.buildingProgress),
     ),
   }
 }
@@ -257,20 +329,32 @@ export function migrateCityState(
   const source = isRecord(persistedState) ? persistedState : {}
   const migrationTime = validNow(now)
   if (persistedVersion < 2) {
-    return upgradeV2ShapeToV3(
-      {
-        buildingProgress: migrateV1BuildingProgress(source.buildingProgress),
-        resources: { ...EMPTY_RESOURCES },
-        lastResourceUpdatedAt: migrationTime,
-        activeProducerIds: [...INITIAL_PRODUCERS],
-      },
+    return upgradeV3ShapeToV4(
+      upgradeV2ShapeToV3(
+        {
+          buildingProgress: migrateV1BuildingProgress(source.buildingProgress),
+          resources: { ...EMPTY_RESOURCES },
+          lastResourceUpdatedAt: migrationTime,
+          activeProducerIds: [...INITIAL_PRODUCERS],
+        },
+        false,
+        migrationTime,
+      ),
       false,
-      migrationTime,
     )
   }
   if (persistedVersion < 3) {
-    return upgradeV2ShapeToV3(source, true, migrationTime)
+    return upgradeV3ShapeToV4(
+      upgradeV2ShapeToV3(source, true, migrationTime),
+      true,
+    )
+  }
+  if (persistedVersion < 4) {
+    return upgradeV3ShapeToV4(
+      upgradeV2ShapeToV3(source, false, migrationTime),
+      true,
+    )
   }
 
-  return upgradeV2ShapeToV3(source, false, migrationTime)
+  return normalizeCityDurableState(source, migrationTime)
 }
