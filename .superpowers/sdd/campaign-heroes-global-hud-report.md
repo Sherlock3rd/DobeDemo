@@ -1,10 +1,11 @@
-# 战役 / 英雄 / GlobalHud — 本地 CDP 验收报告
+# 战役 / 英雄 / GlobalHud — 本地与公开 CDP 验收报告
 
 日期：2026-07-24  
-功能 HEAD：`600f2aa`  
+本地功能验收 HEAD：`600f2aa`  
+公开发布账目：main HEAD `75f5b81`；gh-pages built `d7565826d5c11dabcfca63d8e46480e4a63dc225`。  
 前置状态：最终产品测试 65 文件 / 655 项全绿，Task 6 终审 Approved，最终分支审查修复已完成。
 
-本报告只记录 Task 7 的本地门禁、安全 CDP、真实运行 JSON 与文档证据。未执行 commit、push、gh-pages 发布或公开站点复验，也不作相关完成声明。
+本报告先记录 Task 7 的本地门禁与安全 CDP 证据；第 6 节追加对上述 gh-pages built 的真实公开站点复验。本次公开验收未执行 commit、push，也未修改产品源码。
 
 ## 1. Fresh 工程门禁
 
@@ -103,4 +104,50 @@ teardown：只终止本次自建 Chrome/Vite PID；dev/CDP 两端口均释放；
 - `panel-pop-enter` 的初始 `scale(0.98)` 会把名义 44px 控件在动画测量期缩成 43.12px；移除 scale，只保留位移与透明度动画。
 - 第五次 CDP 的 45/47 是 RED；父代理完成上述产品 CSS 修复后从 fresh 状态运行完整 CDP，原有 47 项全部 GREEN；随后补充英雄入口互斥断言，原有 48 项全部 GREEN。最终分支审查又修复退出冻结、真实 `useFrame` 战斗表现、Store/配置边界与 Overlay 可访问性，并通过 BattleEffects mounted callback → BattleScreen `data-presented-*` 与累计事件计数新增 stage 1 basic/damage/death 和 stage 20 basic+skill 表现层断言；新增 `campaign-skill.png` 并确认其 hash 与 basic 截图不同。最后修正 GlobalHud 层级与 dialog 语义，使 HUD 在非 battle overlay 上可指针导航、battle 仍 hidden/inert；最终完整复跑 exit 0、self-test 11/11、运行断言 50/50。最终 JSON 中全部热区 `controls44=true`、`undersizedControls=[]`，进程/端口/profile 清理继续全部 PASS。
 
-最终本地证据尚未 commit、未 push、未发布 Pages。未触碰或纳入 `example/5v5example.mp4`、`example/ux/`、`dist` 或截图。
+截至本地验收结束时，该批本地证据尚未 commit、push 或发布；后续发布与公开复验见第 6 节。未触碰或纳入 `example/5v5example.mp4`、`example/ux/`、`dist` 或截图。
+
+## 6. GitHub Pages 公开发布验收
+
+公开 URL：`https://sherlock3rd.github.io/DobeDemo/?release=d756582`  
+公开脚本：`.superpowers/sdd/campaign-heroes-global-hud-public-cdp.mjs`  
+脱敏结果：`.superpowers/sdd/campaign-heroes-global-hud-public-results.json`
+
+实际执行：
+
+- `node --check .superpowers/sdd/campaign-heroes-global-hud-public-cdp.mjs`：exit 0。
+- `node .superpowers/sdd/campaign-heroes-global-hud-public-cdp.mjs`：exit 0。
+- assertion self-test：**19/19 PASS**，覆盖好数据、空数据失败、动态 CDP 所有权和 Windows/Unix 路径错误脱敏。
+- 公开运行断言：**18/18 PASS**，`ALL ASSERTIONS PASSED (18/18)`。
+- 公开浏览器验收由实现代理与父流程各完整运行 1 次，两次均全绿、产品重试 0 次。此前有 1 次 PowerShell `&&` 解析失败，Node 与 Chrome 均未启动，不计公开产品运行或重试。
+
+### 6.1 公开 HTTP 与业务链路
+
+1. 首页、当前 JS、当前 CSS 均实测 HTTP 200；HTML 精确引用 `/DobeDemo/assets/index-C010nH2x.js` 与 `/DobeDemo/assets/index-CoMhGqEJ.css`，且所有资产路径均以 `/DobeDemo/` 开头。
+2. 隔离 profile 的 fresh storage 实测钱包 `{money:10000,oil:0,materials:0}`、`sharedExp=0`、`highestClearedStage=0`、初始 foreman 阵容；GlobalHud 显示钱/油/物资/英雄经验四资源及推关红点。
+3. 真实指针依次点击推关 → 1-1 → 编队 → 开始。战斗起始显示 `START`、GlobalHud 隐藏；战斗状态实际变化，最终累计 `basicHits=7`、`damageEvents=7`、`deaths=1`、`presentedBasic=true`，并在 running basic 表现窗口成功截图。
+4. 战斗结果实测 `VICTORY · 胜利首通奖励 英雄经验 500`；持久状态为 `highestClearedStage=1`、`sharedExp=500`。点击继续后回到 Adventure。
+5. GlobalHud 在 fresh、Adventure、Formation 等非 battle 状态均保持可见；battle 中隐藏。移动战斗真实点击退出并确认后回到 Adventure，GlobalHud 恢复。
+6. 1440×900 与 390×844 下，HUD、Adventure、Battle 均无横向溢出；被测可用按钮全部满足 `width >= 44 && height >= 44`，`undersizedControls=[]`。
+
+### 6.2 公开 CDP 安全与脱敏
+
+- Chrome 以 `--remote-debugging-port=0` 启动，只从本次隔离 profile 的 `DevToolsActivePort` 读取动态端口，并校验 page target 的 host/port 所有权。
+- profile 使用精确前缀 `dobe-campaign-heroes-public-cdp-`；只登记并终止本脚本 spawn 的 Chrome PID。结果中不记录 PID、动态端口或 profile 随机目录名。
+- teardown 实测只对 owned Chrome 执行终止；CDP 端口释放、临时 profile 删除均为 `true`，`unknownProcessesTerminated=false`。
+- JSON 脱敏扫描未发现绝对路径、`stack`、原始错误消息或用户目录；运行错误若发生只允许写入白名单 `name`/`code`。
+- 任一运行断言、self-test、截图、端口释放或 profile 删除失败都会非零退出。
+
+### 6.3 公开截图证据
+
+以下截图均为本次公开站点真实运行生成的非空 PNG，保存在 `.superpowers/sdd/` 且继续由 ignore 规则排除，不提交：
+
+- `campaign-public-fresh-desktop.png`：1440×900，119,575 bytes
+- `campaign-public-adventure-desktop.png`：1440×900，148,527 bytes
+- `campaign-public-formation-desktop.png`：1440×900，130,395 bytes
+- `campaign-public-battle-desktop.png`：1440×900，197,153 bytes（running-basic-hit）
+- `campaign-public-victory-desktop.png`：1440×900，230,104 bytes（resolved）
+- `campaign-public-hud-mobile.png`：390×844，66,244 bytes
+- `campaign-public-adventure-mobile.png`：390×844，85,772 bytes
+- `campaign-public-battle-mobile.png`：390×844，36,795 bytes（start）
+
+本次公开复验未发现公开产品缺陷；未改产品源码，未 commit、未 push。

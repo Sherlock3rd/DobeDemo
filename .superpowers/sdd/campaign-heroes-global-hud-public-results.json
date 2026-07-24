@@ -1,0 +1,377 @@
+{
+  "generatedAt": "2026-07-24T12:33:09.967Z",
+  "script": "campaign-heroes-global-hud-public-cdp.mjs",
+  "release": {
+    "commit": "d7565826d5c11dabcfca63d8e46480e4a63dc225",
+    "url": "?release=d756582"
+  },
+  "preflight": {
+    "strategy": "Chrome assigns port 0; trust only isolated-profile DevToolsActivePort",
+    "cdpPortSource": "DevToolsActivePort",
+    "cdpPortAssigned": true,
+    "cdpBrowserWsPathValidated": true,
+    "cdpOwnedProfile": true
+  },
+  "processSafety": {
+    "ownedProcessLabels": [
+      "chrome"
+    ],
+    "killAttempts": [
+      {
+        "label": "chrome",
+        "owned": true
+      }
+    ],
+    "unknownProcessesTerminated": false,
+    "chromeExecutable": "chrome.exe",
+    "profilePrefixVerified": true
+  },
+  "http": {
+    "url": "?release=d756582",
+    "htmlStatus": 200,
+    "assetRefs": [
+      "/DobeDemo/assets/index-C010nH2x.js",
+      "/DobeDemo/assets/index-CoMhGqEJ.css"
+    ],
+    "jsRef": "/DobeDemo/assets/index-C010nH2x.js",
+    "cssRef": "/DobeDemo/assets/index-CoMhGqEJ.css",
+    "jsStatus": 200,
+    "cssStatus": 200,
+    "jsMatchesExpected": true,
+    "cssMatchesExpected": true,
+    "baseOk": true
+  },
+  "fresh": {
+    "wallet": {
+      "money": 10000,
+      "oil": 0,
+      "materials": 0
+    },
+    "sharedExp": 0,
+    "highestClearedStage": 0,
+    "formation": [
+      {
+        "heroId": "foreman",
+        "row": "back",
+        "index": 1
+      }
+    ],
+    "hud": {
+      "resources": [
+        "钱 10000 +1/10秒",
+        "油 0 +0/10秒",
+        "物资 0 +0/10秒",
+        "英雄经验 0 · 可领 0"
+      ],
+      "adventureDot": true
+    }
+  },
+  "desktop": {
+    "hud": {
+      "present": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "withinHorizontalBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "controls": 5,
+      "controls44": true,
+      "undersizedControls": []
+    },
+    "adventure": {
+      "present": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "withinHorizontalBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "controls": 4,
+      "controls44": true,
+      "undersizedControls": []
+    },
+    "stage11Selected": true,
+    "formationSlots": 5,
+    "battle": {
+      "present": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "withinHorizontalBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "controls": 4,
+      "controls44": true,
+      "undersizedControls": []
+    }
+  },
+  "battle": {
+    "start": {
+      "dialog": true,
+      "banner": "START",
+      "globalHudPresent": false,
+      "hp": [
+        800
+      ],
+      "cooldown": [
+        68
+      ]
+    },
+    "combatStateChanged": true,
+    "metrics": {
+      "result": "VICTORY · 胜利继续",
+      "hp": [
+        647
+      ],
+      "cooldown": [
+        97
+      ],
+      "basicHits": 7,
+      "damageEvents": 7,
+      "deaths": 1,
+      "presentedBasic": true,
+      "currentPresentedBasic": false
+    },
+    "runningBasicCaptured": true,
+    "resultText": "VICTORY · 胜利继续",
+    "highestAfter": 1,
+    "sharedAfter": 500
+  },
+  "overlay": {
+    "fresh": {
+      "adventure": false,
+      "formation": false,
+      "battle": false,
+      "globalHud": true
+    },
+    "adventure": {
+      "adventure": true,
+      "formation": false,
+      "battle": false,
+      "globalHud": true
+    },
+    "formation": {
+      "adventure": false,
+      "formation": true,
+      "battle": false,
+      "globalHud": true
+    },
+    "afterContinue": {
+      "adventure": true,
+      "formation": false,
+      "battle": false,
+      "globalHud": true
+    },
+    "afterExit": {
+      "adventure": true,
+      "formation": false,
+      "battle": false,
+      "globalHud": true
+    }
+  },
+  "mobile": {
+    "hud": {
+      "present": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "withinHorizontalBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "controls": 5,
+      "controls44": true,
+      "undersizedControls": []
+    },
+    "adventure": {
+      "present": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "withinHorizontalBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "controls": 4,
+      "controls44": true,
+      "undersizedControls": []
+    },
+    "battle": {
+      "present": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "withinHorizontalBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "controls": 4,
+      "controls44": true,
+      "undersizedControls": []
+    }
+  },
+  "screenshots": {
+    "campaign-public-fresh-desktop.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 119575
+    },
+    "campaign-public-adventure-desktop.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 148527
+    },
+    "campaign-public-formation-desktop.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 130395
+    },
+    "campaign-public-battle-desktop.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 197153,
+      "phase": "running-basic-hit"
+    },
+    "campaign-public-victory-desktop.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 230104,
+      "phase": "resolved"
+    },
+    "campaign-public-hud-mobile.png": {
+      "width": 390,
+      "height": 844,
+      "bytes": 66244
+    },
+    "campaign-public-adventure-mobile.png": {
+      "width": 390,
+      "height": 844,
+      "bytes": 85772
+    },
+    "campaign-public-battle-mobile.png": {
+      "width": 390,
+      "height": 844,
+      "bytes": 36795,
+      "phase": "start"
+    }
+  },
+  "teardown": {
+    "cdpPortReleased": true,
+    "tempProfileRemoved": true
+  },
+  "assertionSelfTest": {
+    "ok": true,
+    "checked": 19,
+    "failuresOnGoodData": [],
+    "passesOnEmptyData": [],
+    "pathRedaction": {
+      "ok": true,
+      "outputs": [
+        {
+          "name": "Error",
+          "code": "ENOENT"
+        },
+        {
+          "name": "TypeError"
+        }
+      ],
+      "forbiddenDataPresent": false
+    }
+  },
+  "assertions": [
+    {
+      "name": "S1. dynamic CDP belongs to isolated owned profile",
+      "pass": true,
+      "detail": "{\"strategy\":\"Chrome assigns port 0; trust only isolated-profile DevToolsActivePort\",\"cdpPortSource\":\"DevToolsActivePort\",\"cdpPortAssigned\":true,\"cdpBrowserWsPathValidated\":true,\"cdpOwnedProfile\":true}"
+    },
+    {
+      "name": "H1. public HTML/JS/CSS all return HTTP 200",
+      "pass": true,
+      "detail": "{\"html\":200,\"js\":200,\"css\":200}"
+    },
+    {
+      "name": "H2. public asset hashes exactly match this release",
+      "pass": true,
+      "detail": "{\"js\":\"/DobeDemo/assets/index-C010nH2x.js\",\"css\":\"/DobeDemo/assets/index-CoMhGqEJ.css\"}"
+    },
+    {
+      "name": "1. fresh GlobalHud has wallet 10000 and four resources",
+      "pass": true,
+      "detail": "{\"wallet\":{\"money\":10000,\"oil\":0,\"materials\":0},\"sharedExp\":0,\"highestClearedStage\":0,\"formation\":[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1}],\"hud\":{\"resources\":[\"钱 10000 +1/10秒\",\"油 0 +0/10秒\",\"物资 0 +0/10秒\",\"英雄经验 0 · 可领 0\"],\"adventureDot\":true}}"
+    },
+    {
+      "name": "1b. fresh adventure red dot and initial progress are present",
+      "pass": true,
+      "detail": "{\"dot\":true,\"highest\":0,\"shared\":0,\"formation\":[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1}]}"
+    },
+    {
+      "name": "2. real push -> 1-1 -> formation -> start chain opened battle",
+      "pass": true,
+      "detail": "{\"stage11\":true,\"slots\":5,\"start\":{\"dialog\":true,\"banner\":\"START\",\"globalHudPresent\":false,\"hp\":[800],\"cooldown\":[68]}}"
+    },
+    {
+      "name": "3. START hides GlobalHud and battle state advances",
+      "pass": true,
+      "detail": "{\"startHud\":false,\"changed\":true}"
+    },
+    {
+      "name": "3b. basic, damage and death presentation callbacks fired",
+      "pass": true,
+      "detail": "{\"result\":\"VICTORY · 胜利继续\",\"hp\":[647],\"cooldown\":[97],\"basicHits\":7,\"damageEvents\":7,\"deaths\":1,\"presentedBasic\":true,\"currentPresentedBasic\":false}"
+    },
+    {
+      "name": "3c. first battle resolved VICTORY with highest=1/shared=500",
+      "pass": true,
+      "detail": "{\"result\":\"VICTORY · 胜利继续\",\"highest\":1,\"shared\":500}"
+    },
+    {
+      "name": "4. GlobalHud remains visible on non-battle overlays",
+      "pass": true,
+      "detail": "{\"fresh\":{\"adventure\":false,\"formation\":false,\"battle\":false,\"globalHud\":true},\"adventure\":{\"adventure\":true,\"formation\":false,\"battle\":false,\"globalHud\":true},\"formation\":{\"adventure\":false,\"formation\":true,\"battle\":false,\"globalHud\":true},\"afterContinue\":{\"adventure\":true,\"formation\":false,\"battle\":false,\"globalHud\":true},\"afterExit\":{\"adventure\":true,\"formation\":false,\"battle\":false,\"globalHud\":true}}"
+    },
+    {
+      "name": "4b. victory continue returns to adventure with GlobalHud",
+      "pass": true,
+      "detail": "{\"adventure\":true,\"formation\":false,\"battle\":false,\"globalHud\":true}"
+    },
+    {
+      "name": "4c. confirmed battle exit returns to adventure with GlobalHud",
+      "pass": true,
+      "detail": "{\"adventure\":true,\"formation\":false,\"battle\":false,\"globalHud\":true}"
+    },
+    {
+      "name": "5. desktop 1440x900 HUD/adventure/battle fit and controls are 44x44",
+      "pass": true,
+      "detail": "{\"hud\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinHorizontalBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":5,\"controls44\":true,\"undersizedControls\":[]},\"adventure\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinHorizontalBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"battle\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinHorizontalBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]}}"
+    },
+    {
+      "name": "5b. mobile 390x844 HUD/adventure/battle fit and controls are 44x44",
+      "pass": true,
+      "detail": "{\"hud\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinHorizontalBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":5,\"controls44\":true,\"undersizedControls\":[]},\"adventure\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinHorizontalBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"battle\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinHorizontalBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]}}"
+    },
+    {
+      "name": "E1. all public screenshots are nonempty valid PNG files",
+      "pass": true,
+      "detail": "{\"campaign-public-fresh-desktop.png\":{\"width\":1440,\"height\":900,\"bytes\":119575},\"campaign-public-adventure-desktop.png\":{\"width\":1440,\"height\":900,\"bytes\":148527},\"campaign-public-formation-desktop.png\":{\"width\":1440,\"height\":900,\"bytes\":130395},\"campaign-public-battle-desktop.png\":{\"width\":1440,\"height\":900,\"bytes\":197153,\"phase\":\"running-basic-hit\"},\"campaign-public-victory-desktop.png\":{\"width\":1440,\"height\":900,\"bytes\":230104,\"phase\":\"resolved\"},\"campaign-public-hud-mobile.png\":{\"width\":390,\"height\":844,\"bytes\":66244},\"campaign-public-adventure-mobile.png\":{\"width\":390,\"height\":844,\"bytes\":85772},\"campaign-public-battle-mobile.png\":{\"width\":390,\"height\":844,\"bytes\":36795,\"phase\":\"start\"}}"
+    },
+    {
+      "name": "T1. teardown targeted only the owned Chrome process",
+      "pass": true,
+      "detail": "{\"ownedProcessLabels\":[\"chrome\"],\"killAttempts\":[{\"label\":\"chrome\",\"owned\":true}],\"unknownProcessesTerminated\":false,\"chromeExecutable\":\"chrome.exe\",\"profilePrefixVerified\":true}"
+    },
+    {
+      "name": "T2. owned CDP port was released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "T3. isolated temporary Chrome profile was removed",
+      "pass": true,
+      "detail": "true"
+    }
+  ]
+}
