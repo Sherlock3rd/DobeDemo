@@ -42,6 +42,7 @@ vi.mock('./ui/GlobalHud', () => ({
     onOpenHeroes: () => void
     onOpenGangTree: () => void
     onOpenAdventure: () => void
+    onOpenRacing: () => void
     onOpenSettings: () => void
   }) => (
     <nav aria-label="主导航">
@@ -53,6 +54,9 @@ vi.mock('./ui/GlobalHud', () => ({
       </button>
       <button type="button" onClick={p.onOpenAdventure}>
         推关
+      </button>
+      <button type="button" onClick={p.onOpenRacing}>
+        赛车
       </button>
       <button type="button" onClick={p.onOpenSettings}>
         设置
@@ -116,6 +120,32 @@ vi.mock('./ui/HeroesPanel', () => ({
       <h2 tabIndex={-1} ref={(element) => element?.focus()}>
         英雄培养
       </h2>
+    </div>
+  ),
+}))
+
+vi.mock('./ui/RacingPanel', () => ({
+  RacingPanel: (p: {
+    onClose: () => void
+    onStart: (stage: number, heroId: 'foreman') => void
+  }) => (
+    <div role="dialog" aria-label="公路争霸大厅">
+      <button type="button" onClick={() => p.onStart(1, 'foreman')}>
+        发车
+      </button>
+      <button type="button" onClick={p.onClose}>
+        关闭赛车
+      </button>
+    </div>
+  ),
+}))
+
+vi.mock('./ui/RaceScreen', () => ({
+  RaceScreen: (p: { onExit: () => void }) => (
+    <div role="dialog" aria-label="公路争霸">
+      <button type="button" onClick={p.onExit}>
+        返回赛车
+      </button>
     </div>
   ),
 }))
@@ -201,6 +231,21 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: '设置' })).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: '退出战斗' }))
     expect(screen.getByRole('dialog', { name: '推关地图' })).toBeInTheDocument()
+  })
+
+  it('opens racing from the HUD and returns to its lobby after a race', async () => {
+    render(<App />)
+    await userEvent.click(screen.getByRole('button', { name: '赛车' }))
+    expect(
+      screen.getByRole('dialog', { name: '公路争霸大厅' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '推关' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: '发车' }))
+    expect(screen.getByRole('dialog', { name: '公路争霸' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '返回赛车' }))
+    expect(
+      screen.getByRole('dialog', { name: '公路争霸大厅' }),
+    ).toBeInTheDocument()
   })
 
   it('keeps focus inside the adventure, formation, and battle transition chain', async () => {

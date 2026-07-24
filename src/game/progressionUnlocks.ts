@@ -1,8 +1,9 @@
 import type { BuildingId } from './cityTypes'
+import type { CarId, GunId } from './equipmentTypes'
 import type { HeroId } from './heroes'
 
-export type UnlockKind = 'building' | 'hero' | 'feature'
-export type FeatureId = 'adventure' | 'heroes'
+export type UnlockKind = 'building' | 'hero' | 'feature' | 'car' | 'gun'
+export type FeatureId = 'adventure' | 'heroes' | 'racing'
 
 export interface ProgressionUnlockBase {
   requiredLevel: number
@@ -13,6 +14,8 @@ export type ProgressionUnlock =
   | (ProgressionUnlockBase & { kind: 'building'; buildingId: BuildingId })
   | (ProgressionUnlockBase & { kind: 'hero'; heroId: HeroId })
   | (ProgressionUnlockBase & { kind: 'feature'; featureId: FeatureId })
+  | (ProgressionUnlockBase & { kind: 'car'; carId: CarId })
+  | (ProgressionUnlockBase & { kind: 'gun'; gunId: GunId })
 
 export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
   {
@@ -34,6 +37,24 @@ export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
     roleTitle: 'Prospect',
   },
   {
+    kind: 'feature',
+    featureId: 'racing',
+    requiredLevel: 1,
+    roleTitle: 'Prospect',
+  },
+  {
+    kind: 'car',
+    carId: 'rust-fox',
+    requiredLevel: 1,
+    roleTitle: 'Prospect',
+  },
+  {
+    kind: 'gun',
+    gunId: 'rivet-smg',
+    requiredLevel: 1,
+    roleTitle: 'Prospect',
+  },
+  {
     kind: 'hero',
     heroId: 'foreman',
     requiredLevel: 1,
@@ -46,8 +67,20 @@ export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
     roleTitle: 'Full Patch',
   },
   {
+    kind: 'car',
+    carId: 'iron-fang',
+    requiredLevel: 8,
+    roleTitle: 'Full Patch',
+  },
+  {
     kind: 'hero',
     heroId: 'anvil',
+    requiredLevel: 12,
+    roleTitle: 'Full Patch',
+  },
+  {
+    kind: 'gun',
+    gunId: 'double-barrel',
     requiredLevel: 12,
     roleTitle: 'Full Patch',
   },
@@ -58,8 +91,20 @@ export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
     roleTitle: 'Wrench',
   },
   {
+    kind: 'car',
+    carId: 'neon-bee',
+    requiredLevel: 16,
+    roleTitle: 'Wrench',
+  },
+  {
     kind: 'building',
     buildingId: 'metalworking-plant',
+    requiredLevel: 24,
+    roleTitle: 'Bar Liaison',
+  },
+  {
+    kind: 'gun',
+    gunId: 'industrial-carbine',
     requiredLevel: 24,
     roleTitle: 'Bar Liaison',
   },
@@ -76,8 +121,32 @@ export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
     roleTitle: 'Road Captain',
   },
   {
+    kind: 'car',
+    carId: 'road-wolf',
+    requiredLevel: 32,
+    roleTitle: 'Road Captain',
+  },
+  {
+    kind: 'gun',
+    gunId: 'road-machine-gun',
+    requiredLevel: 32,
+    roleTitle: 'Road Captain',
+  },
+  {
     kind: 'building',
     buildingId: 'clubhouse',
+    requiredLevel: 40,
+    roleTitle: 'V. PRESIDENT',
+  },
+  {
+    kind: 'car',
+    carId: 'black-throne',
+    requiredLevel: 40,
+    roleTitle: 'V. PRESIDENT',
+  },
+  {
+    kind: 'gun',
+    gunId: 'president-cannon',
     requiredLevel: 40,
     roleTitle: 'V. PRESIDENT',
   },
@@ -135,6 +204,32 @@ export function heroUnlockLevel(heroId: HeroId): number {
 
 export function isHeroUnlocked(heroId: HeroId, gangLevel: number): boolean {
   return normalizeGangLevel(gangLevel) >= heroUnlockLevel(heroId)
+}
+
+export function carUnlockLevel(carId: CarId): number {
+  const unlock = PROGRESSION_UNLOCKS.find(
+    (candidate): candidate is ProgressionUnlock & { kind: 'car' } =>
+      candidate.kind === 'car' && candidate.carId === carId,
+  )
+  if (!unlock) throw new Error(`Unknown car unlock: ${carId}`)
+  return unlock.requiredLevel
+}
+
+export function gunUnlockLevel(gunId: GunId): number {
+  const unlock = PROGRESSION_UNLOCKS.find(
+    (candidate): candidate is ProgressionUnlock & { kind: 'gun' } =>
+      candidate.kind === 'gun' && candidate.gunId === gunId,
+  )
+  if (!unlock) throw new Error(`Unknown gun unlock: ${gunId}`)
+  return unlock.requiredLevel
+}
+
+export function isCarUnlocked(carId: CarId, gangLevel: number): boolean {
+  return normalizeGangLevel(gangLevel) >= carUnlockLevel(carId)
+}
+
+export function isGunUnlocked(gunId: GunId, gangLevel: number): boolean {
+  return normalizeGangLevel(gangLevel) >= gunUnlockLevel(gunId)
 }
 
 export function isFeatureUnlocked(

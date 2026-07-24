@@ -49,6 +49,7 @@ export function FormationPanel({
   const totalReputation = useGangStore((s) => s.totalReputation)
   const storedFormation = useAdventureStore((s) => s.formation)
   const heroLevels = useAdventureStore((s) => s.heroLevels)
+  const equipmentByHero = useAdventureStore((s) => s.equipmentByHero)
   const setFormation = useAdventureStore((s) => s.setFormation)
   const gangLevel = getGangLevel(totalReputation)
   const [draft, setDraft] = useState<FormationAssignment>(() =>
@@ -75,7 +76,11 @@ export function FormationPanel({
     event.stopPropagation()
   }
 
-  const ourPower = computeTeamPowerForFormation(draft, heroLevels)
+  const ourPower = computeTeamPowerForFormation(
+    draft,
+    heroLevels,
+    equipmentByHero,
+  )
   const enemyPower = computeEnemyPowerForStage(stage)
   const occupied = new Set(draft.map((s) => s.heroId))
 

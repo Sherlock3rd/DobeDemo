@@ -14,6 +14,7 @@ export interface GlobalHudProps {
   onOpenHeroes: () => void
   onOpenGangTree: () => void
   onOpenAdventure: () => void
+  onOpenRacing: () => void
   onOpenSettings: () => void
 }
 
@@ -66,6 +67,13 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
         </div>
       </div>
       <nav className="global-hud__bottom" aria-label="主导航">
+        <button
+          type="button"
+          className="global-hud__nav"
+          onClick={props.onOpenRacing}
+        >
+          赛车
+        </button>
         <button
           type="button"
           className="global-hud__nav"

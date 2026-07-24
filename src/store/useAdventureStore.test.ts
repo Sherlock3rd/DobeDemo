@@ -141,6 +141,47 @@ describe('useAdventureStore', () => {
     expect(useAdventureStore.getState().idleClock).toBe(NOW)
   })
 
+  it('moves a unique car and gun atomically between heroes', () => {
+    const store = useAdventureStore.getState()
+    expect(store.equipCar('anvil', 'rust-fox', 40)).toBe(true)
+    expect(store.equipGun('anvil', 'rivet-smg', 40)).toBe(true)
+    const equipment = useAdventureStore.getState().equipmentByHero
+    expect(equipment.foreman).toEqual({ carId: null, gunId: null })
+    expect(equipment.anvil).toEqual({
+      carId: 'rust-fox',
+      gunId: 'rivet-smg',
+    })
+  })
+
+  it('rejects locked gear and locked hero assignments without mutation', () => {
+    const before = structuredClone(useAdventureStore.getState().equipmentByHero)
+    expect(
+      useAdventureStore.getState().equipCar('foreman', 'black-throne', 1),
+    ).toBe(false)
+    expect(useAdventureStore.getState().equipGun('anvil', 'rivet-smg', 1)).toBe(
+      false,
+    )
+    expect(useAdventureStore.getState().equipmentByHero).toEqual(before)
+  })
+
+  it('records racing first-clears only in strict order and grants exp once', () => {
+    expect(useAdventureStore.getState().recordRacingVictory(2)).toEqual({
+      firstClear: false,
+      rewardExp: 0,
+    })
+    expect(useAdventureStore.getState().recordRacingVictory(1)).toEqual({
+      firstClear: true,
+      rewardExp: 160,
+    })
+    expect(useAdventureStore.getState().highestClearedRacingStage).toBe(1)
+    expect(useAdventureStore.getState().sharedExp).toBe(160)
+    expect(useAdventureStore.getState().recordRacingVictory(1)).toEqual({
+      firstClear: false,
+      rewardExp: 0,
+    })
+    expect(useAdventureStore.getState().sharedExp).toBe(160)
+  })
+
   it('persists only durable adventure fields', () => {
     useAdventureStore.setState({
       sharedExp: 42,
@@ -152,8 +193,10 @@ describe('useAdventureStore', () => {
     const persisted = JSON.parse(raw as string).state as Record<string, unknown>
     expect(Object.keys(persisted).sort()).toEqual(
       [
+        'equipmentByHero',
         'formation',
         'heroLevels',
+        'highestClearedRacingStage',
         'highestClearedStage',
         'idleClock',
         'sharedExp',

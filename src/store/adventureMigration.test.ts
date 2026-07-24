@@ -14,6 +14,12 @@ describe('adventureMigration', () => {
       sharedExp: 0,
       formation: [{ heroId: 'foreman', row: 'back', index: 1 }],
       highestClearedStage: 0,
+      highestClearedRacingStage: 0,
+      equipmentByHero: {
+        foreman: { carId: 'rust-fox', gunId: 'rivet-smg' },
+        anvil: { carId: null, gunId: null },
+        skyline: { carId: null, gunId: null },
+      },
       idleClock: NOW,
     })
   })
@@ -56,11 +62,59 @@ describe('adventureMigration', () => {
     expect(n.formation).toEqual([{ heroId: 'foreman', row: 'front', index: 0 }])
   })
 
+  it('migrates a v1 save by preserving progress and adding starter gear', () => {
+    const migrated = normalizeAdventureDurableState(
+      {
+        heroLevels: { foreman: 7, anvil: 2, skyline: 1 },
+        sharedExp: 345,
+        highestClearedStage: 4,
+        idleClock: NOW - 1000,
+        formation: [{ heroId: 'foreman', row: 'back', index: 1 }],
+      },
+      NOW,
+    )
+    expect(migrated.heroLevels.foreman).toBe(7)
+    expect(migrated.sharedExp).toBe(345)
+    expect(migrated.highestClearedStage).toBe(4)
+    expect(migrated.highestClearedRacingStage).toBe(0)
+    expect(migrated.equipmentByHero.foreman).toEqual({
+      carId: 'rust-fox',
+      gunId: 'rivet-smg',
+    })
+  })
+
+  it('deduplicates malformed equipment assignments', () => {
+    const normalized = normalizeAdventureDurableState(
+      {
+        equipmentByHero: {
+          foreman: { carId: 'rust-fox', gunId: 'rivet-smg' },
+          anvil: { carId: 'rust-fox', gunId: 'rivet-smg' },
+          skyline: { carId: 'unknown', gunId: null },
+        },
+      },
+      NOW,
+    )
+    expect(normalized.equipmentByHero.foreman).toEqual({
+      carId: 'rust-fox',
+      gunId: 'rivet-smg',
+    })
+    expect(normalized.equipmentByHero.anvil).toEqual({
+      carId: null,
+      gunId: null,
+    })
+  })
+
   it('reconciles hero levels and formation against gang level', () => {
     const state = {
       heroLevels: { foreman: 40, anvil: 30, skyline: 20 },
       sharedExp: 0,
       highestClearedStage: 0,
+      highestClearedRacingStage: 0,
+      equipmentByHero: {
+        foreman: { carId: 'rust-fox' as const, gunId: 'rivet-smg' as const },
+        anvil: { carId: null, gunId: null },
+        skyline: { carId: null, gunId: null },
+      },
       idleClock: NOW,
       formation: [
         { heroId: 'anvil' as const, row: 'front' as const, index: 0 },
@@ -79,6 +133,12 @@ describe('adventureMigration', () => {
       heroLevels: { foreman: 1, anvil: 1, skyline: 1 },
       sharedExp: 0,
       highestClearedStage: 0,
+      highestClearedRacingStage: 0,
+      equipmentByHero: {
+        foreman: { carId: 'rust-fox' as const, gunId: 'rivet-smg' as const },
+        anvil: { carId: null, gunId: null },
+        skyline: { carId: null, gunId: null },
+      },
       idleClock: NOW,
       formation: [
         { heroId: 'skyline' as const, row: 'back' as const, index: 0 },

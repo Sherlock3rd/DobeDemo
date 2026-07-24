@@ -19,6 +19,9 @@ import { FormationPanel } from './ui/FormationPanel'
 import { GangTreePanel } from './ui/GangTreePanel'
 import { GlobalHud } from './ui/GlobalHud'
 import { HeroesPanel } from './ui/HeroesPanel'
+import { RacingPanel } from './ui/RacingPanel'
+import { RaceScreen } from './ui/RaceScreen'
+import type { HeroId } from './game/heroes'
 import { SettingsPanel } from './ui/SettingsPanel'
 import './App.css'
 
@@ -31,10 +34,19 @@ export type ActiveOverlay =
   | { kind: 'formation'; stage: number }
   | { kind: 'heroes' }
   | { kind: 'battle'; stage: number }
+  | { kind: 'racing' }
+  | { kind: 'race'; stage: number; heroId: HeroId }
 
 type PlayOverlay = Exclude<ActiveOverlay, { kind: 'buildingDetail' }>
 
-const FULLSCREEN_KINDS = new Set(['adventure', 'formation', 'heroes', 'battle'])
+const FULLSCREEN_KINDS = new Set([
+  'adventure',
+  'formation',
+  'heroes',
+  'battle',
+  'racing',
+  'race',
+])
 const MODAL_KINDS = new Set([
   'gangTree',
   'settings',
@@ -42,6 +54,8 @@ const MODAL_KINDS = new Set([
   'formation',
   'heroes',
   'battle',
+  'racing',
+  'race',
 ])
 
 function resolveActiveOverlay(
@@ -133,7 +147,7 @@ export default function App(): JSX.Element {
   }, [activeOverlay.kind])
 
   useEffect(() => {
-    if (activeOverlay.kind !== 'battle') {
+    if (activeOverlay.kind !== 'battle' && activeOverlay.kind !== 'race') {
       return
     }
 
@@ -146,9 +160,10 @@ export default function App(): JSX.Element {
       return
     }
 
+    const label = activeOverlay.kind === 'battle' ? '战斗' : '公路争霸'
     document
       .querySelector<HTMLElement>(
-        '[role="dialog"][aria-label="战斗"] button:not(:disabled)',
+        `[role="dialog"][aria-label="${label}"] button:not(:disabled)`,
       )
       ?.focus()
   }, [activeOverlay.kind])
@@ -156,7 +171,11 @@ export default function App(): JSX.Element {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return
-      if (activeOverlay.kind === 'none' || activeOverlay.kind === 'battle') {
+      if (
+        activeOverlay.kind === 'none' ||
+        activeOverlay.kind === 'battle' ||
+        activeOverlay.kind === 'race'
+      ) {
         return
       }
       if (activeOverlay.kind === 'buildingDetail') {
@@ -230,6 +249,7 @@ export default function App(): JSX.Element {
             onOpenHeroes={() => openOverlay({ kind: 'heroes' })}
             onOpenGangTree={() => openOverlay({ kind: 'gangTree' })}
             onOpenAdventure={() => openOverlay({ kind: 'adventure' })}
+            onOpenRacing={() => openOverlay({ kind: 'racing' })}
             onOpenSettings={() => openOverlay({ kind: 'settings' })}
           />
         </div>
@@ -263,6 +283,21 @@ export default function App(): JSX.Element {
           <BattleScreen
             stage={activeOverlay.stage}
             onExit={() => setPlayOverlay({ kind: 'adventure' })}
+          />
+        ) : null}
+        {activeOverlay.kind === 'racing' ? (
+          <RacingPanel
+            onClose={closeOverlay}
+            onStart={(stage, heroId) =>
+              setPlayOverlay({ kind: 'race', stage, heroId })
+            }
+          />
+        ) : null}
+        {activeOverlay.kind === 'race' ? (
+          <RaceScreen
+            stage={activeOverlay.stage}
+            heroId={activeOverlay.heroId}
+            onExit={() => setPlayOverlay({ kind: 'racing' })}
           />
         ) : null}
       </main>

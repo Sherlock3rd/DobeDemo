@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "stages": [
+    {
+      "order": 1,
+      "id": "yard-sprint",
+      "title": "废场热身",
+      "mode": "race",
+      "durationMs": 60000,
+      "distance": 1550,
+      "opponentSpeeds": [18, 20],
+      "obstacleEvery": 185,
+      "firstClearExp": 160
+    },
+    {
+      "order": 2,
+      "id": "scrap-pursuit",
+      "title": "废铁追猎",
+      "mode": "pursuit",
+      "durationMs": 60000,
+      "distance": 1250,
+      "targetSpeed": 19,
+      "targetHp": 1200,
+      "incomingDamage": 2,
+      "obstacleEvery": 200,
+      "firstClearExp": 190
+    },
+    {
+      "order": 3,
+      "id": "neon-bypass",
+      "title": "霓虹绕城线",
+      "mode": "race",
+      "durationMs": 62000,
+      "distance": 1700,
+      "opponentSpeeds": [21, 22.5],
+      "obstacleEvery": 175,
+      "firstClearExp": 230
+    },
+    {
+      "order": 4,
+      "id": "dock-intercept",
+      "title": "码头截击",
+      "mode": "pursuit",
+      "durationMs": 62000,
+      "distance": 1420,
+      "targetSpeed": 21,
+      "targetHp": 1500,
+      "incomingDamage": 3,
+      "obstacleEvery": 190,
+      "firstClearExp": 270
+    },
+    {
+      "order": 5,
+      "id": "foundry-run",
+      "title": "熔炉大道",
+      "mode": "race",
+      "durationMs": 64000,
+      "distance": 1850,
+      "opponentSpeeds": [23.5, 24.5],
+      "obstacleEvery": 165,
+      "firstClearExp": 320
+    },
+    {
+      "order": 6,
+      "id": "warehouse-hunt",
+      "title": "仓区围猎",
+      "mode": "pursuit",
+      "durationMs": 64000,
+      "distance": 1620,
+      "targetSpeed": 22.5,
+      "targetHp": 2500,
+      "incomingDamage": 4,
+      "obstacleEvery": 180,
+      "firstClearExp": 380
+    },
+    {
+      "order": 7,
+      "id": "storm-viaduct",
+      "title": "暴雨高架",
+      "mode": "race",
+      "durationMs": 65000,
+      "distance": 1950,
+      "opponentSpeeds": [25.5, 26.5],
+      "obstacleEvery": 155,
+      "firstClearExp": 450
+    },
+    {
+      "order": 8,
+      "id": "wolfpack-pursuit",
+      "title": "狼群追击",
+      "mode": "pursuit",
+      "durationMs": 65000,
+      "distance": 1800,
+      "targetSpeed": 24,
+      "targetHp": 3500,
+      "incomingDamage": 5,
+      "obstacleEvery": 170,
+      "firstClearExp": 520
+    },
+    {
+      "order": 9,
+      "id": "president-mile",
+      "title": "会长一英里",
+      "mode": "race",
+      "durationMs": 65000,
+      "distance": 2050,
+      "opponentSpeeds": [27.5, 28.5],
+      "obstacleEvery": 150,
+      "firstClearExp": 600
+    },
+    {
+      "order": 10,
+      "id": "blacktop-finale",
+      "title": "黑路终局",
+      "mode": "pursuit",
+      "durationMs": 65000,
+      "distance": 1920,
+      "targetSpeed": 25,
+      "targetHp": 4200,
+      "incomingDamage": 6,
+      "obstacleEvery": 165,
+      "firstClearExp": 750
+    }
+  ]
+}

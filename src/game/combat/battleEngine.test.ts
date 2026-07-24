@@ -94,6 +94,25 @@ describe('battleEngine', () => {
       'back:0',
     ])
   })
+
+  it('uses equipped car and gun bonuses in actual ally battle stats', () => {
+    const input = buildBattleInput(
+      1,
+      [{ heroId: 'foreman', row: 'back', index: 1 }],
+      { foreman: 1, anvil: 1, skyline: 1 },
+      1,
+      {
+        foreman: { carId: 'rust-fox', gunId: 'rivet-smg' },
+        anvil: { carId: null, gunId: null },
+        skyline: { carId: null, gunId: null },
+      },
+    )
+    expect(input.allies[0]).toMatchObject({
+      hp: 920,
+      atk: 142,
+      def: 48,
+    })
+  })
 })
 
 // Supplementary deterministic sub-tests: skill releases after

@@ -2,11 +2,11 @@
 
 ## 当前目标
 
-完成推关单关卡流程与覆盖层 HUD 遮挡修复，并提交主分支、发布 GitHub Pages：推关始终只展示唯一下一关，已通关关卡不可重复挑战；打开建筑详情、推关、编队、英雄、帮派树、设置或战斗覆盖层时隐藏外层 GlobalHud。
+实现并发布原创 SUP 风格公路争霸玩法：10 个严格顺序解锁的竞速/追击关，英雄车辆与枪械装备、帮派树投放、推关战力联动、存档 v2 迁移、响应式 3D 赛车界面。
 
 ## 当前状态
 
-已完成实现、验证、提交与发布：`main` 功能提交 `c413d9b` 已推送；GitHub Pages 纠正发布提交 `312ac28` 状态为 built，公开首页、JS 与 CSS 均 HTTP 200。
+功能实现与本地验收已完成，等待提交 `main` 并发布 GitHub Pages。类型、Lint、格式、69 个测试文件/714 项测试和生产构建通过；真实浏览器完成桌面与 390×844 赛车大厅/首关/HUD/退出确认检查，控制台 0 错误。
 
 ## 角色
 
@@ -53,3 +53,4 @@
 | 2026-07-24 | Clubhouse Direct Upgrade 本地验收：功能 HEAD `5f909af`，未改产品源码。新增安全 CDP（owned Vite `--strictPort` + 存活/应用特征、Chrome port 0 + 独立 profile `DevToolsActivePort`、真实 `Input.dispatchMouseEvent`、有限 HTTP/CDP/WebSocket 超时、ChildProcess 错误与 PID 复用防护、脱敏与失败/清理/截图非零）；覆盖无 radio/progress/子升级/确认页，战力 `250/+60/310` 与 target 2 主成本 25，两次真实点击 `1→2→3` 精确扣 25/60、刷新持久、资源不足/Lv.10/Lv.39、v3→v4 退款 55 一次、children 恒 10 个 0、3D `1→2` 完成层且 ROI 变化 282px/无 scaffold、修车厂确认流回归、桌面/移动无横溢出与按钮 `270×44`/`324×44`。最终 self-test 23/23、运行期 28/28、9 张截图与清理全绿、exit 0；最终五门禁 65 文件/693 测试全绿，dist `index-781xcY6f.js` / `index-CoMhGqEJ.css`。未 commit/push/发布 Pages | 本地集成验收   |
 | 2026-07-24 | Clubhouse Direct Upgrade 公开复验：用户提供 `main` `9e063c8`、`gh-pages` `9f7844863443d084d23425d77a0940f99b5a61bc` built。新增公开安全 CDP，继承 HTTP/CDP/WebSocket timeout、spawn error/PID 活性、统一脱敏写盘和失败非零边界；公开 HTML 与当前 `index-781xcY6f.js`/`index-CoMhGqEJ.css` 精确 200。fresh 隔离 profile document-start 预置 v4/帮派 Lv.40/钱包后真实开 Clubhouse，无 child/progress/radio/confirm；真实点击 `1→2` 精确扣 25、children 全 0，刷新持久；390×844 无横溢出，按钮 `324×44`；三张 PNG 非空并记录脱敏 basename/尺寸/bytes/SHA-256。首次真实运行 14/16 暴露断言误把合法 `3/1/1` 生产与 `+1` 声望当失败，修正证据后 self-test 27/27、运行 16/16、端口/profile teardown 全绿、exit 0。未改产品源码，未 commit/push/发布 | 公开发布复验   |
 | 2026-07-25 | 推关与 HUD 修复：AdventurePanel 仅显示 `highestClearedStage + 1` 的唯一下一关，历史关卡不再渲染或重复挑战，20 关后显示全部通关；任意 activeOverlay（含建筑升级详情）打开时 GlobalHud hidden + inert，关闭后恢复。format/typecheck/lint/build 全绿，65 文件/694 测试通过；`main` `c413d9b` 已推送。首次临时 index 发布生成空 tree，Pages built 但 404；按新防呆校验纠正为 `gh-pages` `312ac28`，公开 HTML 与 `index-0UEHpLsB.js`/`index-CoMhGqEJ.css` 均 HTTP 200，并记录 `mistakes/2026-07-25-gh-pages-empty-tree.md`。 | 玩法、界面与发布 |
+| 2026-07-25 | 公路争霸本地实现：新增 5 车/5 枪帮派树投放与英雄唯一双装备槽，车辆 HP/DEF 和枪械 ATK 通过同一属性入口同时进入编队战力及真实推关；Adventure persist v2 迁移保留 v1 进度并补发初始车枪。新增 10 个竞速/追击交替关卡、唯一下一关/不可重玩、100ms 确定性引擎、三车道/氮气/射击/路障/耐久/目标还击、程序化 R3F 公路场景、键盘与触屏控制。format/typecheck/lint/build 全绿，69 文件/714 测试通过；浏览器桌面及 390×844 无横溢出，比赛 HUD/控件均在视口内、控制台 0 错误。 | 公路争霸与装备 |

@@ -1,6 +1,8 @@
 import { getEnemyCount, getStage } from '../config/campaignConfig'
 import { teamPower, type FormationAssignment } from '../game/combat/power'
-import { getHeroStats, type HeroId, type Row } from '../game/heroes'
+import type { EquipmentByHero } from '../game/equipmentTypes'
+import { getHeroEquipmentStats } from '../game/heroEquipment'
+import type { HeroId, Row } from '../game/heroes'
 
 const ENEMY_ROWS: ReadonlyArray<Row> = [
   'front',
@@ -13,11 +15,16 @@ const ENEMY_ROWS: ReadonlyArray<Row> = [
 export function computeTeamPowerForFormation(
   formation: FormationAssignment,
   heroLevels: Record<HeroId, number>,
+  equipmentByHero?: EquipmentByHero,
 ): number {
   return teamPower(
     formation.map((s) => ({
       row: s.row,
-      ...getHeroStats(s.heroId, heroLevels[s.heroId] ?? 1),
+      ...getHeroEquipmentStats(
+        s.heroId,
+        heroLevels[s.heroId] ?? 1,
+        equipmentByHero,
+      ),
     })),
   )
 }

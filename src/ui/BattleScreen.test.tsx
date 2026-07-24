@@ -32,6 +32,7 @@ function endedAtTick(stage: number): number {
       adventure.formation,
       adventure.heroLevels,
       gangLevel,
+      adventure.equipmentByHero,
     ),
   ).endedAtTick
 }
@@ -62,6 +63,7 @@ describe('BattleScreen', () => {
         adventure.formation,
         adventure.heroLevels,
         getGangLevel(useGangStore.getState().totalReputation),
+        adventure.equipmentByHero,
       ),
     )
     const expectedMetrics = expected.timeline.reduce(

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { expToLevel } from '../config/heroesConfig'
 import { getFirstClearReward, isStageUnlocked } from '../config/campaignConfig'
+import { getRacingStage, isRacingStageUnlocked } from '../config/racingConfig'
 import { settleIdleExperience } from '../config/idleExperienceConfig'
 import {
   getHeroLevelCap,
@@ -10,6 +11,14 @@ import {
   type HeroId,
 } from '../game/heroes'
 import { GANG_MAX_LEVEL, GANG_MIN_LEVEL } from '../game/progressionUnlocks'
+import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
+import {
+  isCarId,
+  isGunId,
+  type CarId,
+  type EquipmentByHero,
+  type GunId,
+} from '../game/equipmentTypes'
 import type { FormationAssignment } from '../game/combat/power'
 import { createSafeStorage } from './safeStorage'
 import {
@@ -40,6 +49,12 @@ export interface AdventureState extends AdventureDurableState {
     stage: number,
     now: number,
   ) => { firstClear: boolean; rewardExp: number }
+  recordRacingVictory: (stage: number) => {
+    firstClear: boolean
+    rewardExp: number
+  }
+  equipCar: (heroId: string, carId: string | null, gangLevel: number) => boolean
+  equipGun: (heroId: string, gunId: string | null, gangLevel: number) => boolean
   setFormation: (formation: FormationAssignment, gangLevel: number) => boolean
   reconcileWithGang: (gangLevel: number) => void
   reset: (now?: number) => void
@@ -79,6 +94,30 @@ function isValidFormation(
     slots.add(`${s.row}:${s.index}`)
   }
   return true
+}
+
+function cloneEquipment(source: EquipmentByHero): EquipmentByHero {
+  return {
+    foreman: { ...source.foreman },
+    anvil: { ...source.anvil },
+    skyline: { ...source.skyline },
+  }
+}
+
+function unequipCar(equipment: EquipmentByHero, carId: CarId): void {
+  for (const heroId of Object.keys(equipment) as HeroId[]) {
+    if (equipment[heroId].carId === carId) {
+      equipment[heroId].carId = null
+    }
+  }
+}
+
+function unequipGun(equipment: EquipmentByHero, gunId: GunId): void {
+  for (const heroId of Object.keys(equipment) as HeroId[]) {
+    if (equipment[heroId].gunId === gunId) {
+      equipment[heroId].gunId = null
+    }
+  }
 }
 
 export const useAdventureStore = create<AdventureState>()(
@@ -166,6 +205,62 @@ export const useAdventureStore = create<AdventureState>()(
         })
         return outcome
       },
+      recordRacingVictory: (stage) => {
+        let outcome = { firstClear: false, rewardExp: 0 }
+        set((state) => {
+          if (!isRacingStageUnlocked(stage, state.highestClearedRacingStage)) {
+            return state
+          }
+          const reward = getRacingStage(stage).firstClearExp
+          outcome = { firstClear: true, rewardExp: reward }
+          return {
+            highestClearedRacingStage: stage,
+            sharedExp: Math.min(
+              Number.MAX_SAFE_INTEGER,
+              state.sharedExp + reward,
+            ),
+          }
+        })
+        return outcome
+      },
+      equipCar: (heroId, carId, gangLevel) => {
+        if (
+          !isHeroId(heroId) ||
+          !isHeroUnlocked(heroId, gangLevel) ||
+          (carId !== null &&
+            (!isCarId(carId) || !isCarUnlocked(carId, gangLevel)))
+        ) {
+          return false
+        }
+        set((state) => {
+          const equipmentByHero = cloneEquipment(state.equipmentByHero)
+          if (carId !== null) {
+            unequipCar(equipmentByHero, carId)
+          }
+          equipmentByHero[heroId].carId = carId
+          return { equipmentByHero }
+        })
+        return true
+      },
+      equipGun: (heroId, gunId, gangLevel) => {
+        if (
+          !isHeroId(heroId) ||
+          !isHeroUnlocked(heroId, gangLevel) ||
+          (gunId !== null &&
+            (!isGunId(gunId) || !isGunUnlocked(gunId, gangLevel)))
+        ) {
+          return false
+        }
+        set((state) => {
+          const equipmentByHero = cloneEquipment(state.equipmentByHero)
+          if (gunId !== null) {
+            unequipGun(equipmentByHero, gunId)
+          }
+          equipmentByHero[heroId].gunId = gunId
+          return { equipmentByHero }
+        })
+        return true
+      },
       setFormation: (formation, gangLevel) => {
         if (!isValidFormation(formation, gangLevel)) return false
         set({ formation: formation.map((s) => ({ ...s })) })
@@ -177,20 +272,24 @@ export const useAdventureStore = create<AdventureState>()(
     }),
     {
       name: ADVENTURE_STORAGE_KEY,
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => createSafeStorage()),
-      migrate: () => undefined,
+      migrate: (persisted) => persisted,
       partialize: ({
         heroLevels,
         sharedExp,
         formation,
         highestClearedStage,
+        highestClearedRacingStage,
+        equipmentByHero,
         idleClock,
       }) => ({
         heroLevels,
         sharedExp,
         formation,
         highestClearedStage,
+        highestClearedRacingStage,
+        equipmentByHero,
         idleClock,
       }),
       merge: (persisted, current) =>

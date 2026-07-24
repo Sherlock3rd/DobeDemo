@@ -25,6 +25,7 @@ describe('GlobalHud', () => {
         onOpenHeroes={() => {}}
         onOpenGangTree={() => {}}
         onOpenAdventure={() => {}}
+        onOpenRacing={() => {}}
         onOpenSettings={() => {}}
       />,
     )
@@ -39,6 +40,7 @@ describe('GlobalHud', () => {
         onOpenHeroes={() => {}}
         onOpenGangTree={() => {}}
         onOpenAdventure={() => {}}
+        onOpenRacing={() => {}}
         onOpenSettings={() => {}}
       />,
     )
@@ -49,16 +51,20 @@ describe('GlobalHud', () => {
 
   it('routes bottom nav callbacks', async () => {
     const onOpenAdventure = vi.fn()
+    const onOpenRacing = vi.fn()
     render(
       <GlobalHud
         onOpenHeroes={() => {}}
         onOpenGangTree={() => {}}
         onOpenAdventure={onOpenAdventure}
+        onOpenRacing={onOpenRacing}
         onOpenSettings={() => {}}
       />,
     )
     await userEvent.click(screen.getByRole('button', { name: /推关/ }))
     expect(onOpenAdventure).toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: '赛车' }))
+    expect(onOpenRacing).toHaveBeenCalled()
   })
 
   it('shows the adventure red dot for a fresh account', () => {
@@ -67,6 +73,7 @@ describe('GlobalHud', () => {
         onOpenHeroes={() => {}}
         onOpenGangTree={() => {}}
         onOpenAdventure={() => {}}
+        onOpenRacing={() => {}}
         onOpenSettings={() => {}}
       />,
     )
@@ -87,6 +94,7 @@ describe('GlobalHud', () => {
         onOpenHeroes={() => {}}
         onOpenGangTree={() => {}}
         onOpenAdventure={() => {}}
+        onOpenRacing={() => {}}
         onOpenSettings={() => {}}
       />,
     )

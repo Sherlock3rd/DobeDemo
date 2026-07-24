@@ -1,5 +1,6 @@
 import { useEffect, type JSX } from 'react'
 import { heroesConfig } from '../config/heroesConfig'
+import { equipmentConfig } from '../config/equipmentConfig'
 import { buildingCatalogById } from '../game/buildingCatalog'
 import {
   GANG_MAX_LEVEL,
@@ -39,9 +40,10 @@ const UNLOCKS_BY_LEVEL = PROGRESSION_UNLOCKS.reduce((map, unlock) => {
   return map
 }, new Map<number, ProgressionUnlock[]>())
 
-const FEATURE_LABELS: Record<'adventure' | 'heroes', string> = {
+const FEATURE_LABELS = {
   adventure: '战役',
   heroes: '英雄',
+  racing: '公路争霸',
 }
 
 function unlockLabel(unlock: ProgressionUnlock): string {
@@ -52,7 +54,28 @@ function unlockLabel(unlock: ProgressionUnlock): string {
     const hero = heroesConfig.heroes[unlock.heroId]
     return `${hero.name}·${hero.alias}`
   }
+  if (unlock.kind === 'car') {
+    return `载具·${equipmentConfig.cars[unlock.carId].name}`
+  }
+  if (unlock.kind === 'gun') {
+    return `枪械·${equipmentConfig.guns[unlock.gunId].name}`
+  }
   return FEATURE_LABELS[unlock.featureId]
+}
+
+function unlockKey(unlock: ProgressionUnlock): string {
+  switch (unlock.kind) {
+    case 'building':
+      return unlock.buildingId
+    case 'hero':
+      return unlock.heroId
+    case 'feature':
+      return unlock.featureId
+    case 'car':
+      return unlock.carId
+    case 'gun':
+      return unlock.gunId
+  }
 }
 
 function getLevelState(level: number, currentLevel: number): LevelState {
@@ -162,12 +185,7 @@ export function GangTreePanel({
                 ) : null}
                 {unlocks.map((unlock) => {
                   const label = unlockLabel(unlock)
-                  const key =
-                    unlock.kind === 'building'
-                      ? unlock.buildingId
-                      : unlock.kind === 'hero'
-                        ? unlock.heroId
-                        : unlock.featureId
+                  const key = unlockKey(unlock)
                   return (
                     <span
                       key={`${unlock.kind}-${key}`}

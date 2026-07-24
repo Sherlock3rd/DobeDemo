@@ -1,5 +1,7 @@
 import { HERO_IDS, isHeroId, isHeroUnlocked, type HeroId } from '../game/heroes'
 import type { FormationAssignment } from '../game/combat/power'
+import { isCarId, isGunId, type EquipmentByHero } from '../game/equipmentTypes'
+import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
 
 export const ADVENTURE_STORAGE_KEY = 'dobe-adventure-progression-v1'
 
@@ -8,6 +10,8 @@ export interface AdventureDurableState {
   sharedExp: number
   formation: FormationAssignment
   highestClearedStage: number
+  highestClearedRacingStage: number
+  equipmentByHero: EquipmentByHero
   idleClock: number
 }
 
@@ -16,6 +20,14 @@ const DEFAULT_FORMATION: FormationAssignment = [
 ]
 
 const MAX_INDEX_BY_ROW = { front: 1, back: 2 } as const
+
+function createInitialEquipment(): EquipmentByHero {
+  return {
+    foreman: { carId: 'rust-fox', gunId: 'rivet-smg' },
+    anvil: { carId: null, gunId: null },
+    skyline: { carId: null, gunId: null },
+  }
+}
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -39,8 +51,40 @@ export function createInitialAdventureState(
     sharedExp: 0,
     formation: DEFAULT_FORMATION.map((s) => ({ ...s })),
     highestClearedStage: 0,
+    highestClearedRacingStage: 0,
+    equipmentByHero: createInitialEquipment(),
     idleClock: Number.isFinite(now) ? now : Date.now(),
   }
+}
+
+function normalizeEquipment(value: unknown): EquipmentByHero {
+  if (!isRecord(value)) return createInitialEquipment()
+  const result = createInitialEquipment()
+  for (const id of HERO_IDS) {
+    result[id] = { carId: null, gunId: null }
+  }
+  const seenCars = new Set<string>()
+  const seenGuns = new Set<string>()
+  for (const id of HERO_IDS) {
+    const raw = value[id]
+    if (!isRecord(raw)) continue
+    const carId =
+      typeof raw.carId === 'string' &&
+      isCarId(raw.carId) &&
+      !seenCars.has(raw.carId)
+        ? raw.carId
+        : null
+    const gunId =
+      typeof raw.gunId === 'string' &&
+      isGunId(raw.gunId) &&
+      !seenGuns.has(raw.gunId)
+        ? raw.gunId
+        : null
+    if (carId) seenCars.add(carId)
+    if (gunId) seenGuns.add(gunId)
+    result[id] = { carId, gunId }
+  }
+  return result
 }
 
 function normalizeFormation(value: unknown): FormationAssignment {
@@ -92,6 +136,13 @@ export function normalizeAdventureDurableState(
     sharedExp: clampInt(src.sharedExp, 0, Number.MAX_SAFE_INTEGER, 0),
     formation: normalizeFormation(src.formation),
     highestClearedStage: clampInt(src.highestClearedStage, 0, 20, 0),
+    highestClearedRacingStage: clampInt(
+      src.highestClearedRacingStage,
+      0,
+      10,
+      0,
+    ),
+    equipmentByHero: normalizeEquipment(src.equipmentByHero),
     idleClock:
       typeof src.idleClock === 'number' && Number.isFinite(src.idleClock)
         ? src.idleClock
@@ -116,9 +167,24 @@ export function reconcileAdventureWithGang(
   const formation = state.formation.filter((slot) =>
     isHeroUnlocked(slot.heroId, gangLevel),
   )
+  const equipmentByHero = {} as EquipmentByHero
+  for (const id of HERO_IDS) {
+    const equipment = state.equipmentByHero[id]
+    equipmentByHero[id] = {
+      carId:
+        equipment?.carId && isCarUnlocked(equipment.carId, gangLevel)
+          ? equipment.carId
+          : null,
+      gunId:
+        equipment?.gunId && isGunUnlocked(equipment.gunId, gangLevel)
+          ? equipment.gunId
+          : null,
+    }
+  }
   return {
     ...state,
     heroLevels,
+    equipmentByHero,
     formation:
       formation.length === 0
         ? DEFAULT_FORMATION.map((s) => ({ ...s }))

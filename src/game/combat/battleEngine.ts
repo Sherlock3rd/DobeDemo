@@ -3,12 +3,13 @@ import { combatConfig, type SkillConfig } from '../../config/combatConfig'
 import { heroesConfig } from '../../config/heroesConfig'
 import {
   getHeroLevelCap,
-  getHeroStats,
   isHeroId,
   isHeroUnlocked,
   type HeroId,
   type Row,
 } from '../heroes'
+import type { EquipmentByHero } from '../equipmentTypes'
+import { getHeroEquipmentStats } from '../heroEquipment'
 import {
   effectiveStats,
   globalIndexOf,
@@ -135,6 +136,7 @@ export function buildBattleInput(
   formation: FormationAssignment,
   heroLevels: Record<HeroId, number>,
   gangLevel: number,
+  equipmentByHero?: EquipmentByHero,
 ): BattleInput {
   if (!Number.isInteger(stage) || stage < 1 || stage > 20) {
     invalidInput('stage')
@@ -192,7 +194,7 @@ export function buildBattleInput(
       )
     }
 
-    const stats = getHeroStats(slot.heroId, level)
+    const stats = getHeroEquipmentStats(slot.heroId, level, equipmentByHero)
     return {
       side: 'ally',
       heroId: slot.heroId,

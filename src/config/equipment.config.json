@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "cars": {
+    "rust-fox": {
+      "name": "灰狐旧改车",
+      "description": "修理厂拼出的第一台街头战车，轻快而可靠。",
+      "unlockGangLevel": 1,
+      "heroBonus": { "hp": 120, "def": 8 },
+      "racing": {
+        "maxSpeed": 32,
+        "acceleration": 10,
+        "handlingMs": 260,
+        "durability": 100
+      },
+      "appearance": { "body": "#8f999e", "accent": "#f59b36" }
+    },
+    "iron-fang": {
+      "name": "铁獠装甲车",
+      "description": "厚重防护和强化保险杠，适合正面突破。",
+      "unlockGangLevel": 8,
+      "heroBonus": { "hp": 260, "def": 18 },
+      "racing": {
+        "maxSpeed": 34,
+        "acceleration": 9,
+        "handlingMs": 300,
+        "durability": 128
+      },
+      "appearance": { "body": "#4b555b", "accent": "#f1c84b" }
+    },
+    "neon-bee": {
+      "name": "霓虹蜂跑车",
+      "description": "牺牲装甲换取爆发加速的霓虹街车。",
+      "unlockGangLevel": 16,
+      "heroBonus": { "hp": 180, "def": 15 },
+      "racing": {
+        "maxSpeed": 38,
+        "acceleration": 13,
+        "handlingMs": 210,
+        "durability": 104
+      },
+      "appearance": { "body": "#f2b62e", "accent": "#26e0d1" }
+    },
+    "road-wolf": {
+      "name": "公路狼截击车",
+      "description": "追击队的均衡座驾，极速与韧性兼备。",
+      "unlockGangLevel": 32,
+      "heroBonus": { "hp": 380, "def": 28 },
+      "racing": {
+        "maxSpeed": 41,
+        "acceleration": 14,
+        "handlingMs": 190,
+        "durability": 142
+      },
+      "appearance": { "body": "#244c6a", "accent": "#ea5a33" }
+    },
+    "black-throne": {
+      "name": "黑王座",
+      "description": "会长专属的公路统治者，性能没有短板。",
+      "unlockGangLevel": 40,
+      "heroBonus": { "hp": 520, "def": 38 },
+      "racing": {
+        "maxSpeed": 45,
+        "acceleration": 16,
+        "handlingMs": 170,
+        "durability": 165
+      },
+      "appearance": { "body": "#171a20", "accent": "#e33f35" }
+    }
+  },
+  "guns": {
+    "rivet-smg": {
+      "name": "铆钉冲锋枪",
+      "description": "近距离倾泻火力的帮派制式武器。",
+      "unlockGangLevel": 1,
+      "heroBonus": { "atk": 22 },
+      "pursuit": {
+        "damage": 13,
+        "cooldownMs": 400,
+        "range": 30,
+        "projectileSpeed": 44
+      },
+      "appearance": { "metal": "#9ba5aa", "flash": "#ffd166" }
+    },
+    "double-barrel": {
+      "name": "双管短喷",
+      "description": "射程有限，但并线贴近后破坏力惊人。",
+      "unlockGangLevel": 12,
+      "heroBonus": { "atk": 45 },
+      "pursuit": {
+        "damage": 28,
+        "cooldownMs": 900,
+        "range": 22,
+        "projectileSpeed": 38
+      },
+      "appearance": { "metal": "#66584d", "flash": "#ff9f43" }
+    },
+    "industrial-carbine": {
+      "name": "工业卡宾枪",
+      "description": "稳定、精准，适合中距离持续追击。",
+      "unlockGangLevel": 24,
+      "heroBonus": { "atk": 72 },
+      "pursuit": {
+        "damage": 21,
+        "cooldownMs": 330,
+        "range": 36,
+        "projectileSpeed": 52
+      },
+      "appearance": { "metal": "#49616a", "flash": "#70e1f5" }
+    },
+    "road-machine-gun": {
+      "name": "公路机枪",
+      "description": "为高速追逐打造的重型连续火力。",
+      "unlockGangLevel": 32,
+      "heroBonus": { "atk": 105 },
+      "pursuit": {
+        "damage": 18,
+        "cooldownMs": 180,
+        "range": 40,
+        "projectileSpeed": 58
+      },
+      "appearance": { "metal": "#30383c", "flash": "#ff6b35" }
+    },
+    "president-cannon": {
+      "name": "总统重炮",
+      "description": "帮派最高席位象征，一击足以终结追逐。",
+      "unlockGangLevel": 40,
+      "heroBonus": { "atk": 150 },
+      "pursuit": {
+        "damage": 75,
+        "cooldownMs": 700,
+        "range": 45,
+        "projectileSpeed": 64
+      },
+      "appearance": { "metal": "#14191c", "flash": "#f5d547" }
+    }
+  }
+}

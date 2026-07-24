@@ -36,6 +36,7 @@ describe('FormationPanel', () => {
     const ourPower = computeTeamPowerForFormation(
       [{ heroId: 'foreman', row: 'back', index: 1 }],
       { foreman: 1, anvil: 1, skyline: 1 },
+      useAdventureStore.getState().equipmentByHero,
     )
     expect(
       screen.getByLabelText(new RegExp(`我方战力 ${ourPower}`)),

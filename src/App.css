@@ -1281,7 +1281,7 @@
 
 .global-hud__bottom {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem;
   width: 100%;
 }
@@ -1391,6 +1391,46 @@
 .heroes-panel__name {
   margin: 0;
   font-size: 1.05rem;
+}
+
+.heroes-panel__gear {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.35rem 0;
+  padding: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.7rem;
+  background: rgba(2, 6, 23, 0.32);
+}
+
+.heroes-panel__gear-title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.heroes-panel__gear-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.heroes-panel__gear-options button {
+  min-height: 44px;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 0.55rem;
+  color: #dbeafe;
+  background: rgba(30, 41, 59, 0.86);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.heroes-panel__gear-options button[aria-pressed='true'] {
+  border-color: #ffd43b;
+  color: #0f172a;
+  background: #ffd43b;
 }
 
 .gang-tree-panel__level-unlock {
@@ -1522,6 +1562,423 @@
   font-weight: 800;
 }
 
+/* Road Supremacy */
+
+.racing-panel__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 28;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 3vw, 1.5rem);
+  overflow-y: auto;
+  background:
+    linear-gradient(rgba(3, 7, 12, 0.82), rgba(3, 7, 12, 0.92)),
+    repeating-linear-gradient(
+      112deg,
+      transparent 0 42px,
+      rgba(245, 158, 11, 0.08) 43px 45px
+    );
+  backdrop-filter: blur(0.35rem);
+}
+
+.racing-panel {
+  position: relative;
+  display: grid;
+  gap: 0.9rem;
+  width: min(800px, 100%);
+  max-height: 94vh;
+  padding: clamp(1rem, 3vw, 1.8rem);
+  overflow-y: auto;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-left: 5px solid #f59e0b;
+  border-radius: 1rem;
+  color: #f8fafc;
+  background: linear-gradient(145deg, #121820, #080d13 72%);
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.5);
+  animation: drawer-enter 180ms ease-out both;
+}
+
+.racing-panel__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1;
+}
+
+.racing-panel button,
+.race-screen button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(245, 158, 11, 0.48);
+  border-radius: 0.65rem;
+  color: #f8fafc;
+  background: rgba(23, 31, 41, 0.92);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.racing-panel button:focus-visible,
+.race-screen button:focus-visible,
+.heroes-panel__gear-options button:focus-visible {
+  outline: 3px solid #f8fafc;
+  outline-offset: 3px;
+}
+
+.racing-panel button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.racing-panel__header {
+  padding-right: 5rem;
+}
+
+.racing-panel__header p,
+.racing-panel__header h2,
+.racing-panel__header span,
+.racing-panel__stage h3,
+.racing-panel__stage p,
+.racing-panel__stage dl,
+.racing-panel__brief p,
+.racing-panel__status,
+.racing-panel__complete p {
+  margin: 0;
+}
+
+.racing-panel__header p {
+  color: #f59e0b;
+  font-size: 0.75rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+}
+
+.racing-panel__header h2 {
+  margin-top: 0.2rem;
+  outline: none;
+  font-size: clamp(1.75rem, 5vw, 2.7rem);
+  font-style: italic;
+  letter-spacing: -0.04em;
+}
+
+.racing-panel__header span {
+  color: #aeb9c6;
+  font-weight: 750;
+}
+
+.racing-panel__stage {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 0.8rem;
+  background: linear-gradient(100deg, rgba(245, 158, 11, 0.14), transparent);
+}
+
+.racing-panel__stage h3 {
+  font-size: 1.35rem;
+}
+
+.racing-panel__stage p,
+.racing-panel__stage span {
+  color: #fbbf24;
+  font-weight: 800;
+}
+
+.racing-panel__stage dl {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 0.75rem;
+}
+
+.racing-panel__stage dl div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 5rem;
+}
+
+.racing-panel__stage dt {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.racing-panel__stage dd {
+  margin: 0;
+  font-weight: 900;
+}
+
+.racing-panel__heroes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.racing-panel__heroes button {
+  display: grid;
+  gap: 0.2rem;
+  min-height: 6.5rem;
+  text-align: left;
+}
+
+.racing-panel__heroes button[aria-pressed='true'] {
+  border-color: #f59e0b;
+  background: rgba(146, 64, 14, 0.55);
+  box-shadow: inset 0 0 0 1px #f59e0b;
+}
+
+.racing-panel__heroes span {
+  color: #bac6d3;
+  font-size: 0.78rem;
+}
+
+.racing-panel__brief {
+  display: grid;
+  gap: 0.3rem;
+  color: #cbd5e1;
+  font-size: 0.86rem;
+}
+
+.racing-panel__start {
+  justify-self: stretch;
+  color: #17100a !important;
+  background: #f59e0b !important;
+  font-size: 1.05rem;
+}
+
+.racing-panel__status {
+  min-height: 1.2rem;
+  color: #fbbf24;
+  font-weight: 800;
+}
+
+.racing-panel__complete {
+  display: grid;
+  gap: 0.55rem;
+  padding: 2rem;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 0.8rem;
+  background: rgba(146, 64, 14, 0.2);
+  text-align: center;
+}
+
+.race-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  overflow: hidden;
+  color: #f8fafc;
+  background: #171d24;
+  touch-action: none;
+}
+
+.race-screen__canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.race-screen--error {
+  display: grid;
+  place-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.race-hud__top {
+  position: absolute;
+  z-index: 2;
+  top: max(0.65rem, env(safe-area-inset-top));
+  left: 50%;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.7rem;
+  width: min(760px, calc(100% - 1.4rem));
+  padding: 0.55rem 0.7rem;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.8rem;
+  background: rgba(7, 12, 18, 0.82);
+  backdrop-filter: blur(0.4rem);
+}
+
+.race-hud__top div:first-child {
+  display: grid;
+}
+
+.race-hud__top span {
+  color: #cbd5e1;
+  font-size: 0.75rem;
+}
+
+.race-hud__top strong {
+  color: #f59e0b;
+}
+
+.race-hud__timer {
+  min-width: 3.2rem;
+  color: #f8fafc;
+  font-size: 1.7rem;
+  font-weight: 950;
+  text-align: center;
+}
+
+.race-hud__status {
+  position: absolute;
+  z-index: 2;
+  top: 6rem;
+  left: max(0.7rem, env(safe-area-inset-left));
+  display: grid;
+  gap: 0.35rem;
+  width: min(15rem, 43vw);
+  padding: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.7rem;
+  background: rgba(7, 12, 18, 0.77);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.race-hud__status p {
+  margin: 0;
+}
+
+.race-hud__status label {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.race-hud__status progress {
+  width: 100%;
+  accent-color: #f59e0b;
+}
+
+.race-hud__progress {
+  grid-column: 1 / -1;
+}
+
+.race-controls {
+  position: absolute;
+  z-index: 3;
+  right: max(0.8rem, env(safe-area-inset-right));
+  bottom: max(0.8rem, env(safe-area-inset-bottom));
+  left: max(0.8rem, env(safe-area-inset-left));
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.race-controls > div {
+  display: flex;
+  gap: 0.6rem;
+  pointer-events: auto;
+}
+
+.race-controls button {
+  min-width: 4rem;
+  min-height: 4rem;
+  border-radius: 50%;
+  background: rgba(7, 12, 18, 0.84);
+  box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.35);
+  user-select: none;
+}
+
+.race-controls__boost {
+  border-color: #38bdf8 !important;
+  color: #bae6fd !important;
+}
+
+.race-controls__fire {
+  border-color: #fb493f !important;
+  color: #fecaca !important;
+}
+
+.race-screen__modal,
+.race-screen__result {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  gap: 0.75rem;
+  width: min(22rem, calc(100% - 2rem));
+  padding: 1.25rem;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  border-radius: 0.9rem;
+  background: rgba(7, 12, 18, 0.95);
+  box-shadow: 0 1rem 4rem rgba(0, 0, 0, 0.6);
+  text-align: center;
+  animation: overlay-enter 180ms ease-out both;
+}
+
+.race-screen__modal p,
+.race-screen__result p {
+  margin: 0;
+  color: #cbd5e1;
+}
+
+.race-screen__modal > div,
+.race-screen__result > div {
+  display: flex;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.race-screen__result strong {
+  color: #f59e0b;
+  font-size: 2rem;
+}
+
+@media (max-width: 620px) {
+  .racing-panel__stage {
+    grid-template-columns: 1fr;
+  }
+
+  .racing-panel__stage dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .racing-panel__heroes {
+    grid-template-columns: 1fr;
+  }
+
+  .global-hud__bottom {
+    gap: 0.3rem;
+  }
+
+  .global-hud__nav {
+    padding-inline: 0.4rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .race-hud__top {
+    left: 0.6rem;
+    width: min(470px, calc(100% - 7rem));
+    transform: none;
+  }
+
+  .race-hud__status {
+    top: 5rem;
+    width: 13rem;
+  }
+
+  .race-controls button {
+    min-width: 3.3rem;
+    min-height: 3.3rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .city-hud,
   .building-panel,
@@ -1536,7 +1993,10 @@
   .formation-panel__overlay,
   .formation-panel,
   .battle-screen__banner,
-  .battle-screen__result {
+  .battle-screen__result,
+  .racing-panel,
+  .race-screen__modal,
+  .race-screen__result {
     animation: none;
   }
 

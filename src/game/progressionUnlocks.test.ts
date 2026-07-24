@@ -34,6 +34,6 @@ describe('progression unlocks', () => {
 
   it('allows multiple unlocks at level 1', () => {
     const lv1 = PROGRESSION_UNLOCKS.filter((u) => u.requiredLevel === 1)
-    expect(lv1).toHaveLength(4) // repair-shop building + adventure/heroes feature + foreman hero
+    expect(lv1).toHaveLength(7) // starter building/features, hero, car and gun
   })
 })
