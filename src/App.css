@@ -1057,13 +1057,201 @@
   }
 }
 
+/* Global HUD (standalone; App mounts in Task 6) */
+
+.global-hud {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(100%, 390px);
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.global-hud__top,
+.global-hud__bottom,
+.global-hud__resources,
+.global-hud__avatar,
+.global-hud__gang,
+.global-hud__nav {
+  pointer-events: auto;
+}
+
+.global-hud__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.global-hud__avatar,
+.global-hud__gang,
+.global-hud__nav {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(255, 212, 59, 0.35);
+  border-radius: 0.7rem;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.82);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.global-hud__avatar:focus-visible,
+.global-hud__gang:focus-visible,
+.global-hud__nav:focus-visible,
+.heroes-panel__close:focus-visible,
+.heroes-panel__upgrade:focus-visible {
+  outline: 3px solid #f8fafc;
+  outline-offset: 3px;
+}
+
+.global-hud__resources {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 0.6rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.75rem;
+  background: rgba(2, 6, 23, 0.72);
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.global-hud__bottom {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.global-hud__nav {
+  position: relative;
+  width: 100%;
+}
+
+.global-hud__dot {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.45rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 0.15rem;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.85);
+}
+
+/* Heroes panel */
+
+.heroes-panel__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(4, 6, 9, 0.78);
+  backdrop-filter: blur(0.35rem);
+  pointer-events: auto;
+  animation: overlay-enter 180ms ease-out both;
+}
+
+.heroes-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(720px, 100%);
+  max-height: 90vh;
+  padding: 1.75rem 1.75rem 1.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 212, 59, 0.32);
+  border-left: 4px solid #ffd43b;
+  border-radius: 1rem;
+  background: linear-gradient(160deg, #121826 0%, #0b1220 100%);
+  color: #f8fafc;
+  animation: drawer-enter 180ms ease-out both;
+}
+
+.heroes-panel__close,
+.heroes-panel__upgrade {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid rgba(255, 212, 59, 0.35);
+  border-radius: 0.7rem;
+  color: #0f172a;
+  background: #ffd43b;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.heroes-panel__close {
+  align-self: flex-end;
+  color: #e2e8f0;
+  background: rgba(248, 250, 252, 0.08);
+}
+
+.heroes-panel__title {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.heroes-panel__shared-exp,
+.heroes-panel__cap,
+.heroes-panel__status,
+.heroes-panel__locked,
+.heroes-panel__level,
+.heroes-panel__stats,
+.heroes-panel__skill {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.heroes-panel__list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.heroes-panel__card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 0.85rem;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.heroes-panel__name {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.gang-tree-panel__level-unlock {
+  display: block;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .city-hud,
   .building-panel,
   .settings-panel__overlay,
   .settings-panel,
   .gang-tree-panel__overlay,
-  .gang-tree-panel {
+  .gang-tree-panel,
+  .heroes-panel__overlay,
+  .heroes-panel {
     animation: none;
   }
 
@@ -1081,7 +1269,12 @@
   .settings-panel__reset,
   .settings-panel__confirm-reset,
   .settings-panel__cancel-reset,
-  .gang-tree-panel__close {
+  .gang-tree-panel__close,
+  .global-hud__avatar,
+  .global-hud__gang,
+  .global-hud__nav,
+  .heroes-panel__close,
+  .heroes-panel__upgrade {
     transition: none;
   }
 }

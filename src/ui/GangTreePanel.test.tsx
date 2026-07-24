@@ -149,4 +149,19 @@ describe('GangTreePanel', () => {
     expect(items[GANG_MAX_LEVEL - 1]).toHaveAttribute('data-state', 'current')
     expect(items[GANG_MAX_LEVEL - 1]).toHaveAttribute('aria-current', 'step')
   })
+
+  it('renders multiple unlocks on a single level node', () => {
+    useGangStore.setState({
+      totalReputation: MAX_REPUTATION,
+      lastUpdatedAt: BASE_TIME,
+    })
+    render(<GangTreePanel open onClose={() => {}} />)
+    const lv1 = screen.getByText('等级 1').closest('li') as HTMLElement
+    expect(lv1).toHaveTextContent('修车厂')
+    expect(lv1).toHaveTextContent('战役')
+    expect(lv1).toHaveTextContent('英雄')
+    expect(lv1).toHaveTextContent('陈锤')
+    const lv12 = screen.getByText('等级 12').closest('li') as HTMLElement
+    expect(lv12).toHaveTextContent('岳峰')
+  })
 })

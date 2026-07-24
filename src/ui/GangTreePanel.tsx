@@ -1,7 +1,7 @@
 import { useEffect, type JSX } from 'react'
+import { heroesConfig } from '../config/heroesConfig'
 import { buildingCatalogById } from '../game/buildingCatalog'
 import {
-  BUILDING_UNLOCKS,
   GANG_MAX_LEVEL,
   GANG_MIN_LEVEL,
   GANG_ROLES,
@@ -9,6 +9,10 @@ import {
   getGangRole,
   getNextGangRole,
 } from '../game/gangProgression'
+import {
+  PROGRESSION_UNLOCKS,
+  type ProgressionUnlock,
+} from '../game/progressionUnlocks'
 import { useGangStore } from '../store/useGangStore'
 
 export interface GangTreePanelProps {
@@ -26,9 +30,29 @@ const LEVELS: readonly number[] = Array.from(
 )
 
 const ROLE_BY_LEVEL = new Map(GANG_ROLES.map((role) => [role.threshold, role]))
-const BUILDING_UNLOCK_BY_LEVEL = new Map(
-  BUILDING_UNLOCKS.map((unlock) => [unlock.requiredLevel, unlock]),
-)
+
+const UNLOCKS_BY_LEVEL = PROGRESSION_UNLOCKS.reduce((map, unlock) => {
+  const list = map.get(unlock.requiredLevel) ?? []
+  list.push(unlock)
+  map.set(unlock.requiredLevel, list)
+  return map
+}, new Map<number, ProgressionUnlock[]>())
+
+const FEATURE_LABELS: Record<'adventure' | 'heroes', string> = {
+  adventure: '战役',
+  heroes: '英雄',
+}
+
+function unlockLabel(unlock: ProgressionUnlock): string {
+  if (unlock.kind === 'building') {
+    return buildingCatalogById[unlock.buildingId]?.name ?? unlock.buildingId
+  }
+  if (unlock.kind === 'hero') {
+    const hero = heroesConfig.heroes[unlock.heroId]
+    return `${hero.name}·${hero.alias}`
+  }
+  return FEATURE_LABELS[unlock.featureId]
+}
 
 function getLevelState(level: number, currentLevel: number): LevelState {
   if (level < currentLevel) {
@@ -114,11 +138,8 @@ export function GangTreePanel({
           {LEVELS.map((level) => {
             const state = getLevelState(level, currentLevel)
             const role = ROLE_BY_LEVEL.get(level)
-            const buildingUnlock = BUILDING_UNLOCK_BY_LEVEL.get(level)
-            const buildingName = buildingUnlock
-              ? (buildingCatalogById[buildingUnlock.buildingId]?.name ?? '')
-              : null
-            const buildingUnlocked = state !== 'locked'
+            const unlocks = UNLOCKS_BY_LEVEL.get(level) ?? []
+            const unlocked = state !== 'locked'
 
             return (
               <li
@@ -133,11 +154,27 @@ export function GangTreePanel({
                     {`${role.title}（${role.chineseTitle}）`}
                   </span>
                 ) : null}
-                {buildingName ? (
-                  <span className="gang-tree-panel__level-building">
-                    {`${buildingName} ${buildingUnlocked ? '已解锁' : '待解锁'}`}
-                  </span>
-                ) : null}
+                {unlocks.map((unlock) => {
+                  const label = unlockLabel(unlock)
+                  const key =
+                    unlock.kind === 'building'
+                      ? unlock.buildingId
+                      : unlock.kind === 'hero'
+                        ? unlock.heroId
+                        : unlock.featureId
+                  return (
+                    <span
+                      key={`${unlock.kind}-${key}`}
+                      className={
+                        unlock.kind === 'building'
+                          ? 'gang-tree-panel__level-building'
+                          : 'gang-tree-panel__level-unlock'
+                      }
+                    >
+                      {`${label} ${unlocked ? '已解锁' : '待解锁'}`}
+                    </span>
+                  )
+                })}
               </li>
             )
           })}
