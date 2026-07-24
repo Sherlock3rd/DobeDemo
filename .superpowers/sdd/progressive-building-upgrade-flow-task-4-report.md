@@ -50,3 +50,14 @@ GREEN — Task 4 implementation and all required gates pass.
 
 - The implementation commit is local only and not pushed, as requested.
 - The repository still shows numerous pre-existing unrelated `100644 → 100755` working-tree mode-only changes; they were deliberately left unstaged and outside this task.
+
+## Important review finding follow-up
+
+- Review finding: the original hidden-slot animation test changed `commercial-street` from main Lv.1 to Lv.2 at the same time as hidden index 7 changed from 0 to 1, so `previous.level !== progress.level` suppressed animation before the hidden-prefix branch was reached.
+- Fix commit: `d222a3867d0b7be769917f26a0a64f0e8f107d96` (`test: cover hidden building animation guard`), containing only `src/scene/city/BuildingVisual.test.tsx`.
+- The corrected test first installs commercial progress at main Lv.2 with every child at Lv.0, renders that exact baseline, then changes only hidden index 7 from 0 to 1 while keeping main Lv.2. It asserts an empty animated fragment ID, unchanged `animationRun` (`0`), and no `setTimeout(..., 400)` animation timer scheduling.
+- **RED proof:** after writing the corrected test, temporarily removed the production hidden-index guard from `getSessionCompletedFragmentId` and ran `npm.cmd test -- src/scene/city/BuildingVisual.test.tsx -t "does not animate a child change outside the unlocked prefix"`. Result: expected failure, receiving `data-animated="commercial-fragment-8"` instead of an empty ID (1 failed / 15 skipped). The production guard was immediately restored exactly; no production file was included in the fix commit.
+- **GREEN:** `npm.cmd test -- src/scene/city/BuildingVisual.test.tsx` passed (1 file / 16 tests).
+- **Task 4 gate:** `npm.cmd test -- src/scene/city/buildingFragmentCatalog.test.ts src/scene/city/BuildingVisual.test.tsx src/scene/city/BuildingModel.test.tsx src/scene/city/AnimatedBuildingFragment.test.tsx` passed (4 files / 63 tests).
+- **Full gate:** `npm.cmd test` passed (37 files / 466 tests); `npm.cmd run typecheck`, `npm.cmd run lint`, and `npm.cmd run format:check` all exited 0.
+- This follow-up is committed as review evidence after the focused fix was approved.
