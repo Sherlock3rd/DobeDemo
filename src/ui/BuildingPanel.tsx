@@ -350,6 +350,99 @@ function BuildingPanelSession({
     })
   }
 
+  if (selectedBuildingId === 'clubhouse') {
+    const directDecision = getMainUpgradeDecision({
+      buildingId: selectedBuildingId,
+      progress,
+      repairShopProgress,
+      clubhouseProgress,
+      wallet: resources,
+      gangLevel,
+    })
+    const targetLevel = directDecision.targetLevel
+    const cost = directDecision.cost ?? EMPTY_WALLET
+    const currentPower = getBuildingPower(selectedBuildingId, level)
+    const nextPower = targetLevel
+      ? getBuildingPower(selectedBuildingId, targetLevel)
+      : currentPower
+    const blockerText = mainUpgradeBlockerMessage(directDecision, level)
+    const canUpgrade = directDecision.reason === 'ready'
+    const costText = formatNonZeroCost(cost)
+    const directButtonLabel = targetLevel
+      ? costText === '免费'
+        ? `直接升级 Clubhouse 至 Lv.${targetLevel}`
+        : `直接升级 Clubhouse 至 Lv.${targetLevel} · ${costText}`
+      : null
+
+    const handleDirectClubhouseUpgrade = (): void => {
+      upgradeMainBuilding('clubhouse', gangLevel, readNow())
+    }
+
+    return (
+      <section
+        className="building-panel"
+        aria-labelledby={TITLE_ID}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {closeButton}
+        <h2 id={TITLE_ID} className="building-panel__title">
+          {building.name}
+        </h2>
+        <p className="building-panel__level">{`等级 ${level} / ${BUILDING_MAX_LEVEL}`}</p>
+
+        <section
+          className="building-panel__economy-summary"
+          aria-label="资源概览"
+        >
+          <p className="building-panel__production">
+            {formatProduction(production)}
+          </p>
+          <ul className="building-panel__wallet">
+            <li>{`钱 ${Math.trunc(resources.money)}`}</li>
+            <li>{`油 ${Math.trunc(resources.oil)}`}</li>
+            <li>{`物资 ${Math.trunc(resources.materials)}`}</li>
+          </ul>
+        </section>
+
+        <p className="building-panel__confirm-power">{`当前建筑战力 ${currentPower}`}</p>
+        {targetLevel ? (
+          <>
+            <p className="building-panel__confirm-power">{`本次战力 +${nextPower - currentPower}`}</p>
+            <p className="building-panel__confirm-power">{`升级后战力 ${nextPower}`}</p>
+            <ul className="building-panel__confirm-cost" aria-label="升级成本">
+              <li>{`钱 ${cost.money}`}</li>
+              <li>{`油 ${cost.oil}`}</li>
+              <li>{`物资 ${cost.materials}`}</li>
+            </ul>
+            <button
+              type="button"
+              className="building-panel__main-button"
+              disabled={!canUpgrade}
+              onClick={handleDirectClubhouseUpgrade}
+            >
+              {directButtonLabel}
+            </button>
+          </>
+        ) : null}
+        {blockerText ? (
+          <p
+            className={
+              directDecision.reason === 'building-maxed'
+                ? 'building-panel__main-status'
+                : 'building-panel__main-blocker'
+            }
+            role={
+              directDecision.reason === 'building-maxed' ? undefined : 'alert'
+            }
+          >
+            {blockerText}
+          </p>
+        ) : null}
+      </section>
+    )
+  }
+
   if (session.view.kind === 'main-upgrade-confirm') {
     const isMaxed = level >= BUILDING_MAX_LEVEL
     const targetLevel = isMaxed ? null : ((level + 1) as BuildingLevel)

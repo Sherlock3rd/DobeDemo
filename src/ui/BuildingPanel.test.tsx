@@ -2,7 +2,7 @@ import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getBuildingPower } from '../config/economyConfig'
+import { economyConfig, getBuildingPower } from '../config/economyConfig'
 import { buildingCatalogById } from '../game/buildingCatalog'
 import type {
   BuildingDefinition,
@@ -21,6 +21,7 @@ import { BuildingPanel } from './BuildingPanel'
 import {
   findDefaultChildIndex,
   findNextIncompleteChildIndex,
+  formatNonZeroCost,
   mainUpgradeBlockerMessage,
 } from './buildingPanelSession'
 
@@ -341,11 +342,8 @@ describe('BuildingPanel', () => {
       expect(
         screen.queryByRole('button', { name: /升级主建筑/ }),
       ).not.toBeInTheDocument()
-      expect(screen.getByRole('progressbar')).toHaveAttribute(
-        'aria-valuenow',
-        '100',
-      )
-      expect(screen.getByText('100%')).toBeInTheDocument()
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+      expect(screen.queryByText('100%')).not.toBeInTheDocument()
     })
   })
 
@@ -510,6 +508,276 @@ describe('BuildingPanel', () => {
 
       expect(screen.getByText('需要先将修车厂提升至 Lv.2')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: '确认升级' })).toBeDisabled()
+    })
+  })
+
+  describe('Clubhouse direct main upgrade', () => {
+    function setUpClubhouse(
+      level = 1,
+      childLevels: number[] = Array(10).fill(0),
+    ): void {
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(40),
+      })
+      useCityStore.getState().selectBuilding('clubhouse')
+      setProgress('clubhouse', level, childLevels)
+    }
+
+    it('renders no child, progress, or confirmation controls at Lv.1', () => {
+      setUpClubhouse()
+
+      render(<BuildingPanel />)
+
+      expect(
+        screen.getByRole('heading', { name: 'Clubhouse' }),
+      ).toBeInTheDocument()
+      expect(screen.getByText('等级 1 / 10')).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: '关闭建筑面板' }),
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+      expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /升级「/ }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /升级主建筑至/ }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: '确认升级' }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: '返回' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('shows the full next-level cost and all three power figures', () => {
+      setUpClubhouse()
+      setResources(10_000, 10_000, 10_000)
+      const cost = economyConfig.buildingUpgradeCostByTargetLevel[2]
+      if (!cost) {
+        throw new Error('Missing main building target-level 2 cost')
+      }
+
+      render(<BuildingPanel />)
+
+      const costList = screen.getByRole('list', { name: '升级成本' })
+      const scopedCost = within(costList)
+      expect(scopedCost.getByText(`钱 ${cost.money}`)).toBeInTheDocument()
+      expect(scopedCost.getByText(`油 ${cost.oil}`)).toBeInTheDocument()
+      expect(scopedCost.getByText(`物资 ${cost.materials}`)).toBeInTheDocument()
+
+      const currentPower = getBuildingPower('clubhouse', 1)
+      const nextPower = getBuildingPower('clubhouse', 2)
+      expect(
+        screen.getByText(`当前建筑战力 ${currentPower}`),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(`本次战力 +${nextPower - currentPower}`),
+      ).toBeInTheDocument()
+      expect(screen.getByText(`升级后战力 ${nextPower}`)).toBeInTheDocument()
+    })
+
+    it('upgrades Lv.1→2 and atomically charges the exact cost in one click', async () => {
+      const user = userEvent.setup()
+      setUpClubhouse()
+      const cost = economyConfig.buildingUpgradeCostByTargetLevel[2]
+      if (!cost) {
+        throw new Error('Missing main building target-level 2 cost')
+      }
+      setResources(cost.money + 17, cost.oil + 13, cost.materials + 11)
+
+      render(<BuildingPanel />)
+
+      const costText = formatNonZeroCost(cost)
+      await user.click(
+        screen.getByRole('button', {
+          name: `直接升级 Clubhouse 至 Lv.2 · ${costText}`,
+        }),
+      )
+
+      expect(useCityStore.getState().buildingProgress.clubhouse).toEqual({
+        level: 2,
+        childLevels: Array(10).fill(0),
+      })
+      expect(useCityStore.getState().resources).toEqual({
+        money: 17,
+        oil: 13,
+        materials: 11,
+      })
+      expect(screen.getByText('等级 2 / 10')).toBeInTheDocument()
+      expect(
+        screen.getByRole('heading', { name: 'Clubhouse' }),
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: '确认升级' }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /直接升级 Clubhouse 至 Lv\.3/ }),
+      ).toBeInTheDocument()
+    })
+
+    it('charges each target-level cost across consecutive direct clicks', async () => {
+      const user = userEvent.setup()
+      setUpClubhouse()
+      const cost2 = economyConfig.buildingUpgradeCostByTargetLevel[2]
+      const cost3 = economyConfig.buildingUpgradeCostByTargetLevel[3]
+      if (!cost2 || !cost3) {
+        throw new Error('Missing consecutive main building costs')
+      }
+      const startingWallet = {
+        money: cost2.money + cost3.money + 101,
+        oil: cost2.oil + cost3.oil + 102,
+        materials: cost2.materials + cost3.materials + 103,
+      }
+      setResources(
+        startingWallet.money,
+        startingWallet.oil,
+        startingWallet.materials,
+      )
+
+      render(<BuildingPanel />)
+
+      await user.click(
+        screen.getByRole('button', {
+          name: /直接升级 Clubhouse 至 Lv\.2/,
+        }),
+      )
+      await user.click(
+        screen.getByRole('button', {
+          name: /直接升级 Clubhouse 至 Lv\.3/,
+        }),
+      )
+
+      expect(useCityStore.getState().buildingProgress.clubhouse.level).toBe(3)
+      expect(useCityStore.getState().resources).toEqual({
+        money: 101,
+        oil: 102,
+        materials: 103,
+      })
+      expect(
+        screen.getByRole('button', { name: /直接升级 Clubhouse 至 Lv\.4/ }),
+      ).toBeInTheDocument()
+    })
+
+    it('disables direct upgrade, shows the exact shortfall, and leaves state unchanged', async () => {
+      const user = userEvent.setup()
+      setUpClubhouse()
+      setResources(0, 0, 0)
+      const cost = economyConfig.buildingUpgradeCostByTargetLevel[2]
+      if (!cost) {
+        throw new Error('Missing main building target-level 2 cost')
+      }
+      const beforeProgress = useCityStore.getState().buildingProgress.clubhouse
+      const beforeResources = useCityStore.getState().resources
+
+      render(<BuildingPanel />)
+
+      const button = screen.getByRole('button', {
+        name: `直接升级 Clubhouse 至 Lv.2 · ${formatNonZeroCost(cost)}`,
+      })
+      expect(button).toBeDisabled()
+      expect(
+        screen.getByText(
+          `资源不足，还需 ${formatNonZeroCost({
+            money: cost.money,
+            oil: cost.oil,
+            materials: cost.materials,
+          })}`,
+        ),
+      ).toBeInTheDocument()
+      await user.click(button)
+      expect(useCityStore.getState().buildingProgress.clubhouse).toEqual(
+        beforeProgress,
+      )
+      expect(useCityStore.getState().resources).toEqual(beforeResources)
+    })
+
+    it('shows only the max-level message at Lv.10', () => {
+      setUpClubhouse(10, Array(10).fill(10))
+
+      render(<BuildingPanel />)
+
+      expect(screen.getByText('已达到最高等级 Lv.10')).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /直接升级 Clubhouse/ }),
+      ).not.toBeInTheDocument()
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    })
+
+    it('keeps gang Lv.39 on the locked page with no direct action', () => {
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(39),
+      })
+      useCityStore.getState().selectBuilding('clubhouse')
+
+      render(<BuildingPanel />)
+
+      expect(screen.getByText('尚未解锁')).toBeInTheDocument()
+      expect(screen.getByText(/需要 Lv\. 40/)).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /直接升级 Clubhouse/ }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('leaves the repair-shop fragment progress and confirmation flow unchanged', async () => {
+      const user = userEvent.setup()
+      useCityStore.getState().selectBuilding('repair-shop')
+      setProgress('repair-shop', 1, [1, 0, 0, 0, 0])
+      setResources(25)
+
+      render(<BuildingPanel />)
+
+      expect(screen.getByRole('radiogroup')).toBeInTheDocument()
+      expect(screen.getByRole('progressbar')).toHaveAttribute(
+        'aria-valuenow',
+        '100',
+      )
+      await user.click(
+        screen.getByRole('button', { name: '升级主建筑至 Lv.2' }),
+      )
+      expect(
+        screen.getByRole('button', { name: '确认升级' }),
+      ).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '返回' })).toBeInTheDocument()
+    })
+
+    it('cannot retain another building confirmation session when Clubhouse opens', async () => {
+      const user = userEvent.setup()
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(40),
+      })
+      useCityStore.getState().selectBuilding('repair-shop')
+      setProgress('repair-shop', 1, [1, 0, 0, 0, 0])
+      setResources(10_000, 10_000, 10_000)
+
+      render(<BuildingPanel />)
+      await user.click(
+        screen.getByRole('button', { name: '升级主建筑至 Lv.2' }),
+      )
+      expect(
+        screen.getByRole('button', { name: '确认升级' }),
+      ).toBeInTheDocument()
+
+      act(() => {
+        useCityStore.getState().selectBuilding('clubhouse')
+      })
+
+      expect(
+        screen.getByRole('heading', { name: 'Clubhouse' }),
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: '确认升级' }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: '返回' }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('button', {
+          name: /直接升级 Clubhouse 至 Lv\.2/,
+        }),
+      ).toBeInTheDocument()
     })
   })
 
