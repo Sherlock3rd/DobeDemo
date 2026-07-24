@@ -2,7 +2,7 @@
 
 ## 当前目标
 
-在工业城建筑互动升级 Demo 基础上，交付 1–50 级帮派树、在线/离线挂机声望（每 10 秒 +1）、职位晋升、按顺序解锁六座建筑，以及独立子建筑与钱/油/物资三资源经营升级闭环（子建筑 Lv.0 自由升级、追平后升主建筑、Clubhouse Lv.10 其余 Lv.5 上限）的完整本地玩法闭环。可调数值集中在 `src/config/economy.config.json`，冻结后续配置 EXE 的 JSON 契约。
+在工业城建筑互动升级 Demo 基础上，交付 1–50 级帮派树、在线/离线挂机声望（每 10 秒 +1）、职位晋升、按顺序解锁六座建筑，以及渐进式子建筑与钱/油/物资三资源经营升级闭环的完整本地玩法闭环：六类建筑主等级统一 Lv.10，子建筑槽位随主等级逐槽解锁（修车厂 5 槽、其余 10 槽，未解锁槽在 UI/3D 完全隐藏），一个公用子升级按钮逐级建设、追平后经独立确认页扣费升主建筑；门槛为修车厂目标 Lv.2–5 无外部约束/Lv.6–10 受 Clubhouse 约束、其余四类目标 Lv.2–5 受修车厂约束/Lv.6–10 受 Clubhouse 约束、Clubhouse 仅受自身约束；新账号与重置钱包为 `钱 10000 / 油 0 / 物资 0`；建筑战力仅展示；城市存档为 `dobe-city-progression-v1`（persist 版本 3，v2→v3 隐藏槽一次性退款）。可调数值集中在 `src/config/economy.config.json`（schema 版本 2，含 `buildingPowerById`），冻结后续配置 EXE 的 JSON 契约。
 
 ## 当前状态
 
@@ -46,3 +46,5 @@
 | 2026-07-23 | 独立子建筑与三资源经济：固定顺序碎片改为独立子建筑自由升级（修车厂 5/其余 10、Lv.0 起、追平后升主建筑）、新增钱/油/物资 10 秒生产与升级消耗、Clubhouse Lv.10 其余 Lv.5 上限与门槛、帮派每 10 秒 +1、v1→v2 迁移与原子 Store；数值外置到 `economy.config.json`（冻结配置 EXE 契约，本次无 EXE）                                                                                                                        | 独立经济       |
 | 2026-07-23 | 独立经济本地验收与终审：fresh 门禁 format/typecheck/lint/测试（37 文件、420 项）/构建全绿，`dist` 资源以 `/DobeDemo/` 开头；安全 Chrome/CDP 12 项断言全通过（fresh v2、10 秒 +1 钱、真实点击第 5 子建筑数组[0,0,0,0,1]+ROI 变化 650px、两条 Clubhouse 门槛文本、Clubhouse→修车厂真实升级闭环、刷新持久、三资源 10 秒 3/1/1、Lv.5/Lv.10 禁用、390×844 无横向溢出）；终审与时钟回拨修复增量复审均无 Critical/Important | 集成与验证     |
 | 2026-07-23 | 独立经济发布：功能与验收提交普通推送至 `main`；fresh `dist` 经独立临时 index 快进发布为 `gh-pages` 提交 `2fffcf4`，Pages build `1110802086` 精确匹配且状态 `built`。公开 HTML 与当前 JS/CSS 均 HTTP 200；自建 Chrome 真实加载公开 URL 并扫描点击修车厂，确认三资源 HUD、修车厂面板及恰好 5 张子建筑卡片，公开截图 189,819 bytes，临时 profile 已清理                                                                 | GitHub Pages   |
+| 2026-07-24 | 渐进式建筑升级流程实现（Task 1–5，`e97d593..788ae75`，各任务审查通过）：六类建筑主等级统一 Lv.10；子建筑槽位随主等级逐槽解锁并在 UI/3D 完全隐藏未解锁槽；纯规则 `getUnlockedChildCount`/`getBuildingUpgradeProgress`/`getMainUpgradeDecision`（八段短路阻止原因）；`economy.config.json` schema 版本 2 + `buildingPowerById`（严格递增校验、仅展示战力）；初始/重置钱包 10000；persist 版本 3 与 v2→v3 隐藏槽一次性退款；单选项 + 公用子升级按钮 + 独立主升级确认页 UI 状态机；两个调试动作与二次确认重置                                                                                        | 渐进式升级     |
+| 2026-07-24 | 渐进式升级本地验收（Task 6 本地）：TDD 修复 persist `merge` 缺陷——空存档 rehydrate 时 `merge(undefined,…)` 被规范化为全零，导致新访客初始 10000 被清零；新增失败用例后修正为 `persistedState == null` 保留初始态。fresh 门禁 format/typecheck/lint/测试（38 文件、479 项）/构建全绿，`dist` 资源以 `/DobeDemo/` 开头。安全 Chrome/CDP（`progressive-building-upgrade-flow-cdp.mjs`，动态端口/`--strictPort`/仅杀自建 PID/前缀校验 profile/basename 脱敏/坏数据+路径脱敏自测）自测 43 项 + 全部编号断言（fresh 10000 仅首槽、公用按钮升级与 ROI 变化、手选保持与循环、100% 替换主按钮、确认不扣费、成本/战力/资源不足、确认一次扣费与新槽自动选中、全部阻止原因优先级、修车厂 Lv.5→6 Clubhouse 门槛、两个调试动作、二次确认重置、v2 一次退款、桌面 1440×900 与 390×844）全通过；仅终止自建 PID、端口释放、临时 profile 清理。未 commit 前记录，push/Pages/公开复验待父代理 | 集成与验证     |

@@ -177,7 +177,7 @@ export function getBuildingPower(
 
 - Temporary compatibility: `legacyBuildingUpgrade.ts` exports the current Lv.5/Clubhouse-gated API unchanged and is deleted in Task 3.
 
-- [ ] **Step 1: Preserve the current consumers behind the temporary adapter**
+- [x] **Step 1: Preserve the current consumers behind the temporary adapter**
 
 Copy the current `buildingUpgrade.ts` implementation verbatim to `legacyBuildingUpgrade.ts`, then change only these imports:
 
@@ -193,7 +193,7 @@ import {
 
 Use each file's existing relative path. This keeps the pre-v3 UI/Store behavior stable while the final module is rewritten.
 
-- [ ] **Step 2: Write config-v2 RED tests**
+- [x] **Step 2: Write config-v2 RED tests**
 
 Add exact assertions:
 
@@ -214,13 +214,13 @@ expect(() => parseEconomyConfig(missingLevel)).toThrow(
 
 Also test an extra buildingId, extra level `"11"`, negative/unsafe/non-integer power, and equal/decreasing adjacent power.
 
-- [ ] **Step 3: Run config RED**
+- [x] **Step 3: Run config RED**
 
 Run: `npm.cmd test -- src/config/economyConfig.test.ts`
 
 Expected: FAIL because the current parser requires version 1 and has no `buildingPowerById`/`getBuildingPower`.
 
-- [ ] **Step 4: Implement the exact v2 JSON and parser**
+- [x] **Step 4: Implement the exact v2 JSON and parser**
 
 Keep every existing production/cost object unchanged and append:
 
@@ -271,7 +271,7 @@ export function getBuildingPower(
 }
 ```
 
-- [ ] **Step 5: Write progressive-rule RED tests**
+- [x] **Step 5: Write progressive-rule RED tests**
 
 Cover all six max levels, repair unlock sequence `[1,2,3,4,5,5,5,5,5,5]`, other unlock sequence `[1,2,3,4,5,6,7,8,9,10]`, hidden child indices, exact progress and every main reason collision. Representative assertions:
 
@@ -298,13 +298,13 @@ expect(
 
 Use collision cases to prove order: locked+maxed returns `building-locked`; maxed+incomplete returns `building-maxed`; incomplete+repair low returns `children-not-caught-up`; target Lv.6 with gang 39 and low Clubhouse returns `clubhouse-locked`; target Lv.6 with gang 40 and low Clubhouse returns `clubhouse-too-low`; only then resources.
 
-- [ ] **Step 6: Run domain RED**
+- [x] **Step 6: Run domain RED**
 
 Run: `npm.cmd test -- src/game/buildingUpgrade.test.ts`
 
 Expected: FAIL because the current module has split max levels, no unlocked-prefix/progress API, no `child-locked` or repair-shop gate.
 
-- [ ] **Step 7: Implement the minimal pure rules**
+- [x] **Step 7: Implement the minimal pure rules**
 
 Implement progress defensively:
 
@@ -392,7 +392,7 @@ if (targetLevel >= 6 && buildingId !== 'clubhouse') {
 
 Child gate checks `Number.isInteger(childIndex)`, fixed capacity and unlocked prefix before reading the child level. Missing cost or power remains a thrown configuration error, never a free upgrade.
 
-- [ ] **Step 8: Run GREEN and full intermediate gate**
+- [x] **Step 8: Run GREEN and full intermediate gate**
 
 Run:
 
@@ -406,7 +406,7 @@ npm.cmd run format:check
 
 Expected: all commands exit 0; legacy consumers remain green through `legacyBuildingUpgrade.ts`.
 
-- [ ] **Step 9: Commit Task 1**
+- [x] **Step 9: Commit Task 1**
 
 ```powershell
 git add src/config/economy.config.json src/config/economyConfig.ts src/config/economyConfig.test.ts src/game/buildingUpgrade.ts src/game/buildingUpgrade.test.ts src/game/legacyBuildingUpgrade.ts src/store/cityProgressMigration.ts src/store/useCityStore.ts src/ui/BuildingPanel.tsx
@@ -469,7 +469,7 @@ grantDebugResources(now: number): void
 
 - Persisted v3 shape remains exactly `buildingProgress`、`resources`、`lastResourceUpdatedAt`、`activeProducerIds`.
 
-- [ ] **Step 1: Write saturated-wallet and v3 migration RED tests**
+- [x] **Step 1: Write saturated-wallet and v3 migration RED tests**
 
 Test the exact design example and three-resource cumulative refunds:
 
@@ -499,13 +499,13 @@ expect(migrated.resources).toEqual({ money: 140, oil: 7, materials: 9 })
 
 Add a v3 input with those hidden levels and assert they are cleared with wallet still 100 (no second refund), plus v1→v2→v3, malformed levels/arrays, and saturation near `Number.MAX_SAFE_INTEGER`.
 
-- [ ] **Step 2: Run migration RED**
+- [x] **Step 2: Run migration RED**
 
 Run: `npm.cmd test -- src/game/resourceEconomy.test.ts src/store/cityProgressMigration.test.ts`
 
 Expected: FAIL because current normalization enforces the old Clubhouse cap, has no hidden-prefix refund, and wallet addition can exceed safe integers.
 
-- [ ] **Step 3: Implement safe arithmetic and the frozen v2 snapshot**
+- [x] **Step 3: Implement safe arithmetic and the frozen v2 snapshot**
 
 Use per-field saturation:
 
@@ -555,7 +555,7 @@ return upgradeV2ShapeToV3(source, false)
 
 The boolean means “refund hidden children”; normalization and hidden-slot clearing always run. Only persisted v2 receives the frozen snapshot refund because v1 fragment progress did not spend economy resources.
 
-- [ ] **Step 4: Write Store action-result RED tests**
+- [x] **Step 4: Write Store action-result RED tests**
 
 Test initial/reset 10000, invalid requests, hidden index, settle-before-recheck and stale confirmation:
 
@@ -581,13 +581,13 @@ expect(
 
 For stale confirmation, set wallet 24 and `lastResourceUpdatedAt = START - 10_000`; the old repair producer earns 1, so main upgrade recheck sees 25 and succeeds. Reverse the case with a three-resource cost fixture or an insufficient wallet and assert settlement persists but level/cost do not change.
 
-- [ ] **Step 5: Run Store RED**
+- [x] **Step 5: Run Store RED**
 
 Run: `npm.cmd test -- src/store/useCityStore.test.ts src/game/resetAccount.test.ts`
 
 Expected: FAIL because actions return `void`, initial/reset wallet is zero, persist is v2, and Store does not distinguish `invalid-request`.
 
-- [ ] **Step 6: Implement one-set transactions and persist v3**
+- [x] **Step 6: Implement one-set transactions and persist v3**
 
 Because Zustand `set` does not return the callback result, capture the synchronous result:
 
@@ -647,7 +647,7 @@ Validate unknown ID, non-integer/fixed-capacity index and non-finite `now` befor
 
 Set persist `version: 3`; preserve the existing four-field `partialize`; `merge` calls v3 normalization without refunds.
 
-- [ ] **Step 7: Add the atomic debug-resource Store action**
+- [x] **Step 7: Add the atomic debug-resource Store action**
 
 `grantDebugResources(now)` rejects non-finite `now`. In one `set`, settle with current producers and progress, then:
 
@@ -664,11 +664,11 @@ return {
 
 Test two clicks add 20000 to every field, current production settles first, and a near-max wallet saturates.
 
-- [ ] **Step 8: Update old-panel test setup without changing production behavior**
+- [x] **Step 8: Update old-panel test setup without changing production behavior**
 
 Until Task 3 rewrites the panel, make `BuildingPanel.test.tsx` explicitly set `{ money: 0, oil: 0, materials: 0 }` in `beforeEach`. Each test that needs funds already calls `setResources`; this prevents initial 10000 from invalidating old resource-shortage cases without hiding the new Store default.
 
-- [ ] **Step 9: Run GREEN and full intermediate gate**
+- [x] **Step 9: Run GREEN and full intermediate gate**
 
 Run:
 
@@ -682,7 +682,7 @@ npm.cmd run format:check
 
 Expected: all commands exit 0; persist fixture versions are 3; legacy panel remains runnable.
 
-- [ ] **Step 10: Commit Task 2**
+- [x] **Step 10: Commit Task 2**
 
 ```powershell
 git add src/game/resourceEconomy.ts src/game/resourceEconomy.test.ts src/store/cityProgressMigration.ts src/store/cityProgressMigration.test.ts src/store/useCityStore.ts src/store/useCityStore.test.ts src/game/resetAccount.test.ts src/ui/BuildingPanel.test.tsx
@@ -733,7 +733,7 @@ export function mainUpgradeBlockerMessage(
 
 - UI controls: radiogroup/radio child selector, one shared child upgrade button, exact progressbar, details-only main button, independent confirm page.
 
-- [ ] **Step 1: Write session-selection and hidden-DOM RED tests**
+- [x] **Step 1: Write session-selection and hidden-DOM RED tests**
 
 Test initial repair Lv.1 renders exactly one radio/card, defaults to index 0, and no hidden names exist. At repair Lv.3 render exactly three; manually choose index 2, update wallet via Store, rerender, and assert index 2 remains checked.
 
@@ -747,13 +747,13 @@ expect(screen.queryByText('排气设施')).not.toBeInTheDocument()
 
 Close/reopen and switch buildings to prove a new session reselects the first incomplete unlocked slot.
 
-- [ ] **Step 2: Run selection RED**
+- [x] **Step 2: Run selection RED**
 
 Run: `npm.cmd test -- src/ui/BuildingPanel.test.tsx`
 
 Expected: FAIL because the current panel renders every fixed-capacity slot with one button per card and has no radio selection.
 
-- [ ] **Step 3: Implement session identity and cyclic selection**
+- [x] **Step 3: Implement session identity and cyclic selection**
 
 Track session by selected building ID. Initialize it in an effect so rendering
 remains pure and wallet/progress rerenders do not reset the selection:
@@ -787,13 +787,13 @@ useEffect(() => {
 
 Do not derive/reset selection from wallet or progress on every render. After a successful child result, inspect latest Store progress; keep current index if still below main level, otherwise search `(afterIndex + offset) % unlockedCount` for the first incomplete slot, or set null.
 
-- [ ] **Step 4: Write progress/shared-button RED tests**
+- [x] **Step 4: Write progress/shared-button RED tests**
 
 At commercial Lv.3 with `[3,2,1,0,0,0,0,0,0,0]`, assert exact `aria-valuenow={(6 / 9) * 100}`, visible `66%`, one shared button for selected slot, and no per-card upgrade buttons. Upgrade selected child and assert completed steps +1 and selection behavior.
 
 At `[3,3,3,0,0,0,0,0,0,0]`, assert the progress/shared child region is replaced by `升级主建筑至 Lv.4`; for Lv.10 show only `已达到最高等级 Lv.10`.
 
-- [ ] **Step 5: Implement details view and exact reason text**
+- [x] **Step 5: Implement details view and exact reason text**
 
 Render only:
 
@@ -839,7 +839,7 @@ case 'insufficient-resources':
 
 Locked building text continues using `需要 Lv. X · 职位`; locked panels render no upgrade controls.
 
-- [ ] **Step 6: Write confirmation-state RED tests**
+- [x] **Step 6: Write confirmation-state RED tests**
 
 Starting at complete repair Lv.1:
 
@@ -853,13 +853,13 @@ Starting at complete repair Lv.1:
 
 Add repair Lv.5→6 test: no new slot, selected index becomes the first child below Lv.6.
 
-- [ ] **Step 7: Run confirmation RED**
+- [x] **Step 7: Run confirmation RED**
 
 Run: `npm.cmd test -- src/ui/BuildingPanel.test.tsx src/App.test.tsx`
 
 Expected: FAIL because the current main button upgrades immediately and no confirmation/power/focus state exists.
 
-- [ ] **Step 8: Implement confirm page without early settlement**
+- [x] **Step 8: Implement confirm page without early settlement**
 
 Opening confirmation only calls `setSession`; it must not call `Date.now()` or Store actions. Recompute `getMainUpgradeDecision` from current Store values every render.
 
@@ -899,7 +899,7 @@ setSession({
 
 All failures remain on confirmation, never alter selection, and display current pure decision or returned failure reason.
 
-- [ ] **Step 9: Implement focus, Escape, pointer isolation, and responsive CSS**
+- [x] **Step 9: Implement focus, Escape, pointer isolation, and responsive CSS**
 
 Give Canvas `tabIndex={0}` and `aria-label="工业城市 3D 场景"` as a deterministic close focus target. Details→confirm focuses the confirm title via `ref`; return focuses the remembered main button; close/Escape clears selection then focuses Canvas. Switching buildings creates a new session.
 
@@ -913,7 +913,7 @@ CSS requirements:
 - focus ring remains visible;
 - reduced-motion disables panel transitions, not final state.
 
-- [ ] **Step 10: Remove the temporary adapter and scan**
+- [x] **Step 10: Remove the temporary adapter and scan**
 
 Change all remaining product imports to `src/game/buildingUpgrade.ts`, delete `legacyBuildingUpgrade.ts`, then run:
 
@@ -923,7 +923,7 @@ rg "legacyBuildingUpgrade|NON_CLUBHOUSE_MAX_LEVEL|CLUBHOUSE_MAX_LEVEL" src
 
 Expected: no matches.
 
-- [ ] **Step 11: Run GREEN and full task gate**
+- [x] **Step 11: Run GREEN and full task gate**
 
 Run:
 
@@ -937,7 +937,7 @@ npm.cmd run format:check
 
 Expected: all commands exit 0; UI selection/confirm state is absent from persisted JSON.
 
-- [ ] **Step 12: Commit Task 3**
+- [x] **Step 12: Commit Task 3**
 
 ```powershell
 git add -A src/ui/BuildingPanel.tsx src/ui/BuildingPanel.test.tsx src/App.css src/App.tsx src/App.test.tsx src/game/legacyBuildingUpgrade.ts
@@ -970,7 +970,7 @@ export function getRenderedBuildingFragments(
 
 - `BuildingModel` passes `definition.id`; `BuildingVisual` animation detection receives `id` and ignores hidden/multi/main-only transitions.
 
-- [ ] **Step 1: Write unlocked-prefix RED tests for all levels**
+- [x] **Step 1: Write unlocked-prefix RED tests for all levels**
 
 For every `BuildingId` and every `BUILDING_LEVELS`, create canonical progress and assert rendered length equals `getUnlockedChildCount`. Explicitly assert fresh repair and commercial each render one scaffold, repair Lv.6 renders five, commercial Lv.6 renders six.
 
@@ -989,13 +989,13 @@ expect(rendered.map(({ state }) => state)).toEqual([
 
 Assert hidden blueprint IDs and scaffold tags are absent from serialized render results.
 
-- [ ] **Step 2: Run render RED**
+- [x] **Step 2: Run render RED**
 
 Run: `npm.cmd test -- src/scene/city/buildingFragmentCatalog.test.ts src/scene/city/BuildingModel.test.tsx`
 
 Expected: FAIL because current catalog maps every fixed-capacity blueprint and accepts `BuildingKind`, not `BuildingId`.
 
-- [ ] **Step 3: Implement buildingId-driven prefix rendering**
+- [x] **Step 3: Implement buildingId-driven prefix rendering**
 
 Resolve definition and slice before mapping:
 
@@ -1012,7 +1012,7 @@ return blueprints.map((blueprint, index) =>
 
 Do not create placeholders for the suffix. `BuildingModel` memo dependencies become `[definition.id, progress, animatedFragmentId]`.
 
-- [ ] **Step 4: Write animation-boundary RED tests**
+- [x] **Step 4: Write animation-boundary RED tests**
 
 Cover:
 
@@ -1031,7 +1031,7 @@ after.childLevels[7] = 1
 expect(model).toHaveAttribute('data-animated', '')
 ```
 
-- [ ] **Step 5: Implement exact animation detection**
+- [x] **Step 5: Implement exact animation detection**
 
 Require same main level and same array length, and compare only unlocked prefix:
 
@@ -1053,11 +1053,11 @@ for (let index = 0; index < progress.childLevels.length; index += 1) {
 
 Only map the final index to a blueprint ID when it is non-negative and unlocked.
 
-- [ ] **Step 6: Extend full geometry envelope tests**
+- [x] **Step 6: Extend full geometry envelope tests**
 
 For all six buildings, main Lv.1–10 and representative unlocked child levels `0`, `1`, `mainLevel`, assert every returned part remains within footprint and below `BUILDING_HITBOX_HEIGHT`. Keep existing semantic tag, rooftop attachment and positive geometry tests; update helpers to accept `BuildingId`.
 
-- [ ] **Step 7: Run GREEN and full task gate**
+- [x] **Step 7: Run GREEN and full task gate**
 
 Run:
 
@@ -1071,7 +1071,7 @@ npm.cmd run format:check
 
 Expected: all commands exit 0; every level renders exactly the unlocked prefix and no non-child transition animates.
 
-- [ ] **Step 8: Commit Task 4**
+- [x] **Step 8: Commit Task 4**
 
 ```powershell
 git add src/scene/city/buildingFragmentCatalog.ts src/scene/city/buildingFragmentCatalog.test.ts src/scene/city/BuildingVisual.tsx src/scene/city/BuildingVisual.test.tsx src/scene/city/BuildingModel.tsx src/scene/city/BuildingModel.test.tsx
@@ -1108,7 +1108,7 @@ export function grantAllResourcesForDebug(now: number = Date.now()): boolean
 
 - Return `false` only for non-finite `now`; valid calls return `true`.
 
-- [ ] **Step 1: Write coordinator RED tests**
+- [x] **Step 1: Write coordinator RED tests**
 
 At `START`, set repair as the only producer and advance 80,000 seconds. Call:
 
@@ -1130,13 +1130,13 @@ Assert the first settlement includes only old repair production; a second click 
 
 For resources, assert one coordinator call settles current production then adds 10000 each; two clicks add 20000 each; near-max values saturate.
 
-- [ ] **Step 2: Run coordinator RED**
+- [x] **Step 2: Run coordinator RED**
 
 Run: `npm.cmd test -- src/game/debugActions.test.ts src/store/useGangStore.test.ts src/store/useCityStore.test.ts`
 
 Expected: FAIL because the coordinator and `unlockForDebug` do not exist.
 
-- [ ] **Step 3: Implement Store hooks and coordinator ordering**
+- [x] **Step 3: Implement Store hooks and coordinator ordering**
 
 Gang Store:
 
@@ -1166,7 +1166,7 @@ export function grantAllResourcesForDebug(now = Date.now()): boolean {
 
 This order is mandatory: city settles old producers before gang Lv.50 is visible, and both receive the same `now`.
 
-- [ ] **Step 4: Write SettingsPanel RED tests**
+- [x] **Step 4: Write SettingsPanel RED tests**
 
 Test:
 
@@ -1177,13 +1177,13 @@ Test:
 - reset still requires two clicks and closes only after confirmation;
 - Escape, named close, pointer isolation and mobile dialog behavior remain.
 
-- [ ] **Step 5: Run Settings RED**
+- [x] **Step 5: Run Settings RED**
 
 Run: `npm.cmd test -- src/ui/SettingsPanel.test.tsx src/App.test.tsx`
 
 Expected: FAIL because current settings only contains the reset flow.
 
-- [ ] **Step 6: Implement immediate actions and accessible feedback**
+- [x] **Step 6: Implement immediate actions and accessible feedback**
 
 Use one `Date.now()` per click:
 
@@ -1208,7 +1208,7 @@ Render debug actions in a neutral settings section separate from the red reset s
 
 Buttons and close controls remain at least 44×44 CSS px and have visible focus styles.
 
-- [ ] **Step 7: Run GREEN and full task gate**
+- [x] **Step 7: Run GREEN and full task gate**
 
 Run:
 
@@ -1222,7 +1222,7 @@ npm.cmd run format:check
 
 Expected: all commands exit 0; repeated debug actions are deterministic and no debug state is added to persistence.
 
-- [ ] **Step 8: Commit Task 5**
+- [x] **Step 8: Commit Task 5**
 
 ```powershell
 git add src/game/debugActions.ts src/game/debugActions.test.ts src/store/useGangStore.ts src/store/useGangStore.test.ts src/store/useCityStore.test.ts src/ui/SettingsPanel.tsx src/ui/SettingsPanel.test.tsx src/App.css src/App.test.tsx
@@ -1251,7 +1251,7 @@ git commit -m "feat: add repeatable debug progression controls"
 - Public URL: `https://sherlock3rd.github.io/DobeDemo/`.
 - Deployment base: `/DobeDemo/`.
 
-- [ ] **Step 1: Run the fresh engineering gate before writing evidence**
+- [x] **Step 1: Run the fresh engineering gate before writing evidence**
 
 Run:
 
@@ -1265,7 +1265,7 @@ npm.cmd run build
 
 Expected: all exit 0; `dist/index.html` references current JS/CSS under `/DobeDemo/`.
 
-- [ ] **Step 2: Implement the repeatable local CDP safety shell**
+- [x] **Step 2: Implement the repeatable local CDP safety shell**
 
 Base it on the current `independent-economy-cdp.mjs`, changing names and assertions. It must:
 
@@ -1281,7 +1281,7 @@ Base it on the current `independent-economy-cdp.mjs`, changing names and asserti
 - set nonzero `process.exitCode` for any failed assertion, runtime error, cleanup failure, occupied-owned-port mismatch or missing screenshot;
 - verify dev/CDP ports released and temporary profile removed.
 
-- [ ] **Step 3: Implement the local Chrome acceptance flow**
+- [x] **Step 3: Implement the local Chrome acceptance flow**
 
 Drive real Chrome via CDP at desktop 1440×900 and mobile 390×844. Use real pointer clicks for visible controls; legal localStorage injection may prepare expensive levels, but every asserted transition must be triggered by the actual UI action under test.
 
@@ -1303,7 +1303,7 @@ Required assertions:
 14. Desktop and 390×844: details, confirmation and settings remain within viewport, no document/panel horizontal overflow, content scrolls, 44px controls are reachable, focus is visible and expected focus transfers occur.
 15. Teardown proves only owned PIDs were targeted, both ports released, temporary profile removed, and all expected screenshots are nonempty.
 
-- [ ] **Step 4: Run local CDP and record actual evidence**
+- [x] **Step 4: Run local CDP and record actual evidence**
 
 Run:
 
@@ -1315,7 +1315,7 @@ Expected: exit 0, `ASSERTION SELF-TEST: PASS`, every numbered assertion prints `
 
 If any assertion fails, fix the source or script with a focused RED test, rerun the affected unit test, then rerun the full engineering gate and the entire CDP flow from fresh storage.
 
-- [ ] **Step 5: Update all current documentation**
+- [x] **Step 5: Update all current documentation**
 
 README and both requirements files must state:
 
@@ -1332,7 +1332,7 @@ README and both requirements files must state:
 
 `session/session.md` updates current goal and appends dated ledger entries for implementation and local acceptance. The report records actual command outputs, browser assertions, generated basenames/sizes and any real defect/retry history; it must not claim push or Pages completion yet.
 
-- [ ] **Step 6: Run the post-documentation gate and commit local delivery**
+- [x] **Step 6: Run the post-documentation gate and commit local delivery**
 
 Run:
 

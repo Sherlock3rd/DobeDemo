@@ -288,10 +288,16 @@ export const useCityStore = create<CityState>()(
         lastResourceUpdatedAt,
         activeProducerIds,
       }),
-      merge: (persistedState, currentState) => ({
-        ...currentState,
-        ...normalizeCityDurableState(persistedState, Date.now()),
-      }),
+      // Zustand calls merge even when nothing is stored, passing `undefined`.
+      // Normalizing that would zero the canonical 10000-money initial state for
+      // a brand-new visitor, so only normalize an actual persisted payload.
+      merge: (persistedState, currentState) =>
+        persistedState == null
+          ? currentState
+          : {
+              ...currentState,
+              ...normalizeCityDurableState(persistedState, Date.now()),
+            },
     },
   ),
 )

@@ -1,0 +1,687 @@
+{
+  "generatedAt": "2026-07-24T04:55:20.358Z",
+  "script": "progressive-building-upgrade-flow-cdp.mjs",
+  "preflight": {
+    "terminalAndPortCheckPerformed": true,
+    "strategy": "skip occupied preferred ports; never terminate unknown PID",
+    "attemptedDevPorts": [
+      {
+        "port": 5312,
+        "free": true
+      }
+    ],
+    "attemptedCdpPorts": [
+      {
+        "port": 9361,
+        "free": true
+      }
+    ],
+    "devPort": 5312,
+    "cdpPort": 9361,
+    "devPortFree": true,
+    "cdpPortFree": true,
+    "ok": true
+  },
+  "processSafety": {
+    "ownedPids": [
+      {
+        "label": "vite",
+        "pid": 49648
+      },
+      {
+        "label": "chrome",
+        "pid": 64152
+      }
+    ],
+    "killAttempts": [
+      {
+        "label": "chrome",
+        "pid": 64152,
+        "owned": true
+      },
+      {
+        "label": "vite",
+        "pid": 49648,
+        "owned": true
+      }
+    ],
+    "unknownProcessesTerminated": false,
+    "chromeExecutable": "chrome.exe",
+    "tempProfileName": "dobe-progressive-upgrade-cdp-1JZU2f"
+  },
+  "dist": {
+    "index": "dist/index.html",
+    "assetRefs": [
+      "/DobeDemo/assets/index-BYWUWufE.js",
+      "/DobeDemo/assets/index-WW1HS-D7.css"
+    ],
+    "baseOk": true
+  },
+  "http": {
+    "url": "http://127.0.0.1:5312/",
+    "status": 200,
+    "hasRoot": true,
+    "hasMainTsx": true
+  },
+  "fresh": {
+    "storage": {
+      "city": {
+        "state": {
+          "buildingProgress": {
+            "repair-shop": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "recycling-yard": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "commercial-street": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "metalworking-plant": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "gas-station": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "clubhouse": {
+              "level": 1,
+              "childLevels": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "resources": {
+            "money": 10000,
+            "oil": 0,
+            "materials": 0
+          },
+          "lastResourceUpdatedAt": 1784868924596,
+          "activeProducerIds": [
+            "repair-shop"
+          ]
+        },
+        "version": 3
+      },
+      "gang": null
+    },
+    "hud": {
+      "level": "Lv. 1",
+      "rate": "+1 声望/10秒",
+      "resources": [
+        "钱 10000",
+        "钱 +1/10秒",
+        "油 0",
+        "油 +0/10秒",
+        "物资 0",
+        "物资 +0/10秒"
+      ]
+    },
+    "repairPanel": {
+      "present": true,
+      "unlocked": true,
+      "view": "details",
+      "title": "修车厂",
+      "level": "等级 1 / 10",
+      "lockStatus": null,
+      "childCount": 1,
+      "options": [
+        {
+          "name": "基础维修棚",
+          "status": "Lv.0 / Lv.1",
+          "checked": true
+        }
+      ],
+      "selectedIndex": 0,
+      "progressPresent": true,
+      "progressNow": 0,
+      "progressLabel": "0%",
+      "sharedButtonPresent": true,
+      "sharedButtonLabel": "升级「基础维修棚」至 Lv.1 · 钱 5",
+      "sharedButtonDisabled": false,
+      "shortfall": null,
+      "mainButtonPresent": false,
+      "mainButtonLabel": null,
+      "mainStatus": null,
+      "mainBlocker": null,
+      "confirmCost": [],
+      "confirmPower": [],
+      "confirmSubmitDisabled": null,
+      "confirmTitleFocused": false
+    }
+  },
+  "slotUpgrade": {
+    "childCountBefore": 2,
+    "selectedBefore": 0,
+    "progressBefore": 0,
+    "childLevelsBefore": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "childLevel0After": 1,
+    "progressAfter": 25,
+    "canvasTarget": {
+      "changedPixels": 941,
+      "consideredPixels": 125320,
+      "roiClipped": {
+        "x": 248,
+        "y": 40,
+        "w": 400,
+        "h": 390
+      },
+      "changedPct": 0.751
+    },
+    "canvasControl": {
+      "changedPixels": 0,
+      "consideredPixels": 748760,
+      "roiClipped": {
+        "x": 0,
+        "y": 0,
+        "w": 1424,
+        "h": 805
+      },
+      "changedPct": 0
+    }
+  },
+  "selection": {
+    "selectedAfterSelect": 1,
+    "moneyBeforeTick": 99995,
+    "moneyAfterTick": 99996,
+    "selectedAfterTick": 1,
+    "cyclicIndex": 0
+  },
+  "hundred": {
+    "progressPresent": false,
+    "sharedButtonPresent": false,
+    "mainButtonPresent": true,
+    "mainButtonLabel": "升级主建筑至 Lv.3"
+  },
+  "confirmView": {
+    "view": "confirm",
+    "confirmCost": [
+      "钱 60",
+      "油 0",
+      "物资 0"
+    ],
+    "confirmPower": [
+      "当前建筑战力 130",
+      "本次战力 +35",
+      "升级后战力 165"
+    ],
+    "confirmTitleFocused": true,
+    "walletUnchanged": true,
+    "levelUnchanged": true
+  },
+  "back": {
+    "view": "details",
+    "walletUnchanged": true,
+    "levelUnchanged": true
+  },
+  "insufficient": {
+    "blocker": "资源不足，还需 钱 60",
+    "submitDisabled": true
+  },
+  "confirmApply": {
+    "moneySpent": 60,
+    "levelAfter": 3,
+    "childCountAfter": 3,
+    "newSlotStatus": "Lv.0 / Lv.3",
+    "selectedIndexAfter": 2
+  },
+  "reasons": {
+    "locked": {
+      "view": "locked",
+      "lockStatus": "尚未解锁",
+      "mainButtonPresent": false
+    },
+    "maxed": {
+      "mainStatus": "已达到最高等级 Lv.10",
+      "mainButtonPresent": false
+    },
+    "incomplete": {
+      "progressPresent": true,
+      "mainButtonPresent": false,
+      "progressNow": 25
+    },
+    "repairTooLow": {
+      "blocker": "需要先将修车厂提升至 Lv.2"
+    },
+    "clubhouseLocked": {
+      "blocker": "需要先将帮派树提升至 Lv.40 解锁 Clubhouse"
+    },
+    "clubhouseTooLow": {
+      "blocker": "需要先将 Clubhouse 提升至 Lv.6"
+    }
+  },
+  "repairBand": {
+    "readyBlocker": null,
+    "levelAfter": 6,
+    "childCountAfter": 5,
+    "selectedIndexAfter": 0,
+    "firstStatus": "Lv.5 / Lv.6"
+  },
+  "clubhouseFree": {
+    "levelAfter": 2
+  },
+  "unlockGang": {
+    "repBefore": 0,
+    "repAfter": 1470,
+    "levelAfter": "Lv. 50",
+    "feedback": "帮派树已解锁",
+    "producersAfter": [
+      "repair-shop",
+      "commercial-street",
+      "metalworking-plant",
+      "gas-station"
+    ],
+    "moneyJump": 0,
+    "repAfterSecond": 1470
+  },
+  "grant": {
+    "oilDelta": 20000,
+    "materialsDelta": 20000,
+    "moneyDelta": 20000,
+    "panelStillOpen": true,
+    "feedback": "钱、油、物资各增加 10000"
+  },
+  "reset": {
+    "money": 10000,
+    "oil": 0,
+    "materials": 0,
+    "allLevelsOne": true,
+    "repairChildLevels": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "gangReputation": 0,
+    "producers": [
+      "repair-shop"
+    ],
+    "clocksEqual": true,
+    "panelClosed": true,
+    "settingsClosed": true
+  },
+  "migration": {
+    "moneyFirst": 140,
+    "repairChildFirst": [
+      2,
+      1,
+      0,
+      0,
+      0
+    ],
+    "commercialChildFirst": [
+      3,
+      2,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "versionFirst": 3,
+    "moneySecond": 140,
+    "versionSecond": 3
+  },
+  "layout": {
+    "desktopDetails": {
+      "present": true,
+      "viewport": {
+        "width": 1424,
+        "height": 805
+      },
+      "withinBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "control44": true
+    },
+    "desktopConfirm": {
+      "present": true,
+      "viewport": {
+        "width": 1424,
+        "height": 805
+      },
+      "withinBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "control44": true
+    },
+    "mobile": {
+      "present": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "withinBounds": true,
+      "noHorizontalOverflow": true,
+      "scrollableOrFits": true,
+      "control44": true
+    }
+  },
+  "screenshots": {
+    "progressive-initial.png": "progressive-initial.png",
+    "progressive-slot-before.png": "progressive-slot-before.png",
+    "progressive-slot-after.png": "progressive-slot-after.png",
+    "progressive-confirm.png": "progressive-confirm.png",
+    "progressive-new-slot.png": "progressive-new-slot.png",
+    "progressive-gate.png": "progressive-gate.png",
+    "progressive-debug.png": "progressive-debug.png",
+    "progressive-reset.png": "progressive-reset.png",
+    "progressive-migration.png": "progressive-migration.png",
+    "progressive-mobile.png": "progressive-mobile.png"
+  },
+  "teardown": {
+    "cdpPortReleased": true,
+    "devPortReleased": true,
+    "tempProfileRemoved": true
+  },
+  "assertionSelfTest": {
+    "ok": true,
+    "checked": 43,
+    "failuresOnGoodData": [],
+    "passesOnBadData": [],
+    "errorSanitization": {
+      "ok": true,
+      "checked": 1,
+      "outputs": [
+        {
+          "name": "Error",
+          "code": "ENOENT"
+        },
+        {
+          "name": "TypeError"
+        }
+      ],
+      "forbiddenDataPresent": false
+    }
+  },
+  "assertions": [
+    {
+      "name": "preflight selected free dev port",
+      "pass": true,
+      "detail": "5312"
+    },
+    {
+      "name": "preflight selected free CDP port",
+      "pass": true,
+      "detail": "9361"
+    },
+    {
+      "name": "dist assets use /DobeDemo/",
+      "pass": true,
+      "detail": "[\"/DobeDemo/assets/index-BYWUWufE.js\",\"/DobeDemo/assets/index-WW1HS-D7.css\"]"
+    },
+    {
+      "name": "HTTP status 200",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "1. fresh v3 wallet {10000,0,0}, repair Lv.1 childLevels all 0",
+      "pass": true,
+      "detail": "{\"version\":3,\"fr\":{\"level\":1,\"childLevels\":[0,0,0,0,0]},\"fw\":{\"money\":10000,\"oil\":0,\"materials\":0}}"
+    },
+    {
+      "name": "1b. every main building Lv.1",
+      "pass": true,
+      "detail": "[1,1,1,1,1,1]"
+    },
+    {
+      "name": "1c. repair panel shows only the first unlocked slot (no hidden radios)",
+      "pass": true,
+      "detail": "{\"present\":true,\"unlocked\":true,\"view\":\"details\",\"title\":\"修车厂\",\"level\":\"等级 1 / 10\",\"lockStatus\":null,\"childCount\":1,\"options\":[{\"name\":\"基础维修棚\",\"status\":\"Lv.0 / Lv.1\",\"checked\":true}],\"selectedIndex\":0,\"progressPresent\":true,\"progressNow\":0,\"progressLabel\":\"0%\",\"sharedButtonPresent\":true,\"sharedButtonLabel\":\"升级「基础维修棚」至 Lv.1 · 钱 5\",\"sharedButtonDisabled\":false,\"shortfall\":null,\"mainButtonPresent\":false,\"mainButtonLabel\":null,\"mainStatus\":null,\"mainBlocker\":null,\"confirmCost\":[],\"confirmPower\":[],\"confirmSubmitDisabled\":null,\"confirmTitleFocused\":false}"
+    },
+    {
+      "name": "1d. HUD reputation rate is +1 声望/10秒",
+      "pass": true,
+      "detail": "+1 声望/10秒"
+    },
+    {
+      "name": "2. shared button upgraded slot 0 to Lv.1 and progress 0% -> 25%",
+      "pass": true,
+      "detail": "{\"childCountBefore\":2,\"selectedBefore\":0,\"progressBefore\":0,\"childLevelsBefore\":[0,0,0,0,0],\"childLevel0After\":1,\"progressAfter\":25,\"canvasTarget\":{\"changedPixels\":941,\"consideredPixels\":125320,\"roiClipped\":{\"x\":248,\"y\":40,\"w\":400,\"h\":390},\"changedPct\":0.751},\"canvasControl\":{\"changedPixels\":0,\"consideredPixels\":748760,\"roiClipped\":{\"x\":0,\"y\":0,\"w\":1424,\"h\":805},\"changedPct\":0}}"
+    },
+    {
+      "name": "2b. only the target 3D ROI changed (>= 30, control stable)",
+      "pass": true,
+      "detail": "target=941 controlPct=0"
+    },
+    {
+      "name": "3. manual radio selection survives a real resource tick",
+      "pass": true,
+      "detail": "{\"selectedAfterSelect\":1,\"moneyBeforeTick\":99995,\"moneyAfterTick\":99996,\"selectedAfterTick\":1,\"cyclicIndex\":0}"
+    },
+    {
+      "name": "3b. selection cycles to slot 0 after slot 1 catches up",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "4. at 100% progress region is replaced by 升级主建筑至 Lv.3",
+      "pass": true,
+      "detail": "{\"progressPresent\":false,\"sharedButtonPresent\":false,\"mainButtonPresent\":true,\"mainButtonLabel\":\"升级主建筑至 Lv.3\"}"
+    },
+    {
+      "name": "5. main button opens confirm with no wallet/level change",
+      "pass": true,
+      "detail": "{\"view\":\"confirm\",\"walletUnchanged\":true}"
+    },
+    {
+      "name": "5b. confirm shows full cost 钱60/油0/物资0 and power 130/+35/165",
+      "pass": true,
+      "detail": "{\"cost\":[\"钱 60\",\"油 0\",\"物资 0\"],\"power\":[\"当前建筑战力 130\",\"本次战力 +35\",\"升级后战力 165\"]}"
+    },
+    {
+      "name": "5c. focus moved to the confirm-page title",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "6. 返回 returns to details with no state change",
+      "pass": true,
+      "detail": "{\"view\":\"details\",\"walletUnchanged\":true,\"levelUnchanged\":true}"
+    },
+    {
+      "name": "7. confirm deducts 60 once, repair -> Lv.3, new Lv.0 slot auto-selected",
+      "pass": true,
+      "detail": "{\"moneySpent\":60,\"levelAfter\":3,\"childCountAfter\":3,\"newSlotStatus\":\"Lv.0 / Lv.3\",\"selectedIndexAfter\":2}"
+    },
+    {
+      "name": "8. insufficient-resources shows 资源不足 还需 钱 60 and disables confirm",
+      "pass": true,
+      "detail": "{\"blocker\":\"资源不足，还需 钱 60\",\"submitDisabled\":true}"
+    },
+    {
+      "name": "9a. building-locked: locked panel, no upgrade controls",
+      "pass": true,
+      "detail": "{\"view\":\"locked\",\"lockStatus\":\"尚未解锁\",\"mainButtonPresent\":false}"
+    },
+    {
+      "name": "9b. building-maxed: 已达到最高等级 Lv.10, no main button",
+      "pass": true,
+      "detail": "{\"mainStatus\":\"已达到最高等级 Lv.10\",\"mainButtonPresent\":false}"
+    },
+    {
+      "name": "9c. children-not-caught-up: progress 25%, no main button",
+      "pass": true,
+      "detail": "{\"progressPresent\":true,\"mainButtonPresent\":false,\"progressNow\":25}"
+    },
+    {
+      "name": "9d. repair-shop-too-low beats resources: 需要先将修车厂提升至 Lv.2",
+      "pass": true,
+      "detail": "需要先将修车厂提升至 Lv.2"
+    },
+    {
+      "name": "9e. clubhouse-locked: 需要先将帮派树提升至 Lv.40 解锁 Clubhouse",
+      "pass": true,
+      "detail": "需要先将帮派树提升至 Lv.40 解锁 Clubhouse"
+    },
+    {
+      "name": "9f. clubhouse-too-low: 需要先将 Clubhouse 提升至 Lv.6",
+      "pass": true,
+      "detail": "需要先将 Clubhouse 提升至 Lv.6"
+    },
+    {
+      "name": "10. repair Lv.5->6 ready via Clubhouse, keeps 5 slots, selects slot 0",
+      "pass": true,
+      "detail": "{\"readyBlocker\":null,\"levelAfter\":6,\"childCountAfter\":5,\"selectedIndexAfter\":0,\"firstStatus\":\"Lv.5 / Lv.6\"}"
+    },
+    {
+      "name": "11. Clubhouse upgrades to Lv.2 despite repair-shop at Lv.1",
+      "pass": true,
+      "detail": "{\"levelAfter\":2}"
+    },
+    {
+      "name": "12. 解锁帮派树 sets reputation 1470 / Lv.50 with feedback",
+      "pass": true,
+      "detail": "{\"repAfter\":1470,\"level\":\"Lv. 50\"}"
+    },
+    {
+      "name": "12b. producers synced to the four Lv.50 producers, no historical backfill",
+      "pass": true,
+      "detail": "{\"producers\":[\"repair-shop\",\"commercial-street\",\"metalworking-plant\",\"gas-station\"],\"moneyJump\":0}"
+    },
+    {
+      "name": "12c. second click is idempotent (still 1470)",
+      "pass": true,
+      "detail": "1470"
+    },
+    {
+      "name": "13. 钱/油/物资各 +10000 twice adds exactly +20000 oil & materials",
+      "pass": true,
+      "detail": "{\"oilDelta\":20000,\"materialsDelta\":20000,\"moneyDelta\":20000,\"panelStillOpen\":true,\"feedback\":\"钱、油、物资各增加 10000\"}"
+    },
+    {
+      "name": "13b. settings panel stays open with polite feedback",
+      "pass": true,
+      "detail": "{\"open\":true,\"feedback\":\"钱、油、物资各增加 10000\"}"
+    },
+    {
+      "name": "14. reset restores wallet 10000/0/0, all Lv.1, repair childLevels zero",
+      "pass": true,
+      "detail": "{\"money\":10000,\"oil\":0,\"materials\":0,\"allLevelsOne\":true,\"repairChildLevels\":[0,0,0,0,0],\"gangReputation\":0,\"producers\":[\"repair-shop\"],\"clocksEqual\":true,\"panelClosed\":true,\"settingsClosed\":true}"
+    },
+    {
+      "name": "14b. reset: reputation 0, repair-only producer, clocks equal, session closed",
+      "pass": true,
+      "detail": "{\"money\":10000,\"oil\":0,\"materials\":0,\"allLevelsOne\":true,\"repairChildLevels\":[0,0,0,0,0],\"gangReputation\":0,\"producers\":[\"repair-shop\"],\"clocksEqual\":true,\"panelClosed\":true,\"settingsClosed\":true}"
+    },
+    {
+      "name": "15. v2 injection refunds 40 money once and zeroes hidden slots",
+      "pass": true,
+      "detail": "{\"moneyFirst\":140,\"repairChildFirst\":[2,1,0,0,0],\"commercialChildFirst\":[3,2,1,0,0,0,0,0,0,0],\"versionFirst\":3,\"moneySecond\":140,\"versionSecond\":3}"
+    },
+    {
+      "name": "15b. second reload persists version 3 and does not refund again",
+      "pass": true,
+      "detail": "{\"version\":3,\"money\":140}"
+    },
+    {
+      "name": "16. desktop details/confirm within viewport, no horizontal overflow",
+      "pass": true,
+      "detail": "{\"details\":{\"present\":true,\"viewport\":{\"width\":1424,\"height\":805},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"control44\":true},\"confirm\":{\"present\":true,\"viewport\":{\"width\":1424,\"height\":805},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"control44\":true}}"
+    },
+    {
+      "name": "16b. 390x844 panel scrolls without overflow and 44px controls reachable",
+      "pass": true,
+      "detail": "{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"control44\":true}"
+    },
+    {
+      "name": "all expected screenshots written and nonempty",
+      "pass": true,
+      "detail": "[\"progressive-initial.png\",\"progressive-slot-before.png\",\"progressive-slot-after.png\",\"progressive-confirm.png\",\"progressive-new-slot.png\",\"progressive-gate.png\",\"progressive-debug.png\",\"progressive-reset.png\",\"progressive-migration.png\",\"progressive-mobile.png\"]"
+    },
+    {
+      "name": "teardown: only owned PIDs targeted",
+      "pass": true,
+      "detail": "[{\"label\":\"chrome\",\"pid\":64152,\"owned\":true},{\"label\":\"vite\",\"pid\":49648,\"owned\":true}]"
+    },
+    {
+      "name": "teardown: dev port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "teardown: CDP port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "teardown: temporary Chrome profile removed",
+      "pass": true,
+      "detail": "true"
+    }
+  ]
+}

@@ -249,6 +249,20 @@ describe('useCityStore atomic economy', () => {
     expect(useCityStore.getState()).toBe(before)
   })
 
+  it('keeps the initial 10000 wallet when hydrating with empty storage', async () => {
+    window.localStorage.clear()
+
+    await useCityStore.persist.rehydrate()
+
+    const state = useCityStore.getState()
+    expect(state.resources).toEqual({ money: 10_000, oil: 0, materials: 0 })
+    expect(state.buildingProgress['repair-shop']).toEqual({
+      level: 1,
+      childLevels: [0, 0, 0, 0, 0],
+    })
+    expect(state.activeProducerIds).toEqual(['repair-shop'])
+  })
+
   it('persists only the four durable v3 fields', () => {
     useCityStore.getState().selectBuilding('repair-shop')
     useCityStore.getState().syncResourceProduction(START + 10_000, 1)
