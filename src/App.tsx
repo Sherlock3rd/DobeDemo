@@ -31,6 +31,8 @@ export default function App(): JSX.Element {
       <main className="city-app">
         <Canvas
           className="city-app__canvas"
+          tabIndex={0}
+          aria-label="工业城市 3D 场景"
           shadows
           orthographic
           camera={{

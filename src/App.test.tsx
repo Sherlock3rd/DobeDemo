@@ -61,13 +61,25 @@ describe('App', () => {
     expect(props.orthographic).toBe(true)
   })
 
+  it('gives the canvas a focusable, labelled close target for the building panel', () => {
+    render(<App />)
+
+    expect(canvasPropsSpy).toHaveBeenCalled()
+    const props = canvasPropsSpy.mock.calls[0][0] as {
+      tabIndex?: number
+      'aria-label'?: string
+    }
+    expect(props.tabIndex).toBe(0)
+    expect(props['aria-label']).toBe('工业城市 3D 场景')
+  })
+
   it('shows the building panel for a preselected building', () => {
     useCityStore.getState().selectBuilding('repair-shop')
 
     render(<App />)
 
     expect(screen.getByRole('heading', { name: '修车厂' })).toBeInTheDocument()
-    expect(screen.getByText('等级 1 / 5')).toBeInTheDocument()
+    expect(screen.getByText('等级 1 / 10')).toBeInTheDocument()
   })
 
   it('mounts the gang idle controller placeholder without starting real timers', () => {
