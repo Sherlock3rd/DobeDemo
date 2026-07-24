@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BUILDING_IDS } from './cityTypes'
+import { useAdventureStore } from '../store/useAdventureStore'
 import { CITY_STORAGE_KEY } from '../store/useCityStore'
 import { GANG_STORAGE_KEY, useGangStore } from '../store/useGangStore'
 import { useCityStore } from '../store/useCityStore'
@@ -30,12 +31,14 @@ describe('resetAccount', () => {
     window.localStorage.clear()
     useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
+    useAdventureStore.getState().reset(BASE_TIME)
   })
 
   afterEach(() => {
     vi.useRealTimers()
     useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
+    useAdventureStore.getState().reset(BASE_TIME)
     window.localStorage.clear()
   })
 
@@ -134,5 +137,21 @@ describe('resetAccount', () => {
 
     expect(useGangStore.getState().lastUpdatedAt).toBe(FALLBACK_TIME)
     expect(useCityStore.getState().lastResourceUpdatedAt).toBe(FALLBACK_TIME)
+    expect(useAdventureStore.getState().idleClock).toBe(FALLBACK_TIME)
+  })
+
+  it('resets the adventure store alongside city and gang', () => {
+    useAdventureStore.setState({
+      sharedExp: 999,
+      highestClearedStage: 5,
+      heroLevels: { foreman: 20, anvil: 10, skyline: 5 },
+    })
+    resetAccount(RESET_TIME)
+    expect(useAdventureStore.getState().sharedExp).toBe(0)
+    expect(useAdventureStore.getState().highestClearedStage).toBe(0)
+    expect(useAdventureStore.getState().idleClock).toBe(RESET_TIME)
+    expect(useAdventureStore.getState().formation).toEqual([
+      { heroId: 'foreman', row: 'back', index: 1 },
+    ])
   })
 })

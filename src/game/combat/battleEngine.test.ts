@@ -287,7 +287,9 @@ describe('buildBattleInput validation (spec §14.3, no silent clamp)', () => {
   })
 
   it('rejects illegal gangLevel without silent normalize', () => {
-    const formation = [{ heroId: 'foreman' as const, row: 'back' as const, index: 1 }]
+    const formation = [
+      { heroId: 'foreman' as const, row: 'back' as const, index: 1 },
+    ]
     const levels = { foreman: 1, anvil: 1, skyline: 1 }
     for (const gangLevel of [0, 51, 1.5, NaN, Infinity, -1]) {
       expect(() => buildBattleInput(1, formation, levels, gangLevel)).toThrow(
@@ -309,9 +311,7 @@ describe('buildBattleInput validation (spec §14.3, no silent clamp)', () => {
 })
 
 describe('createBattleSeed encodes combat-affecting fields', () => {
-  function baseUnit(
-    overrides: Partial<BattleUnitInput> = {},
-  ): BattleUnitInput {
+  function baseUnit(overrides: Partial<BattleUnitInput> = {}): BattleUnitInput {
     return {
       side: 'ally',
       heroId: 'foreman',
@@ -333,7 +333,9 @@ describe('createBattleSeed encodes combat-affecting fields', () => {
 
   it('changes when hp/atk/def differ', () => {
     const allies = [baseUnit()]
-    const enemies = [baseUnit({ side: 'enemy', heroId: undefined, row: 'front', index: 0 })]
+    const enemies = [
+      baseUnit({ side: 'enemy', heroId: undefined, row: 'front', index: 0 }),
+    ]
     const a = createBattleSeed({ stage: 1, allies, enemies })
     const b = createBattleSeed({
       stage: 1,
@@ -357,7 +359,9 @@ describe('createBattleSeed encodes combat-affecting fields', () => {
 
   it('changes when skill multipliers or cooldowns differ', () => {
     const allies = [baseUnit()]
-    const enemies = [baseUnit({ side: 'enemy', heroId: undefined, row: 'front', index: 0 })]
+    const enemies = [
+      baseUnit({ side: 'enemy', heroId: undefined, row: 'front', index: 0 }),
+    ]
     const a = createBattleSeed({ stage: 1, allies, enemies })
     const b = createBattleSeed({
       stage: 1,
