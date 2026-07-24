@@ -1,13 +1,21 @@
+import { useFrame } from '@react-three/fiber'
+import { useRef } from 'react'
 import type { JSX } from 'react'
+import type { Group } from 'three'
 import type { HeroAppearance } from '../../config/heroesConfig'
 import type { UnitSnapshot } from '../../game/combat/battleEngine'
 import { usePrefersReducedMotion } from '../city/usePrefersReducedMotion'
+import {
+  applyBattleUnitFrame,
+  BattleUnitAnimationController,
+} from './battleAnimationController'
 import { appearanceForUnit, slotWorldPosition } from './battleUnitAppearance'
 
 export interface BattleUnitProps {
   unit: UnitSnapshot
   appearance?: HeroAppearance
   acting?: boolean
+  actionKey?: number | null
 }
 
 function WeaponMeshes({
@@ -51,24 +59,48 @@ export function BattleUnit({
   unit,
   appearance,
   acting = false,
+  actionKey = null,
 }: BattleUnitProps): JSX.Element {
   const reduced = usePrefersReducedMotion()
   const look = appearance ?? appearanceForUnit(unit)
-  const [x, y, z] = slotWorldPosition(unit)
-  const actionOffset =
-    acting && unit.alive ? (unit.side === 'ally' ? -0.45 : 0.45) : 0
+  const basePosition = slotWorldPosition(unit)
+  const groupRef = useRef<Group>(null)
+  const controllerRef = useRef<BattleUnitAnimationController | null>(null)
+  if (controllerRef.current === null) {
+    controllerRef.current = new BattleUnitAnimationController()
+  }
   const hpRatio = unit.maxHp > 0 ? Math.max(0, unit.hp / unit.maxHp) : 0
   const bodyScale =
     look.silhouette === 'bulk' ? 1.2 : look.silhouette === 'slim' ? 0.85 : 1
 
+  useFrame((state) => {
+    const controller = controllerRef.current
+    if (!controller) {
+      return
+    }
+    applyBattleUnitFrame(
+      groupRef.current,
+      controller,
+      state.clock.elapsedTime,
+      {
+        actionKey,
+        alive: unit.alive,
+        side: unit.side,
+        reducedMotion: reduced,
+      },
+      basePosition,
+    )
+  })
+
   return (
     <group
-      position={[x, y, z + actionOffset]}
-      rotation={unit.alive ? [0, 0, 0] : [Math.PI / 2, 0, 0]}
+      ref={groupRef}
+      position={basePosition}
+      rotation={[0, 0, 0]}
       userData={{
         silhouette: look.silhouette,
         weapon: look.weapon,
-        tween: reduced ? 'none' : 'smooth',
+        motion: reduced ? 'snap' : 'frame-driven',
         acting,
       }}
     >

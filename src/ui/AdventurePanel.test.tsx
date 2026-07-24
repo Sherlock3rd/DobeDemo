@@ -15,6 +15,14 @@ describe('AdventurePanel', () => {
     useChestTick.setState({ tick: 0, now: 0 })
   })
 
+  it('moves focus to its programmatically focusable title when opened', () => {
+    render(<AdventurePanel onClose={() => {}} onChallenge={() => {}} />)
+
+    const title = screen.getByRole('heading', { name: '推关战役' })
+    expect(title).toHaveAttribute('tabindex', '-1')
+    expect(title).toHaveFocus()
+  })
+
   it('renders 20 stage nodes across two chapters', () => {
     render(<AdventurePanel onClose={() => {}} onChallenge={() => {}} />)
     expect(screen.getByRole('button', { name: /^1-1 ·/ })).toBeEnabled()

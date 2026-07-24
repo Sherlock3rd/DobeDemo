@@ -14,6 +14,14 @@ describe('HeroesPanel', () => {
     useAdventureStore.getState().reset(BASE_TIME)
   })
 
+  it('moves focus to its programmatically focusable title when opened', () => {
+    render(<HeroesPanel onClose={() => {}} />)
+
+    const title = screen.getByRole('heading', { name: '英雄培养' })
+    expect(title).toHaveAttribute('tabindex', '-1')
+    expect(title).toHaveFocus()
+  })
+
   it('lists all three heroes, locking those above gang level', () => {
     render(<HeroesPanel onClose={() => {}} />)
     expect(screen.getByText('陈锤·工头')).toBeInTheDocument()

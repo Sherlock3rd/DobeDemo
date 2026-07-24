@@ -3,6 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 import type { UnitSnapshot } from '../../game/combat/battleEngine'
 import { appearanceForUnit } from './battleUnitAppearance'
 
+const frameMock = vi.hoisted(() => vi.fn())
+
+vi.mock('@react-three/fiber', () => ({
+  useFrame: frameMock,
+}))
 vi.mock('../city/usePrefersReducedMotion', () => ({
   usePrefersReducedMotion: () => false,
 }))
@@ -23,6 +28,13 @@ const ally: UnitSnapshot = {
 }
 
 describe('BattleUnit', () => {
+  it('registers a frame writer for real transform animation', () => {
+    render(<BattleUnit unit={ally} acting actionKey={9} />)
+
+    expect(frameMock).toHaveBeenCalledTimes(1)
+    expect(frameMock.mock.calls[0]?.[0]).toBeTypeOf('function')
+  })
+
   it('maps foreman appearance to capsule shotgun', () => {
     const appearance = appearanceForUnit(ally)
     expect(appearance.silhouette).toBe('capsule')
@@ -38,20 +50,5 @@ describe('BattleUnit', () => {
       <BattleUnit unit={{ ...ally, alive: false, hp: 0 }} />,
     )
     expect(container.querySelectorAll('group').length).toBeGreaterThan(0)
-  })
-
-  it('lunges toward the opposing side on its action tick', () => {
-    const idle = render(<BattleUnit unit={ally} />)
-    const idlePosition = idle.container
-      .querySelector('group')
-      ?.getAttribute('position')
-    idle.unmount()
-
-    const acting = render(<BattleUnit unit={ally} acting />)
-    const actingPosition = acting.container
-      .querySelector('group')
-      ?.getAttribute('position')
-
-    expect(actingPosition).not.toBe(idlePosition)
   })
 })

@@ -1,6 +1,6 @@
 import { Loader } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useEffect, useState, type JSX } from 'react'
+import { Suspense, useEffect, useRef, useState, type JSX } from 'react'
 import { AdventureIdleClock } from './game/AdventureIdleClock'
 import { EconomyIdleController } from './game/EconomyIdleController'
 import { GangIdleController } from './game/GangIdleController'
@@ -35,6 +35,14 @@ export type ActiveOverlay =
 type PlayOverlay = Exclude<ActiveOverlay, { kind: 'buildingDetail' }>
 
 const FULLSCREEN_KINDS = new Set(['adventure', 'formation', 'heroes', 'battle'])
+const MODAL_KINDS = new Set([
+  'gangTree',
+  'settings',
+  'adventure',
+  'formation',
+  'heroes',
+  'battle',
+])
 
 function resolveActiveOverlay(
   playOverlay: PlayOverlay,
@@ -49,6 +57,8 @@ function resolveActiveOverlay(
 
 export default function App(): JSX.Element {
   const [playOverlay, setPlayOverlay] = useState<PlayOverlay>({ kind: 'none' })
+  const returnFocusRef = useRef<HTMLElement | null>(null)
+  const pendingFocusRestoreRef = useRef(false)
   const selectedBuildingId = useCityStore((s) => s.selectedBuildingId)
   const clearSelection = useCityStore((s) => s.clearSelection)
   const totalReputation = useGangStore((s) => s.totalReputation)
@@ -92,7 +102,10 @@ export default function App(): JSX.Element {
     reconcileWithGang(gangLevel)
   }, [gangLevel, reconcileWithGang])
 
-  const openFullScreen = (overlay: PlayOverlay): void => {
+  const openOverlay = (overlay: PlayOverlay): void => {
+    if (document.activeElement instanceof HTMLElement) {
+      returnFocusRef.current = document.activeElement
+    }
     clearSelection()
     setPlayOverlay(overlay)
   }
@@ -100,9 +113,45 @@ export default function App(): JSX.Element {
   const closeOverlay = (): void => {
     if (activeOverlay.kind === 'buildingDetail') {
       clearSelection()
+    } else if (activeOverlay.kind !== 'none') {
+      pendingFocusRestoreRef.current = true
     }
     setPlayOverlay({ kind: 'none' })
   }
+
+  useEffect(() => {
+    if (activeOverlay.kind !== 'none' || !pendingFocusRestoreRef.current) {
+      return
+    }
+
+    pendingFocusRestoreRef.current = false
+    const target = returnFocusRef.current
+    returnFocusRef.current = null
+    if (target?.isConnected) {
+      target.focus()
+    }
+  }, [activeOverlay.kind])
+
+  useEffect(() => {
+    if (activeOverlay.kind !== 'battle') {
+      return
+    }
+
+    const currentFocus = document.activeElement
+    if (
+      currentFocus instanceof HTMLElement &&
+      currentFocus !== document.body &&
+      currentFocus.isConnected
+    ) {
+      return
+    }
+
+    document
+      .querySelector<HTMLElement>(
+        '[role="dialog"][aria-label="战斗"] button:not(:disabled)',
+      )
+      ?.focus()
+  }, [activeOverlay.kind])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -118,6 +167,7 @@ export default function App(): JSX.Element {
         setPlayOverlay({ kind: 'adventure' })
         return
       }
+      pendingFocusRestoreRef.current = true
       setPlayOverlay({ kind: 'none' })
     }
     window.addEventListener('keydown', onKeyDown)
@@ -125,6 +175,8 @@ export default function App(): JSX.Element {
   }, [activeOverlay.kind, clearSelection])
 
   const hideCityCanvas = FULLSCREEN_KINDS.has(activeOverlay.kind)
+  const isolateCityBackground = MODAL_KINDS.has(activeOverlay.kind)
+  const isolateHud = activeOverlay.kind === 'battle'
 
   return (
     <AppErrorBoundary>
@@ -135,7 +187,8 @@ export default function App(): JSX.Element {
               ? 'city-app__canvas-wrap city-app__canvas-wrap--hidden'
               : 'city-app__canvas-wrap'
           }
-          aria-hidden={hideCityCanvas}
+          aria-hidden={isolateCityBackground || undefined}
+          inert={isolateCityBackground ? true : undefined}
         >
           <Canvas
             className="city-app__canvas"
@@ -168,20 +221,18 @@ export default function App(): JSX.Element {
         <GangIdleController />
         <EconomyIdleController />
         <AdventureIdleClock />
-        {activeOverlay.kind !== 'battle' ? (
+        <div
+          aria-hidden={isolateHud || undefined}
+          inert={isolateHud ? true : undefined}
+          hidden={isolateHud}
+        >
           <GlobalHud
-            onOpenHeroes={() => openFullScreen({ kind: 'heroes' })}
-            onOpenGangTree={() => {
-              clearSelection()
-              setPlayOverlay({ kind: 'gangTree' })
-            }}
-            onOpenAdventure={() => openFullScreen({ kind: 'adventure' })}
-            onOpenSettings={() => {
-              clearSelection()
-              setPlayOverlay({ kind: 'settings' })
-            }}
+            onOpenHeroes={() => openOverlay({ kind: 'heroes' })}
+            onOpenGangTree={() => openOverlay({ kind: 'gangTree' })}
+            onOpenAdventure={() => openOverlay({ kind: 'adventure' })}
+            onOpenSettings={() => openOverlay({ kind: 'settings' })}
           />
-        ) : null}
+        </div>
         {activeOverlay.kind === 'buildingDetail' ? <BuildingPanel /> : null}
         <GangTreePanel
           open={activeOverlay.kind === 'gangTree'}

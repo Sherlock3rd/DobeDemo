@@ -44,11 +44,19 @@ describe('GangTreePanel', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
+  it('moves focus to its programmatically focusable title when opened', () => {
+    render(<GangTreePanel open onClose={vi.fn()} />)
+
+    const title = screen.getByRole('heading', { name: '帮派树' })
+    expect(title).toHaveAttribute('tabindex', '-1')
+    expect(title).toHaveFocus()
+  })
+
   it('renders a dialog with 50 level nodes, 7 role texts and 6 building names when open', () => {
     render(<GangTreePanel open onClose={vi.fn()} />)
 
     const dialog = screen.getByRole('dialog', { name: '帮派树' })
-    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).not.toHaveAttribute('aria-modal')
 
     expect(screen.getAllByRole('listitem')).toHaveLength(GANG_MAX_LEVEL)
 

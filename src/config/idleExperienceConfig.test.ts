@@ -6,6 +6,21 @@ import {
   settleIdleExperience,
 } from './idleExperienceConfig'
 
+function idleConfigWithUnsafeInteger(
+  path: readonly string[],
+): Record<string, unknown> {
+  const bad = structuredClone(idleExperienceConfig) as unknown as Record<
+    string,
+    unknown
+  >
+  let target = bad
+  for (const segment of path.slice(0, -1)) {
+    target = target[segment] as Record<string, unknown>
+  }
+  target[path.at(-1) as string] = Number.MAX_SAFE_INTEGER + 1
+  return bad
+}
+
 describe('idle experience config', () => {
   it('scales rate as 2 * highestClearedStage and 0 when unopened', () => {
     expect(ratePerTick(1)).toBe(2)
@@ -76,6 +91,32 @@ describe('idle experience config', () => {
         highestClearedStage: Number.POSITIVE_INFINITY,
       }),
     ).toEqual({ earnedExp: 0, nextUpdatedAt: base })
+  })
+
+  it.each([
+    { label: 'tickSeconds', path: ['tickSeconds'] },
+    { label: 'maxOfflineSeconds', path: ['maxOfflineSeconds'] },
+    {
+      label: 'ratePerTickByHighestStage.1',
+      path: ['ratePerTickByHighestStage', '1'],
+    },
+  ])('rejects an unsafe integer for $label', ({ label, path }) => {
+    expect(() =>
+      parseIdleExperienceConfig(idleConfigWithUnsafeInteger(path)),
+    ).toThrow(`Invalid idle-experience config: ${label}`)
+  })
+
+  it('rejects a safe rate whose maximum offline reward is unsafe', () => {
+    const bad = structuredClone(idleExperienceConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(bad.ratePerTickByHighestStage as Record<string, unknown>)['1'] =
+      Number.MAX_SAFE_INTEGER
+
+    expect(() => parseIdleExperienceConfig(bad)).toThrow(
+      'Invalid idle-experience config: ratePerTickByHighestStage.1',
+    )
   })
 
   it('rejects an unknown top-level key', () => {

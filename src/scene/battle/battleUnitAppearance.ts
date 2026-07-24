@@ -38,5 +38,5 @@ export function slotWorldPosition(
       : unit.row === 'front'
         ? -2.2
         : -3.8
-  return [xByIndex, unit.alive ? 0.7 : 0.15, z]
+  return [xByIndex, 0.7, z]
 }

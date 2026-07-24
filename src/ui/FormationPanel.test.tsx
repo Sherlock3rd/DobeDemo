@@ -18,6 +18,14 @@ describe('FormationPanel', () => {
     useAdventureStore.getState().reset(BASE_TIME)
   })
 
+  it('moves focus to its programmatically focusable title when opened', () => {
+    render(<FormationPanel stage={1} onCancel={() => {}} onStart={() => {}} />)
+
+    const title = screen.getByRole('heading', { name: '编队 · 关卡 1' })
+    expect(title).toHaveAttribute('tabindex', '-1')
+    expect(title).toHaveFocus()
+  })
+
   it('renders five slots labeled front[0..1] and back[0..2]', () => {
     render(<FormationPanel stage={1} onCancel={() => {}} onStart={() => {}} />)
     expect(screen.getAllByRole('button', { name: /阵位/ })).toHaveLength(5)

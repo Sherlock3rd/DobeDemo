@@ -97,6 +97,7 @@ const APPEARANCE_KEYS = [
   'silhouette',
   'weapon',
 ] as const
+const HERO_MAX_LEVEL = 50
 
 function parseNonNegSafeInt(value: unknown, path: string): number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
@@ -132,6 +133,17 @@ function parseRow(value: unknown, path: string): Row {
     invalidConfig(path)
   }
   return value
+}
+
+function assertDerivedStatSafe(
+  base: number,
+  growth: number,
+  path: string,
+): void {
+  const valueAtMaxLevel = base + growth * (HERO_MAX_LEVEL - 1)
+  if (!Number.isSafeInteger(valueAtMaxLevel) || valueAtMaxLevel < 0) {
+    invalidConfig(path)
+  }
 }
 
 function parseSkill(value: unknown, path: string): HeroSkillConfig {
@@ -188,7 +200,12 @@ function parseAppearance(value: unknown, path: string): HeroAppearance {
 }
 
 export function parseHeroesConfig(value: unknown): HeroesConfig {
-  if (!isRecord(value) || value.version !== 1) {
+  if (
+    !isRecord(value) ||
+    typeof value.version !== 'number' ||
+    !Number.isSafeInteger(value.version) ||
+    value.version !== 1
+  ) {
     invalidConfig('version')
   }
   assertKnownKeys(value, HEROES_TOP_LEVEL_KEYS, '')
@@ -199,17 +216,14 @@ export function parseHeroesConfig(value: unknown): HeroesConfig {
   }
   for (const key of Object.keys(expRaw)) {
     const L = Number(key)
-    if (!Number.isInteger(L) || L < 1 || L > 49 || String(L) !== key) {
+    if (!Number.isSafeInteger(L) || L < 1 || L > 49 || String(L) !== key) {
       invalidConfig(`expToLevel.${key}`)
     }
   }
   const exp: Record<number, number> = {}
   for (let L = 1; L <= 49; L += 1) {
     const cost = expRaw[String(L)]
-    if (typeof cost !== 'number' || !Number.isInteger(cost) || cost <= 0) {
-      invalidConfig(`expToLevel.${L}`)
-    }
-    exp[L] = cost
+    exp[L] = parsePositiveSafeInt(cost, `expToLevel.${L}`)
   }
 
   const heroesRaw = value.heroes
@@ -242,27 +256,60 @@ export function parseHeroesConfig(value: unknown): HeroesConfig {
       invalidConfig(`heroes.${id}.defaultSlot`)
     }
     assertKnownKeys(slot, DEFAULT_SLOT_KEYS, `heroes.${id}.defaultSlot`)
+    const slotRow = parseRow(slot.row, `heroes.${id}.defaultSlot.row`)
+    const slotIndex = parseNonNegSafeInt(
+      slot.index,
+      `heroes.${id}.defaultSlot.index`,
+    )
+    const maxSlotIndex = slotRow === 'front' ? 1 : 2
+    if (slotIndex > maxSlotIndex) {
+      invalidConfig(`heroes.${id}.defaultSlot.index`)
+    }
+    const baseHp = parseNonNegSafeInt(h.baseHp, `heroes.${id}.baseHp`)
+    const baseAtk = parseNonNegSafeInt(h.baseAtk, `heroes.${id}.baseAtk`)
+    const baseDef = parseNonNegSafeInt(h.baseDef, `heroes.${id}.baseDef`)
+    const hpPerLevel = parseNonNegSafeInt(
+      h.hpPerLevel,
+      `heroes.${id}.hpPerLevel`,
+    )
+    const atkPerLevel = parseNonNegSafeInt(
+      h.atkPerLevel,
+      `heroes.${id}.atkPerLevel`,
+    )
+    const defPerLevel = parseNonNegSafeInt(
+      h.defPerLevel,
+      `heroes.${id}.defPerLevel`,
+    )
+    assertDerivedStatSafe(
+      baseHp,
+      hpPerLevel,
+      `heroes.${id}.hpAtLevel${HERO_MAX_LEVEL}`,
+    )
+    assertDerivedStatSafe(
+      baseAtk,
+      atkPerLevel,
+      `heroes.${id}.atkAtLevel${HERO_MAX_LEVEL}`,
+    )
+    assertDerivedStatSafe(
+      baseDef,
+      defPerLevel,
+      `heroes.${id}.defAtLevel${HERO_MAX_LEVEL}`,
+    )
     heroes[id] = {
       name: parseString(h.name, `heroes.${id}.name`),
       alias: parseString(h.alias, `heroes.${id}.alias`),
       role,
       defaultSlot: {
-        row: parseRow(slot.row, `heroes.${id}.defaultSlot.row`),
-        index: parseNonNegSafeInt(slot.index, `heroes.${id}.defaultSlot.index`),
+        row: slotRow,
+        index: slotIndex,
       },
       unlockGangLevel,
-      baseHp: parseNonNegSafeInt(h.baseHp, `heroes.${id}.baseHp`),
-      baseAtk: parseNonNegSafeInt(h.baseAtk, `heroes.${id}.baseAtk`),
-      baseDef: parseNonNegSafeInt(h.baseDef, `heroes.${id}.baseDef`),
-      hpPerLevel: parseNonNegSafeInt(h.hpPerLevel, `heroes.${id}.hpPerLevel`),
-      atkPerLevel: parseNonNegSafeInt(
-        h.atkPerLevel,
-        `heroes.${id}.atkPerLevel`,
-      ),
-      defPerLevel: parseNonNegSafeInt(
-        h.defPerLevel,
-        `heroes.${id}.defPerLevel`,
-      ),
+      baseHp,
+      baseAtk,
+      baseDef,
+      hpPerLevel,
+      atkPerLevel,
+      defPerLevel,
       skill: parseSkill(h.skill, `heroes.${id}.skill`),
       appearance: parseAppearance(h.appearance, `heroes.${id}.appearance`),
     }
@@ -275,7 +322,7 @@ export const heroesConfig = parseHeroesConfig(raw)
 
 export function expToLevel(level: number): number {
   const cost = heroesConfig.expToLevel[level]
-  if (!Number.isInteger(cost)) {
+  if (!Number.isSafeInteger(cost)) {
     throw new Error(`Invalid heroes config: expToLevel.${level}`)
   }
   return cost

@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, type JSX } from 'react'
 import type { UnitSnapshot } from '../game/combat/battleEngine'
 
 export type PlaybackSpeed = 1 | 2
@@ -6,9 +6,12 @@ export type PlaybackSpeed = 1 | 2
 export interface BattleHudProps {
   phase: 'running' | 'paused' | 'resolved'
   speed: PlaybackSpeed
+  exitPending: boolean
   onTogglePause: () => void
   onSetSpeed: (speed: PlaybackSpeed) => void
-  onRequestExit: () => void
+  onRequestExitPrompt: () => void
+  onCancelExit: () => void
+  onConfirmExit: () => void
   units: UnitSnapshot[]
 }
 
@@ -20,26 +23,28 @@ function cooldownSeconds(unit: UnitSnapshot): number {
 export function BattleHud({
   phase,
   speed,
+  exitPending,
   onTogglePause,
   onSetSpeed,
-  onRequestExit,
+  onRequestExitPrompt,
+  onCancelExit,
+  onConfirmExit,
   units,
 }: BattleHudProps): JSX.Element {
-  const [confirmExit, setConfirmExit] = useState(false)
   const allies = units.filter((u) => u.side === 'ally')
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return
-      if (confirmExit) {
-        onRequestExit()
+      if (exitPending) {
+        onConfirmExit()
         return
       }
-      setConfirmExit(true)
+      onRequestExitPrompt()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [confirmExit, onRequestExit])
+  }, [exitPending, onConfirmExit, onRequestExitPrompt])
 
   return (
     <section className="battle-hud" aria-label="战斗控制">
@@ -48,7 +53,7 @@ export function BattleHud({
           type="button"
           className="battle-hud__pause"
           onClick={onTogglePause}
-          disabled={phase === 'resolved'}
+          disabled={phase === 'resolved' || exitPending}
         >
           {phase === 'paused' ? '继续' : '暂停'}
         </button>
@@ -56,6 +61,7 @@ export function BattleHud({
           <button
             type="button"
             aria-pressed={speed === 1}
+            disabled={exitPending}
             onClick={() => onSetSpeed(1)}
           >
             1x
@@ -63,25 +69,26 @@ export function BattleHud({
           <button
             type="button"
             aria-pressed={speed === 2}
+            disabled={exitPending}
             onClick={() => onSetSpeed(2)}
           >
             2x
           </button>
         </div>
-        {!confirmExit ? (
+        {!exitPending ? (
           <button
             type="button"
             className="battle-hud__exit"
-            onClick={() => setConfirmExit(true)}
+            onClick={onRequestExitPrompt}
           >
             退出
           </button>
         ) : (
           <div className="battle-hud__exit-confirm">
-            <button type="button" onClick={onRequestExit}>
+            <button type="button" onClick={onConfirmExit}>
               确认退出
             </button>
-            <button type="button" onClick={() => setConfirmExit(false)}>
+            <button type="button" onClick={onCancelExit}>
               取消
             </button>
           </div>

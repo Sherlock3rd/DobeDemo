@@ -27,6 +27,28 @@ const IDLE_TOP_LEVEL_KEYS = [
   'ratePerTickByHighestStage',
 ] as const
 
+function parsePositiveSafeInt(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value <= 0) {
+    invalidConfig(path)
+  }
+  return value
+}
+
+function parseLiteralSafeInt<const T extends number>(
+  value: unknown,
+  expected: T,
+  path: string,
+): T {
+  if (
+    typeof value !== 'number' ||
+    !Number.isSafeInteger(value) ||
+    value !== expected
+  ) {
+    invalidConfig(path)
+  }
+  return expected
+}
+
 export interface IdleExperienceConfig {
   version: 1
   tickSeconds: 10
@@ -37,16 +59,18 @@ export interface IdleExperienceConfig {
 export function parseIdleExperienceConfig(
   value: unknown,
 ): IdleExperienceConfig {
-  if (!isRecord(value) || value.version !== 1) {
+  if (!isRecord(value)) {
     invalidConfig('version')
   }
+  const version = parseLiteralSafeInt(value.version, 1, 'version')
   assertKnownKeys(value, IDLE_TOP_LEVEL_KEYS, '')
-  if (value.tickSeconds !== 10) {
-    invalidConfig('tickSeconds')
-  }
-  if (value.maxOfflineSeconds !== 28800) {
-    invalidConfig('maxOfflineSeconds')
-  }
+  const tickSeconds = parseLiteralSafeInt(value.tickSeconds, 10, 'tickSeconds')
+  const maxOfflineSeconds = parseLiteralSafeInt(
+    value.maxOfflineSeconds,
+    28800,
+    'maxOfflineSeconds',
+  )
+  const maxOfflineTicks = Math.floor(maxOfflineSeconds / tickSeconds)
 
   const rates = value.ratePerTickByHighestStage
   if (!isRecord(rates)) {
@@ -55,24 +79,26 @@ export function parseIdleExperienceConfig(
 
   for (const key of Object.keys(rates)) {
     const g = Number(key)
-    if (!Number.isInteger(g) || g < 1 || g > 20 || String(g) !== key) {
+    if (!Number.isSafeInteger(g) || g < 1 || g > 20 || String(g) !== key) {
       invalidConfig(`ratePerTickByHighestStage.${key}`)
     }
   }
 
   const parsed: Record<number, number> = {}
   for (let g = 1; g <= 20; g += 1) {
-    const rate = rates[String(g)]
-    if (typeof rate !== 'number' || !Number.isInteger(rate) || rate <= 0) {
-      invalidConfig(`ratePerTickByHighestStage.${g}`)
+    const path = `ratePerTickByHighestStage.${g}`
+    const rate = parsePositiveSafeInt(rates[String(g)], path)
+    const maxOfflineReward = rate * maxOfflineTicks
+    if (!Number.isSafeInteger(maxOfflineReward) || maxOfflineReward < 0) {
+      invalidConfig(path)
     }
     parsed[g] = rate
   }
 
   return {
-    version: 1,
-    tickSeconds: 10,
-    maxOfflineSeconds: 28800,
+    version,
+    tickSeconds,
+    maxOfflineSeconds,
     ratePerTickByHighestStage: parsed,
   }
 }

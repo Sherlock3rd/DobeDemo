@@ -15,6 +15,7 @@ import {
   computeEnemyPowerForStage,
   computeTeamPowerForFormation,
 } from './formationPower'
+import { useInitialFocus } from './useInitialFocus'
 
 export interface FormationPanelProps {
   stage: number
@@ -56,6 +57,7 @@ export function FormationPanel({
   const [selectedHero, setSelectedHero] = useState<HeroId | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [status, setStatus] = useState('')
+  const titleRef = useInitialFocus<HTMLHeadingElement>()
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -170,7 +172,6 @@ export function FormationPanel({
       <section
         className="formation-panel"
         role="dialog"
-        aria-modal="true"
         aria-label="编队"
         aria-labelledby={TITLE_ID}
         onPointerDown={stopPropagation}
@@ -184,7 +185,12 @@ export function FormationPanel({
         >
           取消
         </button>
-        <h2 id={TITLE_ID} className="formation-panel__title">
+        <h2
+          ref={titleRef}
+          id={TITLE_ID}
+          className="formation-panel__title"
+          tabIndex={-1}
+        >
           {`编队 · 关卡 ${stage}`}
         </h2>
 

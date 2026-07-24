@@ -4,6 +4,7 @@ import {
   unlockGangTreeForDebug,
 } from '../game/debugActions'
 import { resetAccount } from '../game/resetAccount'
+import { useInitialFocus } from './useInitialFocus'
 
 export interface SettingsPanelProps {
   onClose: () => void
@@ -14,6 +15,7 @@ const TITLE_ID = 'settings-panel-title'
 export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
   const [confirming, setConfirming] = useState(false)
   const [feedback, setFeedback] = useState('')
+  const titleRef = useInitialFocus<HTMLHeadingElement>()
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -59,7 +61,6 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
       <section
         className="settings-panel"
         role="dialog"
-        aria-modal="true"
         aria-labelledby={TITLE_ID}
         onPointerDown={stopPropagation}
         onClick={stopPropagation}
@@ -72,7 +73,12 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
         >
           关闭
         </button>
-        <h2 id={TITLE_ID} className="settings-panel__title">
+        <h2
+          ref={titleRef}
+          id={TITLE_ID}
+          className="settings-panel__title"
+          tabIndex={-1}
+        >
           调试设置
         </h2>
         <p className="settings-panel__description">

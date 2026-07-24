@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T11:32:45.320Z",
+  "generatedAt": "2026-07-24T12:18:51.976Z",
   "script": "campaign-heroes-global-hud-cdp.mjs",
   "preflight": {
     "strategy": "strict owned Vite port; Chrome assigns CDP port 0 inside isolated profile",
@@ -12,7 +12,7 @@
     "cdpPortSource": "DevToolsActivePort",
     "devPort": 5322,
     "devPortFree": true,
-    "cdpPort": 6874,
+    "cdpPort": 4404,
     "cdpBrowserWsPathValidated": true,
     "cdpOwnedProfile": true
   },
@@ -20,34 +20,34 @@
     "ownedPids": [
       {
         "label": "vite",
-        "pid": 64776
+        "pid": 46480
       },
       {
         "label": "chrome",
-        "pid": 55956
+        "pid": 23916
       }
     ],
     "killAttempts": [
       {
         "label": "chrome",
-        "pid": 55956,
+        "pid": 23916,
         "owned": true
       },
       {
         "label": "vite",
-        "pid": 64776,
+        "pid": 46480,
         "owned": true
       }
     ],
     "unknownProcessesTerminated": false,
     "chromeExecutable": "chrome.exe",
-    "tempProfileName": "dobe-campaign-heroes-cdp-s1EO4v"
+    "tempProfileName": "dobe-campaign-heroes-cdp-Y9lFOp"
   },
   "dist": {
     "index": "dist/index.html",
     "assetRefs": [
-      "/DobeDemo/assets/index-Cqd67PU-.js",
-      "/DobeDemo/assets/index-DQwWECoL.css"
+      "/DobeDemo/assets/index-C010nH2x.js",
+      "/DobeDemo/assets/index-CoMhGqEJ.css"
     ],
     "baseOk": true
   },
@@ -118,14 +118,36 @@
       ],
       "cooldown": [
         68
-      ]
+      ],
+      "basicHits": 0,
+      "skillMainHits": 0,
+      "damageEvents": 0,
+      "deaths": 0,
+      "presentedBasic": false,
+      "presentedSkill": false
     },
     "combatStateChanged": true,
-    "resultText": "VICTORY · 胜利首通奖励 英雄经验 500继续",
+    "firstBattleMetrics": {
+      "result": "VICTORY · 胜利继续",
+      "hp": [
+        647
+      ],
+      "cooldown": [
+        97
+      ],
+      "basicHits": 7,
+      "skillMainHits": 0,
+      "damageEvents": 7,
+      "deaths": 1,
+      "presentedBasic": true,
+      "presentedSkill": false,
+      "currentPresentedBasic": true
+    },
+    "resultText": "VICTORY · 胜利继续",
     "highestAfter": 1,
     "sharedAfter": 500,
-    "idleClock": 1784892775625,
-    "runningVictoryChangedBytes": 180755,
+    "idleClock": 1784895542065,
+    "runningVictoryChangedBytes": 191957,
     "runningVictoryDistinct": true
   },
   "idle": {
@@ -133,8 +155,8 @@
     "displayAfter": "当前可领取 0",
     "sharedBefore": 500,
     "sharedAfter": 504,
-    "clockBefore": 1784892750923,
-    "clockAfter": 1784892770923,
+    "clockBefore": 1784895517394,
+    "clockAfter": 1784895537394,
     "status": "已领取英雄经验 4",
     "displayAfterNextTick": "当前可领取 2",
     "sharedAfterNextTick": 504
@@ -209,11 +231,11 @@
       "confirmText": "确认退出取消"
     },
     "progressBeforeExit": {
-      "highest": 1,
+      "highest": 19,
       "shared": 404
     },
     "progressAfterExit": {
-      "highest": 1,
+      "highest": 19,
       "shared": 404
     },
     "afterExit": {
@@ -249,7 +271,7 @@
         }
       ],
       "highestClearedStage": 0,
-      "idleClock": 1784892800844
+      "idleClock": 1784895573727
     },
     "badPayload": {
       "heroLevels": {
@@ -266,7 +288,7 @@
         }
       ],
       "highestClearedStage": 20,
-      "idleClock": 1784892802257
+      "idleClock": 1784895575155
     }
   },
   "reset": {
@@ -287,9 +309,9 @@
       }
     ],
     "clocks": {
-      "city": 1784892804130,
-      "gang": 1784892804130,
-      "adventure": 1784892804130
+      "city": 1784895577003,
+      "gang": 1784895577003,
+      "adventure": 1784895577003
     }
   },
   "layout": {
@@ -414,7 +436,7 @@
         "withinBounds": true,
         "noHorizontalOverflow": true,
         "scrollableOrFits": true,
-        "controls": 5,
+        "controls": 23,
         "controls44": true,
         "undersizedControls": []
       },
@@ -483,46 +505,53 @@
     "campaign-formation.png": {
       "width": 1440,
       "height": 900,
-      "bytes": 132899,
-      "sha256": "8de92ed3388af86084fc392606b383a81308810e474320fedc63dc9fc7c310e1"
+      "bytes": 130395,
+      "sha256": "d414dce8f63ea8d15186c889e49be65ff3d7284296854c0cb69543409d3d71a1"
     },
     "campaign-battle.png": {
       "width": 1440,
       "height": 900,
-      "bytes": 200871,
-      "sha256": "08a17c474bff5f421d682ea155b2c35c500620eb56bab2ebfbc75f7a53e83dd3",
-      "phase": "running"
+      "bytes": 206212,
+      "sha256": "7837d7f5a65b5b6a1e10eff52edca274ca7956d6d0d39c1a1e788a52a59576ca",
+      "phase": "running-basic-hit"
     },
     "campaign-victory.png": {
       "width": 1440,
       "height": 900,
-      "bytes": 218953,
-      "sha256": "bf14e5d3f0599ca49fb5ccafa1d3c11aef35321b86d2407a622d671b61c2eef0",
+      "bytes": 230188,
+      "sha256": "8cff7adbac68a44cb9ad68a82aabf4c7b66ccc765c684c52171abf1aa0b2da52",
       "phase": "resolved"
     },
     "campaign-idle-heroes.png": {
       "width": 1440,
       "height": 900,
-      "bytes": 128107,
-      "sha256": "b6003f912342947531ca8084a4be8ce25dc8c8e3595f54ab55e3569b5476ed93"
+      "bytes": 122190,
+      "sha256": "4c6450a84cbff507017dd1071c60751b84d8352e6d3fa1ac7f06bfb99ea1a64d"
     },
     "campaign-unlocks.png": {
       "width": 1440,
       "height": 900,
-      "bytes": 126995,
-      "sha256": "53b74c6ad648568efaee7ef022a28a24fbe662cac21083cc1fc828a2a5496672"
+      "bytes": 127515,
+      "sha256": "f15678dbe177cbcfd4fdf390028ded4820aedde44a8ce5d9d7feaa395f3366e2"
+    },
+    "campaign-skill.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 243444,
+      "sha256": "2ef98084cc615f6249ad13a097027095220ad35b235b26d993641adcf4be988c",
+      "phase": "running-skill-effect"
     },
     "campaign-building-100.png": {
       "width": 1440,
       "height": 900,
-      "bytes": 129918,
-      "sha256": "cfe0463388f06fe41d6ba23bb2a8a5190286deee692d43d2d4c18eb5122cceaf"
+      "bytes": 129856,
+      "sha256": "3e467586b4799eaa5c71d5b70c968cc7863b07ea212b00428f37b825c902fdd7"
     },
     "campaign-mobile.png": {
       "width": 390,
       "height": 844,
-      "bytes": 76636,
-      "sha256": "2db9d244f0fec0bb15accfdfafca13ca31fc193c9e9e195174e3cf2311bb78df"
+      "bytes": 77040,
+      "sha256": "d25d60dbb95fa2a9c584fdb204e483dbd5456d82845aae8f1ff186e0899a1ed2"
     },
     "campaign-reset.png": {
       "width": 1440,
@@ -564,7 +593,7 @@
     {
       "name": "dist assets use /DobeDemo/",
       "pass": true,
-      "detail": "/DobeDemo/assets/index-Cqd67PU-.js,/DobeDemo/assets/index-DQwWECoL.css"
+      "detail": "/DobeDemo/assets/index-C010nH2x.js,/DobeDemo/assets/index-CoMhGqEJ.css"
     },
     {
       "name": "owned Vite serves the expected app over HTTP 200",
@@ -574,7 +603,7 @@
     {
       "name": "Chrome assigned an owned dynamic CDP port via DevToolsActivePort",
       "pass": true,
-      "detail": "6874"
+      "detail": "4404"
     },
     {
       "name": "1. fresh wallet is {10000,0,0}",
@@ -614,7 +643,7 @@
     {
       "name": "2d. battle displays START and no Auto/manual-cast controls",
       "pass": true,
-      "detail": "{\"dialog\":true,\"banner\":\"START\",\"text\":\"START暂停1x2x退出3\",\"allyBars\":1,\"globalHudPresent\":false,\"exitConfirmPresent\":false,\"hp\":[800],\"cooldown\":[68]}"
+      "detail": "{\"dialog\":true,\"banner\":\"START\",\"text\":\"START暂停1x2x退出3\",\"allyBars\":1,\"globalHudPresent\":false,\"exitConfirmPresent\":false,\"hp\":[800],\"cooldown\":[68],\"basicHits\":0,\"skillMainHits\":0,\"damageEvents\":0,\"deaths\":0,\"presentedBasic\":false,\"presentedSkill\":false}"
     },
     {
       "name": "2e. automatic battle changes HP or cooldown from its initial values",
@@ -622,9 +651,14 @@
       "detail": "{\"initialHp\":[800],\"initialCooldown\":[68],\"combatStateChanged\":true}"
     },
     {
-      "name": "2f. enemy defeat resolves as VICTORY",
+      "name": "2f. first battle exposes basic attacks, damage and a death",
       "pass": true,
-      "detail": "VICTORY · 胜利首通奖励 英雄经验 500继续"
+      "detail": "{\"result\":\"VICTORY · 胜利继续\",\"hp\":[647],\"cooldown\":[97],\"basicHits\":7,\"skillMainHits\":0,\"damageEvents\":7,\"deaths\":1,\"presentedBasic\":true,\"presentedSkill\":false,\"currentPresentedBasic\":true}"
+    },
+    {
+      "name": "2g. enemy defeat resolves as VICTORY",
+      "pass": true,
+      "detail": "VICTORY · 胜利继续"
     },
     {
       "name": "3. first clear records highest=1 and sharedExp=500",
@@ -634,7 +668,7 @@
     {
       "name": "3b. running battle and victory screenshots have distinct hash and bytes",
       "pass": true,
-      "detail": "{\"runningBytes\":200871,\"victoryBytes\":218953,\"runningSha256\":\"08a17c474bff5f421d682ea155b2c35c500620eb56bab2ebfbc75f7a53e83dd3\",\"victorySha256\":\"bf14e5d3f0599ca49fb5ccafa1d3c11aef35321b86d2407a622d671b61c2eef0\",\"changedBytes\":180755}"
+      "detail": "{\"runningBytes\":206212,\"victoryBytes\":230188,\"runningSha256\":\"7837d7f5a65b5b6a1e10eff52edca274ca7956d6d0d39c1a1e788a52a59576ca\",\"victorySha256\":\"8cff7adbac68a44cb9ad68a82aabf4c7b66ccc765c684c52171abf1aa0b2da52\",\"changedBytes\":191957}"
     },
     {
       "name": "3c. victory continue returns to adventure",
@@ -644,12 +678,12 @@
     {
       "name": "4. idle chest claim increases sharedExp",
       "pass": true,
-      "detail": "{\"displayBefore\":\"当前可领取 4\",\"displayAfter\":\"当前可领取 0\",\"sharedBefore\":500,\"sharedAfter\":504,\"clockBefore\":1784892750923,\"clockAfter\":1784892770923,\"status\":\"已领取英雄经验 4\"}"
+      "detail": "{\"displayBefore\":\"当前可领取 4\",\"displayAfter\":\"当前可领取 0\",\"sharedBefore\":500,\"sharedAfter\":504,\"clockBefore\":1784895517394,\"clockAfter\":1784895537394,\"status\":\"已领取英雄经验 4\"}"
     },
     {
       "name": "4b. idle claim preserves sub-tick remainder",
       "pass": true,
-      "detail": "{\"before\":1784892750923,\"after\":1784892770923}"
+      "detail": "{\"before\":1784895517394,\"after\":1784895537394}"
     },
     {
       "name": "4c. idle chest continues accumulating after one legal tick",
@@ -702,19 +736,24 @@
       "detail": "[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1},{\"heroId\":\"anvil\",\"row\":\"front\",\"index\":0},{\"heroId\":\"skyline\",\"row\":\"back\",\"index\":0}]"
     },
     {
-      "name": "7d. battle hides GlobalHud and first exit click only opens confirmation",
+      "name": "7d. R3F presentation reports and captures basic and skill effects",
+      "pass": true,
+      "detail": "{\"result\":null,\"basicHits\":29,\"skillMainHits\":4,\"skillSplashHits\":8,\"damageEvents\":41,\"deaths\":1,\"presentedBasic\":true,\"presentedSkill\":true,\"currentPresentedSkill\":true,\"basicSha256\":\"7837d7f5a65b5b6a1e10eff52edca274ca7956d6d0d39c1a1e788a52a59576ca\",\"skillSha256\":\"2ef98084cc615f6249ad13a097027095220ad35b235b26d993641adcf4be988c\"}"
+    },
+    {
+      "name": "7e. battle hides GlobalHud and first exit click only opens confirmation",
       "pass": true,
       "detail": "{\"battlePresent\":true,\"globalHudPresent\":false,\"confirmButtons\":2,\"confirmText\":\"确认退出取消\"}"
     },
     {
-      "name": "7e. battle exit confirmation returns to adventure",
+      "name": "7f. battle exit confirmation returns to adventure",
       "pass": true,
       "detail": "{\"building\":false,\"adventure\":true,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":true}"
     },
     {
-      "name": "7f. early battle exit grants no reward/progress",
+      "name": "7g. early battle exit grants no reward/progress",
       "pass": true,
-      "detail": "{\"before\":{\"highest\":1,\"shared\":404},\"after\":{\"highest\":1,\"shared\":404}}"
+      "detail": "{\"before\":{\"highest\":19,\"shared\":404},\"after\":{\"highest\":19,\"shared\":404}}"
     },
     {
       "name": "8. completed building stage still displays 100% and main button",
@@ -734,7 +773,7 @@
     {
       "name": "10c. 390x844 core panels fit/scroll without horizontal overflow",
       "pass": true,
-      "detail": "{\"hud\":{\"noHorizontalOverflow\":true,\"withinBounds\":true,\"controls44\":true},\"building\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"adventure\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":5,\"controls44\":true,\"undersizedControls\":[]},\"formation\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":8,\"controls44\":true,\"undersizedControls\":[]},\"battle\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"heroes\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"settings\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":false,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"focusVisible\":true}"
+      "detail": "{\"hud\":{\"noHorizontalOverflow\":true,\"withinBounds\":true,\"controls44\":true},\"building\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"adventure\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":23,\"controls44\":true,\"undersizedControls\":[]},\"formation\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":8,\"controls44\":true,\"undersizedControls\":[]},\"battle\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"heroes\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"settings\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":false,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"focusVisible\":true}"
     },
     {
       "name": "10d. keyboard focus is visibly styled",
@@ -749,12 +788,12 @@
     {
       "name": "9. persisted Adventure state null keeps the initial durable state",
       "pass": true,
-      "detail": "{\"heroLevels\":{\"foreman\":1,\"anvil\":1,\"skyline\":1},\"sharedExp\":0,\"formation\":[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1}],\"highestClearedStage\":0,\"idleClock\":1784892800844}"
+      "detail": "{\"heroLevels\":{\"foreman\":1,\"anvil\":1,\"skyline\":1},\"sharedExp\":0,\"formation\":[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1}],\"highestClearedStage\":0,\"idleClock\":1784895573727}"
     },
     {
       "name": "9b. bad Adventure save reload is normalized",
       "pass": true,
-      "detail": "{\"heroLevels\":{\"foreman\":50,\"anvil\":1,\"skyline\":1},\"sharedExp\":0,\"formation\":[{\"heroId\":\"anvil\",\"row\":\"front\",\"index\":0}],\"highestClearedStage\":20,\"idleClock\":1784892802257}"
+      "detail": "{\"heroLevels\":{\"foreman\":50,\"anvil\":1,\"skyline\":1},\"sharedExp\":0,\"formation\":[{\"heroId\":\"anvil\",\"row\":\"front\",\"index\":0}],\"highestClearedStage\":20,\"idleClock\":1784895575155}"
     },
     {
       "name": "9c. reset required a second confirmation",
@@ -764,17 +803,17 @@
     {
       "name": "9d. reset restores all three stores to initial state",
       "pass": true,
-      "detail": "{\"confirming\":true,\"wallet\":{\"money\":10000,\"oil\":0,\"materials\":0},\"reputation\":0,\"sharedExp\":0,\"highest\":0,\"formation\":[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1}],\"clocks\":{\"city\":1784892804130,\"gang\":1784892804130,\"adventure\":1784892804130}}"
+      "detail": "{\"confirming\":true,\"wallet\":{\"money\":10000,\"oil\":0,\"materials\":0},\"reputation\":0,\"sharedExp\":0,\"highest\":0,\"formation\":[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1}],\"clocks\":{\"city\":1784895577003,\"gang\":1784895577003,\"adventure\":1784895577003}}"
     },
     {
       "name": "9e. reset aligns all three clocks to one captured instant",
       "pass": true,
-      "detail": "{\"city\":1784892804130,\"gang\":1784892804130,\"adventure\":1784892804130}"
+      "detail": "{\"city\":1784895577003,\"gang\":1784895577003,\"adventure\":1784895577003}"
     },
     {
       "name": "teardown: only owned PIDs targeted",
       "pass": true,
-      "detail": "[{\"label\":\"chrome\",\"pid\":55956,\"owned\":true},{\"label\":\"vite\",\"pid\":64776,\"owned\":true}]"
+      "detail": "[{\"label\":\"chrome\",\"pid\":23916,\"owned\":true},{\"label\":\"vite\",\"pid\":46480,\"owned\":true}]"
     },
     {
       "name": "teardown: dev port released",
@@ -794,7 +833,7 @@
     {
       "name": "all expected screenshots are nonempty PNG files",
       "pass": true,
-      "detail": "[\"campaign-fresh.png\",\"campaign-formation.png\",\"campaign-battle.png\",\"campaign-victory.png\",\"campaign-idle-heroes.png\",\"campaign-unlocks.png\",\"campaign-building-100.png\",\"campaign-mobile.png\",\"campaign-reset.png\"]"
+      "detail": "[\"campaign-fresh.png\",\"campaign-formation.png\",\"campaign-battle.png\",\"campaign-victory.png\",\"campaign-idle-heroes.png\",\"campaign-unlocks.png\",\"campaign-skill.png\",\"campaign-building-100.png\",\"campaign-mobile.png\",\"campaign-reset.png\"]"
     }
   ]
 }

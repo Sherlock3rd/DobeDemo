@@ -39,10 +39,18 @@ vi.mock('./game/AdventureIdleClock', () => ({
 
 vi.mock('./ui/GlobalHud', () => ({
   GlobalHud: (p: {
+    onOpenHeroes: () => void
+    onOpenGangTree: () => void
     onOpenAdventure: () => void
     onOpenSettings: () => void
   }) => (
-    <nav>
+    <nav aria-label="主导航">
+      <button type="button" onClick={p.onOpenHeroes}>
+        英雄
+      </button>
+      <button type="button" onClick={p.onOpenGangTree}>
+        帮派树
+      </button>
       <button type="button" onClick={p.onOpenAdventure}>
         推关
       </button>
@@ -54,8 +62,17 @@ vi.mock('./ui/GlobalHud', () => ({
 }))
 
 vi.mock('./ui/AdventurePanel', () => ({
-  AdventurePanel: (p: { onChallenge: (stage: number) => void }) => (
+  AdventurePanel: (p: {
+    onClose: () => void
+    onChallenge: (stage: number) => void
+  }) => (
     <div role="dialog" aria-label="推关地图">
+      <h2 tabIndex={-1} ref={(element) => element?.focus()}>
+        推关战役
+      </h2>
+      <button type="button" onClick={p.onClose}>
+        关闭推关
+      </button>
       <button type="button" onClick={() => p.onChallenge(1)}>
         挑战 1-1
       </button>
@@ -64,8 +81,18 @@ vi.mock('./ui/AdventurePanel', () => ({
 }))
 
 vi.mock('./ui/FormationPanel', () => ({
-  FormationPanel: (p: { onStart: (stage: number) => void; stage: number }) => (
+  FormationPanel: (p: {
+    onCancel: () => void
+    onStart: (stage: number) => void
+    stage: number
+  }) => (
     <div role="dialog" aria-label="编队">
+      <h2 tabIndex={-1} ref={(element) => element?.focus()}>
+        {`编队 · 关卡 ${p.stage}`}
+      </h2>
+      <button type="button" onClick={p.onCancel}>
+        取消
+      </button>
       <button type="button" onClick={() => p.onStart(p.stage)}>
         开始
       </button>
@@ -84,7 +111,13 @@ vi.mock('./ui/BattleScreen', () => ({
 }))
 
 vi.mock('./ui/HeroesPanel', () => ({
-  HeroesPanel: () => <div role="dialog" aria-label="英雄培养" />,
+  HeroesPanel: () => (
+    <div role="dialog" aria-label="英雄培养">
+      <h2 tabIndex={-1} ref={(element) => element?.focus()}>
+        英雄培养
+      </h2>
+    </div>
+  ),
 }))
 
 const { default: App } = await import('./App')
@@ -115,6 +148,44 @@ describe('App', () => {
     expect(useCityStore.getState().selectedBuildingId).toBeNull()
   })
 
+  it('keeps the global HUD available while isolating the city canvas', async () => {
+    render(<App />)
+
+    await userEvent.click(screen.getByRole('button', { name: '推关' }))
+
+    const visibleTrigger = screen.getByRole('button', { name: '推关' })
+    const hudBackground = visibleTrigger.closest('nav')?.parentElement
+    const canvasBackground = screen.getByTestId('canvas-mock').parentElement
+    expect(hudBackground).not.toHaveAttribute('aria-hidden')
+    expect(hudBackground).not.toHaveAttribute('inert')
+    expect(canvasBackground).toHaveAttribute('aria-hidden', 'true')
+    expect(canvasBackground).toHaveAttribute('inert')
+    expect(screen.getByRole('heading', { name: '推关战役' })).toHaveFocus()
+  })
+
+  it('switches from adventure to heroes through the visible global HUD', async () => {
+    render(<App />)
+
+    await userEvent.click(screen.getByRole('button', { name: '推关' }))
+    expect(screen.getByRole('dialog', { name: '推关地图' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: '英雄' }))
+
+    expect(screen.queryByRole('dialog', { name: '推关地图' })).toBeNull()
+    expect(screen.getByRole('dialog', { name: '英雄培养' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '英雄培养' })).toHaveFocus()
+  })
+
+  it('restores focus to the city trigger after closing an overlay', async () => {
+    render(<App />)
+    const trigger = screen.getByRole('button', { name: '推关' })
+
+    await userEvent.click(trigger)
+    await userEvent.click(screen.getByRole('button', { name: '关闭推关' }))
+
+    expect(trigger).toHaveFocus()
+  })
+
   it('formation can only be entered from adventure, battle only from formation, and exit returns to adventure', async () => {
     render(<App />)
     expect(screen.queryByRole('dialog', { name: '编队' })).toBeNull()
@@ -128,6 +199,24 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: '设置' })).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: '退出战斗' }))
     expect(screen.getByRole('dialog', { name: '推关地图' })).toBeInTheDocument()
+  })
+
+  it('keeps focus inside the adventure, formation, and battle transition chain', async () => {
+    render(<App />)
+
+    await userEvent.click(screen.getByRole('button', { name: '推关' }))
+    expect(screen.getByRole('heading', { name: '推关战役' })).toHaveFocus()
+
+    await userEvent.click(screen.getByRole('button', { name: '挑战 1-1' }))
+    expect(screen.getByRole('heading', { name: '编队 · 关卡 1' })).toHaveFocus()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.getByRole('heading', { name: '推关战役' })).toHaveFocus()
+
+    await userEvent.click(screen.getByRole('button', { name: '挑战 1-1' }))
+    await userEvent.click(screen.getByRole('button', { name: '开始' }))
+    expect(screen.getByRole('button', { name: '退出战斗' })).toHaveFocus()
+    expect(document.body).not.toHaveFocus()
   })
 
   it('Escape closes the current non-none overlay', async () => {

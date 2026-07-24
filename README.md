@@ -55,12 +55,14 @@
 ### 战役、英雄与全局 HUD
 
 - 战役共 2 章 20 关；每关敌人从 1 名递增到 5 名，编队固定为前排 2 个、后排 3 个阵位。
-- 战斗由确定性的 100ms tick 引擎预演；走位、普攻与技能施放全部自动完成，没有 `Auto` 开关或手动施法按钮，同一输入始终得到同一结果。
+- 战斗由确定性的 100ms tick 引擎预演；走位、普攻与技能施放全部自动完成，没有 `Auto` 开关或手动施法按钮，同一输入始终得到同一结果。真实 `useFrame` 表现覆盖走位、lunge、死亡 tween、basic 枪火/命中和 skill 金色齐射拖尾；reduced motion 关闭非必要 tween 但不改变事件与结果。
 - 首版三名英雄分别在帮派 Lv.1、Lv.12、Lv.28 解锁；英雄等级最高 Lv.50 且不能超过当前帮派等级。首通奖励与挂机收益进入共享英雄经验池，培养页从共享池扣费升级。
 - 通关后开启英雄经验挂机：每 10 秒结算一次，离线最多累计 8 小时；推关页宝箱按已通关进度派生可领取经验，领取时保留不足一个 tick 的时间余量。
 - `PROGRESSION_UNLOCKS` 是建筑、英雄和玩法入口的统一解锁来源；`解锁帮派树` 调试动作升至 Lv.50 后，英雄与建筑 UI 都从同一规则即时派生解锁。
-- 全局 `GlobalHud` 常驻显示钱、油、物资、英雄经验及推关/英雄红点。应用只允许一个 `activeOverlay`，推关、编队、英雄、战斗和建筑详情互斥。
+- 全局 `GlobalHud` 以 `z-index:22` 在所有非 battle overlay 上方常驻显示钱、油、物资、英雄经验及推关/英雄红点，并保持可指针导航；这些非 battle dialog 不声明 `aria-modal`。进入 battle 后 HUD 隐藏并 inert，退出后恢复。应用只允许一个 `activeOverlay`，推关、编队、英雄、战斗和建筑详情互斥。
+- 战斗退出需要二次确认；确认态会冻结战斗并阻止胜利/首通/经验发奖。Overlay 打开时标题获得焦点、背景变为 `inert`，关闭后焦点恢复到触发点。
 - 英雄战役存档键为 `dobe-adventure-progression-v1`（persist v1），保存英雄等级、共享经验、阵容、最高通关与挂机时钟；坏存档在 rehydrate 时夹紧并丢弃非法阵位。
+- Store 拒绝锁定英雄和非法帮派等级请求；配置及派生计算校验 safe integer、英雄 `defaultSlot` 与数值溢出。
 - 建筑进度表示“当前主建筑等级这一阶段”的完成度；阶段完成后仍保留精确 `100%` 进度，并同时显示主建筑升级按钮。
 
 ## 职位等级
@@ -121,11 +123,11 @@ npm test
 npm run build
 ```
 
-当前验收基线：63 个测试文件、599 项测试。
+当前验收基线：65 个测试文件、655 项测试。最终本地构建资产为 `/DobeDemo/assets/index-C010nH2x.js` 与 `/DobeDemo/assets/index-CoMhGqEJ.css`。
 
 渐进式建筑升级的可重复浏览器验收脚本为 `.superpowers/sdd/progressive-building-upgrade-flow-cdp.mjs`（安全模式：动态选择空闲端口、`--strictPort`、仅终止脚本自建 PID、临时 profile 删除前校验 `dobe-progressive-upgrade-cdp-` 前缀、结果 JSON 只记录 basename、错误脱敏、坏数据/路径脱敏自测、失败非零退出）。它以真实鼠标点击覆盖：fresh v3 存档 10000 钱与仅首槽可见、公用按钮连续升级与对应 3D ROI 变化、手选保持与追平后循环选择、完成态 100% 与主升级按钮、主按钮进入确认页不扣费、完整成本/战力/资源不足禁用、确认一次扣费与新槽自动选中、全部阻止原因优先级、修车厂 Lv.5→6 的 Clubhouse 门槛、Clubhouse 不受修车厂门槛、两个调试动作重复执行、二次确认重置、代表性 v2 一次退款且刷新不重复、桌面 1440×900 与 390×844 布局；结果与截图见 `.superpowers/sdd/progressive-building-upgrade-flow-*`。
 
-战役/英雄/GlobalHud 的本地验收脚本为 `.superpowers/sdd/campaign-heroes-global-hud-cdp.mjs`。Chrome 使用 `--remote-debugging-port=0`，脚本只从隔离 profile 的 `DevToolsActivePort` 读取并校验自有实际端口/WS；Vite 以 `--strictPort` 启动，并在接受 HTTP 前验证 owned 进程存活及应用 HTML 特征。真实 `Input.dispatchMouseEvent` 覆盖 fresh 无非法直达入口、Adventure/Formation Escape、英雄入口关闭建筑详情且 Escape 后不恢复、1-1 编队/START/自动战斗状态变化/VICTORY/首通、running 与 resolved 截图 hash 差异、宝箱领取归零及后续 tick、英雄升级、Lv.50 派生解锁、三英雄快速编队、战斗二次确认退出无奖励、建筑完成态 100%、Adventure `state:null`/坏存档、三 store reset，以及 1440×900/390×844 的布局和严格双轴 44×44 热区。严格热区 RED 曾暴露 44px 控件被 `panel-pop-enter scale(0.98)` 缩成 43.12px，以及 Adventure/Building/Settings 尺寸下限不完整；统一公共按钮 `min-height:45px`、补齐 Building/Settings 44px 双轴并移除缩放后，最终本地结果为 self-test 11/11、运行期 48/48，产品测试基线仍为 63 文件/599 项。
+战役/英雄/GlobalHud 的本地验收脚本为 `.superpowers/sdd/campaign-heroes-global-hud-cdp.mjs`。Chrome 使用 `--remote-debugging-port=0`，脚本只从隔离 profile 的 `DevToolsActivePort` 读取并校验自有实际端口/WS；Vite 以 `--strictPort` 启动，并在接受 HTTP 前验证 owned 进程存活及应用 HTML 特征。真实 `Input.dispatchMouseEvent` 覆盖 fresh 无非法直达入口、Adventure/Formation Escape、英雄入口关闭建筑详情且 Escape 后不恢复、非 battle HUD 常驻可导航与 battle hidden/inert、1-1 编队/START/自动战斗状态变化/VICTORY/首通、宝箱领取归零及后续 tick、英雄升级、Lv.50 派生解锁、三英雄快速编队、战斗二次确认退出无奖励、建筑完成态 100%、Adventure `state:null`/坏存档、三 store reset，以及 1440×900/390×844 的布局和严格双轴 44×44 热区。严格热区 RED 曾暴露 44px 控件被 `panel-pop-enter scale(0.98)` 缩成 43.12px，以及 Adventure/Building/Settings 尺寸下限不完整；终审又补齐退出冻结和真实战斗表现。BattleEffects 的 mounted callback 写回 BattleScreen `data-presented-*`，配合累计 basic/skill/damage/death 计数，使 CDP 能证明表现层已挂载而非只证明引擎有事件：stage 1 实测 basic 7、damage 7、death 1 与 `presentedBasic`，stage 20 实测 basic 30、skill-main 5、splash 11、damage 46、death 1 与 `currentPresentedSkill`。`campaign-skill.png` 和 running-basic 截图 hash 不同；最终 self-test 11/11、运行期 50/50，本地证据尚未 push 或发布 Pages。
 
 `example/5v5example.mp4` 与 `example/ux/` 中的视频、抽帧和参考图仅用于视觉分析，不属于产品或验收交付，禁止加入仓库提交。
 

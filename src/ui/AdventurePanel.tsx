@@ -9,6 +9,7 @@ import {
   getClaimableIdleExp,
   useAdventureStore,
 } from '../store/useAdventureStore'
+import { useInitialFocus } from './useInitialFocus'
 
 export interface AdventurePanelProps {
   onClose: () => void
@@ -26,6 +27,7 @@ export function AdventurePanel({
   const claimIdleChest = useAdventureStore((s) => s.claimIdleChest)
   const [selectedStage, setSelectedStage] = useState(1)
   const [status, setStatus] = useState('')
+  const titleRef = useInitialFocus<HTMLHeadingElement>()
   const tick = useChestTick((s) => s.tick)
   const now = useChestTick((s) => s.now)
   const claimable = getClaimableIdleExp(
@@ -89,7 +91,6 @@ export function AdventurePanel({
       <section
         className="adventure-panel"
         role="dialog"
-        aria-modal="true"
         aria-labelledby={TITLE_ID}
         aria-label="推关地图"
         onPointerDown={stopPropagation}
@@ -103,7 +104,12 @@ export function AdventurePanel({
         >
           关闭
         </button>
-        <h2 id={TITLE_ID} className="adventure-panel__title">
+        <h2
+          ref={titleRef}
+          id={TITLE_ID}
+          className="adventure-panel__title"
+          tabIndex={-1}
+        >
           推关战役
         </h2>
 

@@ -9,14 +9,41 @@ import {
 import { BattleScene } from './BattleScene'
 
 vi.mock('./BattleUnit', () => ({
-  BattleUnit: ({ unit, acting }: { unit: UnitSnapshot; acting: boolean }) => (
+  BattleUnit: ({
+    unit,
+    acting,
+    actionKey,
+  }: {
+    unit: UnitSnapshot
+    acting: boolean
+    actionKey: number | null
+  }) => (
     <div
       data-testid="battle-unit"
       data-side={unit.side}
       data-dead={String(!unit.alive)}
       data-acting={String(acting)}
+      data-action-key={actionKey ?? ''}
       data-silhouette={unit.heroId ? 'hero' : 'enemy'}
     />
+  ),
+}))
+vi.mock('./BattleEffects', () => ({
+  BattleEffects: ({
+    events,
+  }: {
+    events: Array<{
+      hit: HitEvent
+      eventKey: number
+      eventIndex: number
+    }>
+  }) => (
+    <div
+      data-testid="battle-effects"
+      data-event-key={events.at(-1)?.eventKey ?? ''}
+    >
+      {events.length}
+    </div>
   ),
 }))
 vi.mock('./DamageNumbers', () => ({
@@ -48,16 +75,31 @@ describe('BattleScene', () => {
     expect(screen.getByTestId('damage-numbers')).toHaveTextContent(
       String(result.timeline[hitIndex].hits.length),
     )
+    expect(screen.getByTestId('battle-effects')).toHaveTextContent(
+      String(result.timeline[hitIndex].hits.length),
+    )
+    expect(screen.getByTestId('battle-effects')).toHaveAttribute(
+      'data-event-key',
+      String(result.timeline[hitIndex].tick),
+    )
     const actingHit = result.timeline[hitIndex].hits[0]
+    const actingUnit = screen
+      .getAllByTestId('battle-unit')
+      .find(
+        (node) =>
+          node.dataset.side === actingHit.attackerSide &&
+          node.dataset.acting === 'true',
+      )
+    expect(actingUnit).toBeDefined()
+    expect(actingUnit).toHaveAttribute(
+      'data-action-key',
+      String(result.timeline[hitIndex].tick),
+    )
+
+    rerender(<BattleScene result={result} currentTick={hitIndex + 2} />)
     expect(
-      screen
-        .getAllByTestId('battle-unit')
-        .find(
-          (node) =>
-            node.dataset.side === actingHit.attackerSide &&
-            node.dataset.acting === 'true',
-        ),
-    ).toBeDefined()
+      Number(screen.getByTestId('battle-effects').textContent),
+    ).toBeGreaterThan(0)
   })
 
   it('keeps dead units in the final snapshot for the death animation', () => {

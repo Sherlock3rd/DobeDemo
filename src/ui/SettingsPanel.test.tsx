@@ -15,6 +15,14 @@ describe('SettingsPanel', () => {
     vi.restoreAllMocks()
   })
 
+  it('moves focus to its programmatically focusable title when opened', () => {
+    render(<SettingsPanel onClose={() => {}} />)
+
+    const title = screen.getByRole('heading', { name: '调试设置' })
+    expect(title).toHaveAttribute('tabindex', '-1')
+    expect(title).toHaveFocus()
+  })
+
   it('unlocks the gang tree immediately, keeps the panel open, and announces success', async () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
@@ -112,7 +120,7 @@ describe('SettingsPanel', () => {
     render(<SettingsPanel onClose={onClose} />)
 
     const dialog = screen.getByRole('dialog', { name: '调试设置' })
-    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).not.toHaveAttribute('aria-modal')
     expect(
       screen.getByText('仅用于 Demo 调试，管理当前浏览器中的账号进度。'),
     ).toBeInTheDocument()

@@ -23,9 +23,12 @@ describe('BattleHud', () => {
       <BattleHud
         phase="running"
         speed={1}
+        exitPending={false}
         onTogglePause={() => {}}
         onSetSpeed={() => {}}
-        onRequestExit={() => {}}
+        onRequestExitPrompt={() => {}}
+        onCancelExit={() => {}}
+        onConfirmExit={() => {}}
         units={units}
       />,
     )
@@ -41,9 +44,12 @@ describe('BattleHud', () => {
       <BattleHud
         phase="running"
         speed={1}
+        exitPending={false}
         onTogglePause={onTogglePause}
         onSetSpeed={onSetSpeed}
-        onRequestExit={() => {}}
+        onRequestExitPrompt={() => {}}
+        onCancelExit={() => {}}
+        onConfirmExit={() => {}}
         units={units}
       />,
     )
@@ -53,21 +59,43 @@ describe('BattleHud', () => {
     expect(onSetSpeed).toHaveBeenCalledWith(2)
   })
 
-  it('requires exit confirmation', async () => {
-    const onRequestExit = vi.fn()
-    render(
+  it('renders controlled exit confirmation and delegates its actions', async () => {
+    const onRequestExitPrompt = vi.fn()
+    const onCancelExit = vi.fn()
+    const onConfirmExit = vi.fn()
+    const view = render(
       <BattleHud
         phase="running"
         speed={1}
+        exitPending={false}
         onTogglePause={() => {}}
         onSetSpeed={() => {}}
-        onRequestExit={onRequestExit}
+        onRequestExitPrompt={onRequestExitPrompt}
+        onCancelExit={onCancelExit}
+        onConfirmExit={onConfirmExit}
         units={units}
       />,
     )
     await userEvent.click(screen.getByRole('button', { name: /退出/ }))
+    expect(onRequestExitPrompt).toHaveBeenCalledTimes(1)
+
+    view.rerender(
+      <BattleHud
+        phase="paused"
+        speed={1}
+        exitPending
+        onTogglePause={() => {}}
+        onSetSpeed={() => {}}
+        onRequestExitPrompt={onRequestExitPrompt}
+        onCancelExit={onCancelExit}
+        onConfirmExit={onConfirmExit}
+        units={units}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /取消/ }))
     await userEvent.click(screen.getByRole('button', { name: /确认退出/ }))
-    expect(onRequestExit).toHaveBeenCalled()
+    expect(onCancelExit).toHaveBeenCalledTimes(1)
+    expect(onConfirmExit).toHaveBeenCalledTimes(1)
   })
 
   it('renders read-only portraits with cooldown seconds', () => {
@@ -75,9 +103,12 @@ describe('BattleHud', () => {
       <BattleHud
         phase="running"
         speed={1}
+        exitPending={false}
         onTogglePause={() => {}}
         onSetSpeed={() => {}}
-        onRequestExit={() => {}}
+        onRequestExitPrompt={() => {}}
+        onCancelExit={() => {}}
+        onConfirmExit={() => {}}
         units={units}
       />,
     )

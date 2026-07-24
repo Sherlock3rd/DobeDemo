@@ -59,6 +59,46 @@ describe('useAdventureStore', () => {
     expect(useAdventureStore.getState().sharedExp).toBe(0)
   })
 
+  it('rejects a locked hero upgrade atomically with a locked reason', () => {
+    useAdventureStore.setState({
+      sharedExp: 1_000,
+      heroLevels: { foreman: 1, anvil: 1, skyline: 1 },
+    })
+
+    expect(useAdventureStore.getState().upgradeHero('anvil', 1)).toEqual({
+      applied: false,
+      reason: 'hero-locked',
+    })
+    expect(useAdventureStore.getState().heroLevels.anvil).toBe(1)
+    expect(useAdventureStore.getState().sharedExp).toBe(1_000)
+  })
+
+  it.each([
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    0,
+    1.5,
+    51,
+    Number.MAX_SAFE_INTEGER + 1,
+  ])(
+    'rejects invalid gang level %s without mutating upgrade state',
+    (gangLevel) => {
+      useAdventureStore.setState({
+        sharedExp: 1_000,
+        heroLevels: { foreman: 1, anvil: 1, skyline: 1 },
+      })
+
+      expect(
+        useAdventureStore.getState().upgradeHero('foreman', gangLevel),
+      ).toEqual({
+        applied: false,
+        reason: 'invalid-request',
+      })
+      expect(useAdventureStore.getState().heroLevels.foreman).toBe(1)
+      expect(useAdventureStore.getState().sharedExp).toBe(1_000)
+    },
+  )
+
   it('records first clear in one transaction and initializes idle clock', () => {
     const r = useAdventureStore.getState().recordVictory(1, NOW + 5_000)
     expect(r).toEqual({ firstClear: true, rewardExp: 500 })

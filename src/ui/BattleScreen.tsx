@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber'
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { getFirstClearReward } from '../config/campaignConfig'
 import { combatConfig } from '../config/combatConfig'
 import {
@@ -10,6 +10,7 @@ import {
 } from '../game/combat/battleEngine'
 import { getGangLevel } from '../game/gangProgression'
 import { BattleScene } from '../scene/battle/BattleScene'
+import type { BattlePresentationFrame } from '../scene/battle/BattleEffects'
 import { usePrefersReducedMotion } from '../scene/city/usePrefersReducedMotion'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useGangStore } from '../store/useGangStore'
@@ -71,26 +72,48 @@ function BattleScreenSession({
     boot.ok && reducedMotion ? boot.result.endedAtTick : 0,
   )
   const [paused, setPaused] = useState(false)
+  const [exitPending, setExitPending] = useState(false)
   const [speed, setSpeed] = useState<PlaybackSpeed>(1)
   const [showStart, setShowStart] = useState(() => !(boot.ok && reducedMotion))
+  const [presentedEffects, setPresentedEffects] = useState({
+    basicSeen: false,
+    skillSeen: false,
+    currentBasic: false,
+    currentSkill: false,
+    eventKey: 0,
+  })
   const committedRef = useRef(false)
+
+  const handleEffectsPresented = useCallback(
+    (frame: BattlePresentationFrame): void => {
+      setPresentedEffects((current) => ({
+        basicSeen: current.basicSeen || frame.basicActive,
+        skillSeen: current.skillSeen || frame.skillActive,
+        currentBasic: frame.basicActive,
+        currentSkill: frame.skillActive,
+        eventKey: frame.eventKey,
+      }))
+    },
+    [],
+  )
 
   const result = boot.ok ? boot.result : null
   const phase: Phase =
-    result && currentTick >= result.endedAtTick
-      ? 'resolved'
-      : paused
-        ? 'paused'
+    exitPending || paused
+      ? 'paused'
+      : result && currentTick >= result.endedAtTick
+        ? 'resolved'
         : 'running'
 
   useEffect(() => {
     if (!result) return
+    if (exitPending) return
     if (currentTick < result.endedAtTick || committedRef.current) return
     committedRef.current = true
     if (result.outcome === 'victory') {
       recordVictory(stage, Date.now())
     }
-  }, [currentTick, recordVictory, result, stage])
+  }, [currentTick, exitPending, recordVictory, result, stage])
 
   useEffect(() => {
     if (!result || phase !== 'running') return
@@ -116,6 +139,28 @@ function BattleScreenSession({
       ? (result.timeline[Math.min(currentTick, result.endedAtTick) - 1]
           ?.units ?? [])
       : (result?.timeline[0]?.units ?? [])
+  const replayedTimeline = result
+    ? result.timeline.slice(0, Math.min(currentTick, result.endedAtTick))
+    : []
+  const replayMetrics = replayedTimeline.reduce(
+    (metrics, tick) => {
+      for (const hit of tick.hits) {
+        metrics.damageEvents += 1
+        if (hit.kind === 'basic') metrics.basicHits += 1
+        if (hit.kind === 'skill-main') metrics.skillMainHits += 1
+        if (hit.kind === 'skill-splash') metrics.skillSplashHits += 1
+      }
+      metrics.deaths += tick.deaths.length
+      return metrics
+    },
+    {
+      basicHits: 0,
+      skillMainHits: 0,
+      skillSplashHits: 0,
+      damageEvents: 0,
+      deaths: 0,
+    },
+  )
 
   const firstClear =
     boot.ok &&
@@ -138,14 +183,34 @@ function BattleScreenSession({
   }
 
   return (
-    <div className="battle-screen" role="dialog" aria-label="战斗">
+    <div
+      className="battle-screen"
+      role="dialog"
+      aria-label="战斗"
+      data-current-tick={currentTick}
+      data-ended-tick={boot.result.endedAtTick}
+      data-basic-hits={replayMetrics.basicHits}
+      data-skill-main-hits={replayMetrics.skillMainHits}
+      data-skill-splash-hits={replayMetrics.skillSplashHits}
+      data-damage-events={replayMetrics.damageEvents}
+      data-deaths={replayMetrics.deaths}
+      data-presented-basic={presentedEffects.basicSeen}
+      data-presented-skill={presentedEffects.skillSeen}
+      data-current-presented-basic={presentedEffects.currentBasic}
+      data-current-presented-skill={presentedEffects.currentSkill}
+      data-presented-event-key={presentedEffects.eventKey}
+    >
       <div className="battle-screen__canvas-wrap">
         <Canvas
           className="battle-screen__canvas"
           orthographic
           camera={{ position: [0, 12, 0], zoom: 40, near: 0.1, far: 80 }}
         >
-          <BattleScene result={boot.result} currentTick={currentTick} />
+          <BattleScene
+            result={boot.result}
+            currentTick={currentTick}
+            onEffectsPresented={handleEffectsPresented}
+          />
         </Canvas>
       </div>
 
@@ -172,9 +237,12 @@ function BattleScreenSession({
       <BattleHud
         phase={phase}
         speed={speed}
+        exitPending={exitPending}
         onTogglePause={() => setPaused((value) => !value)}
         onSetSpeed={setSpeed}
-        onRequestExit={onExit}
+        onRequestExitPrompt={() => setExitPending(true)}
+        onCancelExit={() => setExitPending(false)}
+        onConfirmExit={onExit}
         units={units}
       />
     </div>

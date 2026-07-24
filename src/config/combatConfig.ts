@@ -61,11 +61,26 @@ function parsePositiveMultiplier(value: unknown, path: string): number {
   return value
 }
 
-function parsePositiveInt(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
+function parsePositiveSafeInt(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value <= 0) {
     invalidConfig(path)
   }
   return value
+}
+
+function parseLiteralSafeInt<const T extends number>(
+  value: unknown,
+  expected: T,
+  path: string,
+): T {
+  if (
+    typeof value !== 'number' ||
+    !Number.isSafeInteger(value) ||
+    value !== expected
+  ) {
+    invalidConfig(path)
+  }
+  return expected
 }
 
 function parseSkill(value: unknown, path: string): SkillConfig {
@@ -82,11 +97,11 @@ function parseSkill(value: unknown, path: string): SkillConfig {
       value.splashMultiplier,
       `${path}.splashMultiplier`,
     ),
-    initialCooldownTicks: parsePositiveInt(
+    initialCooldownTicks: parsePositiveSafeInt(
       value.initialCooldownTicks,
       `${path}.initialCooldownTicks`,
     ),
-    cooldownTicks: parsePositiveInt(
+    cooldownTicks: parsePositiveSafeInt(
       value.cooldownTicks,
       `${path}.cooldownTicks`,
     ),
@@ -128,16 +143,17 @@ export interface CombatConfig {
 }
 
 export function parseCombatConfig(value: unknown): CombatConfig {
-  if (!isRecord(value) || value.version !== 1) {
+  if (!isRecord(value)) {
     invalidConfig('version')
   }
+  const version = parseLiteralSafeInt(value.version, 1, 'version')
   assertKnownKeys(value, COMBAT_TOP_LEVEL_KEYS, '')
-  if (value.tickMs !== 100) {
-    invalidConfig('tickMs')
-  }
-  if (value.maxBattleTicks !== 600) {
-    invalidConfig('maxBattleTicks')
-  }
+  const tickMs = parseLiteralSafeInt(value.tickMs, 100, 'tickMs')
+  const maxBattleTicks = parseLiteralSafeInt(
+    value.maxBattleTicks,
+    600,
+    'maxBattleTicks',
+  )
 
   const defenseConstant = value.defenseConstant
   if (
@@ -164,10 +180,10 @@ export function parseCombatConfig(value: unknown): CombatConfig {
   assertKnownKeys(weights, POWER_WEIGHTS_KEYS, 'powerWeights')
 
   return {
-    version: 1,
-    tickMs: 100,
-    maxBattleTicks: 600,
-    attackIntervalTicks: parsePositiveInt(
+    version,
+    tickMs,
+    maxBattleTicks,
+    attackIntervalTicks: parsePositiveSafeInt(
       value.attackIntervalTicks,
       'attackIntervalTicks',
     ),
@@ -182,7 +198,7 @@ export function parseCombatConfig(value: unknown): CombatConfig {
       def: parseWeight(weights.def, 'powerWeights.def'),
     },
     skillDefaults: parseSkill(value.skillDefaults, 'skillDefaults'),
-    enemySkillCooldownTicks: parsePositiveInt(
+    enemySkillCooldownTicks: parsePositiveSafeInt(
       value.enemySkillCooldownTicks,
       'enemySkillCooldownTicks',
     ),

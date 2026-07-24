@@ -592,7 +592,7 @@
   top: 0.75rem;
   right: 0.75rem;
   min-width: 44px;
-  min-height: 44px;
+  min-height: 45px;
   padding: 0.4rem 0.9rem;
   border: 1px solid rgba(248, 250, 252, 0.2);
   border-radius: 0.5rem;
@@ -667,7 +667,7 @@
 
 .settings-panel__debug-action {
   min-width: 44px;
-  min-height: 44px;
+  min-height: 45px;
   padding: 0.55rem 0.9rem;
   border: 2px solid #ffd43b;
   border-radius: 0.55rem;
@@ -703,7 +703,7 @@
 .settings-panel__confirm-reset,
 .settings-panel__cancel-reset {
   min-width: 44px;
-  min-height: 44px;
+  min-height: 45px;
   padding: 0.55rem 0.9rem;
   border: 2px solid #f87171;
   border-radius: 0.55rem;
@@ -1212,7 +1212,7 @@
 
 .global-hud {
   position: absolute;
-  z-index: 3;
+  z-index: 22;
   top: clamp(0.75rem, 2.5vw, 1.25rem);
   left: 50%;
   display: flex;
@@ -1337,7 +1337,7 @@
 .heroes-panel__close,
 .heroes-panel__upgrade {
   min-width: 44px;
-  min-height: 44px;
+  min-height: 45px;
   padding: 0.55rem 0.9rem;
   border: 1px solid rgba(255, 212, 59, 0.35);
   border-radius: 0.7rem;

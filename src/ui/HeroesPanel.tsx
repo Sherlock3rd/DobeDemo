@@ -11,6 +11,7 @@ import {
 import { getGangLevel } from '../game/gangProgression'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useGangStore } from '../store/useGangStore'
+import { useInitialFocus } from './useInitialFocus'
 
 export interface HeroesPanelProps {
   onClose: () => void
@@ -44,6 +45,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const sharedExp = useAdventureStore((s) => s.sharedExp)
   const upgradeHero = useAdventureStore((s) => s.upgradeHero)
   const [status, setStatus] = useState('')
+  const titleRef = useInitialFocus<HTMLHeadingElement>()
   const gangLevel = getGangLevel(totalReputation)
   const cap = getHeroLevelCap(gangLevel)
 
@@ -79,7 +81,6 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
       <section
         className="heroes-panel"
         role="dialog"
-        aria-modal="true"
         aria-labelledby={TITLE_ID}
         onPointerDown={stopPropagation}
         onClick={stopPropagation}
@@ -92,7 +93,12 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
         >
           关闭
         </button>
-        <h2 id={TITLE_ID} className="heroes-panel__title">
+        <h2
+          ref={titleRef}
+          id={TITLE_ID}
+          className="heroes-panel__title"
+          tabIndex={-1}
+        >
           英雄培养
         </h2>
         <p className="heroes-panel__shared-exp">{`共享英雄经验 ${sharedExp}`}</p>

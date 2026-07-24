@@ -9,6 +9,7 @@ import {
   isHeroUnlocked,
   type HeroId,
 } from '../game/heroes'
+import { GANG_MAX_LEVEL, GANG_MIN_LEVEL } from '../game/progressionUnlocks'
 import type { FormationAssignment } from '../game/combat/power'
 import { createSafeStorage } from './safeStorage'
 import {
@@ -25,6 +26,7 @@ export type UpgradeHeroResult = {
   applied: boolean
   reason:
     | 'ready'
+    | 'hero-locked'
     | 'hero-level-capped-by-gang'
     | 'hero-maxed'
     | 'insufficient-shared-exp'
@@ -104,7 +106,12 @@ export const useAdventureStore = create<AdventureState>()(
         return claimed
       },
       upgradeHero: (heroId, gangLevel) => {
-        if (!isHeroId(heroId)) {
+        if (
+          !isHeroId(heroId) ||
+          !Number.isSafeInteger(gangLevel) ||
+          gangLevel < GANG_MIN_LEVEL ||
+          gangLevel > GANG_MAX_LEVEL
+        ) {
           return { applied: false, reason: 'invalid-request' }
         }
         let result: UpgradeHeroResult = {
@@ -113,6 +120,10 @@ export const useAdventureStore = create<AdventureState>()(
         }
         set((state) => {
           const level = state.heroLevels[heroId as HeroId]
+          if (!isHeroUnlocked(heroId, gangLevel)) {
+            result = { applied: false, reason: 'hero-locked' }
+            return state
+          }
           const cap = getHeroLevelCap(gangLevel)
           if (level >= 50) {
             result = { applied: false, reason: 'hero-maxed' }

@@ -29,6 +29,7 @@ const EXPECTED_SHOTS = [
   'campaign-fresh.png',
   'campaign-formation.png',
   'campaign-battle.png',
+  'campaign-skill.png',
   'campaign-victory.png',
   'campaign-idle-heroes.png',
   'campaign-unlocks.png',
@@ -540,7 +541,7 @@ async function readOverlay() {
     formation: Boolean(document.querySelector('.formation-panel')),
     heroes: Boolean(document.querySelector('.heroes-panel')),
     battle: Boolean(document.querySelector('.battle-screen')),
-    globalHud: Boolean(document.querySelector('.global-hud')),
+    globalHud: Boolean(document.querySelector('.global-hud') && !document.querySelector('.global-hud').closest('[hidden]')),
     settings: Boolean(document.querySelector('.settings-panel')),
     gangTree: Boolean(document.querySelector('.gang-tree-panel')),
     canvasHidden: document.querySelector('.city-app__canvas-wrap')?.classList.contains('city-app__canvas-wrap--hidden') ?? null
@@ -877,10 +878,16 @@ async function runFlow() {
     banner: document.querySelector('.battle-screen__banner')?.textContent?.trim() ?? null,
     text: document.querySelector('.battle-screen')?.textContent ?? '',
     allyBars: document.querySelectorAll('.battle-hud__portraits > div').length,
-    globalHudPresent: Boolean(document.querySelector('.global-hud')),
+    globalHudPresent: Boolean(document.querySelector('.global-hud') && !document.querySelector('.global-hud').closest('[hidden]')),
     exitConfirmPresent: Boolean(document.querySelector('.battle-hud__exit-confirm')),
     hp: [...document.querySelectorAll('.battle-hud__hp')].map((e) => Number(e.getAttribute('aria-valuenow'))),
-    cooldown: [...document.querySelectorAll('.battle-hud__cd')].map((e) => Number(e.getAttribute('aria-valuenow')))
+    cooldown: [...document.querySelectorAll('.battle-hud__cd')].map((e) => Number(e.getAttribute('aria-valuenow'))),
+    basicHits: Number(document.querySelector('.battle-screen')?.dataset.basicHits ?? 0),
+    skillMainHits: Number(document.querySelector('.battle-screen')?.dataset.skillMainHits ?? 0),
+    damageEvents: Number(document.querySelector('.battle-screen')?.dataset.damageEvents ?? 0),
+    deaths: Number(document.querySelector('.battle-screen')?.dataset.deaths ?? 0),
+    presentedBasic: document.querySelector('.battle-screen')?.dataset.presentedBasic === 'true',
+    presentedSkill: document.querySelector('.battle-screen')?.dataset.presentedSkill === 'true'
   }))()`)
   const battleDesktopLayout = await measurePanel('.battle-screen')
   check(
@@ -892,24 +899,41 @@ async function runFlow() {
       !/Auto|手动施法/.test(battleStart.text),
     JSON.stringify(battleStart),
   )
-  const battleBefore = await screenshot('campaign-battle.png', {
-    phase: 'running',
-  })
+  let battleBefore = null
   await clickSelector('.battle-hud__speed button', 1)
   let combatStateChanged = false
+  let firstBattleMetrics = null
   let victoryText = null
   for (let attempt = 0; attempt < 180; attempt += 1) {
     await sleep(150)
     const state = await evaluate(`(() => ({
       result: document.querySelector('.battle-screen__result')?.textContent ?? null,
       hp: [...document.querySelectorAll('.battle-hud__hp')].map((e) => Number(e.getAttribute('aria-valuenow'))),
-      cooldown: [...document.querySelectorAll('.battle-hud__cd')].map((e) => Number(e.getAttribute('aria-valuenow')))
+      cooldown: [...document.querySelectorAll('.battle-hud__cd')].map((e) => Number(e.getAttribute('aria-valuenow'))),
+      basicHits: Number(document.querySelector('.battle-screen')?.dataset.basicHits ?? 0),
+      skillMainHits: Number(document.querySelector('.battle-screen')?.dataset.skillMainHits ?? 0),
+      damageEvents: Number(document.querySelector('.battle-screen')?.dataset.damageEvents ?? 0),
+      deaths: Number(document.querySelector('.battle-screen')?.dataset.deaths ?? 0),
+      presentedBasic: document.querySelector('.battle-screen')?.dataset.presentedBasic === 'true',
+      presentedSkill: document.querySelector('.battle-screen')?.dataset.presentedSkill === 'true',
+      currentPresentedBasic: document.querySelector('.battle-screen')?.dataset.currentPresentedBasic === 'true'
     }))()`)
     if (
       !arraysEqual(state.hp, battleStart.hp) ||
       !arraysEqual(state.cooldown, battleStart.cooldown)
     ) {
       combatStateChanged = true
+    }
+    firstBattleMetrics = state
+    if (
+      !battleBefore &&
+      !state.result &&
+      state.basicHits > 0 &&
+      state.currentPresentedBasic
+    ) {
+      battleBefore = await screenshot('campaign-battle.png', {
+        phase: 'running-basic-hit',
+      })
     }
     if (state.result) {
       victoryText = state.result
@@ -921,6 +945,7 @@ async function runFlow() {
     ...results.battle,
     start: battleStart,
     combatStateChanged,
+    firstBattleMetrics,
     resultText: victoryText,
     highestAfter: postBattle.adventure?.state?.highestClearedStage ?? null,
     sharedAfter: postBattle.adventure?.state?.sharedExp ?? null,
@@ -936,7 +961,16 @@ async function runFlow() {
     }),
   )
   check(
-    '2f. enemy defeat resolves as VICTORY',
+    '2f. first battle exposes basic attacks, damage and a death',
+    firstBattleMetrics?.basicHits > 0 &&
+      firstBattleMetrics?.damageEvents > 0 &&
+      firstBattleMetrics?.deaths > 0 &&
+      firstBattleMetrics?.presentedBasic === true &&
+      battleBefore !== null,
+    JSON.stringify(firstBattleMetrics),
+  )
+  check(
+    '2g. enemy defeat resolves as VICTORY',
     typeof victoryText === 'string' && victoryText.includes('VICTORY'),
     victoryText,
   )
@@ -948,6 +982,9 @@ async function runFlow() {
       shared: results.battle.sharedAfter,
     }),
   )
+  if (!battleBefore) {
+    throw new Error('No running battle screenshot captured after a basic hit')
+  }
   const victoryBuffer = await screenshot('campaign-victory.png', {
     phase: 'resolved',
   })
@@ -1176,6 +1213,14 @@ async function runFlow() {
   await pressKey('Escape')
 
   // 7. Single-overlay transitions and an early battle exit with no reward.
+  const beforeSkillScenario = await readStorage()
+  await setSavesAndReload({
+    adventure: adventureSave({
+      ...beforeSkillScenario.adventure.state,
+      heroLevels: { foreman: 20, anvil: 20, skyline: 20 },
+      highestClearedStage: 19,
+    }),
+  })
   await findBuilding('修车厂')
   const buildingOpen = await readOverlay()
   await clickSelector('.global-hud__nav', 0)
@@ -1192,7 +1237,7 @@ async function runFlow() {
       selectedAfterAdventure === null,
     JSON.stringify({ buildingOpen, adventureOpen, selectedAfterAdventure }),
   )
-  await clickSelector('.adventure-panel__stage', 1)
+  await clickSelector('.adventure-panel__stage', 19)
   await clickSelector('.adventure-panel__challenge')
   await sleep(120)
   const formationOpen = await readOverlay()
@@ -1221,16 +1266,65 @@ async function runFlow() {
     quickPersisted.adventure?.state?.formation?.length === 3,
     JSON.stringify(quickPersisted.adventure?.state?.formation),
   )
+  await clickSelector('.battle-hud__speed button', 1)
+  let skillReplayMetrics = null
+  let skillScreenshot = null
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    await sleep(100)
+    skillReplayMetrics = await evaluate(`(() => {
+      const battle = document.querySelector('.battle-screen')
+      return {
+        result: document.querySelector('.battle-screen__result')?.textContent ?? null,
+        basicHits: Number(battle?.dataset.basicHits ?? 0),
+        skillMainHits: Number(battle?.dataset.skillMainHits ?? 0),
+        skillSplashHits: Number(battle?.dataset.skillSplashHits ?? 0),
+        damageEvents: Number(battle?.dataset.damageEvents ?? 0),
+        deaths: Number(battle?.dataset.deaths ?? 0),
+        presentedBasic: battle?.dataset.presentedBasic === 'true',
+        presentedSkill: battle?.dataset.presentedSkill === 'true',
+        currentPresentedSkill: battle?.dataset.currentPresentedSkill === 'true'
+      }
+    })()`)
+    if (
+      !skillScreenshot &&
+      skillReplayMetrics.skillMainHits > 0 &&
+      skillReplayMetrics.currentPresentedSkill
+    ) {
+      skillScreenshot = await screenshot('campaign-skill.png', {
+        phase: 'running-skill-effect',
+      })
+    }
+    if (skillScreenshot) break
+    if (skillReplayMetrics.result) break
+  }
+  const basicScreenshot = results.screenshots['campaign-battle.png']
+  const skillShot = results.screenshots['campaign-skill.png']
+  check(
+    '7d. R3F presentation reports and captures basic and skill effects',
+    skillReplayMetrics?.basicHits > 0 &&
+      skillReplayMetrics?.skillMainHits > 0 &&
+      skillReplayMetrics?.presentedBasic === true &&
+      skillReplayMetrics?.presentedSkill === true &&
+      skillScreenshot !== null &&
+      skillShot?.sha256 !== basicScreenshot?.sha256 &&
+      skillReplayMetrics?.damageEvents >
+        skillReplayMetrics?.basicHits,
+    JSON.stringify({
+      ...skillReplayMetrics,
+      basicSha256: basicScreenshot?.sha256,
+      skillSha256: skillShot?.sha256,
+    }),
+  )
   await clickSelector('.battle-hud__exit')
   await sleep(100)
   const exitPrompt = await evaluate(`(() => ({
     battlePresent: Boolean(document.querySelector('.battle-screen')),
-    globalHudPresent: Boolean(document.querySelector('.global-hud')),
+    globalHudPresent: Boolean(document.querySelector('.global-hud') && !document.querySelector('.global-hud').closest('[hidden]')),
     confirmButtons: document.querySelectorAll('.battle-hud__exit-confirm button').length,
     confirmText: document.querySelector('.battle-hud__exit-confirm')?.textContent ?? ''
   }))()`)
   check(
-    '7d. battle hides GlobalHud and first exit click only opens confirmation',
+    '7e. battle hides GlobalHud and first exit click only opens confirmation',
     battleOpen.battle === true &&
       battleOpen.globalHud === false &&
       exitPrompt.battlePresent === true &&
@@ -1256,12 +1350,12 @@ async function runFlow() {
     afterExit: await readOverlay(),
   }
   check(
-    '7e. battle exit confirmation returns to adventure',
+    '7f. battle exit confirmation returns to adventure',
     battleOpen.battle === true && results.overlay.afterExit.adventure === true,
     JSON.stringify(results.overlay.afterExit),
   )
   check(
-    '7f. early battle exit grants no reward/progress',
+    '7g. early battle exit grants no reward/progress',
     results.overlay.progressAfterExit.highest === progressBeforeExit.highest &&
       results.overlay.progressAfterExit.shared === progressBeforeExit.shared,
     JSON.stringify({
@@ -1311,6 +1405,18 @@ async function runFlow() {
   const mobileBuilding = await measurePanel('.building-panel')
   await clickSelector('.building-panel__close')
   await sleep(100)
+  const mobileHud = await evaluate(`(() => {
+    const hud = document.querySelector('.global-hud')
+    const rect = hud.getBoundingClientRect()
+    return {
+      noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth + 1 && hud.scrollWidth <= hud.clientWidth + 1,
+      withinBounds: rect.left >= -1 && rect.right <= innerWidth + 1,
+      controls44: [...document.querySelectorAll('.global-hud button')].every((e) => {
+        const r = e.getBoundingClientRect()
+        return r.width >= 44 && r.height >= 44
+      })
+    }
+  })()`)
   await clickSelector('.global-hud__nav', 0)
   await sleep(120)
   const mobileAdventure = await measurePanel('.adventure-panel')
@@ -1338,18 +1444,6 @@ async function runFlow() {
     if (!active || active === document.body) return false
     const style = getComputedStyle(active)
     return active.matches(':focus-visible') && style.outlineStyle !== 'none'
-  })()`)
-  const mobileHud = await evaluate(`(() => {
-    const hud = document.querySelector('.global-hud')
-    const rect = hud.getBoundingClientRect()
-    return {
-      noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth + 1 && hud.scrollWidth <= hud.clientWidth + 1,
-      withinBounds: rect.left >= -1 && rect.right <= innerWidth + 1,
-      controls44: [...document.querySelectorAll('.global-hud button')].every((e) => {
-        const r = e.getBoundingClientRect()
-        return r.width >= 44 && r.height >= 44
-      })
-    }
   })()`)
   results.layout = {
     desktop: {

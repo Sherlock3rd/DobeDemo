@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { combatConfig, parseCombatConfig } from './combatConfig'
 
+function combatConfigWithUnsafeInteger(
+  path: readonly string[],
+): Record<string, unknown> {
+  const bad = structuredClone(combatConfig) as unknown as Record<
+    string,
+    unknown
+  >
+  let target = bad
+  for (const segment of path.slice(0, -1)) {
+    target = target[segment] as Record<string, unknown>
+  }
+  target[path.at(-1) as string] = Number.MAX_SAFE_INTEGER + 1
+  return bad
+}
+
 describe('combat config', () => {
   it('locks tickMs and maxBattleTicks', () => {
     expect(combatConfig.tickMs).toBe(100)
@@ -29,6 +44,28 @@ describe('combat config', () => {
     expect(() => parseCombatConfig(bad)).toThrow(
       'Invalid combat config: defenseConstant',
     )
+  })
+
+  it.each([
+    { label: 'tickMs', path: ['tickMs'] },
+    { label: 'maxBattleTicks', path: ['maxBattleTicks'] },
+    { label: 'attackIntervalTicks', path: ['attackIntervalTicks'] },
+    {
+      label: 'skillDefaults.initialCooldownTicks',
+      path: ['skillDefaults', 'initialCooldownTicks'],
+    },
+    {
+      label: 'skillDefaults.cooldownTicks',
+      path: ['skillDefaults', 'cooldownTicks'],
+    },
+    {
+      label: 'enemySkillCooldownTicks',
+      path: ['enemySkillCooldownTicks'],
+    },
+  ])('rejects an unsafe integer for $label', ({ label, path }) => {
+    expect(() =>
+      parseCombatConfig(combatConfigWithUnsafeInteger(path)),
+    ).toThrow(`Invalid combat config: ${label}`)
   })
 
   it('rejects an unknown top-level key', () => {

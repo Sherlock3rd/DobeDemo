@@ -14,6 +14,7 @@ import {
   type ProgressionUnlock,
 } from '../game/progressionUnlocks'
 import { useGangStore } from '../store/useGangStore'
+import { useInitialFocus } from './useInitialFocus'
 
 export interface GangTreePanelProps {
   open: boolean
@@ -71,6 +72,7 @@ export function GangTreePanel({
   onClose,
 }: GangTreePanelProps): JSX.Element | null {
   const totalReputation = useGangStore((state) => state.totalReputation)
+  const titleRef = useInitialFocus<HTMLHeadingElement>(open)
 
   useEffect(() => {
     if (!open) {
@@ -110,7 +112,6 @@ export function GangTreePanel({
       <section
         className="gang-tree-panel"
         role="dialog"
-        aria-modal="true"
         aria-labelledby={TITLE_ID}
         onPointerDown={stopPropagation}
         onClick={stopPropagation}
@@ -123,7 +124,12 @@ export function GangTreePanel({
         >
           关闭
         </button>
-        <h2 id={TITLE_ID} className="gang-tree-panel__title">
+        <h2
+          ref={titleRef}
+          id={TITLE_ID}
+          className="gang-tree-panel__title"
+          tabIndex={-1}
+        >
           帮派树
         </h2>
         <p className="gang-tree-panel__status">
