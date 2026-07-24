@@ -25,6 +25,7 @@ export interface BuildingUpgradeProgress {
 export type ChildUpgradeBlockReason =
   | 'ready'
   | 'building-locked'
+  | 'direct-main-upgrade-only'
   | 'child-locked'
   | 'child-at-main-level'
   | 'insufficient-resources'
@@ -74,6 +75,10 @@ export interface MainUpgradeDecisionInput {
 
 export function getBuildingChildCount(id: BuildingId): 5 | 10 {
   return id === 'repair-shop' ? 5 : 10
+}
+
+export function isDirectUpgradeBuilding(id: BuildingId): boolean {
+  return id === 'clubhouse'
 }
 
 export function getUnlockedChildCount(
@@ -199,6 +204,10 @@ export function getChildUpgradeDecision(
     return childDecision('building-locked')
   }
 
+  if (isDirectUpgradeBuilding(buildingId)) {
+    return childDecision('direct-main-upgrade-only')
+  }
+
   if (
     !Number.isInteger(childIndex) ||
     childIndex < 0 ||
@@ -275,7 +284,10 @@ export function getMainUpgradeDecision(
     return blocked('building-maxed')
   }
 
-  if (!getBuildingUpgradeProgress(buildingId, progress).complete) {
+  if (
+    !isDirectUpgradeBuilding(buildingId) &&
+    !getBuildingUpgradeProgress(buildingId, progress).complete
+  ) {
     return blocked('children-not-caught-up')
   }
 

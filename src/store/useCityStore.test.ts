@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { economyConfig } from '../config/economyConfig'
 import { BUILDING_IDS } from '../game/cityTypes'
 import { CITY_STORAGE_KEY } from './cityProgressMigration'
 import { useCityStore } from './useCityStore'
@@ -88,6 +89,18 @@ describe('useCityStore atomic economy', () => {
     expect(useCityStore.getState()).toBe(before)
   })
 
+  it('rejects clubhouse child upgrades without writing wallet, progress, or clock', () => {
+    const before = useCityStore.getState()
+
+    expect(
+      before.upgradeChildBuilding('clubhouse', 0, 40, START + 10_000),
+    ).toEqual({
+      applied: false,
+      reason: 'direct-main-upgrade-only',
+    })
+    expect(useCityStore.getState()).toBe(before)
+  })
+
   it('atomically charges and upgrades a caught-up repair main building', () => {
     useCityStore.setState((state) => ({
       resources: { money: 25, oil: 0, materials: 0 },
@@ -107,6 +120,72 @@ describe('useCityStore atomic economy', () => {
       level: 2,
       childLevels: [1, 0, 0, 0, 0],
     })
+  })
+
+  it('directly upgrades clubhouse once with exact main cost and preserves children', () => {
+    const cost = economyConfig.buildingUpgradeCostByTargetLevel[2]
+    if (!cost) {
+      throw new Error('Missing clubhouse level 2 upgrade cost')
+    }
+    useCityStore.setState((state) => ({
+      resources: { ...cost },
+      buildingProgress: {
+        ...state.buildingProgress,
+        clubhouse: { level: 1, childLevels: Array(10).fill(0) as never },
+      },
+    }))
+
+    expect(
+      useCityStore.getState().upgradeMainBuilding('clubhouse', 40, START),
+    ).toEqual({ applied: true, reason: 'ready' })
+    expect(useCityStore.getState().resources).toEqual({
+      money: 0,
+      oil: 0,
+      materials: 0,
+    })
+    expect(useCityStore.getState().buildingProgress.clubhouse).toEqual({
+      level: 2,
+      childLevels: Array(10).fill(0),
+    })
+  })
+
+  it('atomically blocks clubhouse main upgrades below gang level 40', () => {
+    const before = useCityStore.getState()
+
+    expect(before.upgradeMainBuilding('clubhouse', 39, START)).toEqual({
+      applied: false,
+      reason: 'building-locked',
+    })
+    expect(useCityStore.getState()).toBe(before)
+  })
+
+  it('atomically blocks clubhouse main upgrades with insufficient resources', () => {
+    useCityStore.setState({
+      resources: { money: 0, oil: 0, materials: 0 },
+    })
+    const before = useCityStore.getState()
+
+    expect(before.upgradeMainBuilding('clubhouse', 40, START)).toEqual({
+      applied: false,
+      reason: 'insufficient-resources',
+    })
+    expect(useCityStore.getState()).toBe(before)
+  })
+
+  it('atomically blocks clubhouse main upgrades at level 10', () => {
+    useCityStore.setState((state) => ({
+      buildingProgress: {
+        ...state.buildingProgress,
+        clubhouse: { level: 10, childLevels: Array(10).fill(0) as never },
+      },
+    }))
+    const before = useCityStore.getState()
+
+    expect(before.upgradeMainBuilding('clubhouse', 40, START)).toEqual({
+      applied: false,
+      reason: 'building-maxed',
+    })
+    expect(useCityStore.getState()).toBe(before)
   })
 
   it('settles before a stale main-upgrade confirmation is rechecked', () => {

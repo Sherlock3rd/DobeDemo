@@ -16,6 +16,7 @@ import {
   getChildUpgradeDecision,
   getMainUpgradeDecision,
   getUnlockedChildCount,
+  isDirectUpgradeBuilding,
 } from './buildingUpgrade'
 
 const emptyWallet = { money: 0, oil: 0, materials: 0 }
@@ -56,6 +57,14 @@ function mainInput(
 }
 
 describe('progressive building shape and progress', () => {
+  it('treats only the clubhouse as a direct-upgrade building', () => {
+    for (const buildingId of BUILDING_IDS) {
+      expect(isDirectUpgradeBuilding(buildingId)).toBe(
+        buildingId === 'clubhouse',
+      )
+    }
+  })
+
   it('uses one level 10 maximum for every building', () => {
     expect(BUILDING_MAX_LEVEL).toBe(10)
     for (const buildingId of BUILDING_IDS) {
@@ -129,6 +138,26 @@ describe('progressive building shape and progress', () => {
 })
 
 describe('child upgrade decisions', () => {
+  it.each([-1, 0, 9, 99])(
+    'rejects unlocked clubhouse child index %s without target or cost',
+    (childIndex) => {
+      expect(
+        getChildUpgradeDecision({
+          buildingId: 'clubhouse',
+          childIndex,
+          progress: progress(1, Array(10).fill(0)),
+          wallet: richWallet,
+          gangLevel: 40,
+        }),
+      ).toEqual({
+        reason: 'direct-main-upgrade-only',
+        targetLevel: null,
+        cost: null,
+        missingResources: emptyWallet,
+      })
+    },
+  )
+
   it('checks building unlock before child gates', () => {
     expect(
       getChildUpgradeDecision({
@@ -228,6 +257,69 @@ describe('child upgrade decisions', () => {
 })
 
 describe('main building upgrade decision priority', () => {
+  it('allows an unlocked clubhouse with zero children to upgrade directly', () => {
+    expect(
+      getMainUpgradeDecision(
+        mainInput({
+          buildingId: 'clubhouse',
+          progress: progress(1, Array(10).fill(0)),
+          repairShopProgress: caughtUpProgress('repair-shop', 1),
+          gangLevel: 40,
+        }),
+      ),
+    ).toEqual({
+      reason: 'ready',
+      targetLevel: 2,
+      cost: economyConfig.buildingUpgradeCostByTargetLevel[2],
+      missingResources: emptyWallet,
+      requiredBuildingId: null,
+      requiredBuildingLevel: null,
+    })
+  })
+
+  it('atomically blocks direct clubhouse upgrades at unlock, funds, and max gates', () => {
+    expect(
+      getMainUpgradeDecision(
+        mainInput({
+          buildingId: 'clubhouse',
+          progress: progress(1, Array(10).fill(0)),
+          gangLevel: 39,
+        }),
+      ).reason,
+    ).toBe('building-locked')
+    expect(
+      getMainUpgradeDecision(
+        mainInput({
+          buildingId: 'clubhouse',
+          progress: progress(1, Array(10).fill(0)),
+          wallet: emptyWallet,
+          gangLevel: 40,
+        }),
+      ).reason,
+    ).toBe('insufficient-resources')
+    expect(
+      getMainUpgradeDecision(
+        mainInput({
+          buildingId: 'clubhouse',
+          progress: progress(10, Array(10).fill(0)),
+          gangLevel: 40,
+        }),
+      ).reason,
+    ).toBe('building-maxed')
+  })
+
+  it('still requires repair-shop children to catch up', () => {
+    expect(
+      getMainUpgradeDecision(
+        mainInput({
+          buildingId: 'repair-shop',
+          progress: progress(1, Array(5).fill(0)),
+          gangLevel: 40,
+        }),
+      ).reason,
+    ).toBe('children-not-caught-up')
+  })
+
   it('returns building-locked before max and progress checks', () => {
     expect(
       getMainUpgradeDecision(

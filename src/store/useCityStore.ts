@@ -5,6 +5,7 @@ import {
   getBuildingChildCount,
   getChildUpgradeDecision,
   getMainUpgradeDecision,
+  isDirectUpgradeBuilding,
   type ChildUpgradeBlockReason,
   type MainUpgradeBlockReason,
 } from '../game/buildingUpgrade'
@@ -127,8 +128,13 @@ export const useCityStore = create<CityState>()(
         })
       },
       upgradeChildBuilding: (id, childIndex, gangLevel, now) => {
+        if (!isBuildingId(id)) {
+          return { applied: false, reason: 'invalid-request' }
+        }
+        if (isDirectUpgradeBuilding(id)) {
+          return { applied: false, reason: 'direct-main-upgrade-only' }
+        }
         if (
-          !isBuildingId(id) ||
           !Number.isInteger(childIndex) ||
           childIndex < 0 ||
           childIndex >= getBuildingChildCount(id) ||
