@@ -15,6 +15,7 @@
 ## 防呆
 
 - 临时 index 发布必须从临时工作树目录内执行 `git add -A -- .`。
+- 本仓库的旧版 Cygwin Git 还要求三个环境路径使用相对写法（如 `..\.git`、`.`、`..\.tmp-index`）；Windows 绝对路径会被错误拼到临时工作树后，导致无法创建 index lock。
 - 推送前使用 `git ls-files` 或 `git ls-tree` 明确验证根 `index.html` 和当前构建资产存在。
 - Pages 显示 `built` 不代表站点内容完整；还必须检查公开 HTML、JS、CSS 均返回 HTTP 200，且 HTML 引用了预期资产。
 - 临时目录和 index 仅在验证目标位于工作区后删除。
@@ -22,3 +23,5 @@
 ## 验证
 
 纠正提交 `312ac281e4f24b99a341a1c85d64582c48cdbffe` 的发布 index 包含 `index.html`、`assets/index-0UEHpLsB.js` 和 `assets/index-CoMhGqEJ.css`。GitHub Pages 构建状态为 `built`，公开首页及两项资产均返回 HTTP 200。
+
+公路争霸版本继续按上述流程发布为 `6add1e6366085faf2037cca8f1d5ac566c0eba72`；发布前 index 精确包含 `index.html`、`assets/index-ClwAyOWp.js`、`assets/index-D6A5oCnJ.css`，Pages 状态为 `built`，公网三项资源均为 HTTP 200。
