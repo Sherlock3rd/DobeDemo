@@ -9,14 +9,11 @@ import {
 
 const MIGRATION_TIME = 1_700_000_000_000
 
-describe('city progress v2 defaults', () => {
-  it('keeps the documented storage key', () => {
-    expect(CITY_STORAGE_KEY).toBe('dobe-city-progression-v1')
-  })
-
-  it('creates canonical 5/10 child arrays without legacy fields', () => {
+describe('city progress v3 defaults', () => {
+  it('keeps the storage key and creates canonical fixed-capacity arrays', () => {
     const progress = createInitialBuildingProgress()
 
+    expect(CITY_STORAGE_KEY).toBe('dobe-city-progression-v1')
     expect(progress['repair-shop']).toEqual({
       level: 1,
       childLevels: [0, 0, 0, 0, 0],
@@ -28,8 +25,59 @@ describe('city progress v2 defaults', () => {
   })
 })
 
-describe('migrateCityState v1 to v2', () => {
-  it('maps fragments, applies the clubhouse cap, and starts resources now', () => {
+describe('migrateCityState to v3', () => {
+  const hiddenProgress = {
+    'repair-shop': { level: 2, childLevels: [2, 1, 2, 0, 1] },
+    'commercial-street': {
+      level: 3,
+      childLevels: [3, 2, 1, 2, 1, 0, 0, 0, 0, 0],
+    },
+  }
+
+  it('refunds v2 hidden child steps using the frozen cumulative costs', () => {
+    const migrated = migrateCityState(
+      {
+        buildingProgress: hiddenProgress,
+        resources: { money: 100, oil: 7, materials: 9 },
+      },
+      2,
+      MIGRATION_TIME,
+    )
+
+    expect(migrated.buildingProgress['repair-shop'].childLevels).toEqual([
+      2, 1, 0, 0, 0,
+    ])
+    expect(migrated.buildingProgress['commercial-street'].childLevels).toEqual([
+      3, 2, 1, 0, 0, 0, 0, 0, 0, 0,
+    ])
+    expect(migrated.resources).toEqual({
+      money: 140,
+      oil: 7,
+      materials: 9,
+    })
+  })
+
+  it('clears v3 hidden levels without refunding them again', () => {
+    const migrated = migrateCityState(
+      {
+        buildingProgress: hiddenProgress,
+        resources: { money: 100, oil: 7, materials: 9 },
+      },
+      3,
+      MIGRATION_TIME,
+    )
+
+    expect(migrated.buildingProgress['repair-shop'].childLevels).toEqual([
+      2, 1, 0, 0, 0,
+    ])
+    expect(migrated.resources).toEqual({
+      money: 100,
+      oil: 7,
+      materials: 9,
+    })
+  })
+
+  it('chains v1 fragment mapping into v3 clearing without a refund', () => {
     const migrated = migrateCityState(
       {
         buildingProgress: {
@@ -43,45 +91,46 @@ describe('migrateCityState v1 to v2', () => {
 
     expect(migrated.buildingProgress['repair-shop']).toEqual({
       level: 2,
-      childLevels: [2, 2, 2, 0, 0],
-    })
-    expect(migrated.buildingProgress.clubhouse).toEqual({
-      level: 2,
-      childLevels: [2, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+      childLevels: [2, 2, 0, 0, 0],
     })
     expect(migrated.resources).toEqual({ money: 0, oil: 0, materials: 0 })
     expect(migrated.activeProducerIds).toEqual(['repair-shop'])
     expect(migrated.lastResourceUpdatedAt).toBe(MIGRATION_TIME)
   })
 
-  it('maps completed old fragments to the in-progress target level', () => {
+  it('saturates a v2 refund near the safe integer limit', () => {
     const migrated = migrateCityState(
       {
         buildingProgress: {
-          'repair-shop': { level: 3, completedFragments: 2 },
-          clubhouse: { level: 5, completedFragments: 0 },
+          'repair-shop': { level: 2, childLevels: [2, 1, 2, 0, 0] },
+        },
+        resources: {
+          money: Number.MAX_SAFE_INTEGER - 1,
+          oil: Number.MAX_SAFE_INTEGER,
+          materials: Number.MAX_SAFE_INTEGER,
         },
       },
-      1,
+      2,
       MIGRATION_TIME,
     )
 
-    expect(migrated.buildingProgress['repair-shop']).toEqual({
-      level: 4,
-      childLevels: [4, 4, 3, 0, 0],
+    expect(migrated.resources).toEqual({
+      money: Number.MAX_SAFE_INTEGER,
+      oil: Number.MAX_SAFE_INTEGER,
+      materials: Number.MAX_SAFE_INTEGER,
     })
   })
 })
 
-describe('normalize v2 durable state', () => {
-  it('repairs bad child arrays and enforces the clubhouse level cap', () => {
+describe('normalize v3 durable state', () => {
+  it('repairs malformed levels and arrays without the old clubhouse cap', () => {
     const normalized = normalizeCityDurableState(
       {
         buildingProgress: {
-          clubhouse: { level: 2, childLevels: [9, 2, -1] },
+          clubhouse: { level: 2.9, childLevels: [9, 2, -1] },
           'repair-shop': {
-            level: 5,
-            childLevels: [5, 4, 3, Number.NaN, 1, 5],
+            level: 8.8,
+            childLevels: [9, 4.9, 3, Number.NaN, 1, 5],
           },
         },
       },
@@ -93,12 +142,12 @@ describe('normalize v2 durable state', () => {
       childLevels: [2, 2, 0, 0, 0, 0, 0, 0, 0, 0],
     })
     expect(normalized.buildingProgress['repair-shop']).toEqual({
-      level: 2,
-      childLevels: [2, 2, 2, 0, 1],
+      level: 8,
+      childLevels: [8, 4, 3, 0, 1],
     })
   })
 
-  it('sanitizes negative resources, unknown producers, and non-finite time', () => {
+  it('sanitizes resources, producers, and non-finite time', () => {
     const normalized = normalizeCityDurableState(
       {
         resources: { money: -1, oil: 2.8, materials: Number.POSITIVE_INFINITY },

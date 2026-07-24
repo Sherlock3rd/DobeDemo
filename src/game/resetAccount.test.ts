@@ -61,7 +61,7 @@ describe('resetAccount', () => {
       childLevels: [0, 0, 0, 0, 0],
     })
     expect(useCityStore.getState().resources).toEqual({
-      money: 0,
+      money: 10_000,
       oil: 0,
       materials: 0,
     })
@@ -95,7 +95,7 @@ describe('resetAccount', () => {
       })
     }
     expect(cityPersisted?.resources).toEqual({
-      money: 0,
+      money: 10_000,
       oil: 0,
       materials: 0,
     })

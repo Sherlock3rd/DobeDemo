@@ -61,7 +61,7 @@ describe('EconomyIdleController', () => {
     })
 
     expect(useCityStore.getState().resources).toEqual({
-      money: 0,
+      money: 10_000,
       oil: 0,
       materials: 0,
     })
@@ -74,7 +74,7 @@ describe('EconomyIdleController', () => {
       vi.advanceTimersByTime(10_000)
     })
 
-    expect(useCityStore.getState().resources.money).toBe(1)
+    expect(useCityStore.getState().resources.money).toBe(10_001)
     expect(useCityStore.getState().lastResourceUpdatedAt).toBe(
       BASE_TIME + 10_000,
     )
@@ -105,7 +105,7 @@ describe('EconomyIdleController', () => {
       vi.advanceTimersByTime(10_000)
     })
 
-    expect(useCityStore.getState().resources.money).toBe(1)
+    expect(useCityStore.getState().resources.money).toBe(10_001)
   })
 
   it('cleans up the interval and visibility listener on unmount', () => {

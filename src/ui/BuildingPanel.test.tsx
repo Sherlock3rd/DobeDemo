@@ -44,6 +44,7 @@ describe('BuildingPanel', () => {
     // Anchor production to "now" so a click's settlement earns zero ticks and
     // resource assertions reflect only the upgrade charge.
     useCityStore.getState().reset(Date.now())
+    setResources(0)
     useGangStore.getState().reset(BASE_TIME)
   })
 
@@ -80,22 +81,22 @@ describe('BuildingPanel', () => {
     expect(screen.queryByText(/completedFragments/)).not.toBeInTheDocument()
   })
 
-  // Step 2: any child card can be chosen; the store atomically charges.
-  it('upgrades the freely chosen fifth child and charges its cost atomically', async () => {
+  // Step 2: the legacy panel can still upgrade a currently unlocked child.
+  it('upgrades the first child and charges its cost atomically', async () => {
     const user = userEvent.setup()
     useCityStore.getState().selectBuilding('repair-shop')
     setResources(5)
 
     render(<BuildingPanel />)
 
-    const fifthName = repairFragments[4].name
+    const firstName = repairFragments[0].name
     await user.click(
-      screen.getByRole('button', { name: `升级 ${fifthName} 至 Lv.1` }),
+      screen.getByRole('button', { name: `升级 ${firstName} 至 Lv.1` }),
     )
 
     expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
       level: 1,
-      childLevels: [0, 0, 0, 0, 1],
+      childLevels: [1, 0, 0, 0, 0],
     })
     expect(useCityStore.getState().resources.money).toBe(0)
   })

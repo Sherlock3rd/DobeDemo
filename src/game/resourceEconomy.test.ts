@@ -7,6 +7,7 @@ import {
 } from '../store/cityProgressMigration'
 import {
   EMPTY_WALLET,
+  addWalletSaturated,
   canAfford,
   getBuildingProductionPerTick,
   getCurrentProductionRates,
@@ -41,6 +42,23 @@ function repairShopProgress(
 }
 
 describe('resourceEconomy', () => {
+  it('adds each wallet resource without exceeding safe integers', () => {
+    expect(
+      addWalletSaturated(
+        {
+          money: Number.MAX_SAFE_INTEGER - 2,
+          oil: Number.MAX_SAFE_INTEGER,
+          materials: 7,
+        },
+        { money: 5, oil: 1, materials: 9 },
+      ),
+    ).toEqual({
+      money: Number.MAX_SAFE_INTEGER,
+      oil: Number.MAX_SAFE_INTEGER,
+      materials: 16,
+    })
+  })
+
   it('tracks affordability and subtracts costs', () => {
     expect(canAfford({ money: 5, oil: 0, materials: 0 }, cost5)).toBe(true)
     expect(subtractCost({ money: 5, oil: 2, materials: 3 }, cost5)).toEqual({
@@ -257,6 +275,26 @@ describe('resourceEconomy', () => {
       wallet: { money: 1, oil: 1, materials: 0 },
       earned: { money: 1, oil: 1, materials: 0 },
       nextUpdatedAt: TICK_MS,
+    })
+  })
+
+  it('saturates settled production at safe integer limits', () => {
+    expect(
+      settleResourceProduction({
+        wallet: {
+          money: Number.MAX_SAFE_INTEGER,
+          oil: 0,
+          materials: 0,
+        },
+        buildingProgress: repairShopProgress([0, 0, 0, 0, 0]),
+        activeProducerIds: ['repair-shop'],
+        lastUpdatedAt: 0,
+        now: TICK_MS,
+      }).wallet,
+    ).toEqual({
+      money: Number.MAX_SAFE_INTEGER,
+      oil: 0,
+      materials: 0,
     })
   })
 })

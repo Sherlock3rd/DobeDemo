@@ -61,14 +61,16 @@ export function getBuildingProductionPerTick(
   return wallet
 }
 
-function addWallets(
+export function addWalletSaturated(
   left: ResourceWallet,
   right: ResourceWallet,
 ): ResourceWallet {
+  const add = (leftValue: number, rightValue: number) =>
+    Math.min(Number.MAX_SAFE_INTEGER, leftValue + rightValue)
   return {
-    money: left.money + right.money,
-    oil: left.oil + right.oil,
-    materials: left.materials + right.materials,
+    money: add(left.money, right.money),
+    oil: add(left.oil, right.oil),
+    materials: add(left.materials, right.materials),
   }
 }
 
@@ -83,7 +85,7 @@ export function getCurrentProductionRates(
         return total
       }
 
-      return addWallets(
+      return addWalletSaturated(
         total,
         getBuildingProductionPerTick(buildingId, progress.childLevels),
       )
@@ -153,13 +155,13 @@ export function settleResourceProduction(input: {
       buildingId,
       progress.childLevels,
     )
-    earned = addWallets(earned, scaleWallet(perTick, ticks))
+    earned = addWalletSaturated(earned, scaleWallet(perTick, ticks))
   }
 
   const nextUpdatedAt = capped ? now : lastUpdatedAt + ticks * tickMs
 
   return {
-    wallet: addWallets(wallet, earned),
+    wallet: addWalletSaturated(wallet, earned),
     earned,
     nextUpdatedAt,
   }

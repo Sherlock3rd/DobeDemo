@@ -31,7 +31,7 @@ describe('CityHud', () => {
     expect(screen.getByText('Prospect（见习）')).toBeInTheDocument()
     expect(screen.getByText('0 / 30')).toBeInTheDocument()
     expect(screen.getByText('+1 声望/10秒')).toBeInTheDocument()
-    expect(screen.getByText('钱 0')).toBeInTheDocument()
+    expect(screen.getByText('钱 10000')).toBeInTheDocument()
     expect(screen.getByText('油 0')).toBeInTheDocument()
     expect(screen.getByText('物资 0')).toBeInTheDocument()
     expect(screen.getByText('钱 +1/10秒')).toBeInTheDocument()
