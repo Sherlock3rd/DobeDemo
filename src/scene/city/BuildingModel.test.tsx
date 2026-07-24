@@ -138,7 +138,7 @@ describe('getFragmentPartMaterial', () => {
 })
 
 describe('BuildingModel', () => {
-  it('renders all five repair slots for a fresh building and animates none', () => {
+  it('renders only the unlocked repair slot for a fresh building and animates none', () => {
     render(
       <BuildingModel
         definition={buildingCatalogById['repair-shop']}
@@ -148,7 +148,7 @@ describe('BuildingModel', () => {
     )
 
     const fragments = screen.getAllByTestId('fragment')
-    expect(fragments).toHaveLength(5)
+    expect(fragments).toHaveLength(1)
     fragments.forEach((fragment) => {
       expect(fragment).toHaveAttribute('data-animate', 'false')
     })
@@ -166,12 +166,10 @@ describe('BuildingModel', () => {
     )
 
     const fragments = screen.getAllByTestId('fragment')
-    expect(fragments).toHaveLength(5)
+    expect(fragments).toHaveLength(3)
     expect(fragments[0]).toHaveAttribute('data-animate', 'false')
     expect(fragments[1]).toHaveAttribute('data-animate', 'false')
     expect(fragments[2]).toHaveAttribute('data-animate', 'true')
     expect(fragments[2]).toHaveAttribute('data-animation-run', '7')
-    expect(fragments[3]).toHaveAttribute('data-animate', 'false')
-    expect(fragments[4]).toHaveAttribute('data-animate', 'false')
   })
 })

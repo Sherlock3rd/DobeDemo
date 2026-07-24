@@ -1,5 +1,10 @@
-import { buildingCatalog } from '../../game/buildingCatalog'
+import {
+  buildingCatalog,
+  buildingCatalogById,
+} from '../../game/buildingCatalog'
+import { getUnlockedChildCount } from '../../game/buildingUpgrade'
 import type {
+  BuildingId,
   BuildingKind,
   BuildingLevel,
   BuildingProgress,
@@ -1571,17 +1576,21 @@ export function getBuildingFragments(
   return buildingFragmentCatalog[kind]
 }
 
-// Pure and deterministic in (kind, progress, animatedFragmentId): the same
+// Pure and deterministic in (buildingId, progress, animatedFragmentId): the same
 // inputs always yield an equivalent result, so it is a good fit for useMemo in
 // the render layer (memoize on those inputs; each call still returns a fresh
 // array). `animatedFragmentId` is opt-in: with no id nothing animates, so a
 // refresh never replays an entrance.
 export function getRenderedBuildingFragments(
-  kind: BuildingKind,
+  buildingId: BuildingId,
   progress: BuildingProgress,
   animatedFragmentId?: string,
 ): readonly RenderedBuildingFragment[] {
-  const blueprints = getBuildingFragments(kind)
+  const definition = buildingCatalogById[buildingId]
+  const blueprints = getBuildingFragments(definition.kind).slice(
+    0,
+    getUnlockedChildCount(buildingId, progress.level),
+  )
 
   const toRendered = (
     blueprint: BuildingFragmentBlueprint,

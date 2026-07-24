@@ -262,6 +262,15 @@ describe('BuildingVisual', () => {
     })
 
     it('animates the exact child that increases by one regardless of slot order', () => {
+      useCityStore.setState((state) => ({
+        buildingProgress: {
+          ...state.buildingProgress,
+          'repair-shop': {
+            level: 5,
+            childLevels: [0, 0, 0, 0, 0],
+          },
+        },
+      }))
       render(<BuildingVisual id="repair-shop" highlighted={false} />)
 
       act(() => {
@@ -294,6 +303,81 @@ describe('BuildingVisual', () => {
               childLevels: [
                 ...state.buildingProgress['repair-shop'].childLevels,
               ],
+            },
+          },
+        }))
+      })
+
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        '',
+      )
+    })
+
+    it('does not animate a child increase bundled with a main-level upgrade', () => {
+      render(<BuildingVisual id="repair-shop" highlighted={false} />)
+
+      act(() => {
+        useCityStore.setState((state) => ({
+          buildingProgress: {
+            ...state.buildingProgress,
+            'repair-shop': {
+              level: 2,
+              childLevels: [1, 0, 0, 0, 0],
+            },
+          },
+        }))
+      })
+
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        '',
+      )
+    })
+
+    it('does not animate a child change outside the unlocked prefix', () => {
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(16),
+      })
+      render(<BuildingVisual id="commercial-street" highlighted={false} />)
+
+      act(() => {
+        useCityStore.setState((state) => ({
+          buildingProgress: {
+            ...state.buildingProgress,
+            'commercial-street': {
+              level: 2,
+              childLevels: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            },
+          },
+        }))
+      })
+
+      expect(screen.getByTestId('building-model')).toHaveAttribute(
+        'data-animated',
+        '',
+      )
+    })
+
+    it('does not animate the repair level-five to six main transition', () => {
+      useCityStore.setState((state) => ({
+        buildingProgress: {
+          ...state.buildingProgress,
+          'repair-shop': {
+            level: 5,
+            childLevels: [5, 5, 5, 5, 5],
+          },
+        },
+      }))
+      render(<BuildingVisual id="repair-shop" highlighted={false} />)
+
+      act(() => {
+        useCityStore.setState((state) => ({
+          buildingProgress: {
+            ...state.buildingProgress,
+            'repair-shop': {
+              level: 6,
+              childLevels: [5, 5, 5, 5, 5],
             },
           },
         }))

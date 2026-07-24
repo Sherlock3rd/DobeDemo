@@ -21,12 +21,8 @@ export function BuildingModel({
 }: BuildingModelProps): JSX.Element {
   const fragments = useMemo(
     () =>
-      getRenderedBuildingFragments(
-        definition.kind,
-        progress,
-        animatedFragmentId,
-      ),
-    [definition.kind, progress, animatedFragmentId],
+      getRenderedBuildingFragments(definition.id, progress, animatedFragmentId),
+    [definition.id, progress, animatedFragmentId],
   )
   const neon = definition.kind === 'clubhouse'
 

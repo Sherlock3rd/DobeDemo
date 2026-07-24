@@ -1,11 +1,8 @@
 import { useEffect, useState, type JSX } from 'react'
 import { buildingCatalogById } from '../../game/buildingCatalog'
 import { BUILDING_RENDER_SCALE } from '../../game/cityLayout'
-import type {
-  BuildingId,
-  BuildingKind,
-  BuildingProgress,
-} from '../../game/cityTypes'
+import type { BuildingId, BuildingProgress } from '../../game/cityTypes'
+import { getUnlockedChildCount } from '../../game/buildingUpgrade'
 import { useCityStore } from '../../store/useCityStore'
 import { useGangStore } from '../../store/useGangStore'
 import { BUILDING_FRAGMENT_ANIMATION_MS } from './buildingFragmentAnimation'
@@ -32,20 +29,28 @@ interface HydrationStatus {
 // Restored progress is the initial snapshot, so only a later, single child +1
 // transition can opt a fragment into the entrance animation.
 function getSessionCompletedFragmentId(
-  kind: BuildingKind,
+  id: BuildingId,
   previous: BuildingProgress,
   progress: BuildingProgress,
 ): string | undefined {
   if (
     previous === progress ||
+    previous.level !== progress.level ||
     previous.childLevels.length !== progress.childLevels.length
   ) {
     return undefined
   }
 
+  const unlocked = getUnlockedChildCount(id, progress.level)
   let upgradedIndex = -1
   for (let index = 0; index < progress.childLevels.length; index += 1) {
     const delta = progress.childLevels[index] - previous.childLevels[index]
+    if (index >= unlocked) {
+      if (delta !== 0) {
+        return undefined
+      }
+      continue
+    }
     if (delta === 0) {
       continue
     }
@@ -57,7 +62,7 @@ function getSessionCompletedFragmentId(
 
   return upgradedIndex === -1
     ? undefined
-    : getBuildingFragments(kind)[upgradedIndex]?.id
+    : getBuildingFragments(buildingCatalogById[id].kind)[upgradedIndex]?.id
 }
 
 export function BuildingVisual({
@@ -105,11 +110,7 @@ export function BuildingVisual({
     setPreviousProgress(progress)
     const fragmentId = suppressAnimation
       ? undefined
-      : getSessionCompletedFragmentId(
-          definition.kind,
-          previousProgress,
-          progress,
-        )
+      : getSessionCompletedFragmentId(id, previousProgress, progress)
     if (fragmentId === undefined) {
       setAnimation((current) => ({ run: current.run }))
     } else {
