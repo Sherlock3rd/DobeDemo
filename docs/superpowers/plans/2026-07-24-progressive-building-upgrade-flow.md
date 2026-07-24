@@ -1356,7 +1356,7 @@ git commit -m "test: document progressive upgrade acceptance"
 
 Do not add ignored PNGs, `dist`, temporary profiles, terminal files, review diffs or unknown local files.
 
-- [ ] **Step 7: Perform full-branch review and repair every actionable branch defect**
+- [x] **Step 7: Perform full-branch review and repair every actionable branch defect**
 
 Review the complete range from the pre-feature base through HEAD, not just the latest commit. Require explicit review of:
 

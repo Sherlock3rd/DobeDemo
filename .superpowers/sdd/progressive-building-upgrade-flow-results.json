@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T04:55:20.358Z",
+  "generatedAt": "2026-07-24T05:18:17.539Z",
   "script": "progressive-building-upgrade-flow-cdp.mjs",
   "preflight": {
     "terminalAndPortCheckPerformed": true,
@@ -26,28 +26,28 @@
     "ownedPids": [
       {
         "label": "vite",
-        "pid": 49648
+        "pid": 65460
       },
       {
         "label": "chrome",
-        "pid": 64152
+        "pid": 62592
       }
     ],
     "killAttempts": [
       {
         "label": "chrome",
-        "pid": 64152,
+        "pid": 62592,
         "owned": true
       },
       {
         "label": "vite",
-        "pid": 49648,
+        "pid": 65460,
         "owned": true
       }
     ],
     "unknownProcessesTerminated": false,
     "chromeExecutable": "chrome.exe",
-    "tempProfileName": "dobe-progressive-upgrade-cdp-1JZU2f"
+    "tempProfileName": "dobe-progressive-upgrade-cdp-uN1SbH"
   },
   "dist": {
     "index": "dist/index.html",
@@ -159,7 +159,7 @@
             "oil": 0,
             "materials": 0
           },
-          "lastResourceUpdatedAt": 1784868924596,
+          "lastResourceUpdatedAt": 1784870301366,
           "activeProducerIds": [
             "repair-shop"
           ]
@@ -666,7 +666,7 @@
     {
       "name": "teardown: only owned PIDs targeted",
       "pass": true,
-      "detail": "[{\"label\":\"chrome\",\"pid\":64152,\"owned\":true},{\"label\":\"vite\",\"pid\":49648,\"owned\":true}]"
+      "detail": "[{\"label\":\"chrome\",\"pid\":62592,\"owned\":true},{\"label\":\"vite\",\"pid\":65460,\"owned\":true}]"
     },
     {
       "name": "teardown: dev port released",

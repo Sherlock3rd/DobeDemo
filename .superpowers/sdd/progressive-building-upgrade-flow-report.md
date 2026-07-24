@@ -96,9 +96,13 @@
 - `session/session.md`：更新当前目标；追加两条 2026-07-24 总账（渐进式升级实现 Task 1–5、渐进式升级本地验收 Task 6 本地）。
 - `docs/superpowers/plans/2026-07-24-progressive-building-upgrade-flow.md`：勾选 Task 1–5 全部步骤与 Task 6 Step 1–6；Step 7–12（终审、push、发布、Pages built、公开复验、最终证据）保持未勾。
 
-## 7. 待父代理执行（未完成，未声明完成）
+## 7. 全分支终审与 fresh 复验
 
-- 计划 Step 7 全分支终审并修复所有 Critical/Important。
+- 完整范围 `9d87ff8..22a82e0` 的发布前终审结论为 **Approved**，无 Critical/Important。终审逐项确认迁移/merge、门槛短路、修车厂 Lv.5→6、确认原子重查、会话选择、隐藏槽与动画、调试不追溯、初始 10000、重置与安全 CDP 均符合设计。
+- 父代理在终审后 fresh 重跑 `format:check`、`typecheck`、`lint`、38 文件/479 项测试、production build，全部退出 0；随后重跑本地 CDP，self-test 43 项与运行期 43/43 断言全部 PASS。
+
+## 8. 待发布步骤（未完成，未声明完成）
+
 - 计划 Step 8 普通 push `main`（禁止 force）。
 - 计划 Step 9 用 fresh `dist` 经独立临时 index 发布 `gh-pages`。
 - 计划 Step 10 等待精确 `gh-pages` 提交 Pages 状态 `built`。
