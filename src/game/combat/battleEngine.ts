@@ -89,8 +89,22 @@ interface RuntimeUnit {
 }
 
 export function createBattleSeed(input: Omit<BattleInput, 'seed'>): string {
+  // Encode every field that can change combat outcomes so two different
+  // BattleInputs never collide on the same seed string.
   const part = (u: BattleUnitInput) =>
-    `${u.side}:${u.heroId ?? 'enemy'}:${u.level}:${u.row}${u.index}`
+    [
+      u.side,
+      u.heroId ?? 'enemy',
+      u.level,
+      `${u.row}${u.index}`,
+      `hp${u.hp}`,
+      `atk${u.atk}`,
+      `def${u.def}`,
+      `tm${u.skill.targetMultiplier}`,
+      `sm${u.skill.splashMultiplier}`,
+      `ic${u.skill.initialCooldownTicks}`,
+      `cd${u.skill.cooldownTicks}`,
+    ].join(':')
   return `stage${input.stage}|${input.allies.map(part).join(',')}|${input.enemies
     .map(part)
     .join(',')}`
@@ -120,6 +134,13 @@ export function buildBattleInput(
   heroLevels: Record<HeroId, number>,
   gangLevel: number,
 ): BattleInput {
+  if (!Number.isInteger(stage) || stage < 1 || stage > 20) {
+    invalidInput('stage')
+  }
+  if (!Number.isInteger(gangLevel) || gangLevel < 1 || gangLevel > 50) {
+    invalidInput('gangLevel')
+  }
+
   const stageConfig = getStage(stage)
 
   if (!Array.isArray(formation) || formation.length === 0) {

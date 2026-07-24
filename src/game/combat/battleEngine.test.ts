@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   buildBattleInput,
   createBattleSeed,
@@ -25,15 +25,32 @@ describe('battleEngine', () => {
     expect(a.timeline).toEqual(b.timeline)
   })
 
-  it('never reads Math.random or Date.now (stable seed)', () => {
-    const input = foremanVsStage1()
-    expect(
+  it('never reads Math.random or Date.now', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockImplementation(() => {
+      throw new Error('Math.random must not be called')
+    })
+    const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => {
+      throw new Error('Date.now must not be called')
+    })
+    try {
+      const input = buildBattleInput(
+        1,
+        [{ heroId: 'foreman', row: 'back', index: 1 }],
+        { foreman: 1, anvil: 1, skyline: 1 },
+        1,
+      )
       createBattleSeed({
         stage: input.stage,
         allies: input.allies,
         enemies: input.enemies,
-      }),
-    ).toBe(input.seed)
+      })
+      simulateBattle(input)
+      expect(randomSpy).not.toHaveBeenCalled()
+      expect(nowSpy).not.toHaveBeenCalled()
+    } finally {
+      randomSpy.mockRestore()
+      nowSpy.mockRestore()
+    }
   })
 
   it('wins stage 1 with foreman and reports enemies-cleared', () => {
@@ -201,7 +218,7 @@ describe('buildBattleInput validation (spec §14.3, no silent clamp)', () => {
   it('rejects an empty formation', () => {
     expect(() =>
       buildBattleInput(1, [], { foreman: 1, anvil: 1, skyline: 1 }, 1),
-    ).toThrow()
+    ).toThrow(/Invalid battle input/)
   })
 
   it('rejects a locked hero', () => {
@@ -213,7 +230,7 @@ describe('buildBattleInput validation (spec §14.3, no silent clamp)', () => {
         { foreman: 1, anvil: 1, skyline: 1 },
         1,
       ),
-    ).toThrow()
+    ).toThrow(/Invalid battle input/)
   })
 
   it('rejects a hero level above the gang cap (no clamp)', () => {
@@ -225,7 +242,7 @@ describe('buildBattleInput validation (spec §14.3, no silent clamp)', () => {
         { foreman: 5, anvil: 1, skyline: 1 },
         1,
       ),
-    ).toThrow()
+    ).toThrow(/Invalid battle input/)
   })
 
   it('rejects duplicate slots', () => {
@@ -239,7 +256,44 @@ describe('buildBattleInput validation (spec §14.3, no silent clamp)', () => {
         { foreman: 1, anvil: 1, skyline: 1 },
         1,
       ),
-    ).toThrow()
+    ).toThrow(/Invalid battle input/)
+  })
+
+  it('rejects an unknown stage with Invalid battle input: stage', () => {
+    expect(() =>
+      buildBattleInput(
+        0,
+        [{ heroId: 'foreman', row: 'back', index: 1 }],
+        { foreman: 1, anvil: 1, skyline: 1 },
+        1,
+      ),
+    ).toThrow('Invalid battle input: stage')
+    expect(() =>
+      buildBattleInput(
+        21,
+        [{ heroId: 'foreman', row: 'back', index: 1 }],
+        { foreman: 1, anvil: 1, skyline: 1 },
+        1,
+      ),
+    ).toThrow('Invalid battle input: stage')
+    expect(() =>
+      buildBattleInput(
+        1.5,
+        [{ heroId: 'foreman', row: 'back', index: 1 }],
+        { foreman: 1, anvil: 1, skyline: 1 },
+        1,
+      ),
+    ).toThrow('Invalid battle input: stage')
+  })
+
+  it('rejects illegal gangLevel without silent normalize', () => {
+    const formation = [{ heroId: 'foreman' as const, row: 'back' as const, index: 1 }]
+    const levels = { foreman: 1, anvil: 1, skyline: 1 }
+    for (const gangLevel of [0, 51, 1.5, NaN, Infinity, -1]) {
+      expect(() => buildBattleInput(1, formation, levels, gangLevel)).toThrow(
+        'Invalid battle input: gangLevel',
+      )
+    }
   })
 
   it('accepts a legal formation at the cap', () => {
@@ -251,5 +305,119 @@ describe('buildBattleInput validation (spec §14.3, no silent clamp)', () => {
         1,
       ),
     ).not.toThrow()
+  })
+})
+
+describe('createBattleSeed encodes combat-affecting fields', () => {
+  function baseUnit(
+    overrides: Partial<BattleUnitInput> = {},
+  ): BattleUnitInput {
+    return {
+      side: 'ally',
+      heroId: 'foreman',
+      level: 1,
+      row: 'back',
+      index: 1,
+      hp: 1000,
+      atk: 100,
+      def: 20,
+      skill: {
+        targetMultiplier: 2,
+        splashMultiplier: 0.5,
+        initialCooldownTicks: 30,
+        cooldownTicks: 90,
+      },
+      ...overrides,
+    }
+  }
+
+  it('changes when hp/atk/def differ', () => {
+    const allies = [baseUnit()]
+    const enemies = [baseUnit({ side: 'enemy', heroId: undefined, row: 'front', index: 0 })]
+    const a = createBattleSeed({ stage: 1, allies, enemies })
+    const b = createBattleSeed({
+      stage: 1,
+      allies: [baseUnit({ hp: 1001 })],
+      enemies,
+    })
+    const c = createBattleSeed({
+      stage: 1,
+      allies: [baseUnit({ atk: 101 })],
+      enemies,
+    })
+    const d = createBattleSeed({
+      stage: 1,
+      allies: [baseUnit({ def: 21 })],
+      enemies,
+    })
+    expect(a).not.toBe(b)
+    expect(a).not.toBe(c)
+    expect(a).not.toBe(d)
+  })
+
+  it('changes when skill multipliers or cooldowns differ', () => {
+    const allies = [baseUnit()]
+    const enemies = [baseUnit({ side: 'enemy', heroId: undefined, row: 'front', index: 0 })]
+    const a = createBattleSeed({ stage: 1, allies, enemies })
+    const b = createBattleSeed({
+      stage: 1,
+      allies: [
+        baseUnit({
+          skill: {
+            targetMultiplier: 2.1,
+            splashMultiplier: 0.5,
+            initialCooldownTicks: 30,
+            cooldownTicks: 90,
+          },
+        }),
+      ],
+      enemies,
+    })
+    const c = createBattleSeed({
+      stage: 1,
+      allies: [
+        baseUnit({
+          skill: {
+            targetMultiplier: 2,
+            splashMultiplier: 0.6,
+            initialCooldownTicks: 30,
+            cooldownTicks: 90,
+          },
+        }),
+      ],
+      enemies,
+    })
+    const d = createBattleSeed({
+      stage: 1,
+      allies: [
+        baseUnit({
+          skill: {
+            targetMultiplier: 2,
+            splashMultiplier: 0.5,
+            initialCooldownTicks: 31,
+            cooldownTicks: 90,
+          },
+        }),
+      ],
+      enemies,
+    })
+    const e = createBattleSeed({
+      stage: 1,
+      allies: [
+        baseUnit({
+          skill: {
+            targetMultiplier: 2,
+            splashMultiplier: 0.5,
+            initialCooldownTicks: 30,
+            cooldownTicks: 91,
+          },
+        }),
+      ],
+      enemies,
+    })
+    expect(a).not.toBe(b)
+    expect(a).not.toBe(c)
+    expect(a).not.toBe(d)
+    expect(a).not.toBe(e)
   })
 })
