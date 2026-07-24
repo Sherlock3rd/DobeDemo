@@ -1,0 +1,800 @@
+{
+  "generatedAt": "2026-07-24T11:32:45.320Z",
+  "script": "campaign-heroes-global-hud-cdp.mjs",
+  "preflight": {
+    "strategy": "strict owned Vite port; Chrome assigns CDP port 0 inside isolated profile",
+    "attemptedDevPorts": [
+      {
+        "port": 5322,
+        "free": true
+      }
+    ],
+    "cdpPortSource": "DevToolsActivePort",
+    "devPort": 5322,
+    "devPortFree": true,
+    "cdpPort": 6874,
+    "cdpBrowserWsPathValidated": true,
+    "cdpOwnedProfile": true
+  },
+  "processSafety": {
+    "ownedPids": [
+      {
+        "label": "vite",
+        "pid": 64776
+      },
+      {
+        "label": "chrome",
+        "pid": 55956
+      }
+    ],
+    "killAttempts": [
+      {
+        "label": "chrome",
+        "pid": 55956,
+        "owned": true
+      },
+      {
+        "label": "vite",
+        "pid": 64776,
+        "owned": true
+      }
+    ],
+    "unknownProcessesTerminated": false,
+    "chromeExecutable": "chrome.exe",
+    "tempProfileName": "dobe-campaign-heroes-cdp-s1EO4v"
+  },
+  "dist": {
+    "index": "dist/index.html",
+    "assetRefs": [
+      "/DobeDemo/assets/index-Cqd67PU-.js",
+      "/DobeDemo/assets/index-DQwWECoL.css"
+    ],
+    "baseOk": true
+  },
+  "http": {
+    "startupOwnershipVerified": true,
+    "startupAppFeatureVerified": true,
+    "status": 200,
+    "hasRoot": true,
+    "hasMainTsx": true
+  },
+  "fresh": {
+    "wallet": {
+      "money": 10000,
+      "oil": 0,
+      "materials": 0
+    },
+    "gangReputation": 0,
+    "gangSaveAbsentMeansInitial": true,
+    "sharedExp": 0,
+    "highestClearedStage": 0,
+    "heroLevels": {
+      "foreman": 1,
+      "anvil": 1,
+      "skyline": 1
+    },
+    "formation": [
+      {
+        "heroId": "foreman",
+        "row": "back",
+        "index": 1
+      }
+    ],
+    "hud": {
+      "resources": [
+        "钱 10000 +1/10秒",
+        "油 0 +0/10秒",
+        "物资 0 +0/10秒",
+        "英雄经验 0 · 可领 0"
+      ],
+      "adventureDot": true,
+      "text": "玩家Lv.1 Prospect（见习）钱 10000 +1/10秒油 0 +0/10秒物资 0 +0/10秒英雄经验 0 · 可领 0推关英雄设置"
+    }
+  },
+  "battle": {
+    "formation": {
+      "slots": [
+        "front[0] 空",
+        "front[1] 空",
+        "back[0] 空",
+        "back[1] 陈锤",
+        "back[2] 空"
+      ],
+      "powers": [
+        "我方战力 730",
+        "敌方战力 369"
+      ],
+      "autoText": false
+    },
+    "start": {
+      "dialog": true,
+      "banner": "START",
+      "text": "START暂停1x2x退出3",
+      "allyBars": 1,
+      "globalHudPresent": false,
+      "exitConfirmPresent": false,
+      "hp": [
+        800
+      ],
+      "cooldown": [
+        68
+      ]
+    },
+    "combatStateChanged": true,
+    "resultText": "VICTORY · 胜利首通奖励 英雄经验 500继续",
+    "highestAfter": 1,
+    "sharedAfter": 500,
+    "idleClock": 1784892775625,
+    "runningVictoryChangedBytes": 180755,
+    "runningVictoryDistinct": true
+  },
+  "idle": {
+    "displayBefore": "当前可领取 4",
+    "displayAfter": "当前可领取 0",
+    "sharedBefore": 500,
+    "sharedAfter": 504,
+    "clockBefore": 1784892750923,
+    "clockAfter": 1784892770923,
+    "status": "已领取英雄经验 4",
+    "displayAfterNextTick": "当前可领取 2",
+    "sharedAfterNextTick": 504
+  },
+  "heroes": {
+    "levelBefore": 1,
+    "levelAfter": 2,
+    "sharedBefore": 504,
+    "sharedAfter": 404,
+    "status": "已升级 陈锤 至 Lv.2"
+  },
+  "unlocks": {
+    "reputation": 1470,
+    "feedback": "帮派树已解锁",
+    "treeHasAnvil": true,
+    "treeHasSkyline": true,
+    "heroView": {
+      "unlockedCards": 3,
+      "lockedCards": 0,
+      "text": "关闭英雄培养共享英雄经验 404当前帮派等级上限 Lv.50陈锤·工头Lv.2HP 860 · ATK 130 · DEF 43技能 散射压制升级 陈锤岳峰·铁砧Lv.1HP 1500 · ATK 80 · DEF 90技能 钢盾镇场升级 岳峰秦岚·长空Lv.1HP 650 · ATK 160 · DEF 30技能 长空穿击升级 秦岚"
+    }
+  },
+  "overlay": {
+    "buildingOpen": {
+      "building": true,
+      "adventure": false,
+      "formation": false,
+      "heroes": false,
+      "battle": false,
+      "globalHud": true,
+      "settings": false,
+      "gangTree": false,
+      "canvasHidden": false
+    },
+    "adventureOpen": {
+      "building": false,
+      "adventure": true,
+      "formation": false,
+      "heroes": false,
+      "battle": false,
+      "globalHud": true,
+      "settings": false,
+      "gangTree": false,
+      "canvasHidden": true
+    },
+    "formationOpen": {
+      "building": false,
+      "adventure": false,
+      "formation": true,
+      "heroes": false,
+      "battle": false,
+      "globalHud": true,
+      "settings": false,
+      "gangTree": false,
+      "canvasHidden": true
+    },
+    "battleOpen": {
+      "building": false,
+      "adventure": false,
+      "formation": false,
+      "heroes": false,
+      "battle": true,
+      "globalHud": false,
+      "settings": false,
+      "gangTree": false,
+      "canvasHidden": true
+    },
+    "exitPrompt": {
+      "battlePresent": true,
+      "globalHudPresent": false,
+      "confirmButtons": 2,
+      "confirmText": "确认退出取消"
+    },
+    "progressBeforeExit": {
+      "highest": 1,
+      "shared": 404
+    },
+    "progressAfterExit": {
+      "highest": 1,
+      "shared": 404
+    },
+    "afterExit": {
+      "building": false,
+      "adventure": true,
+      "formation": false,
+      "heroes": false,
+      "battle": false,
+      "globalHud": true,
+      "settings": false,
+      "gangTree": false,
+      "canvasHidden": true
+    }
+  },
+  "building": {
+    "progress": 100,
+    "label": "100%",
+    "mainButton": "升级主建筑至 Lv.3"
+  },
+  "migration": {
+    "nullPayload": {
+      "heroLevels": {
+        "foreman": 1,
+        "anvil": 1,
+        "skyline": 1
+      },
+      "sharedExp": 0,
+      "formation": [
+        {
+          "heroId": "foreman",
+          "row": "back",
+          "index": 1
+        }
+      ],
+      "highestClearedStage": 0,
+      "idleClock": 1784892800844
+    },
+    "badPayload": {
+      "heroLevels": {
+        "foreman": 50,
+        "anvil": 1,
+        "skyline": 1
+      },
+      "sharedExp": 0,
+      "formation": [
+        {
+          "heroId": "anvil",
+          "row": "front",
+          "index": 0
+        }
+      ],
+      "highestClearedStage": 20,
+      "idleClock": 1784892802257
+    }
+  },
+  "reset": {
+    "confirming": true,
+    "wallet": {
+      "money": 10000,
+      "oil": 0,
+      "materials": 0
+    },
+    "reputation": 0,
+    "sharedExp": 0,
+    "highest": 0,
+    "formation": [
+      {
+        "heroId": "foreman",
+        "row": "back",
+        "index": 1
+      }
+    ],
+    "clocks": {
+      "city": 1784892804130,
+      "gang": 1784892804130,
+      "adventure": 1784892804130
+    }
+  },
+  "layout": {
+    "desktop": {
+      "hud": {
+        "present": true,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 5,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "adventure": {
+        "present": true,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 4,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "formation": {
+        "present": true,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 8,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "battle": {
+        "present": true,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 4,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "heroes": {
+        "present": true,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 2,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "building": {
+        "present": true,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 4,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "settings": {
+        "present": true,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 4,
+        "controls44": true,
+        "undersizedControls": []
+      }
+    },
+    "mobile": {
+      "hud": {
+        "noHorizontalOverflow": true,
+        "withinBounds": true,
+        "controls44": true
+      },
+      "building": {
+        "present": true,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 4,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "adventure": {
+        "present": true,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 5,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "formation": {
+        "present": true,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 8,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "battle": {
+        "present": true,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 4,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "heroes": {
+        "present": true,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "withinBounds": true,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 4,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "settings": {
+        "present": true,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "withinBounds": false,
+        "noHorizontalOverflow": true,
+        "scrollableOrFits": true,
+        "controls": 4,
+        "controls44": true,
+        "undersizedControls": []
+      },
+      "focusVisible": true
+    }
+  },
+  "screenshots": {
+    "campaign-fresh.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 119575,
+      "sha256": "c19247da810989d1231e99ae4d14cd4fb90cfa54d8aee33fcb77ca0f6ce9cf35"
+    },
+    "campaign-formation.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 132899,
+      "sha256": "8de92ed3388af86084fc392606b383a81308810e474320fedc63dc9fc7c310e1"
+    },
+    "campaign-battle.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 200871,
+      "sha256": "08a17c474bff5f421d682ea155b2c35c500620eb56bab2ebfbc75f7a53e83dd3",
+      "phase": "running"
+    },
+    "campaign-victory.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 218953,
+      "sha256": "bf14e5d3f0599ca49fb5ccafa1d3c11aef35321b86d2407a622d671b61c2eef0",
+      "phase": "resolved"
+    },
+    "campaign-idle-heroes.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 128107,
+      "sha256": "b6003f912342947531ca8084a4be8ce25dc8c8e3595f54ab55e3569b5476ed93"
+    },
+    "campaign-unlocks.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 126995,
+      "sha256": "53b74c6ad648568efaee7ef022a28a24fbe662cac21083cc1fc828a2a5496672"
+    },
+    "campaign-building-100.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 129918,
+      "sha256": "cfe0463388f06fe41d6ba23bb2a8a5190286deee692d43d2d4c18eb5122cceaf"
+    },
+    "campaign-mobile.png": {
+      "width": 390,
+      "height": 844,
+      "bytes": 76636,
+      "sha256": "2db9d244f0fec0bb15accfdfafca13ca31fc193c9e9e195174e3cf2311bb78df"
+    },
+    "campaign-reset.png": {
+      "width": 1440,
+      "height": 900,
+      "bytes": 119575,
+      "sha256": "c19247da810989d1231e99ae4d14cd4fb90cfa54d8aee33fcb77ca0f6ce9cf35"
+    }
+  },
+  "teardown": {
+    "cdpPortReleased": true,
+    "devPortReleased": true,
+    "tempProfileRemoved": true
+  },
+  "assertionSelfTest": {
+    "ok": true,
+    "checked": 11,
+    "failuresOnGoodData": [],
+    "passesOnEmptyData": [],
+    "pathRedaction": {
+      "ok": true,
+      "outputs": [
+        {
+          "name": "Error",
+          "code": "ENOENT"
+        },
+        {
+          "name": "TypeError"
+        }
+      ],
+      "forbiddenDataPresent": false
+    }
+  },
+  "assertions": [
+    {
+      "name": "preflight selected a free dev port",
+      "pass": true,
+      "detail": "5322"
+    },
+    {
+      "name": "dist assets use /DobeDemo/",
+      "pass": true,
+      "detail": "/DobeDemo/assets/index-Cqd67PU-.js,/DobeDemo/assets/index-DQwWECoL.css"
+    },
+    {
+      "name": "owned Vite serves the expected app over HTTP 200",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "Chrome assigned an owned dynamic CDP port via DevToolsActivePort",
+      "pass": true,
+      "detail": "6874"
+    },
+    {
+      "name": "1. fresh wallet is {10000,0,0}",
+      "pass": true,
+      "detail": "{\"money\":10000,\"oil\":0,\"materials\":0}"
+    },
+    {
+      "name": "1b. fresh gang/adventure state is initial",
+      "pass": true,
+      "detail": "{\"shared\":0,\"highest\":0,\"formation\":[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1}]}"
+    },
+    {
+      "name": "1c. GlobalHud shows four resources and adventure red dot",
+      "pass": true,
+      "detail": "{\"resources\":[\"钱 10000 +1/10秒\",\"油 0 +0/10秒\",\"物资 0 +0/10秒\",\"英雄经验 0 · 可领 0\"],\"adventureDot\":true,\"text\":\"玩家Lv.1 Prospect（见习）钱 10000 +1/10秒油 0 +0/10秒物资 0 +0/10秒英雄经验 0 · 可领 0推关英雄设置\"}"
+    },
+    {
+      "name": "1d. fresh DOM exposes no direct formation or battle entry",
+      "pass": true,
+      "detail": "{\"building\":false,\"adventure\":false,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":false,\"directEntries\":{\"formationControls\":0,\"battleControls\":0,\"href\":\"/\"}}"
+    },
+    {
+      "name": "2. adventure Escape closes to the city with no illegal overlay",
+      "pass": true,
+      "detail": "{\"adventureBeforeEscape\":{\"building\":false,\"adventure\":true,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":true},\"adventureAfterEscape\":{\"building\":false,\"adventure\":false,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":false}}"
+    },
+    {
+      "name": "2b. formation Escape returns to adventure without entering battle",
+      "pass": true,
+      "detail": "{\"formationBeforeEscape\":{\"building\":false,\"adventure\":false,\"formation\":true,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":true},\"formationAfterEscape\":{\"building\":false,\"adventure\":true,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":true}}"
+    },
+    {
+      "name": "2c. formation has 2 front + 3 back slots and both powers",
+      "pass": true,
+      "detail": "{\"slots\":[\"front[0] 空\",\"front[1] 空\",\"back[0] 空\",\"back[1] 陈锤\",\"back[2] 空\"],\"powers\":[\"我方战力 730\",\"敌方战力 369\"],\"autoText\":false}"
+    },
+    {
+      "name": "2d. battle displays START and no Auto/manual-cast controls",
+      "pass": true,
+      "detail": "{\"dialog\":true,\"banner\":\"START\",\"text\":\"START暂停1x2x退出3\",\"allyBars\":1,\"globalHudPresent\":false,\"exitConfirmPresent\":false,\"hp\":[800],\"cooldown\":[68]}"
+    },
+    {
+      "name": "2e. automatic battle changes HP or cooldown from its initial values",
+      "pass": true,
+      "detail": "{\"initialHp\":[800],\"initialCooldown\":[68],\"combatStateChanged\":true}"
+    },
+    {
+      "name": "2f. enemy defeat resolves as VICTORY",
+      "pass": true,
+      "detail": "VICTORY · 胜利首通奖励 英雄经验 500继续"
+    },
+    {
+      "name": "3. first clear records highest=1 and sharedExp=500",
+      "pass": true,
+      "detail": "{\"highest\":1,\"shared\":500}"
+    },
+    {
+      "name": "3b. running battle and victory screenshots have distinct hash and bytes",
+      "pass": true,
+      "detail": "{\"runningBytes\":200871,\"victoryBytes\":218953,\"runningSha256\":\"08a17c474bff5f421d682ea155b2c35c500620eb56bab2ebfbc75f7a53e83dd3\",\"victorySha256\":\"bf14e5d3f0599ca49fb5ccafa1d3c11aef35321b86d2407a622d671b61c2eef0\",\"changedBytes\":180755}"
+    },
+    {
+      "name": "3c. victory continue returns to adventure",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "4. idle chest claim increases sharedExp",
+      "pass": true,
+      "detail": "{\"displayBefore\":\"当前可领取 4\",\"displayAfter\":\"当前可领取 0\",\"sharedBefore\":500,\"sharedAfter\":504,\"clockBefore\":1784892750923,\"clockAfter\":1784892770923,\"status\":\"已领取英雄经验 4\"}"
+    },
+    {
+      "name": "4b. idle claim preserves sub-tick remainder",
+      "pass": true,
+      "detail": "{\"before\":1784892750923,\"after\":1784892770923}"
+    },
+    {
+      "name": "4c. idle chest continues accumulating after one legal tick",
+      "pass": true,
+      "detail": "{\"display\":\"当前可领取 2\",\"shared\":504}"
+    },
+    {
+      "name": "5. heroes entry replaces building detail and clears its selection",
+      "pass": true,
+      "detail": "{\"before\":{\"building\":true,\"adventure\":false,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":false},\"open\":{\"building\":false,\"adventure\":false,\"formation\":false,\"heroes\":true,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":true},\"selectedAfterHeroOpen\":null,\"afterEscape\":{\"building\":false,\"adventure\":false,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":false}}"
+    },
+    {
+      "name": "5b. real hero upgrade adds one level and deducts 100 exp",
+      "pass": true,
+      "detail": "{\"levelBefore\":1,\"levelAfter\":2,\"sharedBefore\":504,\"sharedAfter\":404,\"status\":\"已升级 陈锤 至 Lv.2\"}"
+    },
+    {
+      "name": "5c. hero upgrade reports role=status feedback",
+      "pass": true,
+      "detail": "已升级 陈锤 至 Lv.2"
+    },
+    {
+      "name": "6. unlock gang tree sets reputation 1470 / Lv50",
+      "pass": true,
+      "detail": "{\"reputation\":1470,\"feedback\":\"帮派树已解锁\",\"treeHasAnvil\":true,\"treeHasSkyline\":true}"
+    },
+    {
+      "name": "6b. gang tree derives both hero unlocks",
+      "pass": true,
+      "detail": "{\"reputation\":1470,\"feedback\":\"帮派树已解锁\",\"treeHasAnvil\":true,\"treeHasSkyline\":true}"
+    },
+    {
+      "name": "6c. heroes panel derives all three heroes unlocked",
+      "pass": true,
+      "detail": "{\"unlockedCards\":3,\"lockedCards\":0,\"text\":\"关闭英雄培养共享英雄经验 404当前帮派等级上限 Lv.50陈锤·工头Lv.2HP 860 · ATK 130 · DEF 43技能 散射压制升级 陈锤岳峰·铁砧Lv.1HP 1500 · ATK 80 · DEF 90技能 钢盾镇场升级 岳峰秦岚·长空Lv.1HP 650 · ATK 160 · DEF 30技能 长空穿击升级 秦岚\"}"
+    },
+    {
+      "name": "7. adventure replaces building detail and clears selection",
+      "pass": true,
+      "detail": "{\"buildingOpen\":{\"building\":true,\"adventure\":false,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":false},\"adventureOpen\":{\"building\":false,\"adventure\":true,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":true},\"selectedAfterAdventure\":null}"
+    },
+    {
+      "name": "7b. quick deploy derives three unlocked heroes into formation",
+      "pass": true,
+      "detail": "[\"front[0] 岳峰\",\"front[1] 空\",\"back[0] 秦岚\",\"back[1] 陈锤\",\"back[2] 空\"]"
+    },
+    {
+      "name": "7c. Start persists the three-hero derived formation",
+      "pass": true,
+      "detail": "[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1},{\"heroId\":\"anvil\",\"row\":\"front\",\"index\":0},{\"heroId\":\"skyline\",\"row\":\"back\",\"index\":0}]"
+    },
+    {
+      "name": "7d. battle hides GlobalHud and first exit click only opens confirmation",
+      "pass": true,
+      "detail": "{\"battlePresent\":true,\"globalHudPresent\":false,\"confirmButtons\":2,\"confirmText\":\"确认退出取消\"}"
+    },
+    {
+      "name": "7e. battle exit confirmation returns to adventure",
+      "pass": true,
+      "detail": "{\"building\":false,\"adventure\":true,\"formation\":false,\"heroes\":false,\"battle\":false,\"globalHud\":true,\"settings\":false,\"gangTree\":false,\"canvasHidden\":true}"
+    },
+    {
+      "name": "7f. early battle exit grants no reward/progress",
+      "pass": true,
+      "detail": "{\"before\":{\"highest\":1,\"shared\":404},\"after\":{\"highest\":1,\"shared\":404}}"
+    },
+    {
+      "name": "8. completed building stage still displays 100% and main button",
+      "pass": true,
+      "detail": "{\"progress\":100,\"label\":\"100%\",\"mainButton\":\"升级主建筑至 Lv.3\"}"
+    },
+    {
+      "name": "10. desktop core panels have no horizontal overflow",
+      "pass": true,
+      "detail": "{\"hud\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":5,\"controls44\":true,\"undersizedControls\":[]},\"adventure\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"formation\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":8,\"controls44\":true,\"undersizedControls\":[]},\"battle\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"heroes\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":2,\"controls44\":true,\"undersizedControls\":[]},\"building\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"settings\":{\"present\":true,\"viewport\":{\"width\":1440,\"height\":900},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]}}"
+    },
+    {
+      "name": "10b. desktop key controls are at least 44x44",
+      "pass": true,
+      "detail": "[true,true,true,true,true,true,true]"
+    },
+    {
+      "name": "10c. 390x844 core panels fit/scroll without horizontal overflow",
+      "pass": true,
+      "detail": "{\"hud\":{\"noHorizontalOverflow\":true,\"withinBounds\":true,\"controls44\":true},\"building\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"adventure\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":5,\"controls44\":true,\"undersizedControls\":[]},\"formation\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":8,\"controls44\":true,\"undersizedControls\":[]},\"battle\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"heroes\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":true,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"settings\":{\"present\":true,\"viewport\":{\"width\":390,\"height\":844},\"withinBounds\":false,\"noHorizontalOverflow\":true,\"scrollableOrFits\":true,\"controls\":4,\"controls44\":true,\"undersizedControls\":[]},\"focusVisible\":true}"
+    },
+    {
+      "name": "10d. keyboard focus is visibly styled",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "10e. mobile key controls are at least 44x44",
+      "pass": true,
+      "detail": "{\"hudControls44\":true,\"panels\":[true,true,true,true,true,true]}"
+    },
+    {
+      "name": "9. persisted Adventure state null keeps the initial durable state",
+      "pass": true,
+      "detail": "{\"heroLevels\":{\"foreman\":1,\"anvil\":1,\"skyline\":1},\"sharedExp\":0,\"formation\":[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1}],\"highestClearedStage\":0,\"idleClock\":1784892800844}"
+    },
+    {
+      "name": "9b. bad Adventure save reload is normalized",
+      "pass": true,
+      "detail": "{\"heroLevels\":{\"foreman\":50,\"anvil\":1,\"skyline\":1},\"sharedExp\":0,\"formation\":[{\"heroId\":\"anvil\",\"row\":\"front\",\"index\":0}],\"highestClearedStage\":20,\"idleClock\":1784892802257}"
+    },
+    {
+      "name": "9c. reset required a second confirmation",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "9d. reset restores all three stores to initial state",
+      "pass": true,
+      "detail": "{\"confirming\":true,\"wallet\":{\"money\":10000,\"oil\":0,\"materials\":0},\"reputation\":0,\"sharedExp\":0,\"highest\":0,\"formation\":[{\"heroId\":\"foreman\",\"row\":\"back\",\"index\":1}],\"clocks\":{\"city\":1784892804130,\"gang\":1784892804130,\"adventure\":1784892804130}}"
+    },
+    {
+      "name": "9e. reset aligns all three clocks to one captured instant",
+      "pass": true,
+      "detail": "{\"city\":1784892804130,\"gang\":1784892804130,\"adventure\":1784892804130}"
+    },
+    {
+      "name": "teardown: only owned PIDs targeted",
+      "pass": true,
+      "detail": "[{\"label\":\"chrome\",\"pid\":55956,\"owned\":true},{\"label\":\"vite\",\"pid\":64776,\"owned\":true}]"
+    },
+    {
+      "name": "teardown: dev port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "teardown: CDP port released",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "teardown: temporary Chrome profile removed",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "all expected screenshots are nonempty PNG files",
+      "pass": true,
+      "detail": "[\"campaign-fresh.png\",\"campaign-formation.png\",\"campaign-battle.png\",\"campaign-victory.png\",\"campaign-idle-heroes.png\",\"campaign-unlocks.png\",\"campaign-building-100.png\",\"campaign-mobile.png\",\"campaign-reset.png\"]"
+    }
+  ]
+}

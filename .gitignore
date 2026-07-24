@@ -14,3 +14,7 @@ temp/
 *.local
 .DS_Store
 Thumbs.db
+
+# Local-only visual references; never publish with the demo.
+/example/5v5example.mp4
+/example/ux/
