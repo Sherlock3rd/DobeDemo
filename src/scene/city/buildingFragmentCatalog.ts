@@ -1587,10 +1587,7 @@ export function getRenderedBuildingFragments(
   animatedFragmentId?: string,
 ): readonly RenderedBuildingFragment[] {
   const definition = buildingCatalogById[buildingId]
-  const blueprints = getBuildingFragments(definition.kind).slice(
-    0,
-    getUnlockedChildCount(buildingId, progress.level),
-  )
+  const allBlueprints = getBuildingFragments(definition.kind)
 
   const toRendered = (
     blueprint: BuildingFragmentBlueprint,
@@ -1607,6 +1604,23 @@ export function getRenderedBuildingFragments(
       animatedFragmentId != null &&
       blueprint.id === animatedFragmentId,
   })
+
+  if (buildingId === 'clubhouse') {
+    return allBlueprints
+      .slice(0, progress.level)
+      .map((blueprint) =>
+        toRendered(
+          blueprint,
+          'current',
+          renderFragmentParts(blueprint, progress.level),
+        ),
+      )
+  }
+
+  const blueprints = allBlueprints.slice(
+    0,
+    getUnlockedChildCount(buildingId, progress.level),
+  )
 
   return blueprints.map((blueprint, index) => {
     const childLevel = progress.childLevels[index] ?? 0

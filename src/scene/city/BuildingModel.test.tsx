@@ -172,4 +172,26 @@ describe('BuildingModel', () => {
     expect(fragments[2]).toHaveAttribute('data-animate', 'true')
     expect(fragments[2]).toHaveAttribute('data-animation-run', '7')
   })
+
+  it('renders stale Clubhouse children from the main level without child animation', () => {
+    render(
+      <BuildingModel
+        definition={buildingCatalogById.clubhouse}
+        progress={{
+          level: 4,
+          childLevels: [4, 3, 2, 1, 4, 3, 2, 1, 4, 3],
+        }}
+        highlighted={false}
+        animatedFragmentId="clubhouse-fragment-4"
+        animationRun={8}
+      />,
+    )
+
+    const fragments = screen.getAllByTestId('fragment')
+    expect(fragments).toHaveLength(4)
+    fragments.forEach((fragment) => {
+      expect(fragment).toHaveAttribute('data-animate', 'false')
+      expect(fragment).toHaveAttribute('data-animation-run', '')
+    })
+  })
 })
