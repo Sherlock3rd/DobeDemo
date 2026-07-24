@@ -1057,6 +1057,142 @@
   }
 }
 
+/* Adventure / Formation panels (standalone; App mounts in Task 6) */
+
+.adventure-panel__overlay,
+.formation-panel__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(4, 6, 9, 0.78);
+  backdrop-filter: blur(0.35rem);
+  pointer-events: auto;
+  animation: overlay-enter 180ms ease-out both;
+}
+
+.adventure-panel,
+.formation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(720px, 100%);
+  max-height: 90vh;
+  padding: 1.75rem 1.75rem 1.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 212, 59, 0.32);
+  border-left: 4px solid #ffd43b;
+  border-radius: 1rem;
+  background: linear-gradient(160deg, #121826 0%, #0b1220 100%);
+  color: #f8fafc;
+  animation: drawer-enter 180ms ease-out both;
+}
+
+.adventure-panel__close,
+.adventure-panel__challenge,
+.adventure-panel__claim,
+.formation-panel__close,
+.formation-panel__hero,
+.formation-panel__slot,
+.formation-panel__quick,
+.formation-panel__start {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid rgba(255, 212, 59, 0.35);
+  border-radius: 0.7rem;
+  color: #0f172a;
+  background: #ffd43b;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.adventure-panel__close,
+.formation-panel__close {
+  align-self: flex-end;
+  color: #e2e8f0;
+  background: rgba(248, 250, 252, 0.08);
+}
+
+.adventure-panel__stage,
+.formation-panel__slot,
+.formation-panel__hero {
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.adventure-panel__stage:disabled,
+.formation-panel__hero:disabled,
+.adventure-panel__challenge:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.adventure-panel__stages {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.adventure-panel__stage[aria-pressed='true'],
+.formation-panel__slot[aria-pressed='true'],
+.formation-panel__hero[aria-pressed='true'] {
+  border-color: #ffd43b;
+  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.55);
+}
+
+.adventure-panel__chest,
+.adventure-panel__detail,
+.formation-panel__powers,
+.formation-panel__actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.formation-panel__slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.formation-panel__slot--front {
+  grid-row: 1;
+}
+
+.formation-panel__slot--back {
+  grid-row: 2;
+}
+
+.formation-panel__heroes {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.formation-panel__hero-locked {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.adventure-panel__close:focus-visible,
+.adventure-panel__challenge:focus-visible,
+.adventure-panel__claim:focus-visible,
+.adventure-panel__stage:focus-visible,
+.formation-panel__close:focus-visible,
+.formation-panel__hero:focus-visible,
+.formation-panel__slot:focus-visible,
+.formation-panel__quick:focus-visible,
+.formation-panel__start:focus-visible {
+  outline: 3px solid #f8fafc;
+  outline-offset: 3px;
+}
+
 /* Global HUD (standalone; App mounts in Task 6) */
 
 .global-hud {
@@ -1251,7 +1387,11 @@
   .gang-tree-panel__overlay,
   .gang-tree-panel,
   .heroes-panel__overlay,
-  .heroes-panel {
+  .heroes-panel,
+  .adventure-panel__overlay,
+  .adventure-panel,
+  .formation-panel__overlay,
+  .formation-panel {
     animation: none;
   }
 
