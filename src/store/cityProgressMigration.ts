@@ -2,7 +2,7 @@ import { economyConfig, type ResourceWallet } from '../config/economyConfig'
 import {
   getBuildingChildCount,
   getBuildingMaxLevel,
-} from '../game/buildingUpgrade'
+} from '../game/legacyBuildingUpgrade'
 import { isBuildingId } from '../game/buildingCatalog'
 import {
   BUILDING_IDS,

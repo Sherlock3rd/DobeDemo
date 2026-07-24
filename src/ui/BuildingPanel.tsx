@@ -11,7 +11,7 @@ import {
   getChildUpgradeDecision,
   getMainUpgradeDecision,
   type UpgradeDecision,
-} from '../game/buildingUpgrade'
+} from '../game/legacyBuildingUpgrade'
 import type { BuildingLevel } from '../game/cityTypes'
 import {
   getBuildingUnlock,

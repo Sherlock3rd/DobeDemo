@@ -5,7 +5,7 @@ import {
   getBuildingChildCount,
   getChildUpgradeDecision,
   getMainUpgradeDecision,
-} from '../game/buildingUpgrade'
+} from '../game/legacyBuildingUpgrade'
 import { isBuildingId } from '../game/buildingCatalog'
 import {
   BUILDING_IDS,

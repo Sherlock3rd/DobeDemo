@@ -1,4 +1,9 @@
-import type { BuildingId, BuildingLevel } from '../game/cityTypes'
+import {
+  BUILDING_IDS,
+  BUILDING_LEVELS,
+  type BuildingId,
+  type BuildingLevel,
+} from '../game/cityTypes'
 import rawEconomyConfig from './economy.config.json'
 
 export const RESOURCE_TYPES = ['money', 'oil', 'materials'] as const
@@ -20,12 +25,13 @@ export interface ProductionConfig {
 }
 
 export interface EconomyConfig {
-  version: 1
+  version: 2
   resourceTickSeconds: 10
   maxOfflineSeconds: 28_800
   production: Partial<Record<BuildingId, ProductionConfig>>
   childUpgradeCostByTargetLevel: Record<BuildingLevel, ResourceCost>
   buildingUpgradeCostByTargetLevel: Partial<Record<BuildingLevel, ResourceCost>>
+  buildingPowerById: Record<BuildingId, Record<BuildingLevel, number>>
 }
 
 const PRODUCTION_BUILDING_IDS = [
@@ -96,6 +102,18 @@ function parseNonNegativeInteger(value: unknown, path: string): number {
     invalidConfig(path)
   }
 
+  return value
+}
+
+function parsePower(value: unknown, path: string): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isSafeInteger(value) ||
+    value < 0
+  ) {
+    invalidConfig(path)
+  }
   return value
 }
 
@@ -228,12 +246,65 @@ function parseCostByLevel(
   return costs
 }
 
+function parseBuildingPowerById(
+  value: unknown,
+): Record<BuildingId, Record<BuildingLevel, number>> {
+  if (!isRecord(value)) {
+    invalidConfig('buildingPowerById')
+  }
+
+  for (const key of Object.keys(value)) {
+    if (!BUILDING_IDS.includes(key as BuildingId)) {
+      invalidConfig(`buildingPowerById.${key}`)
+    }
+  }
+
+  const powerById = {} as Record<BuildingId, Record<BuildingLevel, number>>
+  for (const buildingId of BUILDING_IDS) {
+    const path = `buildingPowerById.${buildingId}`
+    const powerByLevel = value[buildingId]
+    if (!isRecord(powerByLevel)) {
+      invalidConfig(path)
+    }
+
+    for (const key of Object.keys(powerByLevel)) {
+      const level = Number(key)
+      if (
+        !Number.isInteger(level) ||
+        !BUILDING_LEVELS.includes(level as BuildingLevel) ||
+        String(level) !== key
+      ) {
+        invalidConfig(`${path}.${key}`)
+      }
+    }
+
+    const parsedPower = {} as Record<BuildingLevel, number>
+    for (const level of BUILDING_LEVELS) {
+      const levelPath = `${path}.${level}`
+      if (!(String(level) in powerByLevel)) {
+        invalidConfig(levelPath)
+      }
+      parsedPower[level] = parsePower(powerByLevel[String(level)], levelPath)
+    }
+
+    for (const level of BUILDING_LEVELS.slice(1)) {
+      const previousLevel = (level - 1) as BuildingLevel
+      if (parsedPower[level] <= parsedPower[previousLevel]) {
+        invalidConfig(`${path}.${level}`)
+      }
+    }
+    powerById[buildingId] = parsedPower
+  }
+
+  return powerById
+}
+
 export function parseEconomyConfig(value: unknown): EconomyConfig {
   if (!isRecord(value)) {
     invalidConfig('version')
   }
 
-  if (value.version !== 1) {
+  if (value.version !== 2) {
     invalidConfig('version')
   }
 
@@ -250,7 +321,7 @@ export function parseEconomyConfig(value: unknown): EconomyConfig {
   ) as Partial<Record<BuildingLevel, ResourceCost>>
 
   return {
-    version: 1,
+    version: 2,
     resourceTickSeconds: parseExactPositiveInteger(
       value.resourceTickSeconds,
       'resourceTickSeconds',
@@ -264,7 +335,21 @@ export function parseEconomyConfig(value: unknown): EconomyConfig {
     production: parseProduction(value.production),
     childUpgradeCostByTargetLevel,
     buildingUpgradeCostByTargetLevel,
+    buildingPowerById: parseBuildingPowerById(value.buildingPowerById),
   }
 }
 
 export const economyConfig = parseEconomyConfig(rawEconomyConfig)
+
+export function getBuildingPower(
+  buildingId: BuildingId,
+  level: BuildingLevel,
+): number {
+  const power = economyConfig.buildingPowerById[buildingId]?.[level]
+  if (!Number.isSafeInteger(power)) {
+    throw new Error(
+      `Invalid economy config: buildingPowerById.${buildingId}.${level}`,
+    )
+  }
+  return power
+}

@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { economyConfig, parseEconomyConfig } from './economyConfig'
+import {
+  economyConfig,
+  getBuildingPower,
+  parseEconomyConfig,
+} from './economyConfig'
 
 describe('economyConfig', () => {
   it('loads validated defaults from JSON', () => {
+    expect(economyConfig.version).toBe(2)
     expect(economyConfig.resourceTickSeconds).toBe(10)
     expect(economyConfig.maxOfflineSeconds).toBe(28_800)
     expect(economyConfig.production['repair-shop']).toEqual({
@@ -17,6 +22,9 @@ describe('economyConfig', () => {
       materials: 0,
     })
     expect(economyConfig.buildingUpgradeCostByTargetLevel[10]?.money).toBe(1250)
+    expect(getBuildingPower('repair-shop', 1)).toBe(100)
+    expect(getBuildingPower('repair-shop', 10)).toBe(550)
+    expect(getBuildingPower('clubhouse', 10)).toBe(1150)
   })
 
   it('rejects missing version', () => {
@@ -161,6 +169,80 @@ describe('economyConfig', () => {
       }),
     ).toThrow(
       'Invalid economy config: buildingUpgradeCostByTargetLevel.3.money',
+    )
+  })
+
+  it('rejects a missing building power level', () => {
+    const missingLevel = structuredClone(economyConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    delete (
+      missingLevel.buildingPowerById as Record<string, Record<string, number>>
+    )['repair-shop']['10']
+    expect(() => parseEconomyConfig(missingLevel)).toThrow(
+      'Invalid economy config: buildingPowerById.repair-shop.10',
+    )
+  })
+
+  it('rejects an extra building power buildingId', () => {
+    const extraBuilding = structuredClone(economyConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(
+      extraBuilding.buildingPowerById as Record<string, Record<string, number>>
+    ).warehouse = { 1: 100 }
+    expect(() => parseEconomyConfig(extraBuilding)).toThrow(
+      'Invalid economy config: buildingPowerById.warehouse',
+    )
+  })
+
+  it('rejects an extra building power level', () => {
+    const extraLevel = structuredClone(economyConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(extraLevel.buildingPowerById as Record<string, Record<string, number>>)[
+      'repair-shop'
+    ]['11'] = 600
+    expect(() => parseEconomyConfig(extraLevel)).toThrow(
+      'Invalid economy config: buildingPowerById.repair-shop.11',
+    )
+  })
+
+  it.each([
+    ['negative', -1],
+    ['unsafe', Number.MAX_SAFE_INTEGER + 1],
+    ['non-integer', 100.5],
+  ])('rejects %s building power', (_label, power) => {
+    const invalidPower = structuredClone(economyConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(invalidPower.buildingPowerById as Record<string, Record<string, number>>)[
+      'repair-shop'
+    ]['2'] = power
+    expect(() => parseEconomyConfig(invalidPower)).toThrow(
+      'Invalid economy config: buildingPowerById.repair-shop.2',
+    )
+  })
+
+  it.each([
+    ['equal', 100],
+    ['decreasing', 99],
+  ])('rejects %s adjacent building power', (_label, power) => {
+    const nonIncreasingPower = structuredClone(
+      economyConfig,
+    ) as unknown as Record<string, unknown>
+    ;(
+      nonIncreasingPower.buildingPowerById as Record<
+        string,
+        Record<string, number>
+      >
+    )['repair-shop']['2'] = power
+    expect(() => parseEconomyConfig(nonIncreasingPower)).toThrow(
+      'Invalid economy config: buildingPowerById.repair-shop.2',
     )
   })
 })
