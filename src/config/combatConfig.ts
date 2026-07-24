@@ -50,6 +50,7 @@ const SKILL_KEYS = [
   'initialCooldownTicks',
   'cooldownTicks',
 ] as const
+const POSITION_MODIFIERS_CONTAINER_KEYS = ['front', 'back'] as const
 const POSITION_MODIFIER_KEYS = ['atkMul', 'defMul', 'aggro'] as const
 const POWER_WEIGHTS_KEYS = ['hp', 'atk', 'def'] as const
 
@@ -151,6 +152,11 @@ export function parseCombatConfig(value: unknown): CombatConfig {
   if (!isRecord(modifiers)) {
     invalidConfig('positionModifiers')
   }
+  assertKnownKeys(
+    modifiers,
+    POSITION_MODIFIERS_CONTAINER_KEYS,
+    'positionModifiers',
+  )
   const weights = value.powerWeights
   if (!isRecord(weights)) {
     invalidConfig('powerWeights')

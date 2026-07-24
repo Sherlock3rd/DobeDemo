@@ -51,6 +51,21 @@ describe('combat config', () => {
     )
   })
 
+  it('rejects an unknown positionModifiers container key', () => {
+    const bad = structuredClone(combatConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    ;(bad.positionModifiers as Record<string, unknown>).middle = {
+      atkMul: 1,
+      defMul: 1,
+      aggro: false,
+    }
+    expect(() => parseCombatConfig(bad)).toThrow(
+      'Invalid combat config: positionModifiers.middle',
+    )
+  })
+
   it('rejects an unknown positionModifier key', () => {
     const bad = structuredClone(combatConfig) as unknown as Record<
       string,
