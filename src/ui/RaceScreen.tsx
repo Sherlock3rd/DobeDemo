@@ -102,25 +102,30 @@ function RaceSession({
       setState((current) =>
         advanceRace(current, input, initial.loadout, RACE_TICK_MS),
       )
-      inputRef.current = { ...inputRef.current, laneDelta: 0 }
+      inputRef.current = {
+        ...inputRef.current,
+        laneDelta: 0,
+        fire: false,
+      }
     }, RACE_TICK_MS)
     return () => window.clearInterval(timer)
   }, [exitPending, initial.loadout, state.status])
 
   useEffect(() => {
     const down = (event: KeyboardEvent): void => {
+      const key = event.key.toLowerCase()
       if (
         event.repeat &&
-        ['ArrowUp', 'ArrowDown', 'w', 's'].includes(event.key)
+        ['arrowleft', 'arrowright', 'a', 'd', 'f'].includes(key)
       ) {
         return
       }
-      if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') {
+      if (event.key === 'ArrowLeft' || key === 'a') {
         inputRef.current.steer = -1
         inputRef.current.laneDelta = -1
         event.preventDefault()
       }
-      if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') {
+      if (event.key === 'ArrowRight' || key === 'd') {
         inputRef.current.steer = 1
         inputRef.current.laneDelta = 1
         event.preventDefault()
@@ -129,26 +134,26 @@ function RaceSession({
         inputRef.current.boost = true
         event.preventDefault()
       }
-      if (event.key.toLowerCase() === 'f') {
+      if (key === 'f') {
         inputRef.current.fire = true
       }
       if (event.key === 'Escape') setExitPending(true)
     }
     const up = (event: KeyboardEvent): void => {
+      const key = event.key.toLowerCase()
       if (
-        (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') &&
+        (event.key === 'ArrowLeft' || key === 'a') &&
         inputRef.current.steer === -1
       ) {
         inputRef.current.steer = 0
       }
       if (
-        (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') &&
+        (event.key === 'ArrowRight' || key === 'd') &&
         inputRef.current.steer === 1
       ) {
         inputRef.current.steer = 0
       }
       if (event.code === 'Space') inputRef.current.boost = false
-      if (event.key.toLowerCase() === 'f') inputRef.current.fire = false
     }
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
@@ -172,33 +177,30 @@ function RaceSession({
     event.preventDefault()
     inputRef.current.boost = false
   }
-  const pressFire = (event: ReactPointerEvent<HTMLButtonElement>): void => {
-    event.preventDefault()
+  const triggerFireBoost = (): void => {
     inputRef.current.fire = true
   }
-  const releaseFire = (event: ReactPointerEvent<HTMLButtonElement>): void => {
-    event.preventDefault()
-    inputRef.current.fire = false
-  }
-  const pressSteerUp = (event: ReactPointerEvent<HTMLButtonElement>): void => {
+  const pressSteerLeft = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ): void => {
     event.preventDefault()
     inputRef.current.steer = -1
     inputRef.current.laneDelta = -1
   }
-  const releaseSteerUp = (
+  const releaseSteerLeft = (
     event: ReactPointerEvent<HTMLButtonElement>,
   ): void => {
     event.preventDefault()
     if (inputRef.current.steer === -1) inputRef.current.steer = 0
   }
-  const pressSteerDown = (
+  const pressSteerRight = (
     event: ReactPointerEvent<HTMLButtonElement>,
   ): void => {
     event.preventDefault()
     inputRef.current.steer = 1
     inputRef.current.laneDelta = 1
   }
-  const releaseSteerDown = (
+  const releaseSteerRight = (
     event: ReactPointerEvent<HTMLButtonElement>,
   ): void => {
     event.preventDefault()
@@ -245,6 +247,12 @@ function RaceSession({
   const escortCount = state.vehicles.filter(
     (vehicle) => vehicle.role === 'escort' && vehicle.durability > 0,
   ).length
+  const fireBoostStatus =
+    state.fireBoostRemainingMs > 0
+      ? `强化中 ${Math.ceil(state.fireBoostRemainingMs / 1000)}秒`
+      : state.fireBoostCooldownMs > 0
+        ? `冷却 ${Math.ceil(state.fireBoostCooldownMs / 1000)}秒`
+        : '强化就绪'
 
   return (
     <div
@@ -253,11 +261,15 @@ function RaceSession({
       aria-label="公路争霸"
       data-status={state.status}
       data-event={state.event?.type ?? ''}
+      data-player-lane={state.player.targetLane}
+      data-fire-boost={state.fireBoostRemainingMs}
+      data-fire-cooldown={state.fireBoostCooldownMs}
+      data-shots={state.shotsFired}
     >
       <Canvas
         className="race-screen__canvas"
         shadows
-        camera={{ position: [0, 16, 28], fov: 46, near: 0.1, far: 220 }}
+        camera={{ position: [0, 17, 29], fov: 48, near: 0.1, far: 260 }}
         dpr={[1, 1.5]}
       >
         <RacingScene
@@ -321,9 +333,7 @@ function RaceSession({
                   )}m`
                 : ''
             }`}</p>
-            <p>{`武器 ${
-              state.player.fireCooldownMs <= 0 ? '就绪' : '后坐/装填'
-            }`}</p>
+            <p>{`普通攻击 自动开火 · 敌方持续反击 · ${fireBoostStatus}`}</p>
           </>
         )}
         <progress
@@ -338,23 +348,23 @@ function RaceSession({
         <div>
           <button
             type="button"
-            aria-label="向上切换车道"
-            onPointerDown={pressSteerUp}
-            onPointerUp={releaseSteerUp}
-            onPointerCancel={releaseSteerUp}
-            onPointerLeave={releaseSteerUp}
+            aria-label="向左切换车道"
+            onPointerDown={pressSteerLeft}
+            onPointerUp={releaseSteerLeft}
+            onPointerCancel={releaseSteerLeft}
+            onPointerLeave={releaseSteerLeft}
           >
-            ↑<span>按住漂移</span>
+            ←<span>按住漂移</span>
           </button>
           <button
             type="button"
-            aria-label="向下切换车道"
-            onPointerDown={pressSteerDown}
-            onPointerUp={releaseSteerDown}
-            onPointerCancel={releaseSteerDown}
-            onPointerLeave={releaseSteerDown}
+            aria-label="向右切换车道"
+            onPointerDown={pressSteerRight}
+            onPointerUp={releaseSteerRight}
+            onPointerCancel={releaseSteerRight}
+            onPointerLeave={releaseSteerRight}
           >
-            ↓<span>按住漂移</span>
+            →<span>按住漂移</span>
           </button>
         </div>
         <div>
@@ -372,12 +382,12 @@ function RaceSession({
             <button
               type="button"
               className="race-controls__fire"
-              onPointerDown={pressFire}
-              onPointerUp={releaseFire}
-              onPointerCancel={releaseFire}
-              onPointerLeave={releaseFire}
+              onClick={triggerFireBoost}
+              disabled={state.fireBoostCooldownMs > 0}
             >
-              开火
+              {state.fireBoostCooldownMs > 0
+                ? `强化 ${Math.ceil(state.fireBoostCooldownMs / 1000)}s`
+                : '火力强化'}
             </button>
           ) : null}
         </div>

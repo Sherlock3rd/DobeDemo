@@ -63,7 +63,6 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
           <span>{`钱 ${Math.trunc(resources.money)} +${rates.money}/10秒`}</span>
           <span>{`油 ${Math.trunc(resources.oil)} +${rates.oil}/10秒`}</span>
           <span>{`物资 ${Math.trunc(resources.materials)} +${rates.materials}/10秒`}</span>
-          <span>{`英雄经验 ${sharedExp} · 可领 ${claimable}`}</span>
         </div>
       </div>
       <nav className="global-hud__bottom" aria-label="主导航">

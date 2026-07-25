@@ -7,13 +7,13 @@
       "unlockGangLevel": 1,
       "heroBonus": { "hp": 120, "def": 8 },
       "racing": {
-        "maxSpeed": 32,
-        "acceleration": 10,
+        "maxSpeed": 42,
+        "acceleration": 15,
         "handlingMs": 260,
         "durability": 100,
         "mass": 1080,
         "grip": 0.72,
-        "driftNitroRate": 20,
+        "driftNitroRate": 8,
         "suspension": 0.72
       },
       "appearance": { "body": "#8f999e", "accent": "#f59b36" }
@@ -24,13 +24,13 @@
       "unlockGangLevel": 8,
       "heroBonus": { "hp": 260, "def": 18 },
       "racing": {
-        "maxSpeed": 34,
-        "acceleration": 9,
+        "maxSpeed": 45,
+        "acceleration": 14,
         "handlingMs": 300,
         "durability": 128,
         "mass": 1380,
         "grip": 0.82,
-        "driftNitroRate": 16,
+        "driftNitroRate": 7,
         "suspension": 0.9
       },
       "appearance": { "body": "#4b555b", "accent": "#f1c84b" }
@@ -41,13 +41,13 @@
       "unlockGangLevel": 16,
       "heroBonus": { "hp": 180, "def": 15 },
       "racing": {
-        "maxSpeed": 38,
-        "acceleration": 13,
+        "maxSpeed": 50,
+        "acceleration": 19,
         "handlingMs": 210,
         "durability": 104,
         "mass": 980,
         "grip": 0.68,
-        "driftNitroRate": 26,
+        "driftNitroRate": 10,
         "suspension": 0.66
       },
       "appearance": { "body": "#f2b62e", "accent": "#26e0d1" }
@@ -58,13 +58,13 @@
       "unlockGangLevel": 32,
       "heroBonus": { "hp": 380, "def": 28 },
       "racing": {
-        "maxSpeed": 41,
-        "acceleration": 14,
+        "maxSpeed": 54,
+        "acceleration": 20,
         "handlingMs": 190,
         "durability": 142,
         "mass": 1260,
         "grip": 0.86,
-        "driftNitroRate": 23,
+        "driftNitroRate": 9,
         "suspension": 0.82
       },
       "appearance": { "body": "#244c6a", "accent": "#ea5a33" }
@@ -75,13 +75,13 @@
       "unlockGangLevel": 40,
       "heroBonus": { "hp": 520, "def": 38 },
       "racing": {
-        "maxSpeed": 45,
-        "acceleration": 16,
+        "maxSpeed": 59,
+        "acceleration": 23,
         "handlingMs": 170,
         "durability": 165,
         "mass": 1320,
         "grip": 0.9,
-        "driftNitroRate": 28,
+        "driftNitroRate": 11,
         "suspension": 0.88
       },
       "appearance": { "body": "#171a20", "accent": "#e33f35" }

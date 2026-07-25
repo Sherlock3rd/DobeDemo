@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AIR_GRAVITY,
   advanceRace,
   createRaceState,
+  FIRE_BOOST_COOLDOWN_MS,
+  FIRE_BOOST_DURATION_MS,
+  NATURAL_NITRO_PER_SECOND,
   RACE_LANE_X,
   RACE_TICK_MS,
   targetVehicle,
@@ -21,6 +25,10 @@ const ENDGAME: RaceLoadout = {
 }
 
 function botInput(state: RaceState): RaceInput {
+  const triggerFireBoost =
+    state.mode === 'pursuit' &&
+    state.fireBoostCooldownMs <= 0 &&
+    !state.fireBoostLatch
   const nearbyFeature = upcomingTrackFeatures(state).find(
     (feature) =>
       feature.distance > state.player.distance &&
@@ -31,7 +39,7 @@ function botInput(state: RaceState): RaceInput {
     return {
       laneDelta: state.player.targetLane === 0 ? 1 : -1,
       boost: true,
-      fire: state.mode === 'pursuit',
+      fire: triggerFireBoost,
     }
   }
   if (state.mode === 'pursuit' && !state.steerLatch) {
@@ -46,7 +54,7 @@ function botInput(state: RaceState): RaceInput {
       return {
         laneDelta: target.x < state.player.x ? -1 : 1,
         boost: target.distance - state.player.distance > 20,
-        fire: true,
+        fire: triggerFireBoost,
       }
     }
   }
@@ -55,7 +63,7 @@ function botInput(state: RaceState): RaceInput {
     boost:
       state.mode === 'race' ||
       (targetVehicle(state)?.distance ?? 0) - state.player.distance > 18,
-    fire: state.mode === 'pursuit',
+    fire: triggerFireBoost,
   }
 }
 
@@ -165,6 +173,21 @@ describe('raceEngine V2', () => {
     expect(next.player.boost).toBeGreaterThan(20)
   })
 
+  it('halves passive nitro income so stunts are the main refill', () => {
+    const initial = createRaceState(1, STARTER)
+    initial.player = { ...initial.player, boost: 0 }
+    initial.vehicles = initial.vehicles.map((vehicle, index) => ({
+      ...vehicle,
+      x: index === 0 ? -3.25 : 3.25,
+      distance: 80 + index * 10,
+    }))
+    const next = advanceRace(initial, {}, STARTER)
+    expect(next.player.boost).toBeCloseTo(
+      NATURAL_NITRO_PER_SECOND * (RACE_TICK_MS / 1000),
+      5,
+    )
+  })
+
   it('launches a vehicle from a visible lane ramp', () => {
     let state = createRaceState(1, STARTER)
     const ramp = upcomingTrackFeatures(state, 400).find(
@@ -185,6 +208,65 @@ describe('raceEngine V2', () => {
     expect(state.player.airborneHeight).toBeGreaterThan(0)
     expect(state.player.verticalSpeed).toBeGreaterThan(0)
     expect(state.event?.type).toBe('ramp')
+  })
+
+  it('keeps the player airborne for roughly three times the old duration', () => {
+    let state = createRaceState(1, STARTER)
+    const ramp = upcomingTrackFeatures(state, 400).find(
+      (feature) => feature.kind === 'ramp',
+    )
+    expect(ramp).toBeDefined()
+    if (!ramp) return
+    state.player = {
+      ...state.player,
+      lane: ramp.lane,
+      targetLane: ramp.lane,
+      x: RACE_LANE_X[ramp.lane],
+      distance: ramp.distance - 1,
+      speed: 30,
+      desiredSpeed: 30,
+    }
+    state = advanceRace(state, {}, STARTER)
+    let airborneTicks = 0
+    while (
+      state.status === 'running' &&
+      state.player.airborneHeight > 0 &&
+      airborneTicks < 120
+    ) {
+      state = advanceRace(state, {}, STARTER)
+      airborneTicks += 1
+    }
+    expect(AIR_GRAVITY).toBeCloseTo(6.2)
+    expect(airborneTicks * RACE_TICK_MS).toBeGreaterThanOrEqual(3000)
+    expect(airborneTicks * RACE_TICK_MS).toBeLessThanOrEqual(4500)
+  })
+
+  it('lets AI cars seek ramps and perform airborne stunts', () => {
+    let state = createRaceState(1, STARTER)
+    const ramp = upcomingTrackFeatures(state, 400).find(
+      (feature) => feature.kind === 'ramp',
+    )
+    expect(ramp).toBeDefined()
+    if (!ramp) return
+    state.vehicles[0] = {
+      ...state.vehicles[0],
+      lane: ramp.lane,
+      targetLane: ramp.lane,
+      x: RACE_LANE_X[ramp.lane],
+      distance: ramp.distance - 20,
+      speed: 30,
+      desiredSpeed: 30,
+    }
+    for (
+      let tick = 0;
+      tick < 24 && state.vehicles[0].airborneHeight <= 0;
+      tick += 1
+    ) {
+      state = advanceRace(state, {}, STARTER)
+    }
+    state = advanceRace(state, {}, STARTER)
+    expect(state.vehicles[0].airborneHeight).toBeGreaterThan(0)
+    expect(Math.abs(state.vehicles[0].stuntAngle)).toBeGreaterThan(0)
   })
 
   it('uses visible projectile travel and hit effects in pursuit', () => {
@@ -208,7 +290,7 @@ describe('raceEngine V2', () => {
       desiredSpeed: 20,
     }))
     const beforeHp = state.targetHp
-    state = advanceRace(state, { fire: true }, STARTER)
+    state = advanceRace(state, {}, STARTER)
     expect(state.projectiles).toHaveLength(1)
     for (let tick = 0; tick < 18 && state.hits === 0; tick += 1) {
       state = advanceRace(state, { fire: false }, STARTER)
@@ -219,6 +301,36 @@ describe('raceEngine V2', () => {
       state.effects.some(
         (effect) => effect.type === 'impact' || effect.type === 'explosion',
       ),
+    ).toBe(true)
+  })
+
+  it('doubles pursuit durability, auto-fires, and makes input a fire boost', () => {
+    let state = createRaceState(2, STARTER)
+    expect(state.player.maxDurability).toBe(200)
+    state = advanceRace(state, { fire: true }, STARTER)
+    expect(state.shotsFired).toBe(1)
+    expect(state.fireBoostRemainingMs).toBe(FIRE_BOOST_DURATION_MS)
+    expect(state.fireBoostCooldownMs).toBe(FIRE_BOOST_COOLDOWN_MS)
+    const playerProjectile = state.projectiles.find(
+      (projectile) => projectile.owner === 'player',
+    )
+    expect(playerProjectile?.damage).toBeGreaterThan(13)
+  })
+
+  it('lets the enemy convoy automatically return fire', () => {
+    let state = createRaceState(2, STARTER)
+    state = {
+      ...state,
+      nextEnemyFireMs: 0,
+      vehicles: state.vehicles.map((vehicle, index) => ({
+        ...vehicle,
+        x: index === 0 ? state.player.x : vehicle.x,
+        distance: index === 0 ? state.player.distance + 20 : vehicle.distance,
+      })),
+    }
+    state = advanceRace(state, {}, STARTER)
+    expect(
+      state.projectiles.some((projectile) => projectile.owner === 'enemy'),
     ).toBe(true)
   })
 

@@ -24,7 +24,7 @@ function RacingCameraRig({ state }: { state: RaceState }): null {
 
   useFrame((frameState) => {
     const activeCamera = frameState.camera
-    const speedRatio = Math.min(1, state.player.speed / 48)
+    const speedRatio = Math.min(1, state.player.speed / 60)
     const impact =
       state.event?.type === 'collision' || state.event?.type === 'incoming'
         ? 0.32
@@ -34,14 +34,14 @@ function RacingCameraRig({ state }: { state: RaceState }): null {
         ? Math.sin((state.event?.id ?? 0) * 8.3 + state.elapsedMs * 0.04) *
           impact
         : 0
-    desired.current.set(shake, 15.5 + speedRatio * 2.5, 26.5 + speedRatio * 2)
+    desired.current.set(shake, 16 + speedRatio * 3, 27 + speedRatio * 2.5)
     activeCamera.position.lerp(desired.current, 0.14)
-    target.current.set(0, 0.65, -26 - speedRatio * 9)
+    target.current.set(0, 0.65, -30 - speedRatio * 14)
     activeCamera.lookAt(target.current)
     if (activeCamera instanceof PerspectiveCamera) {
       activeCamera.fov = MathUtils.lerp(
         activeCamera.fov,
-        45 + speedRatio * 7,
+        46 + speedRatio * 8,
         0.09,
       )
       activeCamera.updateProjectionMatrix()
@@ -79,7 +79,7 @@ function VehicleModel({
   if (vehicle.durability <= 0) return null
   const appearance = equipmentConfig.cars[vehicle.carId].appearance
   const relativeZ = PLAYER_SCENE_Z - (vehicle.distance - playerDistance)
-  if (relativeZ < -145 || relativeZ > 28) return null
+  if (relativeZ < -185 || relativeZ > 28) return null
   const spin = vehicle.distance * 0.65
   const bodyRoll = MathUtils.clamp(
     -vehicle.lateralVelocity * 0.035,
@@ -90,11 +90,7 @@ function VehicleModel({
   return (
     <group
       position={[vehicle.x, vehicle.airborneHeight + 0.12, relativeZ]}
-      rotation={[
-        vehicle.role === 'player' ? vehicle.stuntAngle : 0,
-        vehicle.yaw,
-        bodyRoll,
-      ]}
+      rotation={[vehicle.stuntAngle, vehicle.yaw, bodyRoll]}
       userData={{
         vehicleId: vehicle.id,
         role: vehicle.role,
@@ -252,22 +248,22 @@ export function RacingScene({
   const roadOffset = state.player.distance % 12
   const features = upcomingTrackFeatures(state)
   const allVehicles = [state.player, ...state.vehicles]
-  const speedRatio = Math.min(1, state.player.speed / 48)
+  const speedRatio = Math.min(1, state.player.speed / 60)
   return (
     <>
       <RacingCameraRig state={state} />
       <color attach="background" args={['#121820']} />
-      <fog attach="fog" args={['#121820', 58, 165]} />
+      <fog attach="fog" args={['#121820', 68, 205]} />
       <hemisphereLight args={['#b8d5e2', '#211d1a', 1.4]} />
       <directionalLight position={[10, 22, 12]} intensity={2.7} castShadow />
       <group>
-        <mesh position={[0, -0.55, -63]} receiveShadow>
-          <boxGeometry args={[11.5, 0.28, 175]} />
+        <mesh position={[0, -0.55, -83]} receiveShadow>
+          <boxGeometry args={[11.5, 0.28, 215]} />
           <meshStandardMaterial color="#292e34" roughness={0.96} />
         </mesh>
         {[-5.55, 5.55].map((x) => (
-          <mesh key={x} position={[x, -0.36, -63]}>
-            <boxGeometry args={[0.22, 0.22, 175]} />
+          <mesh key={x} position={[x, -0.36, -83]}>
+            <boxGeometry args={[0.22, 0.22, 215]} />
             <meshStandardMaterial
               color="#d9a128"
               emissive="#71500b"
@@ -276,7 +272,7 @@ export function RacingScene({
           </mesh>
         ))}
         {[-1.62, 1.62].flatMap((x) =>
-          Array.from({ length: 16 }, (_, index) => {
+          Array.from({ length: 20 }, (_, index) => {
             const z = 15 - index * 12 + roadOffset
             return (
               <mesh key={`${x}:${index}`} position={[x, -0.34, z]}>

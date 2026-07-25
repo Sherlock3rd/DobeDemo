@@ -19,7 +19,7 @@ describe('GlobalHud', () => {
     useChestTick.setState({ tick: 0, now: 0 })
   })
 
-  it('renders four resource readouts including shared hero exp', () => {
+  it('renders only money, oil, and materials in the main resource HUD', () => {
     render(
       <GlobalHud
         onOpenHeroes={() => {}}
@@ -29,8 +29,9 @@ describe('GlobalHud', () => {
         onOpenSettings={() => {}}
       />,
     )
-    expect(screen.getByLabelText('资源')).toBeInTheDocument()
-    expect(screen.getByText(/英雄经验/)).toBeInTheDocument()
+    const resources = screen.getByLabelText('资源')
+    expect(resources.querySelectorAll('span')).toHaveLength(3)
+    expect(screen.queryByText(/英雄经验/)).toBeNull()
   })
 
   it('shows gang level and role in the gang entry', () => {
@@ -82,7 +83,7 @@ describe('GlobalHud', () => {
     ).toBeInTheDocument()
   })
 
-  it('refreshes claimable chest exp from useChestTick without writing adventure state', () => {
+  it('refreshes claimable chest state without exposing exp in the resource HUD', () => {
     useAdventureStore.setState({
       highestClearedStage: 1,
       idleClock: BASE_TIME,
@@ -98,11 +99,11 @@ describe('GlobalHud', () => {
         onOpenSettings={() => {}}
       />,
     )
-    expect(screen.getByText(/可领 0/)).toBeInTheDocument()
+    expect(screen.queryByText(/可领/)).toBeNull()
     act(() => {
       useChestTick.setState({ tick: 1, now: BASE_TIME + 25_000 })
     })
-    expect(screen.getByText(/可领 4/)).toBeInTheDocument()
+    expect(screen.queryByText(/可领/)).toBeNull()
     expect(useAdventureStore.getState().idleClock).toBe(BASE_TIME)
     expect(useAdventureStore.getState().sharedExp).toBe(0)
     expect(localStorage.getItem(ADVENTURE_STORAGE_KEY)).toBe(before)

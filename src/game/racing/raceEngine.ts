@@ -7,6 +7,10 @@ import {
 import { CAR_IDS, type CarId, type GunId } from '../equipmentTypes'
 
 export const RACE_TICK_MS = 50
+export const AIR_GRAVITY = 6.2
+export const NATURAL_NITRO_PER_SECOND = 3.5
+export const FIRE_BOOST_DURATION_MS = 2400
+export const FIRE_BOOST_COOLDOWN_MS = 8000
 export const RACE_LANES = [0, 1, 2] as const
 export const RACE_LANE_X = [-3.25, 0, 3.25] as const
 export type RaceLane = (typeof RACE_LANES)[number]
@@ -21,6 +25,7 @@ export type RaceEventType =
   | 'stunt'
   | 'land'
   | 'shot'
+  | 'fire-boost'
   | 'hit'
   | 'incoming'
   | 'destroyed'
@@ -107,6 +112,9 @@ export interface RaceState {
   hits: number
   collisions: number
   slipstream: boolean
+  fireBoostRemainingMs: number
+  fireBoostCooldownMs: number
+  fireBoostLatch: boolean
   steerLatch: boolean
   steerHoldMs: number
   event: RaceEvent | null
@@ -250,7 +258,8 @@ export function createRaceState(
     loadout.carId,
     1,
     0,
-    Math.min(14, playerCar.maxSpeed),
+    Math.min(22, playerCar.maxSpeed),
+    stage.mode === 'pursuit' ? playerCar.durability * 2 : undefined,
   )
   const vehicles =
     stage.mode === 'race'
@@ -281,11 +290,14 @@ export function createRaceState(
     effects: [],
     targetHp: target?.durability ?? 0,
     maxTargetHp: target?.maxDurability ?? 0,
-    nextEnemyFireMs: 1800,
+    nextEnemyFireMs: 900,
     shotsFired: 0,
     hits: 0,
     collisions: 0,
     slipstream: false,
+    fireBoostRemainingMs: 0,
+    fireBoostCooldownMs: 0,
+    fireBoostLatch: false,
     steerLatch: false,
     steerHoldMs: 0,
     event: null,
@@ -326,7 +338,8 @@ function updatePlayerControl(
 ): RaceState {
   const player = { ...state.player }
   const car = equipmentConfig.cars[carId].racing
-  const steer = input.steer ?? input.laneDelta ?? 0
+  const heldSteer = input.steer ?? 0
+  const steer = heldSteer !== 0 ? heldSteer : (input.laneDelta ?? 0)
   let next = { ...state, player }
 
   if (steer !== 0) {
@@ -361,7 +374,10 @@ function updatePlayerControl(
     player.boost = Math.max(0, player.boost - 25 * (dtMs / 1000))
     if (!state.player.boosting) next = withEvent(next, 'boost')
   } else if (!player.driftActive) {
-    player.boost = Math.min(100, player.boost + 7 * (dtMs / 1000))
+    player.boost = Math.min(
+      100,
+      player.boost + NATURAL_NITRO_PER_SECOND * (dtMs / 1000),
+    )
   }
   player.desiredSpeed =
     car.maxSpeed * (player.boosting ? 1.24 : player.driftActive ? 0.94 : 1)
@@ -394,7 +410,7 @@ function updateAi(
       } else {
         vehicleState.boost = Math.min(
           100,
-          vehicleState.boost + 8 * (dtMs / 1000),
+          vehicleState.boost + NATURAL_NITRO_PER_SECOND * (dtMs / 1000),
         )
       }
       const closeBehind =
@@ -434,6 +450,18 @@ function updateAi(
       vehicleState.airborneHeight <= 0 &&
       Math.abs(RACE_LANE_X[vehicleState.targetLane] - vehicleState.x) > 1.1 &&
       vehicleState.speed > 19
+    if (vehicleState.airborneHeight > 0) {
+      const stuntDirection = (index + stage.order) % 2 === 0 ? 1 : -1
+      vehicleState.stuntAngle += stuntDirection * 3.7 * (dtMs / 1000)
+      vehicleState.driftActive = false
+    } else {
+      const nextRampIndex = Math.max(1, vehicleState.lastRampIndex + 1)
+      const distanceToRamp =
+        rampDistance(stage, nextRampIndex) - vehicleState.distance
+      if (distanceToRamp > -4 && distanceToRamp < 82) {
+        vehicleState.targetLane = rampLane(stage.order, nextRampIndex)
+      }
+    }
     return vehicleState
   })
   return { ...state, vehicles }
@@ -475,7 +503,7 @@ function integrateVehicle(source: VehicleState, dtMs: number): VehicleState {
     )
   }
   if (next.airborneHeight > 0 || next.verticalSpeed > 0) {
-    next.verticalSpeed -= 18.5 * dt
+    next.verticalSpeed -= AIR_GRAVITY * dt
     next.airborneHeight = Math.max(
       0,
       next.airborneHeight + next.verticalSpeed * dt,
@@ -573,35 +601,38 @@ function processLanding(
   state: RaceState,
   previous: VehicleState,
   current: VehicleState,
-): { state: RaceState; player: VehicleState } {
+): { state: RaceState; vehicle: VehicleState } {
   if (previous.airborneHeight <= 0 || current.airborneHeight > 0) {
-    return { state, player: current }
+    return { state, vehicle: current }
   }
-  const player = { ...current }
-  const rotations = player.stuntAngle / (Math.PI * 2)
+  const landedVehicle = { ...current }
+  const rotations = landedVehicle.stuntAngle / (Math.PI * 2)
   const landingError = Math.abs(rotations - Math.round(rotations))
+  const aiStunt = landedVehicle.role !== 'player' && Math.abs(rotations) >= 0.65
+  const cleanStunt =
+    Math.abs(rotations) >= 0.65 && (landingError < 0.18 || aiStunt)
   let next = addEffect(
     state,
     'landing',
-    player.x,
-    player.distance,
-    landingError < 0.18 ? 1.4 : 2,
+    landedVehicle.x,
+    landedVehicle.distance,
+    cleanStunt || landingError < 0.18 ? 1.4 : 2,
     750,
   )
-  if (landingError < 0.18 && Math.abs(rotations) >= 0.65) {
-    player.boost = Math.min(100, player.boost + 28)
-    player.speed *= 1.08
-    next = withEvent(next, 'stunt')
-  } else if (landingError >= 0.18) {
-    player.speed *= 0.68
-    player.durability = Math.max(0, player.durability - 14)
-    player.yawVelocity += rotations >= 0 ? 1.2 : -1.2
+  if (cleanStunt) {
+    landedVehicle.boost = Math.min(100, landedVehicle.boost + 45)
+    landedVehicle.speed *= 1.1
+    if (landedVehicle.role === 'player') next = withEvent(next, 'stunt')
+  } else if (landingError >= 0.18 && landedVehicle.role === 'player') {
+    landedVehicle.speed *= 0.68
+    landedVehicle.durability = Math.max(0, landedVehicle.durability - 14)
+    landedVehicle.yawVelocity += rotations >= 0 ? 1.2 : -1.2
     next = withEvent(next, 'collision')
-  } else {
+  } else if (landedVehicle.role === 'player') {
     next = withEvent(next, 'land')
   }
-  player.stuntAngle = 0
-  return { state: next, player }
+  landedVehicle.stuntAngle = 0
+  return { state: next, vehicle: landedVehicle }
 }
 
 function resolveVehicleCollisions(state: RaceState): RaceState {
@@ -720,14 +751,51 @@ function spawnProjectile(
   }
 }
 
-function processPlayerFire(
+function updateFireBoost(
   state: RaceState,
   input: RaceInput,
+  dtMs: number,
+): RaceState {
+  const released = !input.fire
+  let next: RaceState = {
+    ...state,
+    fireBoostRemainingMs: Math.max(0, state.fireBoostRemainingMs - dtMs),
+    fireBoostCooldownMs: Math.max(0, state.fireBoostCooldownMs - dtMs),
+    fireBoostLatch: released ? false : state.fireBoostLatch,
+  }
+  if (
+    state.mode !== 'pursuit' ||
+    !input.fire ||
+    state.fireBoostLatch ||
+    state.fireBoostCooldownMs > 0
+  ) {
+    return next
+  }
+  next = {
+    ...next,
+    fireBoostRemainingMs: FIRE_BOOST_DURATION_MS,
+    fireBoostCooldownMs: FIRE_BOOST_COOLDOWN_MS,
+    fireBoostLatch: true,
+  }
+  next = addEffect(
+    next,
+    'nitro',
+    state.player.x,
+    state.player.distance,
+    1.8,
+    650,
+  )
+  return withEvent(next, 'fire-boost')
+}
+
+function processPlayerAutoFire(
+  state: RaceState,
   loadout: RaceLoadout,
 ): RaceState {
-  if (state.mode !== 'pursuit' || !input.fire || !loadout.gunId) return state
+  if (state.mode !== 'pursuit' || !loadout.gunId) return state
   if (state.player.fireCooldownMs > 0) return state
   const gun = equipmentConfig.guns[loadout.gunId].pursuit
+  const fireBoosted = state.fireBoostRemainingMs > 0
   const candidates = state.vehicles
     .filter(
       (candidate) =>
@@ -739,18 +807,29 @@ function processPlayerFire(
     .sort((a, b) => a.distance - b.distance)
   const player = {
     ...state.player,
-    fireCooldownMs: gun.cooldownMs,
-    speed: Math.max(5, state.player.speed - gun.damage / 420),
+    fireCooldownMs: Math.round(gun.cooldownMs * (fireBoosted ? 0.48 : 1)),
+    speed: Math.max(
+      5,
+      state.player.speed - (gun.damage * (fireBoosted ? 1.25 : 1)) / 420,
+    ),
   }
+  const damage = Math.round(gun.damage * (fireBoosted ? 1.25 : 1))
   let next = spawnProjectile(
     { ...state, player, shotsFired: state.shotsFired + 1 },
     'player',
     player,
     candidates[0],
     gun.projectileSpeed + player.speed * 0.3,
-    gun.damage,
+    damage,
   )
-  next = addEffect(next, 'muzzle', player.x, player.distance + 2, 1.2, 180)
+  next = addEffect(
+    next,
+    'muzzle',
+    player.x,
+    player.distance + 2,
+    fireBoosted ? 1.8 : 1.2,
+    180,
+  )
   return withEvent(next, 'shot')
 }
 
@@ -770,7 +849,7 @@ function processEnemyFire(
     .sort((a, b) => a.distance - b.distance)
   let next = {
     ...state,
-    nextEnemyFireMs: state.nextEnemyFireMs + 1350 + ((state.stage * 137) % 550),
+    nextEnemyFireMs: state.nextEnemyFireMs + 950 + ((state.stage * 97) % 360),
   }
   if (shooters.length === 0) return next
   const shooter = shooters[0]
@@ -931,6 +1010,7 @@ export function advanceRace(
       .map((effect) => ({ ...effect, ttlMs: effect.ttlMs - dtMs }))
       .filter((effect) => effect.ttlMs > 0),
   }
+  next = updateFireBoost(next, input, dtMs)
   next = updatePlayerControl(next, input, loadout.carId, dtMs)
   next = updateAi(next, stage, dtMs)
   const slipstream = next.vehicles.some((candidate) => {
@@ -949,7 +1029,7 @@ export function advanceRace(
       player: {
         ...next.player,
         desiredSpeed: next.player.desiredSpeed + 2.6,
-        boost: Math.min(100, next.player.boost + 4 * (dtMs / 1000)),
+        boost: Math.min(100, next.player.boost + 2 * (dtMs / 1000)),
       },
     }
   } else if (next.slipstream) {
@@ -985,20 +1065,23 @@ export function advanceRace(
     stage,
   )
   next = trackResult.state
-  const player = trackResult.vehicle
+  let player = trackResult.vehicle
+  let landing = processLanding(next, previousPlayer, player)
+  next = landing.state
+  player = landing.vehicle
   const vehicles: VehicleState[] = []
   for (const candidate of next.vehicles) {
     const previous = candidate
     const integrated = integrateVehicle(candidate, dtMs)
     trackResult = processTrackForVehicle(next, integrated, previous, stage)
     next = trackResult.state
-    vehicles.push(trackResult.vehicle)
+    landing = processLanding(next, previous, trackResult.vehicle)
+    next = landing.state
+    vehicles.push(landing.vehicle)
   }
   next = { ...next, player, vehicles }
-  const landing = processLanding(next, previousPlayer, player)
-  next = { ...landing.state, player: landing.player }
   next = resolveVehicleCollisions(next)
-  next = processPlayerFire(next, input, loadout)
+  next = processPlayerAutoFire(next, loadout)
   if (stage.mode === 'pursuit') {
     next = processEnemyFire(next, stage)
   }
@@ -1008,7 +1091,7 @@ export function advanceRace(
 
 export function upcomingTrackFeatures(
   state: RaceState,
-  aheadDistance = 135,
+  aheadDistance = 175,
 ): TrackFeature[] {
   const stage = getRacingStage(state.stage)
   const from = state.player.distance - 5

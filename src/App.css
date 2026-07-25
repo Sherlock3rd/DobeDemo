@@ -1267,8 +1267,8 @@
 
 .global-hud__resources {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem 0.6rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
   width: 100%;
   padding: 0.65rem 0.75rem;
   border: 1px solid rgba(148, 163, 184, 0.28);
@@ -1910,6 +1910,11 @@
   font-size: 0.56rem;
   font-weight: 750;
   opacity: 0.72;
+}
+
+.race-controls button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .race-controls__boost {
