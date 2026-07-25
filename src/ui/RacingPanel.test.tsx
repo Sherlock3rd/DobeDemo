@@ -29,6 +29,8 @@ describe('RacingPanel', () => {
     expect(screen.getByText('第 2 关')).toBeInTheDocument()
     expect(screen.queryByText('第 1 关')).toBeNull()
     expect(screen.getByText('追击枪战')).toBeInTheDocument()
+    expect(screen.getByText(/纯追击枪战不使用氮气加速/)).toBeInTheDocument()
+    expect(screen.queryByText(/空格释放氮气/)).toBeNull()
   })
 
   it('shows completion without replay buttons after stage ten', () => {

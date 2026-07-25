@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   AIR_GRAVITY,
   advanceRace,
+  BAD_LANDING_SPEED_MULTIPLIER,
+  CATCHUP_NITRO_MAX_PER_SECOND,
   createRaceState,
   FIRE_BOOST_COOLDOWN_MS,
   FIRE_BOOST_DURATION_MS,
@@ -194,16 +196,32 @@ describe('raceEngine V2', () => {
 
   it('halves passive nitro income so stunts are the main refill', () => {
     const initial = createRaceState(1, STARTER)
-    initial.player = { ...initial.player, boost: 0 }
+    initial.player = { ...initial.player, boost: 0, distance: 100 }
     initial.vehicles = initial.vehicles.map((vehicle, index) => ({
       ...vehicle,
       x: index === 0 ? -3.25 : 3.25,
-      distance: 80 + index * 10,
+      distance: 20 + index * 10,
     }))
     const next = advanceRace(initial, {}, STARTER)
     expect(next.player.boost).toBeCloseTo(
       NATURAL_NITRO_PER_SECOND * (RACE_TICK_MS / 1000),
       5,
+    )
+  })
+
+  it('gives increasingly strong nitro income to racers behind the leader', () => {
+    const initial = createRaceState(1, STARTER)
+    initial.player = { ...initial.player, distance: 100, boost: 0 }
+    initial.vehicles = initial.vehicles.map((vehicle, index) => ({
+      ...vehicle,
+      distance: index === 1 ? 40 : 95,
+      boost: 0,
+    }))
+
+    const next = advanceRace(initial, {}, STARTER, 250)
+    expect(next.vehicles[1].boost).toBeGreaterThan(next.vehicles[0].boost)
+    expect(next.vehicles[1].boost).toBeGreaterThanOrEqual(
+      (NATURAL_NITRO_PER_SECOND + CATCHUP_NITRO_MAX_PER_SECOND - 0.5) * 0.25,
     )
   })
 
@@ -370,6 +388,45 @@ describe('raceEngine V2', () => {
     expect(Math.abs(state.vehicles[0].stuntAngle)).toBeGreaterThan(0)
   })
 
+  it('instantly slows any vehicle that lands at an extreme angle', () => {
+    const playerLanding = createRaceState(1, STARTER)
+    playerLanding.player = {
+      ...playerLanding.player,
+      airborneHeight: 0.05,
+      verticalSpeed: -8,
+      stuntAngle: Math.PI,
+      speed: 30,
+      desiredSpeed: 30,
+    }
+    playerLanding.vehicles = playerLanding.vehicles.map((vehicle, index) => ({
+      ...vehicle,
+      distance: 80 + index * 10,
+      x: index % 2 === 0 ? -3.25 : 3.25,
+    }))
+    const playerResult = advanceRace(playerLanding, {}, STARTER)
+    expect(playerResult.player.speed).toBeLessThan(30 * 0.7)
+    expect(playerResult.player.speed).toBeCloseTo(
+      30 * BAD_LANDING_SPEED_MULTIPLIER,
+      0,
+    )
+    expect(playerResult.event?.type).toBe('collision')
+
+    const aiLanding = createRaceState(1, STARTER)
+    aiLanding.player = { ...aiLanding.player, distance: 100 }
+    aiLanding.vehicles = aiLanding.vehicles.map((vehicle, index) => ({
+      ...vehicle,
+      distance: index === 0 ? 45 : 120 + index * 10,
+      x: index === 0 ? 0 : index % 2 === 0 ? -3.25 : 3.25,
+      airborneHeight: index === 0 ? 0.05 : 0,
+      verticalSpeed: index === 0 ? -8 : 0,
+      stuntAngle: index === 0 ? Math.PI : 0,
+      speed: index === 0 ? 30 : vehicle.speed,
+      desiredSpeed: index === 0 ? 30 : vehicle.desiredSpeed,
+    }))
+    const aiResult = advanceRace(aiLanding, {}, STARTER)
+    expect(aiResult.vehicles[0].speed).toBeLessThan(30 * 0.7)
+  })
+
   it('uses visible projectile travel and hit effects in pursuit', () => {
     let state = createRaceState(2, STARTER)
     state.player = {
@@ -416,6 +473,36 @@ describe('raceEngine V2', () => {
       (projectile) => projectile.owner === 'player',
     )
     expect(playerProjectile?.damage).toBeGreaterThan(13)
+  })
+
+  it('disables all nitro charging and speed boosts in pursuit stages', () => {
+    const initial = createRaceState(2, STARTER)
+    initial.player = {
+      ...initial.player,
+      boost: NITRO_MAX,
+      boosting: true,
+      boostRemainingMs: NITRO_SUPER_DURATION_MS,
+      superBoosting: true,
+    }
+    initial.vehicles = initial.vehicles.map((vehicle) => ({
+      ...vehicle,
+      boost: NITRO_MAX,
+      boosting: true,
+      boostRemainingMs: NITRO_SUPER_DURATION_MS,
+      superBoosting: true,
+    }))
+
+    const next = advanceRace(initial, { boostTaps: 2 }, STARTER, 250)
+    expect(next.player.boost).toBe(0)
+    expect(next.player.boosting).toBe(false)
+    expect(next.player.superBoosting).toBe(false)
+    expect(next.slipstream).toBe(false)
+    expect(
+      next.vehicles.every(
+        (vehicle) =>
+          vehicle.boost === 0 && !vehicle.boosting && !vehicle.superBoosting,
+      ),
+    ).toBe(true)
   })
 
   it('lets the enemy convoy automatically return fire', () => {

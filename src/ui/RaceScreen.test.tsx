@@ -28,17 +28,23 @@ describe('RaceScreen V2', () => {
   it('explains the pursuit objective, convoy state, and weapon controls', () => {
     render(<RaceScreen stage={2} heroId="foreman" onExit={() => {}} />)
 
-    expect(screen.getByText('突破护卫 · 摧毁装甲目标车')).toBeInTheDocument()
+    expect(
+      screen.getByText('纯追击枪战 · 突破护卫 · 摧毁目标车'),
+    ).toBeInTheDocument()
     expect(screen.getByText(/护卫 5\/5/)).toBeInTheDocument()
     expect(screen.getByText(/普通攻击 自动开火/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '火力强化' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('三格氮气')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /氮气/ }),
+    ).not.toBeInTheDocument()
   })
 
   it('shows seven-car racing, three empty nitro cells, and drift controls', () => {
     render(<RaceScreen stage={1} heroId="foreman" onExit={() => {}} />)
 
     expect(
-      screen.getByText('七车对抗 · 三格氮气 · 满格双击超级飞跃'),
+      screen.getByText('七车对抗 · 落后补氮 · 满格双击超级飞跃'),
     ).toBeInTheDocument()
     expect(screen.getByText('当前排名 7/7')).toBeInTheDocument()
     expect(screen.getByLabelText('三格氮气')).toBeInTheDocument()

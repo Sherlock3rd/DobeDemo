@@ -133,7 +133,7 @@ function RaceSession({
         inputRef.current.laneDelta = 1
         event.preventDefault()
       }
-      if (event.code === 'Space') {
+      if (event.code === 'Space' && definition.mode === 'race') {
         inputRef.current.boostTaps = Math.min(
           2,
           (inputRef.current.boostTaps ?? 0) + 1,
@@ -166,7 +166,7 @@ function RaceSession({
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
     }
-  }, [])
+  }, [definition.mode])
 
   useEffect(() => {
     if (state.status !== 'victory' || committedRef.current) return
@@ -292,8 +292,8 @@ function RaceSession({
           <strong>{definition.mode === 'race' ? '竞速' : '追击'}</strong>
           <span>
             {definition.mode === 'race'
-              ? '七车对抗 · 三格氮气 · 满格双击超级飞跃'
-              : '突破护卫 · 摧毁装甲目标车'}
+              ? '七车对抗 · 落后补氮 · 满格双击超级飞跃'
+              : '纯追击枪战 · 突破护卫 · 摧毁目标车'}
           </span>
         </div>
         <div className="race-hud__timer">{remainingSeconds}</div>
@@ -320,22 +320,28 @@ function RaceSession({
             max={state.player.maxDurability}
           />
         </label>
-        <label className="race-hud__nitro-label">
-          氮气 · 单击消耗一格，满三格双击超级加速
-          <span className="race-hud__nitro" role="group" aria-label="三格氮气">
-            {[0, 1, 2].map((index) => (
-              <progress
-                key={index}
-                value={Math.min(
-                  NITRO_CELL,
-                  Math.max(0, state.player.boost - index * NITRO_CELL),
-                )}
-                max={NITRO_CELL}
-                aria-label={`氮气第 ${index + 1} 格`}
-              />
-            ))}
-          </span>
-        </label>
+        {definition.mode === 'race' ? (
+          <label className="race-hud__nitro-label">
+            氮气 · 落后自动加速补充 · 满三格双击超级加速
+            <span
+              className="race-hud__nitro"
+              role="group"
+              aria-label="三格氮气"
+            >
+              {[0, 1, 2].map((index) => (
+                <progress
+                  key={index}
+                  value={Math.min(
+                    NITRO_CELL,
+                    Math.max(0, state.player.boost - index * NITRO_CELL),
+                  )}
+                  max={NITRO_CELL}
+                  aria-label={`氮气第 ${index + 1} 格`}
+                />
+              ))}
+            </span>
+          </label>
+        ) : null}
         {definition.mode === 'race' ? (
           <p>{`当前排名 ${raceRank(state)}/7`}</p>
         ) : (
@@ -387,15 +393,16 @@ function RaceSession({
           </button>
         </div>
         <div>
-          <button
-            type="button"
-            className="race-controls__boost"
-            onClick={triggerBoost}
-          >
-            氮气
-            <span>单击冲刺 · 满格双击飞跃</span>
-          </button>
-          {definition.mode === 'pursuit' ? (
+          {definition.mode === 'race' ? (
+            <button
+              type="button"
+              className="race-controls__boost"
+              onClick={triggerBoost}
+            >
+              氮气
+              <span>单击冲刺 · 满格双击飞跃</span>
+            </button>
+          ) : (
             <button
               type="button"
               className="race-controls__fire"
@@ -406,7 +413,7 @@ function RaceSession({
                 ? `强化 ${Math.ceil(state.fireBoostCooldownMs / 1000)}s`
                 : '火力强化'}
             </button>
-          ) : null}
+          )}
         </div>
       </div>
 

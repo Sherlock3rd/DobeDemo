@@ -15,6 +15,11 @@ export const NITRO_BOOST_DURATION_MS = 1800
 export const NITRO_SUPER_DURATION_MS = 3200
 export const NITRO_DOUBLE_TAP_WINDOW_MS = 280
 export const NITRO_SUPER_LAUNCH_SPEED = 18
+export const CATCHUP_NITRO_GAP_START = 4
+export const CATCHUP_NITRO_BASE_PER_SECOND = 4
+export const CATCHUP_NITRO_MAX_PER_SECOND = 18
+export const BAD_LANDING_ANGLE_THRESHOLD = 0.2
+export const BAD_LANDING_SPEED_MULTIPLIER = 0.62
 export const FIRE_BOOST_DURATION_MS = 2400
 export const FIRE_BOOST_COOLDOWN_MS = 8000
 export const RACE_LANES = [0, 1, 2] as const
@@ -381,6 +386,7 @@ function updatePlayerControl(
   state: RaceState,
   input: RaceInput,
   carId: CarId,
+  nitroEnabled: boolean,
   dtMs: number,
 ): RaceState {
   let player = {
@@ -402,8 +408,15 @@ function updatePlayerControl(
   let next = {
     ...state,
     player,
-    boostLatch: Boolean(input.boost),
-    boostTapPendingMs: pendingAfter,
+    boostLatch: nitroEnabled && Boolean(input.boost),
+    boostTapPendingMs: nitroEnabled ? pendingAfter : 0,
+  }
+
+  if (!nitroEnabled) {
+    player.boost = 0
+    player.boosting = false
+    player.boostRemainingMs = 0
+    player.superBoosting = false
   }
 
   if (steer !== 0) {
@@ -421,7 +434,7 @@ function updatePlayerControl(
       player.speed >= 16
     if (player.driftActive) {
       player.driftMs += dtMs
-      if (!player.boosting) {
+      if (nitroEnabled && !player.boosting) {
         player.boost = Math.min(
           NITRO_MAX,
           player.boost + car.driftNitroRate * (dtMs / 1000),
@@ -435,14 +448,14 @@ function updatePlayerControl(
     player.driftActive = false
   }
 
-  if (!player.boosting && !player.driftActive) {
+  if (nitroEnabled && !player.boosting && !player.driftActive) {
     player.boost = Math.min(
       NITRO_MAX,
       player.boost + NATURAL_NITRO_PER_SECOND * (dtMs / 1000),
     )
   }
 
-  if (!player.boosting) {
+  if (nitroEnabled && !player.boosting) {
     const fullCharge = player.boost >= NITRO_MAX - 0.001
     const doubleTap =
       fullCharge && (tapCount >= 2 || (pendingBefore > 0 && tapCount >= 1))
@@ -564,7 +577,7 @@ function updateAi(
       }
     }
 
-    if (!vehicleState.boosting) {
+    if (stage.mode === 'race' && !vehicleState.boosting) {
       const nitroRate = vehicleState.driftActive
         ? car.driftNitroRate
         : NATURAL_NITRO_PER_SECOND
@@ -575,18 +588,28 @@ function updateAi(
       const savesForSuper = index % 3 === 0
       const canSuper = vehicleState.boost >= NITRO_MAX - 0.001
       const canBoost = vehicleState.boost >= NITRO_CELL
+      const trailingPlayer = state.player.distance - vehicleState.distance > 4
       if (savesForSuper && canSuper) {
         const activated = activateNitro(next, vehicleState, true)
         next = activated.state
         vehicleState = activated.vehicle
-      } else if (!savesForSuper && canBoost && phase % 5 === 3) {
+      } else if (
+        !savesForSuper &&
+        canBoost &&
+        (trailingPlayer || phase % 5 === 3)
+      ) {
         const activated = activateNitro(next, vehicleState, false)
         next = activated.state
         vehicleState = activated.vehicle
       }
     }
 
-    if (vehicleState.superBoosting) {
+    if (stage.mode === 'pursuit') {
+      vehicleState.boost = 0
+      vehicleState.boosting = false
+      vehicleState.boostRemainingMs = 0
+      vehicleState.superBoosting = false
+    } else if (vehicleState.superBoosting) {
       vehicleState.desiredSpeed *= 1.65
     } else if (vehicleState.boosting) {
       vehicleState.desiredSpeed *= 1.3
@@ -738,31 +761,71 @@ function processLanding(
   const landedVehicle = { ...current }
   const rotations = landedVehicle.stuntAngle / (Math.PI * 2)
   const landingError = Math.abs(rotations - Math.round(rotations))
-  const aiStunt = landedVehicle.role !== 'player' && Math.abs(rotations) >= 0.65
   const cleanStunt =
-    Math.abs(rotations) >= 0.65 && (landingError < 0.18 || aiStunt)
+    Math.abs(rotations) >= 0.65 && landingError < BAD_LANDING_ANGLE_THRESHOLD
+  const badLanding = landingError >= BAD_LANDING_ANGLE_THRESHOLD
   let next = addEffect(
     state,
     'landing',
     landedVehicle.x,
     landedVehicle.distance,
-    cleanStunt || landingError < 0.18 ? 1.4 : 2,
+    cleanStunt || !badLanding ? 1.4 : 2,
     750,
   )
   if (cleanStunt) {
-    landedVehicle.boost = Math.min(NITRO_MAX, landedVehicle.boost + 45)
-    landedVehicle.speed *= 1.1
+    if (state.mode === 'race') {
+      landedVehicle.boost = Math.min(NITRO_MAX, landedVehicle.boost + 45)
+      landedVehicle.speed *= 1.1
+    }
     if (landedVehicle.role === 'player') next = withEvent(next, 'stunt')
-  } else if (landingError >= 0.18 && landedVehicle.role === 'player') {
-    landedVehicle.speed *= 0.68
-    landedVehicle.durability = Math.max(0, landedVehicle.durability - 14)
+  } else if (badLanding) {
+    landedVehicle.speed *= BAD_LANDING_SPEED_MULTIPLIER
     landedVehicle.yawVelocity += rotations >= 0 ? 1.2 : -1.2
-    next = withEvent(next, 'collision')
+    if (landedVehicle.role === 'player') {
+      landedVehicle.durability = Math.max(0, landedVehicle.durability - 14)
+      next = withEvent(next, 'collision')
+    }
   } else if (landedVehicle.role === 'player') {
     next = withEvent(next, 'land')
   }
   landedVehicle.stuntAngle = 0
   return { state: next, vehicle: landedVehicle }
+}
+
+function catchupNitroRate(gap: number): number {
+  if (gap <= CATCHUP_NITRO_GAP_START) return 0
+  return clamp(
+    CATCHUP_NITRO_BASE_PER_SECOND + (gap - CATCHUP_NITRO_GAP_START) * 0.65,
+    0,
+    CATCHUP_NITRO_MAX_PER_SECOND,
+  )
+}
+
+function applyCatchupNitro(state: RaceState, dtMs: number): RaceState {
+  if (state.mode !== 'race') return state
+  const activeVehicles = [state.player, ...state.vehicles].filter(
+    (vehicleState) => vehicleState.durability > 0,
+  )
+  const leaderDistance = Math.max(
+    state.player.distance,
+    ...activeVehicles.map((vehicleState) => vehicleState.distance),
+  )
+  const refill = (vehicleState: VehicleState): VehicleState => {
+    if (vehicleState.boosting || vehicleState.durability <= 0) {
+      return vehicleState
+    }
+    const rate = catchupNitroRate(leaderDistance - vehicleState.distance)
+    if (rate <= 0) return vehicleState
+    return {
+      ...vehicleState,
+      boost: Math.min(NITRO_MAX, vehicleState.boost + rate * (dtMs / 1000)),
+    }
+  }
+  return {
+    ...state,
+    player: refill(state.player),
+    vehicles: state.vehicles.map(refill),
+  }
 }
 
 function resolveVehicleCollisions(state: RaceState): RaceState {
@@ -1141,8 +1204,15 @@ export function advanceRace(
       .filter((effect) => effect.ttlMs > 0),
   }
   next = updateFireBoost(next, input, dtMs)
-  next = updatePlayerControl(next, input, loadout.carId, dtMs)
+  next = updatePlayerControl(
+    next,
+    input,
+    loadout.carId,
+    stage.mode === 'race',
+    dtMs,
+  )
   next = updateAi(next, stage, dtMs)
+  next = applyCatchupNitro(next, dtMs)
   const slipstream = next.vehicles.some((candidate) => {
     const gap = candidate.distance - next.player.distance
     return (
@@ -1152,7 +1222,7 @@ export function advanceRace(
       Math.abs(candidate.x - next.player.x) <= 1.45
     )
   })
-  if (slipstream) {
+  if (stage.mode === 'race' && slipstream) {
     next = {
       ...next,
       slipstream: true,
