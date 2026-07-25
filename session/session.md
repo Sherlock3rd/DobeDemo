@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-已完成实现、验证、提交与发布：`main` 功能提交 `40337f0` 已推送；GitHub Pages 发布提交 `6add1e6` 状态为 `built`。公开首页、`index-ClwAyOWp.js` 与 `index-D6A5oCnJ.css` 均 HTTP 200。类型、Lint、格式、69 个测试文件/714 项测试和生产构建通过；真实浏览器完成桌面与 390×844 赛车大厅/首关/HUD/退出确认检查，控制台 0 错误。
+V2 重做已完成实现、验证、提交与发布：`main` 功能提交 `069ef06` 已推送；GitHub Pages 发布提交 `ca838d6` 状态为 `built`。公开首页、`index-0BNRk0z9.js` 与 `index-DeNxZOdy.css` 均 HTTP 200。格式、类型、Lint、71 个测试文件/721 项测试和生产构建通过；真实浏览器确认四车高位远距镜头、目标车 + 两护卫追击车队、目标/射界 HUD、推关斜向鸟瞰及覆盖层隐藏全局 HUD，控制台无运行错误。
 
 ## 角色
 
@@ -54,3 +54,4 @@
 | 2026-07-24 | Clubhouse Direct Upgrade 公开复验：用户提供 `main` `9e063c8`、`gh-pages` `9f7844863443d084d23425d77a0940f99b5a61bc` built。新增公开安全 CDP，继承 HTTP/CDP/WebSocket timeout、spawn error/PID 活性、统一脱敏写盘和失败非零边界；公开 HTML 与当前 `index-781xcY6f.js`/`index-CoMhGqEJ.css` 精确 200。fresh 隔离 profile document-start 预置 v4/帮派 Lv.40/钱包后真实开 Clubhouse，无 child/progress/radio/confirm；真实点击 `1→2` 精确扣 25、children 全 0，刷新持久；390×844 无横溢出，按钮 `324×44`；三张 PNG 非空并记录脱敏 basename/尺寸/bytes/SHA-256。首次真实运行 14/16 暴露断言误把合法 `3/1/1` 生产与 `+1` 声望当失败，修正证据后 self-test 27/27、运行 16/16、端口/profile teardown 全绿、exit 0。未改产品源码，未 commit/push/发布 | 公开发布复验   |
 | 2026-07-25 | 推关与 HUD 修复：AdventurePanel 仅显示 `highestClearedStage + 1` 的唯一下一关，历史关卡不再渲染或重复挑战，20 关后显示全部通关；任意 activeOverlay（含建筑升级详情）打开时 GlobalHud hidden + inert，关闭后恢复。format/typecheck/lint/build 全绿，65 文件/694 测试通过；`main` `c413d9b` 已推送。首次临时 index 发布生成空 tree，Pages built 但 404；按新防呆校验纠正为 `gh-pages` `312ac28`，公开 HTML 与 `index-0UEHpLsB.js`/`index-CoMhGqEJ.css` 均 HTTP 200，并记录 `mistakes/2026-07-25-gh-pages-empty-tree.md`。 | 玩法、界面与发布 |
 | 2026-07-25 | 公路争霸实现与发布：新增 5 车/5 枪帮派树投放与英雄唯一双装备槽，车辆 HP/DEF 和枪械 ATK 通过同一属性入口同时进入编队战力及真实推关；Adventure persist v2 迁移保留 v1 进度并补发初始车枪。新增 10 个竞速/追击交替关卡、唯一下一关/不可重玩、100ms 确定性引擎、三车道/氮气/射击/路障/耐久/目标还击、程序化 R3F 公路场景、键盘与触屏控制。format/typecheck/lint/build 全绿，69 文件/714 测试通过；浏览器桌面及 390×844 无横溢出，比赛 HUD/控件均在视口内、控制台 0 错误。`main` `40337f0` 已推送；`gh-pages` `6add1e6` built，公开 HTML/JS/CSS 均 HTTP 200。 | 公路争霸与发布 |
+| 2026-07-25 | 公路争霸 V2 重做与发布：竞速升级为四车独立实体物理，加入质量/抓地/悬挂、连续横向惯性与偏航、前后追撞动量交换、氮气冲撞、尾流、长按漂移补氮、上扬跳台、空中翻滚与落地反馈；追击升级为装甲目标 + 两护卫队形、射界阻挡、实际飞行弹道、敌我火力与枪口焰/曳光/火花/碎片/烟雾/爆炸/受力反馈。赛车镜头提高并随速度扩大视野和前视距离，玩家车前移避免屏幕底部裁切；推关改为与主城观察方向一致的斜向鸟瞰。新增引擎、追击 HUD、镜头测试并将固定步长改为 50ms；格式/类型/Lint/build 全绿，71 文件/721 测试通过。浏览器确认四车视野、追击车队与射界 HUD、推关镜头；无运行错误。`main` `069ef06`、`gh-pages` `ca838d6` 均已推送，Pages `built`，公开 HTML/JS/CSS 全部 HTTP 200。另记录旧 Git 2.15 不支持 `branch --show-current`，后续改用 `symbolic-ref --short HEAD`。 | 公路争霸 V2 与发布 |
