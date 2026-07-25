@@ -53,8 +53,8 @@
   },
   "heroes": {
     "foreman": {
-      "name": "陈锤",
-      "alias": "工头",
+      "name": "Thomas Shelby",
+      "alias": "Tommy",
       "role": "back",
       "defaultSlot": { "row": "back", "index": 1 },
       "unlockGangLevel": 1,
@@ -79,8 +79,8 @@
       }
     },
     "anvil": {
-      "name": "岳峰",
-      "alias": "铁砧",
+      "name": "Arthur Shelby",
+      "alias": "Arthur",
       "role": "front",
       "defaultSlot": { "row": "front", "index": 0 },
       "unlockGangLevel": 12,
@@ -105,8 +105,8 @@
       }
     },
     "skyline": {
-      "name": "秦岚",
-      "alias": "长空",
+      "name": "Polly Gray",
+      "alias": "Aunt Polly",
       "role": "back",
       "defaultSlot": { "row": "back", "index": 0 },
       "unlockGangLevel": 28,

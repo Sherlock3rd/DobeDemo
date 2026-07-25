@@ -29,9 +29,11 @@ describe('HeroesPanel', () => {
 
   it('lists all three heroes, locking those above gang level', () => {
     render(<HeroesPanel onClose={() => {}} />)
-    expect(screen.getByText('陈锤·工头')).toBeInTheDocument()
-    expect(screen.getByText('岳峰·铁砧')).toBeInTheDocument()
-    expect(screen.getByText(/帮派 Lv.12 解锁/)).toBeInTheDocument()
+    const roster = within(screen.getByRole('navigation', { name: '英雄列表' }))
+    expect(roster.getByText('Thomas Shelby')).toBeInTheDocument()
+    expect(roster.getByText('Tommy · Lv.1')).toBeInTheDocument()
+    expect(roster.getByText('Arthur Shelby')).toBeInTheDocument()
+    expect(roster.getByText('Arthur · 帮派 Lv.12 解锁')).toBeInTheDocument()
   })
 
   it('upgrades foreman spending shared exp when cap allows', async () => {
@@ -40,7 +42,9 @@ describe('HeroesPanel', () => {
     render(<HeroesPanel onClose={() => {}} />)
     await userEvent.click(screen.getByRole('button', { name: /提升至 Lv\.2/ }))
     expect(useAdventureStore.getState().heroLevels.foreman).toBe(2)
-    expect(screen.getByRole('status')).toHaveTextContent('已升级 陈锤 至 Lv.2')
+    expect(screen.getByRole('status')).toHaveTextContent(
+      '已升级 Thomas Shelby 至 Lv.2',
+    )
   })
 
   it('blocks and explains gang cap', async () => {
@@ -76,7 +80,7 @@ describe('HeroesPanel', () => {
     })
     render(<HeroesPanel onClose={() => {}} />)
 
-    await userEvent.click(screen.getByRole('button', { name: '车辆' }))
+    await userEvent.click(screen.getByRole('button', { name: /^车辆/ }))
     const engineCard = screen.getByText('旧件·动力核心').closest('article')
     expect(engineCard).not.toBeNull()
     await userEvent.click(
@@ -114,7 +118,7 @@ describe('HeroesPanel', () => {
     useAdventureStore.setState({ spareParts: 100 })
     render(<HeroesPanel onClose={() => {}} />)
 
-    await userEvent.click(screen.getByRole('button', { name: '枪械' }))
+    await userEvent.click(screen.getByRole('button', { name: /^枪械/ }))
     await userEvent.click(
       screen.getByRole('button', {
         name: '升级至 Lv.1 · 40 零件',
@@ -124,6 +128,86 @@ describe('HeroesPanel', () => {
     expect(useAdventureStore.getState().gunLevels['rivet-smg']).toBe(1)
     expect(useAdventureStore.getState().spareParts).toBe(60)
     expect(screen.getByText('强化 Lv.1/10')).toBeInTheDocument()
+  })
+
+  it('shows current loadout first and changes cars in a separate garage screen', async () => {
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      lastUpdatedAt: BASE_TIME,
+    })
+    render(<HeroesPanel onClose={() => {}} />)
+
+    expect(
+      screen.getByRole('button', { name: '车辆 · 灰狐旧改车' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '枪械 · 铆钉冲锋枪' }),
+    ).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', { name: '车辆 · 灰狐旧改车' }),
+    )
+    expect(screen.getByText('当前装备 · Thomas Shelby')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '更换车辆' }))
+    expect(
+      screen.getByRole('heading', { name: '选择车辆' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '当前已装备' })).toBeDisabled()
+    const ironFangCard = screen
+      .getByRole('heading', { name: '铁獠装甲车' })
+      .closest('article')
+    expect(ironFangCard).not.toBeNull()
+    await userEvent.click(
+      within(ironFangCard as HTMLElement).getByRole('button', {
+        name: '装备此车辆',
+      }),
+    )
+
+    expect(useAdventureStore.getState().equipmentByHero.foreman.carId).toBe(
+      'iron-fang',
+    )
+    expect(
+      screen.getByRole('button', { name: '车辆 · 铁獠装甲车' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '更换车辆' })).toBeInTheDocument()
+  })
+
+  it('changes guns in a separate weapon screen and Escape returns first', async () => {
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(12),
+      lastUpdatedAt: BASE_TIME,
+    })
+    const onClose = vi.fn()
+    render(<HeroesPanel onClose={onClose} />)
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '枪械 · 铆钉冲锋枪' }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: '更换枪械' }))
+    expect(
+      screen.getByRole('heading', { name: '选择枪械' }),
+    ).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: '更换枪械' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: '更换枪械' }))
+    const doubleBarrelCard = screen
+      .getByRole('heading', { name: '双管短喷' })
+      .closest('article')
+    expect(doubleBarrelCard).not.toBeNull()
+    await userEvent.click(
+      within(doubleBarrelCard as HTMLElement).getByRole('button', {
+        name: '装备此枪械',
+      }),
+    )
+
+    expect(useAdventureStore.getState().equipmentByHero.foreman.gunId).toBe(
+      'double-barrel',
+    )
+    expect(
+      screen.getByRole('button', { name: '枪械 · 双管短喷' }),
+    ).toBeInTheDocument()
   })
 
   it('closes on Escape', async () => {

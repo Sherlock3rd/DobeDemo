@@ -32,6 +32,7 @@ describe('GlobalHud', () => {
     const resources = screen.getByLabelText('资源')
     expect(resources.querySelectorAll('span')).toHaveLength(3)
     expect(screen.queryByText(/英雄经验/)).toBeNull()
+    expect(screen.getByText('Thomas Shelby')).toBeInTheDocument()
   })
 
   it('shows gang level and role in the gang entry', () => {

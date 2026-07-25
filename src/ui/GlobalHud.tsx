@@ -50,7 +50,7 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
           aria-label="打开英雄培养"
           onClick={props.onOpenHeroes}
         >
-          玩家
+          Thomas Shelby
         </button>
         <button
           type="button"

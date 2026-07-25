@@ -51,6 +51,7 @@ export interface HeroesPanelProps {
 }
 
 type DevelopmentTab = 'level' | 'car' | 'gun'
+type EquipmentPicker = Exclude<DevelopmentTab, 'level'>
 
 const TITLE_ID = 'heroes-panel-title'
 
@@ -149,6 +150,8 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const clockNow = useChestTick((state) => state.now)
   const [selectedHero, setSelectedHero] = useState<HeroId>('foreman')
   const [activeTab, setActiveTab] = useState<DevelopmentTab>('level')
+  const [equipmentPicker, setEquipmentPicker] =
+    useState<EquipmentPicker | null>(null)
   const [status, setStatus] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>()
   const gangLevel = getGangLevel(totalReputation)
@@ -160,6 +163,12 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const selectedDefinition = heroesConfig.heroes[selectedHero]
   const selectedLevel = heroLevels[selectedHero]
   const selectedEquipment = equipmentByHero[selectedHero]
+  const selectedCarName = selectedEquipment.carId
+    ? equipmentConfig.cars[selectedEquipment.carId].name
+    : '未装备'
+  const selectedGunName = selectedEquipment.gunId
+    ? equipmentConfig.guns[selectedEquipment.gunId].name
+    : '未装备'
   const selectedStats = getHeroCombatStats(
     selectedHero,
     selectedLevel,
@@ -185,11 +194,16 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') onClose()
+      if (event.key !== 'Escape') return
+      if (equipmentPicker) {
+        setEquipmentPicker(null)
+        return
+      }
+      onClose()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  }, [equipmentPicker, onClose])
 
   const stopPropagation = (event: { stopPropagation: () => void }): void => {
     event.stopPropagation()
@@ -221,6 +235,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
     setStatus(
       `${equipmentConfig.cars[carId].name} 已装备给 ${selectedDefinition.name}`,
     )
+    setEquipmentPicker(null)
   }
 
   const handleGun = (gunId: GunId): void => {
@@ -231,6 +246,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
     setStatus(
       `${equipmentConfig.guns[gunId].name} 已装备给 ${selectedDefinition.name}`,
     )
+    setEquipmentPicker(null)
   }
 
   const handleInstallPart = (part: CarPartInstance): void => {
@@ -360,6 +376,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                   disabled={!unlocked}
                   onClick={() => {
                     setSelectedHero(heroId)
+                    setEquipmentPicker(null)
                     setStatus('')
                   }}
                 >
@@ -370,11 +387,11 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                     }}
                   />
                   <span>
-                    <strong>{`${definition.name}·${definition.alias}`}</strong>
+                    <strong>{definition.name}</strong>
                     <small>
                       {unlocked
-                        ? `Lv.${heroLevels[heroId]}`
-                        : `帮派 Lv.${heroUnlockLevel(heroId)} 解锁`}
+                        ? `${definition.alias} · Lv.${heroLevels[heroId]}`
+                        : `${definition.alias} · 帮派 Lv.${heroUnlockLevel(heroId)} 解锁`}
                     </small>
                   </span>
                   {unlocked ? (
@@ -434,21 +451,24 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
             <nav className="heroes-panel__tabs" aria-label="养成分类">
               {(
                 [
-                  ['level', '等级'],
-                  ['car', '车辆'],
-                  ['gun', '枪械'],
+                  ['level', '等级', `Lv.${selectedLevel}`],
+                  ['car', '车辆', selectedCarName],
+                  ['gun', '枪械', selectedGunName],
                 ] as const
-              ).map(([tab, label]) => (
+              ).map(([tab, label, equipmentName]) => (
                 <button
                   type="button"
                   key={tab}
                   aria-pressed={activeTab === tab}
+                  aria-label={`${label} · ${equipmentName}`}
                   onClick={() => {
                     setActiveTab(tab)
+                    setEquipmentPicker(null)
                     setStatus('')
                   }}
                 >
-                  {label}
+                  <strong>{label}</strong>
+                  <small>{equipmentName}</small>
                 </button>
               ))}
             </nav>
@@ -480,51 +500,181 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
               </div>
             ) : null}
 
-            {activeTab === 'car' ? (
-              <div className="heroes-panel__car-pane">
-                <div
-                  className="heroes-panel__equipment-list"
-                  aria-label="车辆列表"
-                >
+            {equipmentPicker === 'car' ? (
+              <div className="heroes-panel__picker" aria-label="选择装备车辆">
+                <header className="heroes-panel__picker-header">
+                  <button
+                    type="button"
+                    onClick={() => setEquipmentPicker(null)}
+                  >
+                    ← 返回当前车辆
+                  </button>
+                  <div>
+                    <p>VEHICLE LOADOUT</p>
+                    <h4>选择车辆</h4>
+                    <span>{`为 ${selectedDefinition.name} 选择座驾，装备后自动返回养成页。`}</span>
+                  </div>
+                </header>
+                <div className="heroes-panel__picker-grid">
                   {CAR_IDS.filter((carId) =>
                     isCarUnlocked(carId, gangLevel),
                   ).map((carId) => {
                     const owner = carOwner(carId)
                     const definition = equipmentConfig.cars[carId]
+                    const equipped = selectedEquipment.carId === carId
+                    const installedCount = CAR_PART_SLOT_IDS.filter(
+                      (slot) => carPartSlotsByCar[carId][slot] !== null,
+                    ).length
                     return (
-                      <button
-                        type="button"
+                      <article
                         key={carId}
-                        aria-pressed={selectedEquipment.carId === carId}
-                        onClick={() => handleCar(carId)}
+                        className="heroes-panel__picker-card"
+                        aria-current={equipped ? 'true' : undefined}
                       >
-                        <span
-                          className="heroes-panel__car-chip"
+                        <div
+                          className="heroes-panel__picker-car"
                           style={
                             {
                               '--car-body': definition.appearance.body,
                               '--car-accent': definition.appearance.accent,
                             } as CSSProperties
                           }
-                        />
-                        <span>
-                          <strong>{definition.name}</strong>
-                          <small>
-                            {owner && owner !== selectedHero
-                              ? `${heroesConfig.heroes[owner].name} 使用中`
-                              : `${
-                                  CAR_PART_SLOT_IDS.filter(
-                                    (slot) =>
-                                      carPartSlotsByCar[carId][slot] !== null,
-                                  ).length
-                                }/4 配件`}
-                          </small>
-                        </span>
-                      </button>
+                          aria-hidden="true"
+                        >
+                          <span />
+                          <i />
+                        </div>
+                        <div className="heroes-panel__picker-copy">
+                          <span>
+                            {equipped
+                              ? '当前装备'
+                              : owner
+                                ? `${heroesConfig.heroes[owner].name} 使用中`
+                                : '车库待命'}
+                          </span>
+                          <h5>{definition.name}</h5>
+                          <p>{definition.description}</p>
+                          <dl>
+                            <div>
+                              <dt>英雄增益</dt>
+                              <dd>{`HP +${definition.heroBonus.hp} / DEF +${definition.heroBonus.def}`}</dd>
+                            </div>
+                            <div>
+                              <dt>车辆性能</dt>
+                              <dd>{`极速 ${definition.racing.maxSpeed} / 耐久 ${definition.racing.durability}`}</dd>
+                            </div>
+                            <div>
+                              <dt>已装配件</dt>
+                              <dd>{`${installedCount}/4`}</dd>
+                            </div>
+                          </dl>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={equipped}
+                          onClick={() => handleCar(carId)}
+                        >
+                          {equipped
+                            ? '当前已装备'
+                            : owner
+                              ? '转移并装备'
+                              : '装备此车辆'}
+                        </button>
+                      </article>
                     )
                   })}
                 </div>
+              </div>
+            ) : null}
 
+            {equipmentPicker === 'gun' ? (
+              <div className="heroes-panel__picker" aria-label="选择装备枪械">
+                <header className="heroes-panel__picker-header">
+                  <button
+                    type="button"
+                    onClick={() => setEquipmentPicker(null)}
+                  >
+                    ← 返回当前枪械
+                  </button>
+                  <div>
+                    <p>WEAPON LOADOUT</p>
+                    <h4>选择枪械</h4>
+                    <span>{`为 ${selectedDefinition.name} 选择武器，装备后自动返回养成页。`}</span>
+                  </div>
+                </header>
+                <div className="heroes-panel__picker-grid">
+                  {GUN_IDS.filter((gunId) =>
+                    isGunUnlocked(gunId, gangLevel),
+                  ).map((gunId) => {
+                    const owner = gunOwner(gunId)
+                    const definition = equipmentConfig.guns[gunId]
+                    const equipped = selectedEquipment.gunId === gunId
+                    return (
+                      <article
+                        key={gunId}
+                        className="heroes-panel__picker-card"
+                        aria-current={equipped ? 'true' : undefined}
+                      >
+                        <div
+                          className="heroes-panel__picker-gun"
+                          style={
+                            {
+                              '--gun-metal': definition.appearance.metal,
+                              '--gun-flash': definition.appearance.flash,
+                            } as CSSProperties
+                          }
+                          aria-hidden="true"
+                        >
+                          <span />
+                        </div>
+                        <div className="heroes-panel__picker-copy">
+                          <span>
+                            {equipped
+                              ? '当前装备'
+                              : owner
+                                ? `${heroesConfig.heroes[owner].name} 使用中`
+                                : '武器库待命'}
+                          </span>
+                          <h5>{definition.name}</h5>
+                          <p>{definition.description}</p>
+                          <dl>
+                            <div>
+                              <dt>强化等级</dt>
+                              <dd>{`Lv.${gunLevels[gunId]}/${GUN_MAX_LEVEL}`}</dd>
+                            </div>
+                            <div>
+                              <dt>英雄 ATK</dt>
+                              <dd>{`+${getGunHeroAtk(gunId, progression)}`}</dd>
+                            </div>
+                            <div>
+                              <dt>追击性能</dt>
+                              <dd>{`伤害 ${getGunPursuitDamage(
+                                gunId,
+                                gunLevels[gunId],
+                              )} / 射程 ${definition.pursuit.range}`}</dd>
+                            </div>
+                          </dl>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={equipped}
+                          onClick={() => handleGun(gunId)}
+                        >
+                          {equipped
+                            ? '当前已装备'
+                            : owner
+                              ? '转移并装备'
+                              : '装备此枪械'}
+                        </button>
+                      </article>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === 'car' && equipmentPicker === null ? (
+              <div className="heroes-panel__car-pane">
                 {selectedEquipment.carId ? (
                   <>
                     <div className="heroes-panel__car-focus">
@@ -547,7 +697,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                         <b />
                       </div>
                       <div>
-                        <small>当前座驾</small>
+                        <small>{`当前装备 · ${selectedDefinition.name}`}</small>
                         <strong>
                           {equipmentConfig.cars[selectedEquipment.carId].name}
                         </strong>
@@ -558,6 +708,16 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                           }
                         </p>
                       </div>
+                      <button
+                        type="button"
+                        className="heroes-panel__change-equipment"
+                        onClick={() => {
+                          setEquipmentPicker('car')
+                          setStatus('')
+                        }}
+                      >
+                        更换车辆
+                      </button>
                     </div>
 
                     <div
@@ -658,53 +818,21 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                     </div>
                   </>
                 ) : (
-                  <p className="heroes-panel__empty">
-                    请先选择一辆已解锁车辆。
-                  </p>
+                  <div className="heroes-panel__empty">
+                    <p>当前没有装备车辆。</p>
+                    <button
+                      type="button"
+                      onClick={() => setEquipmentPicker('car')}
+                    >
+                      选择车辆
+                    </button>
+                  </div>
                 )}
               </div>
             ) : null}
 
-            {activeTab === 'gun' ? (
+            {activeTab === 'gun' && equipmentPicker === null ? (
               <div className="heroes-panel__gun-pane">
-                <div
-                  className="heroes-panel__equipment-list"
-                  aria-label="枪械列表"
-                >
-                  {GUN_IDS.filter((gunId) =>
-                    isGunUnlocked(gunId, gangLevel),
-                  ).map((gunId) => {
-                    const owner = gunOwner(gunId)
-                    const definition = equipmentConfig.guns[gunId]
-                    return (
-                      <button
-                        type="button"
-                        key={gunId}
-                        aria-pressed={selectedEquipment.gunId === gunId}
-                        onClick={() => handleGun(gunId)}
-                      >
-                        <span
-                          className="heroes-panel__gun-chip"
-                          style={
-                            {
-                              '--gun-metal': definition.appearance.metal,
-                              '--gun-flash': definition.appearance.flash,
-                            } as CSSProperties
-                          }
-                        />
-                        <span>
-                          <strong>{definition.name}</strong>
-                          <small>
-                            {owner && owner !== selectedHero
-                              ? `${heroesConfig.heroes[owner].name} 使用中`
-                              : `强化 Lv.${gunLevels[gunId]}`}
-                          </small>
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-
                 {selectedEquipment.gunId ? (
                   <div className="heroes-panel__gun-focus">
                     <div
@@ -725,7 +853,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                       <i />
                     </div>
                     <div className="heroes-panel__gun-info">
-                      <p>当前枪械</p>
+                      <p>{`当前装备 · ${selectedDefinition.name}`}</p>
                       <h4>
                         {equipmentConfig.guns[selectedEquipment.gunId].name}
                       </h4>
@@ -759,28 +887,46 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                           </dd>
                         </div>
                       </dl>
-                      <button
-                        type="button"
-                        className="heroes-panel__primary-action"
-                        onClick={() =>
-                          handleUpgradeGun(selectedEquipment.gunId as GunId)
-                        }
-                      >
-                        {gunLevels[selectedEquipment.gunId] >= GUN_MAX_LEVEL
-                          ? '枪械已满级'
-                          : `升级至 Lv.${
-                              gunLevels[selectedEquipment.gunId] + 1
-                            } · ${getGunUpgradeCost(
-                              selectedEquipment.gunId,
-                              gunLevels[selectedEquipment.gunId],
-                            )} 零件`}
-                      </button>
+                      <div className="heroes-panel__gun-actions">
+                        <button
+                          type="button"
+                          className="heroes-panel__change-equipment"
+                          onClick={() => {
+                            setEquipmentPicker('gun')
+                            setStatus('')
+                          }}
+                        >
+                          更换枪械
+                        </button>
+                        <button
+                          type="button"
+                          className="heroes-panel__primary-action"
+                          onClick={() =>
+                            handleUpgradeGun(selectedEquipment.gunId as GunId)
+                          }
+                        >
+                          {gunLevels[selectedEquipment.gunId] >= GUN_MAX_LEVEL
+                            ? '枪械已满级'
+                            : `升级至 Lv.${
+                                gunLevels[selectedEquipment.gunId] + 1
+                              } · ${getGunUpgradeCost(
+                                selectedEquipment.gunId,
+                                gunLevels[selectedEquipment.gunId],
+                              )} 零件`}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <p className="heroes-panel__empty">
-                    请先选择一把已解锁枪械。
-                  </p>
+                  <div className="heroes-panel__empty">
+                    <p>当前没有装备枪械。</p>
+                    <button
+                      type="button"
+                      onClick={() => setEquipmentPicker('gun')}
+                    >
+                      选择枪械
+                    </button>
+                  </div>
                 )}
               </div>
             ) : null}

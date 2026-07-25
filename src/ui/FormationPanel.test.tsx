@@ -54,6 +54,6 @@ describe('FormationPanel', () => {
 
   it('cannot deploy a locked hero', () => {
     render(<FormationPanel stage={1} onCancel={() => {}} onStart={() => {}} />)
-    expect(screen.getByText(/岳峰.*帮派 Lv.12/)).toBeInTheDocument()
+    expect(screen.getByText(/Arthur Shelby.*帮派 Lv.12/)).toBeInTheDocument()
   })
 })

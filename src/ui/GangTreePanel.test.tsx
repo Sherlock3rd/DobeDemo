@@ -168,8 +168,8 @@ describe('GangTreePanel', () => {
     expect(lv1).toHaveTextContent('修车厂')
     expect(lv1).toHaveTextContent('战役')
     expect(lv1).toHaveTextContent('英雄')
-    expect(lv1).toHaveTextContent('陈锤')
+    expect(lv1).toHaveTextContent('Thomas Shelby')
     const lv12 = screen.getByText('等级 12').closest('li') as HTMLElement
-    expect(lv12).toHaveTextContent('岳峰')
+    expect(lv12).toHaveTextContent('Arthur Shelby')
   })
 })
