@@ -170,6 +170,8 @@ Clubhouse 直接升级的本地验收脚本为 `.superpowers/sdd/clubhouse-direc
 
 生产构建会把 Vite base 自动切换为 `/DobeDemo/`。发布时将 `dist/` 内容提交到 `gh-pages` 分支，GitHub Pages 从该分支根目录提供公开体验；本地开发服务器继续使用根路径。
 
+执行 `.\scripts\deploy-gh-pages.ps1 -Message "deploy: 描述"` 可用独立临时 index 将当前 `dist/` 追加为 `gh-pages` 的快进提交。脚本会在推送前强制校验发布树与 `dist/` 文件集合完全一致，并确认根 `index.html` 及当前 JS/CSS 资产存在，避免误发布空树。
+
 ## 项目结构
 
 ```text
