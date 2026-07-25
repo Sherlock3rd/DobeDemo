@@ -10,6 +10,7 @@ import {
 } from '../game/combat/battleEngine'
 import { getGangLevel } from '../game/gangProgression'
 import { BattleScene } from '../scene/battle/BattleScene'
+import { BATTLE_CAMERA_CONFIG } from '../scene/battle/battleCamera'
 import type { BattlePresentationFrame } from '../scene/battle/BattleEffects'
 import { usePrefersReducedMotion } from '../scene/city/usePrefersReducedMotion'
 import { useAdventureStore } from '../store/useAdventureStore'
@@ -205,7 +206,7 @@ function BattleScreenSession({
         <Canvas
           className="battle-screen__canvas"
           orthographic
-          camera={{ position: [0, 12, 0], zoom: 40, near: 0.1, far: 80 }}
+          camera={BATTLE_CAMERA_CONFIG}
         >
           <BattleScene
             result={boot.result}

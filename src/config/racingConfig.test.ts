@@ -26,6 +26,9 @@ describe('racingConfig', () => {
     for (const stage of racingConfig.stages) {
       expect(stage.durationMs).toBeGreaterThanOrEqual(60_000)
       expect(stage.durationMs).toBeLessThanOrEqual(65_000)
+      if (stage.mode === 'race') {
+        expect(stage.opponentSpeeds).toHaveLength(3)
+      }
     }
   })
 

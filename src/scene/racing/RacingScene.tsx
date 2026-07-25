@@ -1,7 +1,14 @@
-import type { JSX } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { useRef, type JSX } from 'react'
+import { MathUtils, PerspectiveCamera, Vector3 } from 'three'
 import { equipmentConfig } from '../../config/equipmentConfig'
-import { nextObstacle, type RaceState } from '../../game/racing/raceEngine'
 import type { CarId, GunId } from '../../game/equipmentTypes'
+import {
+  upcomingTrackFeatures,
+  type RaceEffect,
+  type RaceState,
+  type VehicleState,
+} from '../../game/racing/raceEngine'
 
 export interface RacingSceneProps {
   state: RaceState
@@ -9,57 +16,230 @@ export interface RacingSceneProps {
   gunId: GunId | null
 }
 
-const LANE_X = [-3.2, 0, 3.2] as const
+const PLAYER_SCENE_Z = 0
 
-function Car({
-  color,
-  accent,
-  position,
-  enemy = false,
-  armed = false,
+function RacingCameraRig({ state }: { state: RaceState }): null {
+  const target = useRef(new Vector3(0, 0.8, -24))
+  const desired = useRef(new Vector3())
+
+  useFrame((frameState) => {
+    const activeCamera = frameState.camera
+    const speedRatio = Math.min(1, state.player.speed / 48)
+    const impact =
+      state.event?.type === 'collision' || state.event?.type === 'incoming'
+        ? 0.32
+        : 0
+    const shake =
+      impact > 0
+        ? Math.sin((state.event?.id ?? 0) * 8.3 + state.elapsedMs * 0.04) *
+          impact
+        : 0
+    desired.current.set(shake, 15.5 + speedRatio * 2.5, 26.5 + speedRatio * 2)
+    activeCamera.position.lerp(desired.current, 0.14)
+    target.current.set(0, 0.65, -26 - speedRatio * 9)
+    activeCamera.lookAt(target.current)
+    if (activeCamera instanceof PerspectiveCamera) {
+      activeCamera.fov = MathUtils.lerp(
+        activeCamera.fov,
+        45 + speedRatio * 7,
+        0.09,
+      )
+      activeCamera.updateProjectionMatrix()
+    }
+  })
+  return null
+}
+
+function Wheel({
+  x,
+  z,
+  spin,
 }: {
-  color: string
-  accent: string
-  position: [number, number, number]
-  enemy?: boolean
-  armed?: boolean
+  x: number
+  z: number
+  spin: number
 }): JSX.Element {
   return (
-    <group position={position} rotation={[0, enemy ? Math.PI : 0, 0]}>
+    <mesh position={[x, -0.29, z]} rotation={[spin, 0, Math.PI / 2]} castShadow>
+      <cylinderGeometry args={[0.38, 0.38, 0.3, 12]} />
+      <meshStandardMaterial color="#0a0c0f" roughness={0.9} />
+    </mesh>
+  )
+}
+
+function VehicleModel({
+  vehicle,
+  playerDistance,
+  armed,
+}: {
+  vehicle: VehicleState
+  playerDistance: number
+  armed: boolean
+}): JSX.Element | null {
+  if (vehicle.durability <= 0) return null
+  const appearance = equipmentConfig.cars[vehicle.carId].appearance
+  const relativeZ = PLAYER_SCENE_Z - (vehicle.distance - playerDistance)
+  if (relativeZ < -145 || relativeZ > 28) return null
+  const spin = vehicle.distance * 0.65
+  const bodyRoll = MathUtils.clamp(
+    -vehicle.lateralVelocity * 0.035,
+    -0.22,
+    0.22,
+  )
+  const damaged = vehicle.durability / vehicle.maxDurability < 0.38
+  return (
+    <group
+      position={[vehicle.x, vehicle.airborneHeight + 0.12, relativeZ]}
+      rotation={[
+        vehicle.role === 'player' ? vehicle.stuntAngle : 0,
+        vehicle.yaw,
+        bodyRoll,
+      ]}
+      userData={{
+        vehicleId: vehicle.id,
+        role: vehicle.role,
+        drift: vehicle.driftActive,
+        airborne: vehicle.airborneHeight > 0,
+      }}
+    >
       <mesh castShadow>
-        <boxGeometry args={[2.15, 0.55, 3.8]} />
-        <meshStandardMaterial color={color} roughness={0.62} />
-      </mesh>
-      <mesh position={[0, 0.55, -0.15]} castShadow>
-        <boxGeometry args={[1.6, 0.62, 1.7]} />
-        <meshStandardMaterial color={accent} roughness={0.45} />
-      </mesh>
-      <mesh position={[0, 0.6, enemy ? 2.1 : -2.1]}>
-        <boxGeometry args={[1.7, 0.18, 0.12]} />
+        <boxGeometry args={[2.2, 0.62, 4]} />
         <meshStandardMaterial
-          color={enemy ? '#f04444' : '#f7e85b'}
-          emissive={enemy ? '#8e1212' : '#b18c11'}
+          color={appearance.body}
+          roughness={0.55}
+          metalness={0.2}
+        />
+      </mesh>
+      <mesh position={[0, 0.58, -0.12]} castShadow>
+        <boxGeometry args={[1.62, 0.66, 1.78]} />
+        <meshStandardMaterial color={appearance.accent} roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 0.15, 2.03]}>
+        <boxGeometry args={[1.74, 0.18, 0.12]} />
+        <meshStandardMaterial
+          color="#f44747"
+          emissive="#9c1717"
+          emissiveIntensity={1.7}
+        />
+      </mesh>
+      <mesh position={[0, 0.18, -2.03]}>
+        <boxGeometry args={[1.72, 0.18, 0.12]} />
+        <meshStandardMaterial
+          color="#fff18a"
+          emissive="#c8a821"
           emissiveIntensity={1.5}
         />
       </mesh>
       {armed ? (
-        <mesh position={[0, 1.05, -0.2]} castShadow>
-          <boxGeometry args={[0.18, 0.18, 1.7]} />
-          <meshStandardMaterial color="#24292c" metalness={0.8} />
+        <group position={[0, 1.03, -0.3]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.28, 0.25, 1.8]} />
+            <meshStandardMaterial color="#20262b" metalness={0.85} />
+          </mesh>
+          <mesh position={[0, 0, -1.05]}>
+            <cylinderGeometry args={[0.07, 0.07, 0.75, 8]} />
+            <meshStandardMaterial color="#101417" metalness={0.95} />
+          </mesh>
+        </group>
+      ) : null}
+      <Wheel x={-0.95} z={-1.28} spin={spin} />
+      <Wheel x={0.95} z={-1.28} spin={spin} />
+      <Wheel x={-0.95} z={1.28} spin={spin} />
+      <Wheel x={0.95} z={1.28} spin={spin} />
+      {vehicle.driftActive ? (
+        <>
+          <mesh position={[-0.88, -0.12, 2.35]}>
+            <sphereGeometry args={[0.42, 8, 6]} />
+            <meshStandardMaterial color="#d6d9dd" transparent opacity={0.42} />
+          </mesh>
+          <mesh position={[0.88, -0.12, 2.35]}>
+            <sphereGeometry args={[0.42, 8, 6]} />
+            <meshStandardMaterial color="#d6d9dd" transparent opacity={0.42} />
+          </mesh>
+        </>
+      ) : null}
+      {damaged ? (
+        <mesh position={[0.45, 1.4, 0.8]}>
+          <sphereGeometry args={[0.48, 8, 6]} />
+          <meshStandardMaterial color="#596068" transparent opacity={0.58} />
         </mesh>
       ) : null}
-      {[-0.92, 0.92].flatMap((x) =>
-        [-1.22, 1.22].map((z) => (
+    </group>
+  )
+}
+
+function TrackEffect({
+  effect,
+  playerDistance,
+}: {
+  effect: RaceEffect
+  playerDistance: number
+}): JSX.Element | null {
+  const z = PLAYER_SCENE_Z - (effect.distance - playerDistance)
+  if (z < -145 || z > 32) return null
+  const color =
+    effect.type === 'smoke'
+      ? '#cbd1d5'
+      : effect.type === 'nitro'
+        ? '#38bdf8'
+        : effect.type === 'explosion'
+          ? '#ff5a2e'
+          : effect.type === 'landing'
+            ? '#d4b17a'
+            : '#ffd43b'
+  const size =
+    effect.type === 'explosion'
+      ? 1.4 * effect.intensity
+      : 0.2 + effect.intensity * 0.24
+  return (
+    <group position={[effect.x, 0.45, z]}>
+      {Array.from(
+        { length: effect.type === 'explosion' ? 8 : 4 },
+        (_, index) => (
           <mesh
-            key={`${x}:${z}`}
-            position={[x, -0.28, z]}
-            rotation={[0, 0, Math.PI / 2]}
+            key={index}
+            position={[
+              Math.sin(index * 2.4) * size,
+              (index % 3) * size * 0.42,
+              Math.cos(index * 1.7) * size,
+            ]}
           >
-            <cylinderGeometry args={[0.36, 0.36, 0.28, 12]} />
-            <meshStandardMaterial color="#111316" />
+            <sphereGeometry args={[size * 0.28, 6, 5]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={color}
+              emissiveIntensity={effect.type === 'smoke' ? 0 : 1.8}
+              transparent
+              opacity={Math.min(0.9, effect.ttlMs / 450)}
+            />
           </mesh>
-        )),
+        ),
       )}
+    </group>
+  )
+}
+
+function Ramp({ x, z }: { x: number; z: number }): JSX.Element {
+  return (
+    <group position={[x, 0.2, z]}>
+      <mesh rotation={[-0.2, 0, 0]} castShadow receiveShadow>
+        <boxGeometry args={[2.7, 0.35, 5.4]} />
+        <meshStandardMaterial color="#bc6b2c" roughness={0.82} />
+      </mesh>
+      {[-0.8, 0, 0.8].map((stripe) => (
+        <mesh
+          key={stripe}
+          position={[stripe, 0.38, -0.1]}
+          rotation={[-0.2, 0, 0]}
+        >
+          <boxGeometry args={[0.28, 0.04, 5.25]} />
+          <meshStandardMaterial
+            color="#ffd43b"
+            emissive="#8c6711"
+            emissiveIntensity={0.7}
+          />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -69,89 +249,127 @@ export function RacingScene({
   carId,
   gunId,
 }: RacingSceneProps): JSX.Element {
-  const appearance = equipmentConfig.cars[carId].appearance
-  const roadOffset = state.distance % 12
-  const obstacle = nextObstacle(state)
-  const obstacleGap = obstacle.distance - state.distance
+  const roadOffset = state.player.distance % 12
+  const features = upcomingTrackFeatures(state)
+  const allVehicles = [state.player, ...state.vehicles]
+  const speedRatio = Math.min(1, state.player.speed / 48)
   return (
     <>
-      <color attach="background" args={['#171d24']} />
-      <fog attach="fog" args={['#171d24', 24, 72]} />
-      <hemisphereLight args={['#a9c7d6', '#1e1a18', 1.2]} />
-      <directionalLight position={[8, 16, 8]} intensity={2.4} castShadow />
+      <RacingCameraRig state={state} />
+      <color attach="background" args={['#121820']} />
+      <fog attach="fog" args={['#121820', 58, 165]} />
+      <hemisphereLight args={['#b8d5e2', '#211d1a', 1.4]} />
+      <directionalLight position={[10, 22, 12]} intensity={2.7} castShadow />
       <group>
-        <mesh position={[0, -0.55, -28]} receiveShadow>
-          <boxGeometry args={[11, 0.25, 90]} />
-          <meshStandardMaterial color="#292d31" roughness={0.95} />
+        <mesh position={[0, -0.55, -63]} receiveShadow>
+          <boxGeometry args={[11.5, 0.28, 175]} />
+          <meshStandardMaterial color="#292e34" roughness={0.96} />
         </mesh>
-        {[-5.4, 5.4].map((x) => (
-          <mesh key={x} position={[x, -0.36, -28]}>
-            <boxGeometry args={[0.22, 0.22, 90]} />
-            <meshStandardMaterial color="#d9a128" />
+        {[-5.55, 5.55].map((x) => (
+          <mesh key={x} position={[x, -0.36, -63]}>
+            <boxGeometry args={[0.22, 0.22, 175]} />
+            <meshStandardMaterial
+              color="#d9a128"
+              emissive="#71500b"
+              emissiveIntensity={0.4}
+            />
           </mesh>
         ))}
-        {[-1.6, 1.6].flatMap((x) =>
-          Array.from({ length: 9 }, (_, index) => {
-            const z = 6 - index * 12 + roadOffset
+        {[-1.62, 1.62].flatMap((x) =>
+          Array.from({ length: 16 }, (_, index) => {
+            const z = 15 - index * 12 + roadOffset
             return (
               <mesh key={`${x}:${index}`} position={[x, -0.34, z]}>
-                <boxGeometry args={[0.11, 0.06, 5.5]} />
-                <meshStandardMaterial color="#d9dad5" />
+                <boxGeometry args={[0.12, 0.06, 5.6]} />
+                <meshStandardMaterial color="#e6e7e3" />
               </mesh>
             )
           }),
         )}
-        <Car
-          color={appearance.body}
-          accent={appearance.accent}
-          position={[LANE_X[state.lane], 0, 3]}
-          armed={gunId !== null}
-        />
-        {state.opponents.map((distance, index) => {
-          const gap = distance - state.distance
-          return (
-            <Car
-              key={index}
-              color={index === 0 ? '#a43e32' : '#3d5d87'}
-              accent="#c7cbd0"
-              position={[
-                LANE_X[((index + state.stage) % 3) as 0 | 1 | 2],
-                0,
-                Math.min(18, Math.max(-58, 3 - gap)),
-              ]}
-            />
+        {features.map((feature) => {
+          const z = PLAYER_SCENE_Z - (feature.distance - state.player.distance)
+          const x = [-3.25, 0, 3.25][feature.lane]
+          return feature.kind === 'ramp' ? (
+            <Ramp key={`ramp-${feature.index}`} x={x} z={z} />
+          ) : (
+            <group key={`obstacle-${feature.index}`} position={[x, 0, z]}>
+              <mesh castShadow>
+                <boxGeometry args={[1.65, 1.15, 0.75]} />
+                <meshStandardMaterial color="#d17128" />
+              </mesh>
+              <mesh position={[0, 0.12, 0.4]}>
+                <boxGeometry args={[1.7, 0.2, 0.05]} />
+                <meshStandardMaterial
+                  color="#f6d45a"
+                  emissive="#866e16"
+                  emissiveIntensity={0.7}
+                />
+              </mesh>
+            </group>
           )
         })}
-        {state.mode === 'pursuit' ? (
-          <Car
-            color="#8b2529"
-            accent="#16181b"
-            position={[
-              LANE_X[state.targetLane],
-              0,
-              Math.min(
-                18,
-                Math.max(-58, 3 - (state.targetDistance - state.distance)),
-              ),
-            ]}
-            enemy
-            armed
+        {allVehicles.map((vehicle) => (
+          <VehicleModel
+            key={vehicle.id}
+            vehicle={
+              vehicle.role === 'player' ? { ...vehicle, carId } : vehicle
+            }
+            playerDistance={state.player.distance}
+            armed={
+              state.mode === 'pursuit' &&
+              (vehicle.role !== 'player' || gunId !== null)
+            }
           />
-        ) : null}
-        {obstacleGap > -4 && obstacleGap < 65 ? (
-          <group
-            position={[LANE_X[obstacle.lane], 0, Math.min(18, 3 - obstacleGap)]}
+        ))}
+        {state.projectiles.map((projectile) => {
+          const z =
+            PLAYER_SCENE_Z - (projectile.distance - state.player.distance)
+          return (
+            <group key={projectile.id} position={[projectile.x, 1.12, z]}>
+              <mesh rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.055, 0.055, 1.5, 6]} />
+                <meshStandardMaterial
+                  color={projectile.owner === 'player' ? '#ffe066' : '#ff5c5c'}
+                  emissive={
+                    projectile.owner === 'player' ? '#ffd43b' : '#e03131'
+                  }
+                  emissiveIntensity={3}
+                />
+              </mesh>
+              <pointLight
+                color={projectile.owner === 'player' ? '#ffd43b' : '#ff4d4d'}
+                intensity={1.6}
+                distance={4}
+              />
+            </group>
+          )
+        })}
+        {state.effects.map((effect) => (
+          <TrackEffect
+            key={effect.id}
+            effect={effect}
+            playerDistance={state.player.distance}
+          />
+        ))}
+        {Array.from({ length: Math.round(4 + speedRatio * 8) }, (_, index) => (
+          <mesh
+            key={`speed-${index}`}
+            position={[
+              index % 2 === 0
+                ? -5.1 + (index % 3) * 0.3
+                : 5.1 - (index % 3) * 0.3,
+              0.3 + (index % 4) * 0.28,
+              -10 - index * 10 + roadOffset,
+            ]}
           >
-            <mesh castShadow>
-              <boxGeometry args={[1.5, 1.1, 0.7]} />
-              <meshStandardMaterial color="#d17128" />
-            </mesh>
-            <mesh position={[0, 0.12, 0.36]}>
-              <boxGeometry args={[1.55, 0.2, 0.05]} />
-              <meshStandardMaterial color="#f6d45a" />
-            </mesh>
-          </group>
-        ) : null}
+            <boxGeometry args={[0.035, 0.035, 3 + speedRatio * 7]} />
+            <meshBasicMaterial
+              color="#b8ddf0"
+              transparent
+              opacity={0.18 + speedRatio * 0.32}
+            />
+          </mesh>
+        ))}
       </group>
     </>
   )

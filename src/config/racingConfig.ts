@@ -83,7 +83,7 @@ export function parseRacingConfig(value: unknown): RacingConfig {
     if (candidate.mode === 'race') {
       if (
         !Array.isArray(candidate.opponentSpeeds) ||
-        candidate.opponentSpeeds.length < 1
+        candidate.opponentSpeeds.length !== 3
       ) {
         invalid(`${path}.opponentSpeeds`)
       }

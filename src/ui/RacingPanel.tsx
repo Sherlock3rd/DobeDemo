@@ -143,11 +143,14 @@ export function RacingPanel({
             </div>
 
             <div className="racing-panel__brief">
-              <p>↑↓ / W S 切换车道 · 空格加速 · F 开火</p>
+              <p>
+                点按 ↑↓ / W S 换道 · 按住方向漂移 · 空中按方向做特技 · 空格加速
+                · F 开火
+              </p>
               <p>
                 {stage.mode === 'race'
-                  ? '抢在对手之前冲过终点。'
-                  : '靠近目标、保持同车道并开火，在其逃脱前击毁。'}
+                  ? '四车同场：利用尾流、冲撞、跳台和特技抢先冲线。'
+                  : '突破两辆护卫车，取得清晰射界并摧毁装甲目标车。'}
               </p>
             </div>
             <button

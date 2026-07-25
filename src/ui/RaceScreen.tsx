@@ -15,6 +15,7 @@ import {
   raceProgress,
   raceRank,
   RACE_TICK_MS,
+  targetVehicle,
   type RaceInput,
   type RaceLoadout,
   type RaceState,
@@ -115,10 +116,12 @@ function RaceSession({
         return
       }
       if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') {
+        inputRef.current.steer = -1
         inputRef.current.laneDelta = -1
         event.preventDefault()
       }
       if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') {
+        inputRef.current.steer = 1
         inputRef.current.laneDelta = 1
         event.preventDefault()
       }
@@ -132,6 +135,18 @@ function RaceSession({
       if (event.key === 'Escape') setExitPending(true)
     }
     const up = (event: KeyboardEvent): void => {
+      if (
+        (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') &&
+        inputRef.current.steer === -1
+      ) {
+        inputRef.current.steer = 0
+      }
+      if (
+        (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') &&
+        inputRef.current.steer === 1
+      ) {
+        inputRef.current.steer = 0
+      }
       if (event.code === 'Space') inputRef.current.boost = false
       if (event.key.toLowerCase() === 'f') inputRef.current.fire = false
     }
@@ -165,6 +180,30 @@ function RaceSession({
     event.preventDefault()
     inputRef.current.fire = false
   }
+  const pressSteerUp = (event: ReactPointerEvent<HTMLButtonElement>): void => {
+    event.preventDefault()
+    inputRef.current.steer = -1
+    inputRef.current.laneDelta = -1
+  }
+  const releaseSteerUp = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ): void => {
+    event.preventDefault()
+    if (inputRef.current.steer === -1) inputRef.current.steer = 0
+  }
+  const pressSteerDown = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ): void => {
+    event.preventDefault()
+    inputRef.current.steer = 1
+    inputRef.current.laneDelta = 1
+  }
+  const releaseSteerDown = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ): void => {
+    event.preventDefault()
+    if (inputRef.current.steer === 1) inputRef.current.steer = 0
+  }
 
   const retry = (): void => {
     committedRef.current = false
@@ -182,6 +221,30 @@ function RaceSession({
   const gunName = initial.loadout.gunId
     ? equipmentConfig.guns[initial.loadout.gunId].name
     : null
+  const target = targetVehicle(state)
+  const gun = initial.loadout.gunId
+    ? equipmentConfig.guns[initial.loadout.gunId].pursuit
+    : null
+  const alignedVehicles = state.vehicles
+    .filter(
+      (vehicle) =>
+        vehicle.durability > 0 &&
+        vehicle.distance >= state.player.distance - 2 &&
+        Math.abs(vehicle.x - state.player.x) < 1.65 &&
+        (!gun || vehicle.distance - state.player.distance <= gun.range),
+    )
+    .sort((left, right) => left.distance - right.distance)
+  const sightStatus =
+    definition.mode !== 'pursuit'
+      ? ''
+      : alignedVehicles[0]?.role === 'target'
+        ? '目标锁定'
+        : alignedVehicles[0]?.role === 'escort'
+          ? '护卫车阻挡射界'
+          : '换道并接近目标'
+  const escortCount = state.vehicles.filter(
+    (vehicle) => vehicle.role === 'escort' && vehicle.durability > 0,
+  ).length
 
   return (
     <div
@@ -194,7 +257,7 @@ function RaceSession({
       <Canvas
         className="race-screen__canvas"
         shadows
-        camera={{ position: [0, 7.5, 13], fov: 48, near: 0.1, far: 120 }}
+        camera={{ position: [0, 16, 28], fov: 46, near: 0.1, far: 220 }}
         dpr={[1, 1.5]}
       >
         <RacingScene
@@ -208,6 +271,11 @@ function RaceSession({
         <div>
           <span>{`第 ${stage} 关 · ${definition.title}`}</span>
           <strong>{definition.mode === 'race' ? '竞速' : '追击'}</strong>
+          <span>
+            {definition.mode === 'race'
+              ? '四车对抗 · 漂移与特技补充氮气'
+              : '突破护卫 · 摧毁装甲目标车'}
+          </span>
         </div>
         <div className="race-hud__timer">{remainingSeconds}</div>
         <button type="button" onClick={() => setExitPending(true)}>
@@ -217,21 +285,46 @@ function RaceSession({
 
       <aside className="race-hud__status">
         <p>{`${carName}${gunName ? ` · ${gunName}` : ''}`}</p>
+        <p>{`${Math.round(state.player.speed * 7.2)} km/h${
+          state.player.driftActive
+            ? ' · 漂移'
+            : state.player.airborneHeight > 0
+              ? ' · 空中特技'
+              : state.slipstream
+                ? ' · 尾流加速'
+                : ''
+        }`}</p>
         <label>
           耐久
-          <progress value={state.durability} max={state.maxDurability} />
+          <progress
+            value={state.player.durability}
+            max={state.player.maxDurability}
+          />
         </label>
         <label>
           氮气
-          <progress value={state.boost} max={100} />
+          <progress value={state.player.boost} max={100} />
         </label>
         {definition.mode === 'race' ? (
-          <p>{`当前排名 ${raceRank(state)}/${state.opponents.length + 1}`}</p>
+          <p>{`当前排名 ${raceRank(state)}/4`}</p>
         ) : (
-          <label>
-            目标
-            <progress value={state.targetHp} max={state.maxTargetHp} />
-          </label>
+          <>
+            <label>
+              目标
+              <progress value={state.targetHp} max={state.maxTargetHp} />
+            </label>
+            <p className="race-hud__sight">{`${sightStatus} · 护卫 ${escortCount}/2${
+              target
+                ? ` · 距离 ${Math.max(
+                    0,
+                    Math.round(target.distance - state.player.distance),
+                  )}m`
+                : ''
+            }`}</p>
+            <p>{`武器 ${
+              state.player.fireCooldownMs <= 0 ? '就绪' : '后坐/装填'
+            }`}</p>
+          </>
         )}
         <progress
           className="race-hud__progress"
@@ -246,20 +339,22 @@ function RaceSession({
           <button
             type="button"
             aria-label="向上切换车道"
-            onClick={() => {
-              inputRef.current.laneDelta = -1
-            }}
+            onPointerDown={pressSteerUp}
+            onPointerUp={releaseSteerUp}
+            onPointerCancel={releaseSteerUp}
+            onPointerLeave={releaseSteerUp}
           >
-            ↑
+            ↑<span>按住漂移</span>
           </button>
           <button
             type="button"
             aria-label="向下切换车道"
-            onClick={() => {
-              inputRef.current.laneDelta = 1
-            }}
+            onPointerDown={pressSteerDown}
+            onPointerUp={releaseSteerDown}
+            onPointerCancel={releaseSteerDown}
+            onPointerLeave={releaseSteerDown}
           >
-            ↓
+            ↓<span>按住漂移</span>
           </button>
         </div>
         <div>

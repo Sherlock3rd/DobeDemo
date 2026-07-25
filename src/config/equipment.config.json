@@ -10,7 +10,11 @@
         "maxSpeed": 32,
         "acceleration": 10,
         "handlingMs": 260,
-        "durability": 100
+        "durability": 100,
+        "mass": 1080,
+        "grip": 0.72,
+        "driftNitroRate": 20,
+        "suspension": 0.72
       },
       "appearance": { "body": "#8f999e", "accent": "#f59b36" }
     },
@@ -23,7 +27,11 @@
         "maxSpeed": 34,
         "acceleration": 9,
         "handlingMs": 300,
-        "durability": 128
+        "durability": 128,
+        "mass": 1380,
+        "grip": 0.82,
+        "driftNitroRate": 16,
+        "suspension": 0.9
       },
       "appearance": { "body": "#4b555b", "accent": "#f1c84b" }
     },
@@ -36,7 +44,11 @@
         "maxSpeed": 38,
         "acceleration": 13,
         "handlingMs": 210,
-        "durability": 104
+        "durability": 104,
+        "mass": 980,
+        "grip": 0.68,
+        "driftNitroRate": 26,
+        "suspension": 0.66
       },
       "appearance": { "body": "#f2b62e", "accent": "#26e0d1" }
     },
@@ -49,7 +61,11 @@
         "maxSpeed": 41,
         "acceleration": 14,
         "handlingMs": 190,
-        "durability": 142
+        "durability": 142,
+        "mass": 1260,
+        "grip": 0.86,
+        "driftNitroRate": 23,
+        "suspension": 0.82
       },
       "appearance": { "body": "#244c6a", "accent": "#ea5a33" }
     },
@@ -62,7 +78,11 @@
         "maxSpeed": 45,
         "acceleration": 16,
         "handlingMs": 170,
-        "durability": 165
+        "durability": 165,
+        "mass": 1320,
+        "grip": 0.9,
+        "driftNitroRate": 28,
+        "suspension": 0.88
       },
       "appearance": { "body": "#171a20", "accent": "#e33f35" }
     }

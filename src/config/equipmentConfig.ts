@@ -16,6 +16,10 @@ export interface CarDefinition {
     acceleration: number
     handlingMs: number
     durability: number
+    mass: number
+    grip: number
+    driftNitroRate: number
+    suspension: number
   }
   appearance: { body: string; accent: string }
 }
@@ -58,6 +62,13 @@ function positiveInt(value: unknown, path: string): number {
   return value as number
 }
 
+function positiveNumber(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    invalid(path)
+  }
+  return value
+}
+
 function nonNegativeInt(value: unknown, path: string): number {
   if (!Number.isSafeInteger(value) || (value as number) < 0) invalid(path)
   return value as number
@@ -90,6 +101,16 @@ function parseCar(value: unknown, path: string): CarDefinition {
       ),
       handlingMs: positiveInt(racing.handlingMs, `${path}.racing.handlingMs`),
       durability: positiveInt(racing.durability, `${path}.racing.durability`),
+      mass: positiveInt(racing.mass, `${path}.racing.mass`),
+      grip: positiveNumber(racing.grip, `${path}.racing.grip`),
+      driftNitroRate: positiveNumber(
+        racing.driftNitroRate,
+        `${path}.racing.driftNitroRate`,
+      ),
+      suspension: positiveNumber(
+        racing.suspension,
+        `${path}.racing.suspension`,
+      ),
     },
     appearance: {
       body: text(appearance.body, `${path}.appearance.body`),

@@ -8,7 +8,7 @@
       "mode": "race",
       "durationMs": 60000,
       "distance": 1550,
-      "opponentSpeeds": [18, 20],
+      "opponentSpeeds": [18, 20, 19],
       "obstacleEvery": 185,
       "firstClearExp": 160
     },
@@ -20,7 +20,7 @@
       "durationMs": 60000,
       "distance": 1250,
       "targetSpeed": 19,
-      "targetHp": 1200,
+      "targetHp": 800,
       "incomingDamage": 2,
       "obstacleEvery": 200,
       "firstClearExp": 190
@@ -32,7 +32,7 @@
       "mode": "race",
       "durationMs": 62000,
       "distance": 1700,
-      "opponentSpeeds": [21, 22.5],
+      "opponentSpeeds": [21, 22.5, 21.8],
       "obstacleEvery": 175,
       "firstClearExp": 230
     },
@@ -44,8 +44,8 @@
       "durationMs": 62000,
       "distance": 1420,
       "targetSpeed": 21,
-      "targetHp": 1500,
-      "incomingDamage": 3,
+      "targetHp": 1200,
+      "incomingDamage": 2,
       "obstacleEvery": 190,
       "firstClearExp": 270
     },
@@ -56,7 +56,7 @@
       "mode": "race",
       "durationMs": 64000,
       "distance": 1850,
-      "opponentSpeeds": [23.5, 24.5],
+      "opponentSpeeds": [23.5, 24.5, 25],
       "obstacleEvery": 165,
       "firstClearExp": 320
     },
@@ -68,8 +68,8 @@
       "durationMs": 64000,
       "distance": 1620,
       "targetSpeed": 22.5,
-      "targetHp": 2500,
-      "incomingDamage": 4,
+      "targetHp": 1800,
+      "incomingDamage": 3,
       "obstacleEvery": 180,
       "firstClearExp": 380
     },
@@ -80,7 +80,7 @@
       "mode": "race",
       "durationMs": 65000,
       "distance": 1950,
-      "opponentSpeeds": [25.5, 26.5],
+      "opponentSpeeds": [25.5, 26.5, 27],
       "obstacleEvery": 155,
       "firstClearExp": 450
     },
@@ -92,8 +92,8 @@
       "durationMs": 65000,
       "distance": 1800,
       "targetSpeed": 24,
-      "targetHp": 3500,
-      "incomingDamage": 5,
+      "targetHp": 2600,
+      "incomingDamage": 4,
       "obstacleEvery": 170,
       "firstClearExp": 520
     },
@@ -104,7 +104,7 @@
       "mode": "race",
       "durationMs": 65000,
       "distance": 2050,
-      "opponentSpeeds": [27.5, 28.5],
+      "opponentSpeeds": [27.5, 28.5, 29],
       "obstacleEvery": 150,
       "firstClearExp": 600
     },
@@ -116,8 +116,8 @@
       "durationMs": 65000,
       "distance": 1920,
       "targetSpeed": 25,
-      "targetHp": 4200,
-      "incomingDamage": 6,
+      "targetHp": 3000,
+      "incomingDamage": 5,
       "obstacleEvery": 165,
       "firstClearExp": 750
     }
