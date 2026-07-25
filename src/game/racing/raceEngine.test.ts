@@ -6,8 +6,15 @@ import {
   FIRE_BOOST_COOLDOWN_MS,
   FIRE_BOOST_DURATION_MS,
   NATURAL_NITRO_PER_SECOND,
+  NITRO_BOOST_DURATION_MS,
+  NITRO_CELL,
+  NITRO_DOUBLE_TAP_WINDOW_MS,
+  NITRO_MAX,
+  NITRO_SUPER_DURATION_MS,
+  NITRO_SUPER_LAUNCH_SPEED,
   RACE_LANE_X,
   RACE_TICK_MS,
+  raceRank,
   targetVehicle,
   upcomingTrackFeatures,
   type RaceInput,
@@ -35,10 +42,18 @@ function botInput(state: RaceState): RaceInput {
       feature.distance - state.player.distance < 13 &&
       feature.lane === state.player.targetLane,
   )
+  const boostTaps =
+    state.player.boosting || state.boostTapPendingMs > 0
+      ? 0
+      : state.player.boost >= NITRO_MAX - 0.001
+        ? 2
+        : state.player.boost >= NITRO_CELL
+          ? 1
+          : 0
   if (!state.steerLatch && nearbyFeature) {
     return {
       laneDelta: state.player.targetLane === 0 ? 1 : -1,
-      boost: true,
+      boostTaps,
       fire: triggerFireBoost,
     }
   }
@@ -53,16 +68,14 @@ function botInput(state: RaceState): RaceInput {
     if (target && Math.abs(target.x - state.player.x) > 1.1) {
       return {
         laneDelta: target.x < state.player.x ? -1 : 1,
-        boost: target.distance - state.player.distance > 20,
+        boostTaps,
         fire: triggerFireBoost,
       }
     }
   }
   return {
     laneDelta: 0,
-    boost:
-      state.mode === 'race' ||
-      (targetVehicle(state)?.distance ?? 0) - state.player.distance > 18,
+    boostTaps,
     fire: triggerFireBoost,
   }
 }
@@ -76,17 +89,23 @@ function finish(stage: number, loadout: RaceLoadout): RaceState {
 }
 
 describe('raceEngine V2', () => {
-  it('creates a four-car race and a three-car enemy convoy', () => {
+  it('doubles AI opponents and starts every vehicle with zero nitro', () => {
     const race = createRaceState(1, STARTER)
     expect(
       race.vehicles.filter((vehicle) => vehicle.role === 'racer'),
-    ).toHaveLength(3)
+    ).toHaveLength(6)
     const pursuit = createRaceState(2, STARTER)
-    expect(pursuit.vehicles.map((vehicle) => vehicle.role).sort()).toEqual([
-      'escort',
-      'escort',
-      'target',
-    ])
+    expect(
+      pursuit.vehicles.filter((vehicle) => vehicle.role === 'escort'),
+    ).toHaveLength(5)
+    expect(
+      [
+        race.player,
+        ...race.vehicles,
+        pursuit.player,
+        ...pursuit.vehicles,
+      ].every((vehicle) => vehicle.boost === 0),
+    ).toBe(true)
   })
 
   it('is deterministic for identical input streams', () => {
@@ -186,6 +205,88 @@ describe('raceEngine V2', () => {
       NATURAL_NITRO_PER_SECOND * (RACE_TICK_MS / 1000),
       5,
     )
+  })
+
+  it('requires one full cell and converts it into a timed boost', () => {
+    const belowCell = createRaceState(1, STARTER)
+    belowCell.player = {
+      ...belowCell.player,
+      boost: NITRO_CELL - 1,
+    }
+    const blocked = advanceRace(belowCell, { boostTaps: 1 }, STARTER)
+    expect(blocked.player.boosting).toBe(false)
+
+    const charged = createRaceState(1, STARTER)
+    charged.player = {
+      ...charged.player,
+      boost: NITRO_CELL,
+    }
+    const boosted = advanceRace(charged, { boostTaps: 1 }, STARTER)
+    expect(boosted.player.boosting).toBe(true)
+    expect(boosted.player.superBoosting).toBe(false)
+    expect(boosted.player.boostRemainingMs).toBe(NITRO_BOOST_DURATION_MS)
+    expect(boosted.player.boost).toBeLessThan(1)
+    expect(boosted.event?.type).toBe('boost')
+    expect(boosted.effects.some((effect) => effect.type === 'nitro')).toBe(true)
+  })
+
+  it('waits for a possible second tap before spending a full tank normally', () => {
+    let state = createRaceState(1, STARTER)
+    state.player = { ...state.player, boost: NITRO_MAX }
+    state = advanceRace(state, { boostTaps: 1 }, STARTER)
+    expect(state.player.boosting).toBe(false)
+    expect(state.boostTapPendingMs).toBe(NITRO_DOUBLE_TAP_WINDOW_MS)
+
+    while (state.boostTapPendingMs > 0) {
+      state = advanceRace(state, {}, STARTER)
+    }
+    expect(state.player.boosting).toBe(true)
+    expect(state.player.superBoosting).toBe(false)
+    expect(state.player.boost).toBeGreaterThan(NITRO_CELL)
+    expect(state.player.boost).toBeLessThan(NITRO_CELL * 2 + 1)
+  })
+
+  it('turns a full-tank double tap into a super boost and very high leap', () => {
+    let state = createRaceState(1, STARTER)
+    state.player = { ...state.player, boost: NITRO_MAX }
+    state = advanceRace(state, { boostTaps: 2 }, STARTER)
+
+    expect(state.player.boost).toBe(0)
+    expect(state.player.boosting).toBe(true)
+    expect(state.player.superBoosting).toBe(true)
+    expect(state.player.boostRemainingMs).toBe(NITRO_SUPER_DURATION_MS)
+    expect(state.player.verticalSpeed).toBeLessThan(NITRO_SUPER_LAUNCH_SPEED)
+    expect(state.player.verticalSpeed).toBeGreaterThan(
+      NITRO_SUPER_LAUNCH_SPEED - 1,
+    )
+    expect(state.event?.type).toBe('super-boost')
+    expect(state.effects.some((effect) => effect.type === 'super-nitro')).toBe(
+      true,
+    )
+
+    let peakHeight = state.player.airborneHeight
+    for (let tick = 0; tick < 60; tick += 1) {
+      state = advanceRace(state, {}, STARTER)
+      peakHeight = Math.max(peakHeight, state.player.airborneHeight)
+    }
+    expect(peakHeight).toBeGreaterThan(20)
+  })
+
+  it('lets AI racers spend cells and save full tanks for super boosts', () => {
+    let state = createRaceState(1, STARTER)
+    state = {
+      ...state,
+      elapsedMs: 7290,
+      vehicles: state.vehicles.map((vehicle, index) => ({
+        ...vehicle,
+        boost: index < 2 ? NITRO_MAX : 0,
+      })),
+    }
+    state = advanceRace(state, {}, STARTER)
+    expect(state.vehicles[0].superBoosting).toBe(true)
+    expect(state.vehicles[0].airborneHeight).toBeGreaterThan(0)
+    expect(state.vehicles[1].boosting).toBe(true)
+    expect(state.vehicles[1].superBoosting).toBe(false)
   })
 
   it('launches a vehicle from a visible lane ramp', () => {
@@ -341,7 +442,11 @@ describe('raceEngine V2', () => {
   })
 
   it('keeps the first stage and all endgame stages completable', () => {
-    expect(finish(1, STARTER).status).toBe('victory')
+    const starterResult = finish(1, STARTER)
+    expect(
+      starterResult.status,
+      `starter ended ${starterResult.reason}; rank=${raceRank(starterResult)}; player=${Math.round(starterResult.player.distance)}`,
+    ).toBe('victory')
     for (let stage = 1; stage <= 10; stage += 1) {
       const result = finish(stage, ENDGAME)
       expect(

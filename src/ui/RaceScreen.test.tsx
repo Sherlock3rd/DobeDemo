@@ -29,18 +29,27 @@ describe('RaceScreen V2', () => {
     render(<RaceScreen stage={2} heroId="foreman" onExit={() => {}} />)
 
     expect(screen.getByText('突破护卫 · 摧毁装甲目标车')).toBeInTheDocument()
-    expect(screen.getByText(/护卫 2\/2/)).toBeInTheDocument()
+    expect(screen.getByText(/护卫 5\/5/)).toBeInTheDocument()
     expect(screen.getByText(/普通攻击 自动开火/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '火力强化' })).toBeInTheDocument()
   })
 
-  it('shows the four-car race and hold-to-drift controls', () => {
+  it('shows seven-car racing, three empty nitro cells, and drift controls', () => {
     render(<RaceScreen stage={1} heroId="foreman" onExit={() => {}} />)
 
     expect(
-      screen.getByText('四车对抗 · 漂移与特技补充氮气'),
+      screen.getByText('七车对抗 · 三格氮气 · 满格双击超级飞跃'),
     ).toBeInTheDocument()
-    expect(screen.getByText('当前排名 4/4')).toBeInTheDocument()
+    expect(screen.getByText('当前排名 7/7')).toBeInTheDocument()
+    expect(screen.getByLabelText('三格氮气')).toBeInTheDocument()
+    expect(screen.getByLabelText('氮气第 1 格')).toHaveValue(0)
+    expect(screen.getByLabelText('氮气第 2 格')).toHaveValue(0)
+    expect(screen.getByLabelText('氮气第 3 格')).toHaveValue(0)
+    expect(
+      screen.getByRole('button', {
+        name: '氮气单击冲刺 · 满格双击飞跃',
+      }),
+    ).toBeInTheDocument()
     expect(screen.getAllByText('按住漂移')).toHaveLength(2)
   })
 

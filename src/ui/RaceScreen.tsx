@@ -12,6 +12,7 @@ import type { HeroId } from '../game/heroes'
 import {
   advanceRace,
   createRaceState,
+  NITRO_CELL,
   raceProgress,
   raceRank,
   RACE_TICK_MS,
@@ -104,6 +105,8 @@ function RaceSession({
       )
       inputRef.current = {
         ...inputRef.current,
+        boost: false,
+        boostTaps: 0,
         laneDelta: 0,
         fire: false,
       }
@@ -116,7 +119,7 @@ function RaceSession({
       const key = event.key.toLowerCase()
       if (
         event.repeat &&
-        ['arrowleft', 'arrowright', 'a', 'd', 'f'].includes(key)
+        ['arrowleft', 'arrowright', 'a', 'd', 'f', ' '].includes(key)
       ) {
         return
       }
@@ -131,7 +134,10 @@ function RaceSession({
         event.preventDefault()
       }
       if (event.code === 'Space') {
-        inputRef.current.boost = true
+        inputRef.current.boostTaps = Math.min(
+          2,
+          (inputRef.current.boostTaps ?? 0) + 1,
+        )
         event.preventDefault()
       }
       if (key === 'f') {
@@ -153,7 +159,6 @@ function RaceSession({
       ) {
         inputRef.current.steer = 0
       }
-      if (event.code === 'Space') inputRef.current.boost = false
     }
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
@@ -169,13 +174,11 @@ function RaceSession({
     setReward(recordVictory(stage).rewardExp)
   }, [recordVictory, stage, state.status])
 
-  const pressBoost = (event: ReactPointerEvent<HTMLButtonElement>): void => {
-    event.preventDefault()
-    inputRef.current.boost = true
-  }
-  const releaseBoost = (event: ReactPointerEvent<HTMLButtonElement>): void => {
-    event.preventDefault()
-    inputRef.current.boost = false
+  const triggerBoost = (): void => {
+    inputRef.current.boostTaps = Math.min(
+      2,
+      (inputRef.current.boostTaps ?? 0) + 1,
+    )
   }
   const triggerFireBoost = (): void => {
     inputRef.current.fire = true
@@ -265,6 +268,10 @@ function RaceSession({
       data-fire-boost={state.fireBoostRemainingMs}
       data-fire-cooldown={state.fireBoostCooldownMs}
       data-shots={state.shotsFired}
+      data-boost={state.player.boost}
+      data-boost-remaining={state.player.boostRemainingMs}
+      data-super-boost={state.player.superBoosting}
+      data-opponents={state.vehicles.length}
     >
       <Canvas
         className="race-screen__canvas"
@@ -285,7 +292,7 @@ function RaceSession({
           <strong>{definition.mode === 'race' ? '竞速' : '追击'}</strong>
           <span>
             {definition.mode === 'race'
-              ? '四车对抗 · 漂移与特技补充氮气'
+              ? '七车对抗 · 三格氮气 · 满格双击超级飞跃'
               : '突破护卫 · 摧毁装甲目标车'}
           </span>
         </div>
@@ -313,19 +320,31 @@ function RaceSession({
             max={state.player.maxDurability}
           />
         </label>
-        <label>
-          氮气
-          <progress value={state.player.boost} max={100} />
+        <label className="race-hud__nitro-label">
+          氮气 · 单击消耗一格，满三格双击超级加速
+          <span className="race-hud__nitro" role="group" aria-label="三格氮气">
+            {[0, 1, 2].map((index) => (
+              <progress
+                key={index}
+                value={Math.min(
+                  NITRO_CELL,
+                  Math.max(0, state.player.boost - index * NITRO_CELL),
+                )}
+                max={NITRO_CELL}
+                aria-label={`氮气第 ${index + 1} 格`}
+              />
+            ))}
+          </span>
         </label>
         {definition.mode === 'race' ? (
-          <p>{`当前排名 ${raceRank(state)}/4`}</p>
+          <p>{`当前排名 ${raceRank(state)}/7`}</p>
         ) : (
           <>
             <label>
               目标
               <progress value={state.targetHp} max={state.maxTargetHp} />
             </label>
-            <p className="race-hud__sight">{`${sightStatus} · 护卫 ${escortCount}/2${
+            <p className="race-hud__sight">{`${sightStatus} · 护卫 ${escortCount}/5${
               target
                 ? ` · 距离 ${Math.max(
                     0,
@@ -371,12 +390,10 @@ function RaceSession({
           <button
             type="button"
             className="race-controls__boost"
-            onPointerDown={pressBoost}
-            onPointerUp={releaseBoost}
-            onPointerCancel={releaseBoost}
-            onPointerLeave={releaseBoost}
+            onClick={triggerBoost}
           >
-            加速
+            氮气
+            <span>单击冲刺 · 满格双击飞跃</span>
           </button>
           {definition.mode === 'pursuit' ? (
             <button

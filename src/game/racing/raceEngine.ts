@@ -9,6 +9,12 @@ import { CAR_IDS, type CarId, type GunId } from '../equipmentTypes'
 export const RACE_TICK_MS = 50
 export const AIR_GRAVITY = 6.2
 export const NATURAL_NITRO_PER_SECOND = 3.5
+export const NITRO_MAX = 100
+export const NITRO_CELL = NITRO_MAX / 3
+export const NITRO_BOOST_DURATION_MS = 1800
+export const NITRO_SUPER_DURATION_MS = 3200
+export const NITRO_DOUBLE_TAP_WINDOW_MS = 280
+export const NITRO_SUPER_LAUNCH_SPEED = 18
 export const FIRE_BOOST_DURATION_MS = 2400
 export const FIRE_BOOST_COOLDOWN_MS = 8000
 export const RACE_LANES = [0, 1, 2] as const
@@ -19,6 +25,7 @@ export type VehicleRole = 'player' | 'racer' | 'target' | 'escort'
 export type RaceEventType =
   | 'lane'
   | 'boost'
+  | 'super-boost'
   | 'drift'
   | 'collision'
   | 'ramp'
@@ -59,6 +66,8 @@ export interface VehicleState {
   driftMs: number
   boost: number
   boosting: boolean
+  boostRemainingMs: number
+  superBoosting: boolean
   collisionCooldownMs: number
   fireCooldownMs: number
   lastObstacleIndex: number
@@ -84,6 +93,7 @@ export type RaceEffectType =
   | 'impact'
   | 'landing'
   | 'nitro'
+  | 'super-nitro'
   | 'explosion'
 
 export interface RaceEffect {
@@ -115,6 +125,8 @@ export interface RaceState {
   fireBoostRemainingMs: number
   fireBoostCooldownMs: number
   fireBoostLatch: boolean
+  boostLatch: boolean
+  boostTapPendingMs: number
   steerLatch: boolean
   steerHoldMs: number
   event: RaceEvent | null
@@ -125,6 +137,7 @@ export interface RaceInput {
   steer?: -1 | 0 | 1
   laneDelta?: -1 | 0 | 1
   boost?: boolean
+  boostTaps?: number
   fire?: boolean
 }
 
@@ -199,8 +212,10 @@ function vehicle(
     stuntAngle: 0,
     driftActive: false,
     driftMs: 0,
-    boost: 100,
+    boost: 0,
     boosting: false,
+    boostRemainingMs: 0,
+    superBoosting: false,
     collisionCooldownMs: 0,
     fireCooldownMs: 0,
     lastObstacleIndex: 0,
@@ -210,37 +225,33 @@ function vehicle(
 
 function pursuitVehicles(stage: PursuitStageConfig): VehicleState[] {
   const targetCar = CAR_IDS[Math.min(4, Math.floor(stage.order / 2))]
-  const firstEscortCar = CAR_IDS[Math.min(4, Math.floor(stage.order / 2) - 1)]
-  const secondEscortCar = CAR_IDS[Math.min(4, Math.floor(stage.order / 2))]
-  return [
-    vehicle(
-      'target',
-      'target',
-      targetCar,
-      ((stage.order - 1) % 3) as RaceLane,
-      38,
-      stage.targetSpeed,
-      stage.targetHp,
-    ),
-    vehicle(
-      'escort-1',
+  const target = vehicle(
+    'target',
+    'target',
+    targetCar,
+    ((stage.order - 1) % 3) as RaceLane,
+    38,
+    stage.targetSpeed,
+    stage.targetHp,
+  )
+  const escorts = Array.from({ length: 5 }, (_, index) => {
+    const escortNumber = index + 1
+    const carIndex = clamp(
+      Math.floor(stage.order / 2) - 1 + (index % 3),
+      0,
+      CAR_IDS.length - 1,
+    )
+    return vehicle(
+      `escort-${escortNumber}`,
       'escort',
-      firstEscortCar,
-      (stage.order % 3) as RaceLane,
-      25,
-      stage.targetSpeed - 0.8,
-      Math.round(stage.targetHp * 0.12),
-    ),
-    vehicle(
-      'escort-2',
-      'escort',
-      secondEscortCar,
-      ((stage.order + 1) % 3) as RaceLane,
-      31,
-      stage.targetSpeed + 0.5,
-      Math.round(stage.targetHp * 0.14),
-    ),
-  ]
+      CAR_IDS[carIndex],
+      ((stage.order + index) % 3) as RaceLane,
+      18 + index * 5,
+      stage.targetSpeed - 1.2 + (index % 3) * 0.7,
+      Math.round(stage.targetHp * (0.045 + index * 0.005)),
+    )
+  })
+  return [target, ...escorts]
 }
 
 export function createRaceState(
@@ -263,14 +274,14 @@ export function createRaceState(
   )
   const vehicles =
     stage.mode === 'race'
-      ? stage.opponentSpeeds.map((speed, index) =>
+      ? Array.from({ length: stage.opponentSpeeds.length * 2 }, (_, index) =>
           vehicle(
             `racer-${index + 1}`,
             'racer',
             CAR_IDS[(stage.order + index) % CAR_IDS.length],
             ((stage.order + index) % 3) as RaceLane,
-            7 + index * 7,
-            speed,
+            6 + index * 5.5,
+            stage.opponentSpeeds[index % stage.opponentSpeeds.length],
           ),
         )
       : pursuitVehicles(stage)
@@ -298,6 +309,8 @@ export function createRaceState(
     fireBoostRemainingMs: 0,
     fireBoostCooldownMs: 0,
     fireBoostLatch: false,
+    boostLatch: false,
+    boostTapPendingMs: 0,
     steerLatch: false,
     steerHoldMs: 0,
     event: null,
@@ -330,17 +343,68 @@ function addEffect(
   }
 }
 
+function activateNitro(
+  state: RaceState,
+  source: VehicleState,
+  superBoost: boolean,
+): { state: RaceState; vehicle: VehicleState } {
+  const vehicleState = {
+    ...source,
+    boost: superBoost ? 0 : Math.max(0, source.boost - NITRO_CELL),
+    boosting: true,
+    boostRemainingMs: superBoost
+      ? NITRO_SUPER_DURATION_MS
+      : NITRO_BOOST_DURATION_MS,
+    superBoosting: superBoost,
+    airborneHeight: superBoost
+      ? Math.max(0.08, source.airborneHeight)
+      : source.airborneHeight,
+    verticalSpeed: superBoost
+      ? Math.max(NITRO_SUPER_LAUNCH_SPEED, source.verticalSpeed)
+      : source.verticalSpeed,
+  }
+  let next = addEffect(
+    state,
+    superBoost ? 'super-nitro' : 'nitro',
+    source.x,
+    source.distance,
+    superBoost ? 3.2 : 1.8,
+    superBoost ? 1200 : 700,
+  )
+  if (source.role === 'player') {
+    next = withEvent(next, superBoost ? 'super-boost' : 'boost')
+  }
+  return { state: next, vehicle: vehicleState }
+}
+
 function updatePlayerControl(
   state: RaceState,
   input: RaceInput,
   carId: CarId,
   dtMs: number,
 ): RaceState {
-  const player = { ...state.player }
+  let player = {
+    ...state.player,
+    boostRemainingMs: Math.max(0, state.player.boostRemainingMs - dtMs),
+  }
+  if (player.boostRemainingMs <= 0) {
+    player.boosting = false
+    player.superBoosting = false
+  }
   const car = equipmentConfig.cars[carId].racing
   const heldSteer = input.steer ?? 0
   const steer = heldSteer !== 0 ? heldSteer : (input.laneDelta ?? 0)
-  let next = { ...state, player }
+  const pendingBefore = state.boostTapPendingMs
+  const pendingAfter = Math.max(0, pendingBefore - dtMs)
+  const explicitTaps = clamp(Math.trunc(input.boostTaps ?? 0), 0, 2)
+  const legacyTap = input.boost && !state.boostLatch ? 1 : 0
+  const tapCount = Math.min(2, explicitTaps + legacyTap)
+  let next = {
+    ...state,
+    player,
+    boostLatch: Boolean(input.boost),
+    boostTapPendingMs: pendingAfter,
+  }
 
   if (steer !== 0) {
     if (player.airborneHeight > 0) {
@@ -357,10 +421,12 @@ function updatePlayerControl(
       player.speed >= 16
     if (player.driftActive) {
       player.driftMs += dtMs
-      player.boost = Math.min(
-        100,
-        player.boost + car.driftNitroRate * (dtMs / 1000),
-      )
+      if (!player.boosting) {
+        player.boost = Math.min(
+          NITRO_MAX,
+          player.boost + car.driftNitroRate * (dtMs / 1000),
+        )
+      }
       if (!state.player.driftActive) next = withEvent(next, 'drift')
     }
   } else {
@@ -369,19 +435,48 @@ function updatePlayerControl(
     player.driftActive = false
   }
 
-  player.boosting = Boolean(input.boost && player.boost > 0)
-  if (player.boosting) {
-    player.boost = Math.max(0, player.boost - 25 * (dtMs / 1000))
-    if (!state.player.boosting) next = withEvent(next, 'boost')
-  } else if (!player.driftActive) {
+  if (!player.boosting && !player.driftActive) {
     player.boost = Math.min(
-      100,
+      NITRO_MAX,
       player.boost + NATURAL_NITRO_PER_SECOND * (dtMs / 1000),
     )
   }
+
+  if (!player.boosting) {
+    const fullCharge = player.boost >= NITRO_MAX - 0.001
+    const doubleTap =
+      fullCharge && (tapCount >= 2 || (pendingBefore > 0 && tapCount >= 1))
+    if (doubleTap) {
+      const activated = activateNitro(next, player, true)
+      next = { ...activated.state, boostTapPendingMs: 0 }
+      player = activated.vehicle
+    } else if (tapCount >= 1) {
+      if (fullCharge) {
+        next.boostTapPendingMs = NITRO_DOUBLE_TAP_WINDOW_MS
+      } else if (player.boost >= NITRO_CELL) {
+        const activated = activateNitro(next, player, false)
+        next = { ...activated.state, boostTapPendingMs: 0 }
+        player = activated.vehicle
+      }
+    } else if (pendingBefore > 0 && pendingAfter <= 0) {
+      const activated = activateNitro(next, player, false)
+      next = { ...activated.state, boostTapPendingMs: 0 }
+      player = activated.vehicle
+    }
+  } else {
+    next.boostTapPendingMs = 0
+  }
+
   player.desiredSpeed =
-    car.maxSpeed * (player.boosting ? 1.24 : player.driftActive ? 0.94 : 1)
-  return next
+    car.maxSpeed *
+    (player.superBoosting
+      ? 1.72
+      : player.boosting
+        ? 1.38
+        : player.driftActive
+          ? 0.94
+          : 1)
+  return { ...next, player }
 }
 
 function updateAi(
@@ -389,39 +484,41 @@ function updateAi(
   stage: RacingStageConfig,
   dtMs: number,
 ): RaceState {
-  const vehicles = state.vehicles.map((candidate, index) => {
-    const vehicleState = { ...candidate }
+  let next = state
+  const vehicles: VehicleState[] = []
+  const target =
+    stage.mode === 'pursuit'
+      ? state.vehicles.find(
+          (candidateVehicle) => candidateVehicle.role === 'target',
+        )
+      : undefined
+
+  for (const [index, candidate] of state.vehicles.entries()) {
+    let vehicleState = {
+      ...candidate,
+      boostRemainingMs: Math.max(0, candidate.boostRemainingMs - dtMs),
+    }
+    if (vehicleState.boostRemainingMs <= 0) {
+      vehicleState.boosting = false
+      vehicleState.superBoosting = false
+    }
     const car = equipmentConfig.cars[vehicleState.carId].racing
     const phase = Math.floor(
       (state.elapsedMs + index * 870) / (2300 + index * 420),
     )
     if (stage.mode === 'race') {
       const gap = state.player.distance - vehicleState.distance
-      const configured = stage.opponentSpeeds[index] ?? car.maxSpeed * 0.82
-      const packSpeed = Math.max(configured, car.maxSpeed * 0.82)
+      const configured =
+        stage.opponentSpeeds[index % stage.opponentSpeeds.length] ??
+        car.maxSpeed * 0.82
+      const packSpeed = configured
       vehicleState.desiredSpeed = packSpeed + clamp(gap * 0.075, -3.5, 4.5)
-      vehicleState.boosting = phase % 5 === 3 && vehicleState.boost > 12
-      if (vehicleState.boosting) {
-        vehicleState.desiredSpeed *= 1.16
-        vehicleState.boost = Math.max(
-          0,
-          vehicleState.boost - 19 * (dtMs / 1000),
-        )
-      } else {
-        vehicleState.boost = Math.min(
-          100,
-          vehicleState.boost + NATURAL_NITRO_PER_SECOND * (dtMs / 1000),
-        )
-      }
       const closeBehind =
         gap > 0 && gap < 18 && Math.abs(vehicleState.x - state.player.x) < 3.8
       vehicleState.targetLane = closeBehind
         ? state.player.targetLane
         : (((phase + index + stage.order) % 3) as RaceLane)
     } else {
-      const target = state.vehicles.find(
-        (candidateVehicle) => candidateVehicle.role === 'target',
-      )
       const baseSpeed = stage.targetSpeed
       if (vehicleState.role === 'target') {
         vehicleState.desiredSpeed =
@@ -433,8 +530,12 @@ function updateAi(
           )
         vehicleState.targetLane = ((phase + stage.order) % 3) as RaceLane
       } else if (target) {
-        const escortIndex = vehicleState.id === 'escort-1' ? 0 : 1
-        const wantedDistance = target.distance - 8 - escortIndex * 7
+        const escortIndex = Math.max(
+          0,
+          Number.parseInt(vehicleState.id.split('-')[1] ?? '1', 10) - 1,
+        )
+        const wantedDistance =
+          target.distance - 8 - (escortIndex % 3) * 6 - escortIndex * 1.5
         vehicleState.desiredSpeed =
           baseSpeed +
           clamp((wantedDistance - vehicleState.distance) * 0.3, -4, 4)
@@ -442,8 +543,8 @@ function updateAi(
           state.player.distance < target.distance &&
           target.distance - state.player.distance < 34
         vehicleState.targetLane = blockPlayer
-          ? state.player.targetLane
-          : lane(target.targetLane + (escortIndex === 0 ? -1 : 1))
+          ? lane(state.player.targetLane + ((escortIndex % 3) - 1))
+          : lane(target.targetLane + ((escortIndex % 3) - 1))
       }
     }
     vehicleState.driftActive =
@@ -462,16 +563,45 @@ function updateAi(
         vehicleState.targetLane = rampLane(stage.order, nextRampIndex)
       }
     }
-    return vehicleState
-  })
-  return { ...state, vehicles }
+
+    if (!vehicleState.boosting) {
+      const nitroRate = vehicleState.driftActive
+        ? car.driftNitroRate
+        : NATURAL_NITRO_PER_SECOND
+      vehicleState.boost = Math.min(
+        NITRO_MAX,
+        vehicleState.boost + nitroRate * (dtMs / 1000),
+      )
+      const savesForSuper = index % 3 === 0
+      const canSuper = vehicleState.boost >= NITRO_MAX - 0.001
+      const canBoost = vehicleState.boost >= NITRO_CELL
+      if (savesForSuper && canSuper) {
+        const activated = activateNitro(next, vehicleState, true)
+        next = activated.state
+        vehicleState = activated.vehicle
+      } else if (!savesForSuper && canBoost && phase % 5 === 3) {
+        const activated = activateNitro(next, vehicleState, false)
+        next = activated.state
+        vehicleState = activated.vehicle
+      }
+    }
+
+    if (vehicleState.superBoosting) {
+      vehicleState.desiredSpeed *= 1.65
+    } else if (vehicleState.boosting) {
+      vehicleState.desiredSpeed *= 1.3
+    }
+    vehicles.push(vehicleState)
+  }
+  return { ...next, vehicles }
 }
 
 function integrateVehicle(source: VehicleState, dtMs: number): VehicleState {
   const next = { ...source }
   const dt = dtMs / 1000
   const car = equipmentConfig.cars[next.carId].racing
-  const acceleration = car.acceleration * (next.boosting ? 1.35 : 1)
+  const acceleration =
+    car.acceleration * (next.superBoosting ? 2.25 : next.boosting ? 1.65 : 1)
   if (next.speed < next.desiredSpeed) {
     next.speed = Math.min(next.desiredSpeed, next.speed + acceleration * dt)
   } else {
@@ -620,7 +750,7 @@ function processLanding(
     750,
   )
   if (cleanStunt) {
-    landedVehicle.boost = Math.min(100, landedVehicle.boost + 45)
+    landedVehicle.boost = Math.min(NITRO_MAX, landedVehicle.boost + 45)
     landedVehicle.speed *= 1.1
     if (landedVehicle.role === 'player') next = withEvent(next, 'stunt')
   } else if (landingError >= 0.18 && landedVehicle.role === 'player') {
@@ -859,7 +989,7 @@ function processEnemyFire(
     shooter,
     state.player,
     38 + shooter.speed * 0.25,
-    stage.incomingDamage,
+    Math.max(1, Math.round(stage.incomingDamage * 0.72)),
   )
   return addEffect(next, 'muzzle', shooter.x, shooter.distance - 2, 1, 180)
 }
@@ -1029,7 +1159,9 @@ export function advanceRace(
       player: {
         ...next.player,
         desiredSpeed: next.player.desiredSpeed + 2.6,
-        boost: Math.min(100, next.player.boost + 2 * (dtMs / 1000)),
+        boost: next.player.boosting
+          ? next.player.boost
+          : Math.min(NITRO_MAX, next.player.boost + 2 * (dtMs / 1000)),
       },
     }
   } else if (next.slipstream) {

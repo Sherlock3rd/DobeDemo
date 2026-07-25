@@ -1873,6 +1873,22 @@
   accent-color: #f59e0b;
 }
 
+.race-hud__status .race-hud__nitro-label {
+  grid-template-columns: 1fr;
+  color: #bae6fd;
+}
+
+.race-hud__nitro {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.28rem;
+}
+
+.race-hud__nitro progress {
+  height: 0.62rem;
+  accent-color: #38bdf8;
+}
+
 .race-hud__progress {
   grid-column: 1 / -1;
 }

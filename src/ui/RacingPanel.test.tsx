@@ -17,6 +17,8 @@ describe('RacingPanel', () => {
     render(<RacingPanel onClose={() => {}} onStart={onStart} />)
     expect(screen.getByText('第 1 关')).toBeInTheDocument()
     expect(screen.queryByText('第 2 关')).toBeNull()
+    expect(screen.getByText(/满三格双击超级飞跃/)).toBeInTheDocument()
+    expect(screen.getByText(/七车同场/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '发车' }))
     expect(onStart).toHaveBeenCalledWith(1, 'foreman')
   })

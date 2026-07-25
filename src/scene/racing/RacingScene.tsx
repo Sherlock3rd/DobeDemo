@@ -25,6 +25,12 @@ function RacingCameraRig({ state }: { state: RaceState }): null {
   useFrame((frameState) => {
     const activeCamera = frameState.camera
     const speedRatio = Math.min(1, state.player.speed / 60)
+    const boostLift = Math.min(18, state.player.airborneHeight)
+    const boostFov = state.player.superBoosting
+      ? 11
+      : state.player.boosting
+        ? 5
+        : 0
     const impact =
       state.event?.type === 'collision' || state.event?.type === 'incoming'
         ? 0.32
@@ -34,14 +40,18 @@ function RacingCameraRig({ state }: { state: RaceState }): null {
         ? Math.sin((state.event?.id ?? 0) * 8.3 + state.elapsedMs * 0.04) *
           impact
         : 0
-    desired.current.set(shake, 16 + speedRatio * 3, 27 + speedRatio * 2.5)
+    desired.current.set(
+      shake,
+      16 + speedRatio * 3 + boostLift * 0.72,
+      27 + speedRatio * 2.5 + boostLift * 0.2,
+    )
     activeCamera.position.lerp(desired.current, 0.14)
-    target.current.set(0, 0.65, -30 - speedRatio * 14)
+    target.current.set(0, 0.65 + boostLift * 0.58, -30 - speedRatio * 14)
     activeCamera.lookAt(target.current)
     if (activeCamera instanceof PerspectiveCamera) {
       activeCamera.fov = MathUtils.lerp(
         activeCamera.fov,
-        46 + speedRatio * 8,
+        46 + speedRatio * 8 + boostFov,
         0.09,
       )
       activeCamera.updateProjectionMatrix()
@@ -154,6 +164,55 @@ function VehicleModel({
           </mesh>
         </>
       ) : null}
+      {vehicle.boosting ? (
+        <group
+          name={vehicle.superBoosting ? 'super-nitro-trail' : 'nitro-trail'}
+        >
+          {[-0.64, 0.64].map((x) => (
+            <group key={x} position={[x, 0.05, 2.7]}>
+              <mesh rotation={[Math.PI / 2, 0, 0]}>
+                <coneGeometry
+                  args={[
+                    vehicle.superBoosting ? 0.34 : 0.22,
+                    vehicle.superBoosting ? 4.8 : 2.8,
+                    10,
+                  ]}
+                />
+                <meshBasicMaterial
+                  color={vehicle.superBoosting ? '#c084fc' : '#38bdf8'}
+                  transparent
+                  opacity={0.88}
+                  toneMapped={false}
+                />
+              </mesh>
+              <pointLight
+                color={vehicle.superBoosting ? '#d8b4fe' : '#7dd3fc'}
+                intensity={vehicle.superBoosting ? 5 : 2.8}
+                distance={vehicle.superBoosting ? 9 : 5}
+              />
+            </group>
+          ))}
+          {vehicle.superBoosting ? (
+            <>
+              {[0, 1.4, 2.8].map((offset) => (
+                <mesh
+                  key={offset}
+                  position={[0, 0.1, 3.2 + offset]}
+                  rotation={[Math.PI / 2, 0, 0]}
+                >
+                  <torusGeometry args={[1.25 + offset * 0.08, 0.07, 8, 24]} />
+                  <meshBasicMaterial
+                    color="#e9d5ff"
+                    transparent
+                    opacity={0.62 - offset * 0.1}
+                    toneMapped={false}
+                  />
+                </mesh>
+              ))}
+            </>
+          ) : null}
+        </group>
+      ) : null}
       {damaged ? (
         <mesh position={[0.45, 1.4, 0.8]}>
           <sphereGeometry args={[0.48, 8, 6]} />
@@ -178,15 +237,19 @@ function TrackEffect({
       ? '#cbd1d5'
       : effect.type === 'nitro'
         ? '#38bdf8'
-        : effect.type === 'explosion'
-          ? '#ff5a2e'
-          : effect.type === 'landing'
-            ? '#d4b17a'
-            : '#ffd43b'
+        : effect.type === 'super-nitro'
+          ? '#c084fc'
+          : effect.type === 'explosion'
+            ? '#ff5a2e'
+            : effect.type === 'landing'
+              ? '#d4b17a'
+              : '#ffd43b'
   const size =
     effect.type === 'explosion'
       ? 1.4 * effect.intensity
-      : 0.2 + effect.intensity * 0.24
+      : effect.type === 'super-nitro'
+        ? 0.7 * effect.intensity
+        : 0.2 + effect.intensity * 0.24
   return (
     <group position={[effect.x, 0.45, z]}>
       {Array.from(
@@ -249,6 +312,11 @@ export function RacingScene({
   const features = upcomingTrackFeatures(state)
   const allVehicles = [state.player, ...state.vehicles]
   const speedRatio = Math.min(1, state.player.speed / 60)
+  const nitroIntensity = state.player.superBoosting
+    ? 1
+    : state.player.boosting
+      ? 0.55
+      : 0
   return (
     <>
       <RacingCameraRig state={state} />
@@ -347,25 +415,34 @@ export function RacingScene({
             playerDistance={state.player.distance}
           />
         ))}
-        {Array.from({ length: Math.round(4 + speedRatio * 8) }, (_, index) => (
-          <mesh
-            key={`speed-${index}`}
-            position={[
-              index % 2 === 0
-                ? -5.1 + (index % 3) * 0.3
-                : 5.1 - (index % 3) * 0.3,
-              0.3 + (index % 4) * 0.28,
-              -10 - index * 10 + roadOffset,
-            ]}
-          >
-            <boxGeometry args={[0.035, 0.035, 3 + speedRatio * 7]} />
-            <meshBasicMaterial
-              color="#b8ddf0"
-              transparent
-              opacity={0.18 + speedRatio * 0.32}
-            />
-          </mesh>
-        ))}
+        {Array.from(
+          { length: Math.round(4 + speedRatio * 8 + nitroIntensity * 10) },
+          (_, index) => (
+            <mesh
+              key={`speed-${index}`}
+              position={[
+                index % 2 === 0
+                  ? -5.1 + (index % 3) * 0.3
+                  : 5.1 - (index % 3) * 0.3,
+                0.3 + (index % 4) * 0.28,
+                -10 - index * (10 - nitroIntensity * 3) + roadOffset,
+              ]}
+            >
+              <boxGeometry
+                args={[
+                  0.035 + nitroIntensity * 0.018,
+                  0.035 + nitroIntensity * 0.018,
+                  3 + speedRatio * 7 + nitroIntensity * 10,
+                ]}
+              />
+              <meshBasicMaterial
+                color={state.player.superBoosting ? '#e9d5ff' : '#b8ddf0'}
+                transparent
+                opacity={0.18 + speedRatio * 0.32 + nitroIntensity * 0.22}
+              />
+            </mesh>
+          ),
+        )}
       </group>
     </>
   )
