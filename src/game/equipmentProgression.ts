@@ -21,25 +21,25 @@ export const PART_IDLE_CAP_MS = 8 * 60 * 60 * 1000
 export const CAR_PART_SLOT_INFO: Readonly<
   Record<CarPartSlot, { name: string; shortName: string; description: string }>
 > = {
-  engine: {
-    name: '动力核心',
-    shortName: '动力',
-    description: '提高英雄攻击与车辆加速度。',
-  },
-  armor: {
-    name: '装甲组件',
-    shortName: '装甲',
-    description: '提高英雄生命、防御与车辆耐久。',
-  },
   tires: {
-    name: '抓地轮胎',
+    name: '高抓地轮胎',
     shortName: '轮胎',
     description: '提高英雄防御与车辆抓地性能。',
   },
-  turbo: {
-    name: '涡轮总成',
-    shortName: '涡轮',
-    description: '提高英雄攻击与车辆极速。',
+  engine: {
+    name: '强化引擎',
+    shortName: '引擎',
+    description: '提高英雄攻击、车辆极速与加速度。',
+  },
+  bumper: {
+    name: '防撞保险杠',
+    shortName: '保险杠',
+    description: '提高英雄生命、防御与车辆耐久。',
+  },
+  suspension: {
+    name: '运动悬挂',
+    shortName: '悬挂',
+    description: '提高英雄防御、车辆抓地与加速稳定性。',
   },
 }
 
@@ -103,10 +103,10 @@ export function createInitialGunLevels(): GunUpgradeLevels {
 
 function createEmptySlots(): Record<CarPartSlot, string | null> {
   return {
-    engine: null,
-    armor: null,
     tires: null,
-    turbo: null,
+    engine: null,
+    bumper: null,
+    suspension: null,
   }
 }
 
@@ -255,22 +255,26 @@ function partStrength(part: CarPartInstance): number {
 export function getCarPartHeroBonus(part: CarPartInstance): CarPartHeroBonus {
   const strength = partStrength(part)
   switch (part.slot) {
-    case 'engine':
-      return { hp: 0, atk: Math.round(10 * strength), def: 0 }
-    case 'armor':
-      return {
-        hp: Math.round(70 * strength),
-        atk: 0,
-        def: Math.round(3 * strength),
-      }
     case 'tires':
       return {
         hp: Math.round(25 * strength),
         atk: 0,
         def: Math.round(2 * strength),
       }
-    case 'turbo':
-      return { hp: 0, atk: Math.round(7 * strength), def: 0 }
+    case 'engine':
+      return { hp: 0, atk: Math.round(10 * strength), def: 0 }
+    case 'bumper':
+      return {
+        hp: Math.round(70 * strength),
+        atk: 0,
+        def: Math.round(3 * strength),
+      }
+    case 'suspension':
+      return {
+        hp: Math.round(25 * strength),
+        atk: 0,
+        def: Math.round(2 * strength),
+      }
   }
 }
 
@@ -279,20 +283,6 @@ export function getCarPartRacingBonus(
 ): CarRacingUpgradeBonus {
   const strength = partStrength(part)
   switch (part.slot) {
-    case 'engine':
-      return {
-        maxSpeed: 0,
-        acceleration: 0.8 * strength,
-        durability: 0,
-        grip: 0,
-      }
-    case 'armor':
-      return {
-        maxSpeed: 0,
-        acceleration: 0,
-        durability: Math.round(5 * strength),
-        grip: 0,
-      }
     case 'tires':
       return {
         maxSpeed: 0.18 * strength,
@@ -300,12 +290,26 @@ export function getCarPartRacingBonus(
         durability: 0,
         grip: 0.012 * strength,
       }
-    case 'turbo':
+    case 'engine':
       return {
         maxSpeed: 0.75 * strength,
-        acceleration: 0.35 * strength,
+        acceleration: 0.8 * strength,
         durability: 0,
         grip: 0,
+      }
+    case 'bumper':
+      return {
+        maxSpeed: 0,
+        acceleration: 0,
+        durability: Math.round(5 * strength),
+        grip: 0,
+      }
+    case 'suspension':
+      return {
+        acceleration: 0.35 * strength,
+        durability: 0,
+        maxSpeed: 0,
+        grip: 0.01 * strength,
       }
   }
 }

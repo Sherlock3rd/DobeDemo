@@ -29,10 +29,11 @@ describe('RaceScreen V2', () => {
     render(<RaceScreen stage={2} heroId="foreman" onExit={() => {}} />)
 
     expect(
-      screen.getByText('纯追击枪战 · 突破护卫 · 摧毁目标车'),
+      screen.getByText('纯追击枪战 · 空中特技缩短强化冷却 · 摧毁目标车'),
     ).toBeInTheDocument()
     expect(screen.getByText(/护卫 5\/5/)).toBeInTheDocument()
     expect(screen.getByText(/普通攻击 自动开火/)).toBeInTheDocument()
+    expect(screen.getByText(/空中特技 -2.5秒强化冷却/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '火力强化' })).toBeInTheDocument()
     expect(screen.queryByLabelText('三格氮气')).not.toBeInTheDocument()
     expect(

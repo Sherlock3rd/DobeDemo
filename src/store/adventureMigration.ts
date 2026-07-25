@@ -97,6 +97,12 @@ function normalizeGunLevels(value: unknown): GunUpgradeLevels {
   return result
 }
 
+function normalizeCarPartSlot(value: unknown): CarPartInstance['slot'] | null {
+  if (value === 'armor') return 'bumper'
+  if (value === 'turbo') return 'suspension'
+  return typeof value === 'string' && isCarPartSlot(value) ? value : null
+}
+
 function normalizeCarPartInventory(value: unknown): CarPartInstance[] {
   if (!Array.isArray(value)) return []
   const result: CarPartInstance[] = []
@@ -108,17 +114,17 @@ function normalizeCarPartInventory(value: unknown): CarPartInstance[] {
       typeof raw.id !== 'string' ||
       raw.id.trim() === '' ||
       seen.has(raw.id) ||
-      typeof raw.slot !== 'string' ||
-      !isCarPartSlot(raw.slot) ||
       typeof raw.quality !== 'string' ||
       !isCarPartQuality(raw.quality)
     ) {
       continue
     }
+    const slot = normalizeCarPartSlot(raw.slot)
+    if (!slot) continue
     seen.add(raw.id)
     result.push({
       id: raw.id,
-      slot: raw.slot,
+      slot,
       quality: raw.quality,
       level: clampInt(raw.level, 1, CAR_PART_MAX_LEVEL, 1),
     })
@@ -138,7 +144,10 @@ function normalizeCarPartSlots(
     const rawCar = value[carId]
     if (!isRecord(rawCar)) continue
     for (const slot of CAR_PART_SLOT_IDS) {
-      const partId = rawCar[slot]
+      const legacySlot =
+        slot === 'bumper' ? 'armor' : slot === 'suspension' ? 'turbo' : slot
+      const partId =
+        typeof rawCar[slot] === 'string' ? rawCar[slot] : rawCar[legacySlot]
       if (typeof partId !== 'string' || installed.has(partId)) continue
       const part = inventoryById.get(partId)
       if (!part || part.slot !== slot) continue

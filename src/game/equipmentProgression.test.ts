@@ -42,11 +42,11 @@ describe('equipmentProgression', () => {
     })
     expect(settlement.received).toBe(5)
     expect(settlement.inventory.map((part) => part.slot)).toEqual([
-      'engine',
-      'armor',
       'tires',
-      'turbo',
       'engine',
+      'bumper',
+      'suspension',
+      'tires',
     ])
     expect(settlement.inventory.map((part) => part.quality)).toEqual([
       'worn',
@@ -85,7 +85,7 @@ describe('equipmentProgression', () => {
   it('prices upgrades and refunds base value plus part of invested parts', () => {
     const part: CarPartInstance = {
       id: 'part-1',
-      slot: 'armor',
+      slot: 'bumper',
       quality: 'tuned',
       level: 1,
     }
@@ -102,7 +102,7 @@ describe('equipmentProgression', () => {
   it('applies installed part bonuses and gun levels to combat and racing', () => {
     const slots = createInitialCarPartSlots()
     slots['rust-fox'].engine = 'part-1'
-    slots['rust-fox'].armor = 'part-2'
+    slots['rust-fox'].bumper = 'part-2'
     const progression: EquipmentProgressionSnapshot = {
       gunLevels: {
         ...createInitialGunLevels(),
@@ -117,7 +117,7 @@ describe('equipmentProgression', () => {
         },
         {
           id: 'part-2',
-          slot: 'armor',
+          slot: 'bumper',
           quality: 'tuned',
           level: 3,
         },

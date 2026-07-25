@@ -28,6 +28,7 @@ import {
   GUN_IDS,
   type CarId,
   type CarPartInstance,
+  type CarPartSlot,
   type GunId,
 } from '../game/equipmentTypes'
 import { getGangLevel, isBuildingUnlocked } from '../game/gangProgression'
@@ -117,8 +118,12 @@ function PartCard({
         {CAR_PART_SLOT_INFO[part.slot].shortName.slice(0, 1)}
       </span>
       <span>
-        <strong>{`${quality.name}·${CAR_PART_SLOT_INFO[part.slot].name}`}</strong>
-        <small>{`Lv.${part.level}`}</small>
+        <strong>{CAR_PART_SLOT_INFO[part.slot].name}</strong>
+        <span className="heroes-panel__part-tags">
+          <em>{CAR_PART_SLOT_INFO[part.slot].shortName}</em>
+          <em>{quality.name}</em>
+          <em>{`Lv.${part.level}`}</em>
+        </span>
       </span>
     </span>
   )
@@ -152,6 +157,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const [activeTab, setActiveTab] = useState<DevelopmentTab>('level')
   const [equipmentPicker, setEquipmentPicker] =
     useState<EquipmentPicker | null>(null)
+  const [partPickerSlot, setPartPickerSlot] = useState<CarPartSlot | null>(null)
   const [status, setStatus] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>()
   const gangLevel = getGangLevel(totalReputation)
@@ -195,6 +201,10 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return
+      if (partPickerSlot) {
+        setPartPickerSlot(null)
+        return
+      }
       if (equipmentPicker) {
         setEquipmentPicker(null)
         return
@@ -203,7 +213,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [equipmentPicker, onClose])
+  }, [equipmentPicker, onClose, partPickerSlot])
 
   const stopPropagation = (event: { stopPropagation: () => void }): void => {
     event.stopPropagation()
@@ -214,6 +224,10 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
 
   const gunOwner = (gunId: GunId): HeroId | null =>
     HERO_IDS.find((heroId) => equipmentByHero[heroId].gunId === gunId) ?? null
+
+  const partCar = (part: CarPartInstance): CarId | null =>
+    CAR_IDS.find((carId) => carPartSlotsByCar[carId][part.slot] === part.id) ??
+    null
 
   const handleHeroUpgrade = (): void => {
     const result = upgradeHero(selectedHero, gangLevel)
@@ -236,6 +250,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
       `${equipmentConfig.cars[carId].name} 已装备给 ${selectedDefinition.name}`,
     )
     setEquipmentPicker(null)
+    setPartPickerSlot(null)
   }
 
   const handleGun = (gunId: GunId): void => {
@@ -262,6 +277,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
           }`
         : '无法安装该配件',
     )
+    if (result.applied) setPartPickerSlot(null)
   }
 
   const handleUpgradePart = (part: CarPartInstance): void => {
@@ -377,6 +393,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                   onClick={() => {
                     setSelectedHero(heroId)
                     setEquipmentPicker(null)
+                    setPartPickerSlot(null)
                     setStatus('')
                   }}
                 >
@@ -464,6 +481,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                   onClick={() => {
                     setActiveTab(tab)
                     setEquipmentPicker(null)
+                    setPartPickerSlot(null)
                     setStatus('')
                   }}
                 >
@@ -673,7 +691,132 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
               </div>
             ) : null}
 
-            {activeTab === 'car' && equipmentPicker === null ? (
+            {activeTab === 'car' &&
+            equipmentPicker === null &&
+            partPickerSlot &&
+            selectedEquipment.carId ? (
+              <div className="heroes-panel__picker" aria-label="选择车辆配件">
+                <header className="heroes-panel__picker-header">
+                  <button type="button" onClick={() => setPartPickerSlot(null)}>
+                    ← 返回当前车辆
+                  </button>
+                  <div>
+                    <p>PART LOADOUT · FIXED SLOT</p>
+                    <h4>{`选择${CAR_PART_SLOT_INFO[partPickerSlot].shortName}`}</h4>
+                    <span>{`为 ${
+                      equipmentConfig.cars[selectedEquipment.carId].name
+                    } 的${CAR_PART_SLOT_INFO[partPickerSlot].shortName}部位选择兼容配件。`}</span>
+                  </div>
+                </header>
+                <div className="heroes-panel__picker-grid">
+                  {carPartInventory.filter(
+                    (part) => part.slot === partPickerSlot,
+                  ).length > 0 ? (
+                    carPartInventory
+                      .filter((part) => part.slot === partPickerSlot)
+                      .map((part) => {
+                        const installedCarId = partCar(part)
+                        const equipped =
+                          installedCarId === selectedEquipment.carId
+                        const quality = CAR_PART_QUALITY_INFO[part.quality]
+                        return (
+                          <article
+                            key={part.id}
+                            className="heroes-panel__picker-card heroes-panel__picker-card--part"
+                            aria-current={equipped ? 'true' : undefined}
+                            style={
+                              {
+                                '--part-quality': quality.color,
+                              } as CSSProperties
+                            }
+                          >
+                            <div
+                              className="heroes-panel__picker-part"
+                              aria-hidden="true"
+                            >
+                              {CAR_PART_SLOT_INFO[part.slot].shortName.slice(
+                                0,
+                                1,
+                              )}
+                            </div>
+                            <div className="heroes-panel__picker-copy">
+                              <span>
+                                {equipped
+                                  ? '当前安装'
+                                  : installedCarId
+                                    ? `${
+                                        equipmentConfig.cars[installedCarId]
+                                          .name
+                                      } 使用中`
+                                    : '仓库待命'}
+                              </span>
+                              <h5>{CAR_PART_SLOT_INFO[part.slot].name}</h5>
+                              <span className="heroes-panel__part-tags">
+                                <em>
+                                  {CAR_PART_SLOT_INFO[part.slot].shortName}
+                                </em>
+                                <em>{quality.name}</em>
+                                <em>{`Lv.${part.level}`}</em>
+                              </span>
+                              <p>{CAR_PART_SLOT_INFO[part.slot].description}</p>
+                              <dl>
+                                <div>
+                                  <dt>品质强度</dt>
+                                  <dd>{`${quality.strength}×`}</dd>
+                                </div>
+                                <div>
+                                  <dt>升级成本</dt>
+                                  <dd>
+                                    {part.level >= CAR_PART_MAX_LEVEL
+                                      ? '已满级'
+                                      : `${getCarPartUpgradeCost(part)} 零件`}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt>回收价值</dt>
+                                  <dd>{`${getCarPartRecycleValue(part)} 零件`}</dd>
+                                </div>
+                              </dl>
+                            </div>
+                            <div className="heroes-panel__picker-actions">
+                              <button
+                                type="button"
+                                disabled={equipped}
+                                onClick={() => handleInstallPart(part)}
+                              >
+                                {equipped
+                                  ? '当前已安装'
+                                  : installedCarId
+                                    ? '转移并安装'
+                                    : `安装到${CAR_PART_SLOT_INFO[part.slot].shortName}`}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={installedCarId !== null}
+                                onClick={() => handleRecyclePart(part)}
+                              >
+                                {installedCarId
+                                  ? '使用中不可回收'
+                                  : `回收 +${getCarPartRecycleValue(part)}`}
+                              </button>
+                            </div>
+                          </article>
+                        )
+                      })
+                  ) : (
+                    <p className="heroes-panel__empty">
+                      {yardUnlocked
+                        ? `仓库暂无${CAR_PART_SLOT_INFO[partPickerSlot].shortName}配件，废车回收厂会继续挂机产出。`
+                        : '解锁废车回收厂后即可挂机获得车辆配件。'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === 'car' &&
+            equipmentPicker === null &&
+            partPickerSlot === null ? (
               <div className="heroes-panel__car-pane">
                 {selectedEquipment.carId ? (
                   <>
@@ -713,6 +856,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                         className="heroes-panel__change-equipment"
                         onClick={() => {
                           setEquipmentPicker('car')
+                          setPartPickerSlot(null)
                           setStatus('')
                         }}
                       >
@@ -735,7 +879,10 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                         return (
                           <article key={slot}>
                             <header>
-                              <span>{CAR_PART_SLOT_INFO[slot].shortName}</span>
+                              <span>
+                                {CAR_PART_SLOT_INFO[slot].shortName}
+                                <em>固定部位</em>
+                              </span>
                               <small>
                                 {CAR_PART_SLOT_INFO[slot].description}
                               </small>
@@ -743,7 +890,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                             {part ? (
                               <>
                                 <PartCard part={part} compact />
-                                <div>
+                                <div className="heroes-panel__part-slot-actions">
                                   <button
                                     type="button"
                                     onClick={() => handleUpgradePart(part)}
@@ -751,6 +898,15 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                                     {part.level >= CAR_PART_MAX_LEVEL
                                       ? '已满级'
                                       : `升级 · ${getCarPartUpgradeCost(part)} 零件`}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPartPickerSlot(slot)
+                                      setStatus('')
+                                    }}
+                                  >
+                                    更换
                                   </button>
                                   <button
                                     type="button"
@@ -771,50 +927,32 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                                 </div>
                               </>
                             ) : (
-                              <p>等待安装</p>
+                              <div className="heroes-panel__part-slot-empty">
+                                <p>尚未安装兼容配件</p>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPartPickerSlot(slot)
+                                    setStatus('')
+                                  }}
+                                >
+                                  {`选择${CAR_PART_SLOT_INFO[slot].shortName}`}
+                                </button>
+                              </div>
                             )}
                           </article>
                         )
                       })}
                     </div>
 
-                    <div className="heroes-panel__inventory">
-                      <header>
-                        <div>
-                          <h4>配件仓库</h4>
-                          <p>安装到当前车辆，或回收为升级用零件。</p>
-                        </div>
-                        <span>{`可用 ${availableParts.length}`}</span>
-                      </header>
-                      {availableParts.length > 0 ? (
-                        <div className="heroes-panel__inventory-grid">
-                          {availableParts.map((part) => (
-                            <article key={part.id}>
-                              <PartCard part={part} />
-                              <div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleInstallPart(part)}
-                                >
-                                  安装
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRecyclePart(part)}
-                                >
-                                  {`回收 +${getCarPartRecycleValue(part)}`}
-                                </button>
-                              </div>
-                            </article>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="heroes-panel__empty">
-                          {yardUnlocked
-                            ? '废车回收厂正在搜集下一件配件。'
-                            : '解锁废车回收厂后即可挂机获得车辆配件。'}
-                        </p>
-                      )}
+                    <div className="heroes-panel__part-storage-summary">
+                      <div>
+                        <strong>{`配件仓库 ${carPartInventory.length}/${CAR_PART_INVENTORY_LIMIT}`}</strong>
+                        <span>
+                          点击固定部位后，只会显示可以安装到该部位的配件。
+                        </span>
+                      </div>
+                      <b>{`待命 ${availableParts.length}`}</b>
                     </div>
                   </>
                 ) : (
@@ -822,7 +960,10 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                     <p>当前没有装备车辆。</p>
                     <button
                       type="button"
-                      onClick={() => setEquipmentPicker('car')}
+                      onClick={() => {
+                        setEquipmentPicker('car')
+                        setPartPickerSlot(null)
+                      }}
                     >
                       选择车辆
                     </button>

@@ -8,6 +8,44 @@ vi.mock('@react-three/fiber', () => ({
 }))
 
 describe('RacingScene nitro effects', () => {
+  it('always paints the player car green and marks it above the roof', () => {
+    const state = createRaceState(1, {
+      carId: 'black-throne',
+      gunId: 'rivet-smg',
+    })
+
+    const { container } = render(
+      <RacingScene state={state} carId="black-throne" gunId="rivet-smg" />,
+    )
+
+    expect(
+      container.querySelector('meshStandardMaterial[name="player-body-green"]'),
+    ).toHaveAttribute('color', '#22c55e')
+    expect(
+      container.querySelector('[name="player-marker"]'),
+    ).toBeInTheDocument()
+  })
+
+  it('renders a tall cyan jump ramp distinct from orange road obstacles', () => {
+    const state = createRaceState(1, {
+      carId: 'rust-fox',
+      gunId: 'rivet-smg',
+    })
+    state.player = { ...state.player, distance: 100 }
+
+    const { container } = render(
+      <RacingScene state={state} carId="rust-fox" gunId="rivet-smg" />,
+    )
+
+    expect(container.querySelector('[name="jump-ramp"]')).toBeInTheDocument()
+    expect(
+      container.querySelector('[name="road-obstacle"]'),
+    ).toBeInTheDocument()
+    expect(
+      container.querySelector('[name="jump-ramp"] pointLight'),
+    ).toHaveAttribute('color', '#22d3ee')
+  })
+
   it('renders a persistent super-nitro trail and shock rings', () => {
     const state = createRaceState(1, {
       carId: 'rust-fox',

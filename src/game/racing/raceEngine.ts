@@ -11,7 +11,8 @@ import {
 } from '../equipmentProgression'
 
 export const RACE_TICK_MS = 50
-export const AIR_GRAVITY = 6.2
+export const RACE_FINISH_GRACE_DISTANCE = 4
+export const AIR_GRAVITY = 12.4
 export const NATURAL_NITRO_PER_SECOND = 3.5
 export const NITRO_MAX = 100
 export const NITRO_CELL = NITRO_MAX / 3
@@ -20,12 +21,14 @@ export const NITRO_SUPER_DURATION_MS = 3200
 export const NITRO_DOUBLE_TAP_WINDOW_MS = 280
 export const NITRO_SUPER_LAUNCH_SPEED = 18
 export const CATCHUP_NITRO_GAP_START = 4
-export const CATCHUP_NITRO_BASE_PER_SECOND = 4
-export const CATCHUP_NITRO_MAX_PER_SECOND = 18
+export const CATCHUP_NITRO_BASE_PER_SECOND = 8
+export const CATCHUP_NITRO_MAX_PER_SECOND = 30
+export const AI_CATCHUP_NITRO_MULTIPLIER = 1.4
 export const BAD_LANDING_ANGLE_THRESHOLD = 0.2
 export const BAD_LANDING_SPEED_MULTIPLIER = 0.62
 export const FIRE_BOOST_DURATION_MS = 2400
 export const FIRE_BOOST_COOLDOWN_MS = 8000
+export const PURSUIT_STUNT_FIRE_COOLDOWN_REDUCTION_MS = 2500
 export const RACE_LANES = [0, 1, 2] as const
 export const RACE_LANE_X = [-3.25, 0, 3.25] as const
 export type RaceLane = (typeof RACE_LANES)[number]
@@ -527,6 +530,15 @@ function updateAi(
           (candidateVehicle) => candidateVehicle.role === 'target',
         )
       : undefined
+  const raceLeaderDistance =
+    stage.mode === 'race'
+      ? Math.max(
+          state.player.distance,
+          ...state.vehicles
+            .filter((candidate) => candidate.role === 'racer')
+            .map((candidate) => candidate.distance),
+        )
+      : 0
 
   for (const [index, candidate] of state.vehicles.entries()) {
     let vehicleState = {
@@ -542,16 +554,22 @@ function updateAi(
       (state.elapsedMs + index * 870) / (2300 + index * 420),
     )
     if (stage.mode === 'race') {
-      const gap = state.player.distance - vehicleState.distance
+      const gap = raceLeaderDistance - vehicleState.distance
       const configured =
         stage.opponentSpeeds[index % stage.opponentSpeeds.length] ??
         car.maxSpeed * 0.82
-      const packSpeed = configured
-      vehicleState.desiredSpeed = packSpeed + clamp(gap * 0.075, -3.5, 4.5)
+      const packSpeed = configured * (1.1 + stage.order * 0.008)
+      vehicleState.desiredSpeed = packSpeed + clamp(gap * 0.18, -2, 12)
       const closeBehind =
-        gap > 0 && gap < 18 && Math.abs(vehicleState.x - state.player.x) < 3.8
+        state.player.distance - vehicleState.distance > 0 &&
+        state.player.distance - vehicleState.distance < 18 &&
+        Math.abs(vehicleState.x - state.player.x) < 3.8
       vehicleState.targetLane = closeBehind
-        ? state.player.targetLane
+        ? state.player.targetLane === 1
+          ? index % 2 === 0
+            ? 0
+            : 2
+          : 1
         : (((phase + index + stage.order) % 3) as RaceLane)
     } else {
       const baseSpeed = stage.targetSpeed
@@ -596,6 +614,26 @@ function updateAi(
         rampDistance(stage, nextRampIndex) - vehicleState.distance
       if (distanceToRamp > -4 && distanceToRamp < 82) {
         vehicleState.targetLane = rampLane(stage.order, nextRampIndex)
+      } else {
+        const nextObstacleIndex =
+          Math.floor(vehicleState.distance / stage.obstacleEvery) + 1
+        const distanceToObstacle =
+          nextObstacleIndex * stage.obstacleEvery - vehicleState.distance
+        const blockedLane = obstacleLane(stage.order, nextObstacleIndex)
+        if (
+          distanceToObstacle > 0 &&
+          distanceToObstacle < 68 &&
+          blockedLane === vehicleState.targetLane
+        ) {
+          vehicleState.targetLane =
+            blockedLane === 0
+              ? 1
+              : blockedLane === 2
+                ? 1
+                : index % 2 === 0
+                  ? 0
+                  : 2
+        }
       }
     }
 
@@ -610,7 +648,7 @@ function updateAi(
       const savesForSuper = index % 3 === 0
       const canSuper = vehicleState.boost >= NITRO_MAX - 0.001
       const canBoost = vehicleState.boost >= NITRO_CELL
-      const trailingPlayer = state.player.distance - vehicleState.distance > 4
+      const trailingLeader = raceLeaderDistance - vehicleState.distance > 4
       if (savesForSuper && canSuper) {
         const activated = activateNitro(next, vehicleState, true)
         next = activated.state
@@ -618,7 +656,7 @@ function updateAi(
       } else if (
         !savesForSuper &&
         canBoost &&
-        (trailingPlayer || phase % 5 === 3)
+        (trailingLeader || phase % 5 === 3)
       ) {
         const activated = activateNitro(next, vehicleState, false)
         next = activated.state
@@ -799,6 +837,14 @@ function processLanding(
     if (state.mode === 'race') {
       landedVehicle.boost = Math.min(NITRO_MAX, landedVehicle.boost + 45)
       landedVehicle.speed *= 1.1
+    } else if (landedVehicle.role === 'player') {
+      next = {
+        ...next,
+        fireBoostCooldownMs: Math.max(
+          0,
+          next.fireBoostCooldownMs - PURSUIT_STUNT_FIRE_COOLDOWN_REDUCTION_MS,
+        ),
+      }
     }
     if (landedVehicle.role === 'player') next = withEvent(next, 'stunt')
   } else if (badLanding) {
@@ -837,7 +883,9 @@ function applyCatchupNitro(state: RaceState, dtMs: number): RaceState {
     if (vehicleState.boosting || vehicleState.durability <= 0) {
       return vehicleState
     }
-    const rate = catchupNitroRate(leaderDistance - vehicleState.distance)
+    const rate =
+      catchupNitroRate(leaderDistance - vehicleState.distance) *
+      (vehicleState.role === 'racer' ? AI_CATCHUP_NITRO_MULTIPLIER : 0.65)
     if (rate <= 0) return vehicleState
     return {
       ...vehicleState,
@@ -1180,7 +1228,10 @@ function resolveFinish(state: RaceState, stage: RacingStageConfig): RaceState {
     if (
       state.vehicles.some(
         (candidate) =>
-          candidate.role === 'racer' && candidate.distance >= stage.distance,
+          candidate.role === 'racer' &&
+          candidate.distance >= stage.distance &&
+          candidate.distance - state.player.distance >
+            RACE_FINISH_GRACE_DISTANCE,
       )
     ) {
       return withEvent(

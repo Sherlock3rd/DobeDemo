@@ -159,6 +159,33 @@ describe('adventureMigration', () => {
     expect(normalized.nextPartSerial).toBe(5)
   })
 
+  it('migrates legacy armor and turbo parts into bumper and suspension slots', () => {
+    const normalized = normalizeAdventureDurableState(
+      {
+        carPartInventory: [
+          { id: 'legacy-armor', slot: 'armor', quality: 'worn', level: 2 },
+          { id: 'legacy-turbo', slot: 'turbo', quality: 'elite', level: 3 },
+        ],
+        carPartSlotsByCar: {
+          'rust-fox': {
+            armor: 'legacy-armor',
+            turbo: 'legacy-turbo',
+          },
+        },
+      },
+      NOW,
+    )
+
+    expect(normalized.carPartInventory).toEqual([
+      { id: 'legacy-armor', slot: 'bumper', quality: 'worn', level: 2 },
+      { id: 'legacy-turbo', slot: 'suspension', quality: 'elite', level: 3 },
+    ])
+    expect(normalized.carPartSlotsByCar['rust-fox'].bumper).toBe('legacy-armor')
+    expect(normalized.carPartSlotsByCar['rust-fox'].suspension).toBe(
+      'legacy-turbo',
+    )
+  })
+
   it('reconciles hero levels and formation against gang level', () => {
     const state = {
       ...createInitialAdventureState(NOW),

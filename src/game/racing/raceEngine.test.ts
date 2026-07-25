@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AI_CATCHUP_NITRO_MULTIPLIER,
   AIR_GRAVITY,
   advanceRace,
   BAD_LANDING_SPEED_MULTIPLIER,
@@ -14,6 +15,7 @@ import {
   NITRO_MAX,
   NITRO_SUPER_DURATION_MS,
   NITRO_SUPER_LAUNCH_SPEED,
+  PURSUIT_STUNT_FIRE_COOLDOWN_REDUCTION_MS,
   RACE_LANE_X,
   RACE_TICK_MS,
   raceRank,
@@ -31,6 +33,12 @@ const STARTER: RaceLoadout = {
 const ENDGAME: RaceLoadout = {
   carId: 'black-throne',
   gunId: 'president-cannon',
+  carUpgrade: {
+    maxSpeed: 3,
+    acceleration: 2,
+    durability: 10,
+    grip: 0.04,
+  },
 }
 
 function botInput(state: RaceState): RaceInput {
@@ -38,8 +46,9 @@ function botInput(state: RaceState): RaceInput {
     state.mode === 'pursuit' &&
     state.fireBoostCooldownMs <= 0 &&
     !state.fireBoostLatch
-  const nearbyFeature = upcomingTrackFeatures(state).find(
+  const nearbyObstacle = upcomingTrackFeatures(state).find(
     (feature) =>
+      feature.kind === 'obstacle' &&
       feature.distance > state.player.distance &&
       feature.distance - state.player.distance < 13 &&
       feature.lane === state.player.targetLane,
@@ -52,7 +61,7 @@ function botInput(state: RaceState): RaceInput {
         : state.player.boost >= NITRO_CELL
           ? 1
           : 0
-  if (!state.steerLatch && nearbyFeature) {
+  if (!state.steerLatch && nearbyObstacle) {
     return {
       laneDelta: state.player.targetLane === 0 ? 1 : -1,
       boostTaps,
@@ -84,7 +93,7 @@ function botInput(state: RaceState): RaceInput {
 
 function finish(stage: number, loadout: RaceLoadout): RaceState {
   let state = createRaceState(stage, loadout)
-  for (let tick = 0; tick < 1500 && state.status === 'running'; tick += 1) {
+  for (let tick = 0; tick < 2200 && state.status === 'running'; tick += 1) {
     state = advanceRace(state, botInput(state), loadout)
   }
   return state
@@ -221,8 +230,12 @@ describe('raceEngine V2', () => {
     const next = advanceRace(initial, {}, STARTER, 250)
     expect(next.vehicles[1].boost).toBeGreaterThan(next.vehicles[0].boost)
     expect(next.vehicles[1].boost).toBeGreaterThanOrEqual(
-      (NATURAL_NITRO_PER_SECOND + CATCHUP_NITRO_MAX_PER_SECOND - 0.5) * 0.25,
+      (NATURAL_NITRO_PER_SECOND +
+        CATCHUP_NITRO_MAX_PER_SECOND * AI_CATCHUP_NITRO_MULTIPLIER -
+        0.5) *
+        0.25,
     )
+    expect(next.vehicles[1].desiredSpeed).toBeGreaterThan(40)
   })
 
   it('requires one full cell and converts it into a timed boost', () => {
@@ -287,7 +300,7 @@ describe('raceEngine V2', () => {
       state = advanceRace(state, {}, STARTER)
       peakHeight = Math.max(peakHeight, state.player.airborneHeight)
     }
-    expect(peakHeight).toBeGreaterThan(20)
+    expect(peakHeight).toBeGreaterThan(10)
   })
 
   it('lets AI racers spend cells and save full tanks for super boosts', () => {
@@ -329,7 +342,7 @@ describe('raceEngine V2', () => {
     expect(state.event?.type).toBe('ramp')
   })
 
-  it('keeps the player airborne for roughly three times the old duration', () => {
+  it('halves the previous long airborne duration', () => {
     let state = createRaceState(1, STARTER)
     const ramp = upcomingTrackFeatures(state, 400).find(
       (feature) => feature.kind === 'ramp',
@@ -355,9 +368,9 @@ describe('raceEngine V2', () => {
       state = advanceRace(state, {}, STARTER)
       airborneTicks += 1
     }
-    expect(AIR_GRAVITY).toBeCloseTo(6.2)
-    expect(airborneTicks * RACE_TICK_MS).toBeGreaterThanOrEqual(3000)
-    expect(airborneTicks * RACE_TICK_MS).toBeLessThanOrEqual(4500)
+    expect(AIR_GRAVITY).toBeCloseTo(12.4)
+    expect(airborneTicks * RACE_TICK_MS).toBeGreaterThanOrEqual(1500)
+    expect(airborneTicks * RACE_TICK_MS).toBeLessThanOrEqual(2300)
   })
 
   it('lets AI cars seek ramps and perform airborne stunts', () => {
@@ -473,6 +486,31 @@ describe('raceEngine V2', () => {
       (projectile) => projectile.owner === 'player',
     )
     expect(playerProjectile?.damage).toBeGreaterThan(13)
+  })
+
+  it('reduces pursuit fire-boost cooldown after a clean airborne stunt', () => {
+    const state = createRaceState(2, STARTER)
+    state.fireBoostCooldownMs = 6000
+    state.player = {
+      ...state.player,
+      airborneHeight: 0.05,
+      verticalSpeed: -8,
+      stuntAngle: Math.PI * 2,
+      speed: 30,
+      desiredSpeed: 30,
+      fireCooldownMs: 1000,
+    }
+    state.vehicles = state.vehicles.map((vehicle, index) => ({
+      ...vehicle,
+      distance: 90 + index * 12,
+      x: index % 2 === 0 ? -3.25 : 3.25,
+    }))
+
+    const landed = advanceRace(state, {}, STARTER)
+    expect(landed.event?.type).toBe('stunt')
+    expect(landed.fireBoostCooldownMs).toBe(
+      6000 - RACE_TICK_MS - PURSUIT_STUNT_FIRE_COOLDOWN_REDUCTION_MS,
+    )
   })
 
   it('disables all nitro charging and speed boosts in pursuit stages', () => {

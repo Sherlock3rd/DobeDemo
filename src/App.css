@@ -2016,6 +2016,49 @@
   grid-column: 1 / -1;
 }
 
+.heroes-panel__picker-card--part {
+  --part-quality: #94a3b8;
+  border-left: 3px solid var(--part-quality);
+}
+
+.heroes-panel__picker-part {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 4.6rem;
+  height: 4.6rem;
+  border: 1px solid color-mix(in srgb, var(--part-quality) 72%, white);
+  border-radius: 0.7rem;
+  color: var(--part-quality);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--part-quality) 22%, #0f172a),
+      rgba(2, 6, 23, 0.92)
+    ),
+    #0f172a;
+  box-shadow:
+    inset 0 0 1.1rem color-mix(in srgb, var(--part-quality) 22%, transparent),
+    0 0.45rem 1rem rgba(0, 0, 0, 0.24);
+  font-size: 1.35rem;
+  font-weight: 950;
+}
+
+.heroes-panel__picker-actions {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: 0.4rem;
+}
+
+.heroes-panel__picker-actions button {
+  min-width: 0;
+}
+
+.heroes-panel__picker-grid > .heroes-panel__empty {
+  grid-column: 1 / -1;
+}
+
 .heroes-panel__picker-car,
 .heroes-panel__picker-gun {
   --car-body: #64748b;
@@ -2265,9 +2308,24 @@
 }
 
 .heroes-panel__part-slots article > header > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
   color: #f8fafc;
   font-size: 0.78rem;
   font-weight: 900;
+}
+
+.heroes-panel__part-slots article > header em {
+  padding: 0.16rem 0.3rem;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 999px;
+  color: #67e8f9;
+  background: rgba(8, 145, 178, 0.1);
+  font-size: 0.5rem;
+  font-style: normal;
+  letter-spacing: 0.04em;
 }
 
 .heroes-panel__part-slots article > header small {
@@ -2292,6 +2350,25 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.3rem;
+}
+
+.heroes-panel__part-slots .heroes-panel__part-slot-actions {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.heroes-panel__part-slot-empty {
+  align-items: center;
+  min-height: 4.3rem;
+  padding: 0.35rem;
+  border: 1px dashed rgba(148, 163, 184, 0.22);
+  border-radius: 0.4rem;
+}
+
+.heroes-panel__part-slot-empty p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 750;
 }
 
 .heroes-panel__part-slots article button,
@@ -2340,10 +2417,23 @@
   white-space: nowrap;
 }
 
-.heroes-panel__part-card small {
-  color: var(--part-quality);
-  font-size: 0.62rem;
+.heroes-panel__part-tags {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+  margin-top: 0.24rem;
+}
+
+.heroes-panel__part-tags em {
+  padding: 0.12rem 0.28rem;
+  border: 1px solid color-mix(in srgb, var(--part-quality) 58%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--part-quality) 82%, white);
+  background: color-mix(in srgb, var(--part-quality) 12%, transparent);
+  font-size: 0.52rem;
+  font-style: normal;
   font-weight: 850;
+  line-height: 1;
 }
 
 .heroes-panel__part-card--compact {
@@ -2353,6 +2443,32 @@
 .heroes-panel__part-card--compact .heroes-panel__part-icon {
   width: 1.8rem;
   height: 1.8rem;
+}
+
+.heroes-panel__part-storage-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 0.5rem;
+  background: rgba(8, 145, 178, 0.08);
+}
+
+.heroes-panel__part-storage-summary div {
+  display: grid;
+}
+
+.heroes-panel__part-storage-summary strong {
+  color: #e0f2fe;
+  font-size: 0.72rem;
+}
+
+.heroes-panel__part-storage-summary span,
+.heroes-panel__part-storage-summary b {
+  color: #7dd3fc;
+  font-size: 0.62rem;
 }
 
 .heroes-panel__inventory {

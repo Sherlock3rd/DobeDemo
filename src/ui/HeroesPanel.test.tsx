@@ -71,8 +71,8 @@ describe('HeroesPanel', () => {
           level: 1,
         },
         {
-          id: 'part-armor',
-          slot: 'armor',
+          id: 'part-bumper',
+          slot: 'bumper',
           quality: 'worn',
           level: 1,
         },
@@ -81,11 +81,19 @@ describe('HeroesPanel', () => {
     render(<HeroesPanel onClose={() => {}} />)
 
     await userEvent.click(screen.getByRole('button', { name: /^车辆/ }))
-    const engineCard = screen.getByText('旧件·动力核心').closest('article')
+    await userEvent.click(screen.getByRole('button', { name: '选择引擎' }))
+    expect(
+      screen.getByRole('heading', { name: '选择引擎' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('防撞保险杠')).not.toBeInTheDocument()
+    const engineCard = screen.getByText('强化引擎').closest('article')
     expect(engineCard).not.toBeNull()
+    expect(within(engineCard as HTMLElement).getByText('引擎')).toBeVisible()
+    expect(within(engineCard as HTMLElement).getByText('旧件')).toBeVisible()
+    expect(within(engineCard as HTMLElement).getByText('Lv.1')).toBeVisible()
     await userEvent.click(
       within(engineCard as HTMLElement).getByRole('button', {
-        name: '安装',
+        name: '安装到引擎',
       }),
     )
     expect(
@@ -98,16 +106,20 @@ describe('HeroesPanel', () => {
     expect(useAdventureStore.getState().carPartInventory[0].level).toBe(2)
     expect(useAdventureStore.getState().spareParts).toBe(88)
 
-    const armorCard = screen.getByText('旧件·装甲组件').closest('article')
-    expect(armorCard).not.toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: '选择保险杠' }))
+    const bumperCard = screen.getByText('防撞保险杠').closest('article')
+    expect(bumperCard).not.toBeNull()
     await userEvent.click(
-      within(armorCard as HTMLElement).getByRole('button', {
+      within(bumperCard as HTMLElement).getByRole('button', {
         name: '回收 +8',
       }),
     )
     expect(useAdventureStore.getState().carPartInventory).toHaveLength(1)
     expect(useAdventureStore.getState().spareParts).toBe(96)
 
+    await userEvent.click(
+      screen.getByRole('button', { name: '← 返回当前车辆' }),
+    )
     await userEvent.click(screen.getByRole('button', { name: '卸下' }))
     expect(
       useAdventureStore.getState().carPartSlotsByCar['rust-fox'].engine,
@@ -208,6 +220,28 @@ describe('HeroesPanel', () => {
     expect(
       screen.getByRole('button', { name: '枪械 · 双管短喷' }),
     ).toBeInTheDocument()
+  })
+
+  it('treats a fixed-slot part picker as a deeper Escape layer', async () => {
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      lastUpdatedAt: BASE_TIME,
+    })
+    const onClose = vi.fn()
+    render(<HeroesPanel onClose={onClose} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /^车辆/ }))
+    await userEvent.click(screen.getByRole('button', { name: '选择轮胎' }))
+    expect(
+      screen.getByRole('heading', { name: '选择轮胎' }),
+    ).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: '选择轮胎' })).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 
   it('closes on Escape', async () => {

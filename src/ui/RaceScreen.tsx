@@ -299,7 +299,7 @@ function RaceSession({
           <span>
             {definition.mode === 'race'
               ? '七车对抗 · 落后补氮 · 满格双击超级飞跃'
-              : '纯追击枪战 · 突破护卫 · 摧毁目标车'}
+              : '纯追击枪战 · 空中特技缩短强化冷却 · 摧毁目标车'}
           </span>
         </div>
         <div className="race-hud__timer">{remainingSeconds}</div>
@@ -364,7 +364,7 @@ function RaceSession({
                   )}m`
                 : ''
             }`}</p>
-            <p>{`普通攻击 自动开火 · 敌方持续反击 · ${fireBoostStatus}`}</p>
+            <p>{`普通攻击 自动开火 · 空中特技 -2.5秒强化冷却 · ${fireBoostStatus}`}</p>
           </>
         )}
         <progress

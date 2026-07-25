@@ -169,7 +169,7 @@ describe('useAdventureStore', () => {
       useAdventureStore.getState().settleCarPartIdle(NOW + interval, 1),
     ).toEqual({ received: 1, autoRecycled: 0 })
     expect(useAdventureStore.getState().carPartInventory).toEqual([
-      { id: 'part-1', slot: 'engine', quality: 'worn', level: 1 },
+      { id: 'part-1', slot: 'tires', quality: 'worn', level: 1 },
     ])
   })
 
@@ -182,7 +182,7 @@ describe('useAdventureStore', () => {
       useAdventureStore.getState().equipCarPart('rust-fox', 'part-1', 1),
     ).toMatchObject({ applied: true, reason: 'ready' })
     expect(
-      useAdventureStore.getState().carPartSlotsByCar['rust-fox'].engine,
+      useAdventureStore.getState().carPartSlotsByCar['rust-fox'].tires,
     ).toBe('part-1')
     expect(useAdventureStore.getState().recycleCarPart('part-1')).toMatchObject(
       { applied: false, reason: 'part-installed' },
@@ -193,7 +193,7 @@ describe('useAdventureStore', () => {
     expect(useAdventureStore.getState().carPartInventory[0].level).toBe(2)
     expect(useAdventureStore.getState().spareParts).toBe(88)
     expect(
-      useAdventureStore.getState().unequipCarPart('rust-fox', 'engine', 1),
+      useAdventureStore.getState().unequipCarPart('rust-fox', 'tires', 1),
     ).toMatchObject({ applied: true })
     expect(useAdventureStore.getState().recycleCarPart('part-1')).toMatchObject(
       { applied: true },

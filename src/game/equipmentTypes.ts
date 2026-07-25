@@ -14,7 +14,12 @@ export const GUN_IDS = [
   'president-cannon',
 ] as const
 
-export const CAR_PART_SLOT_IDS = ['engine', 'armor', 'tires', 'turbo'] as const
+export const CAR_PART_SLOT_IDS = [
+  'tires',
+  'engine',
+  'bumper',
+  'suspension',
+] as const
 
 export const CAR_PART_QUALITY_IDS = [
   'worn',

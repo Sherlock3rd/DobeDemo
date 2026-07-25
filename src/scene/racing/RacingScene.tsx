@@ -97,6 +97,9 @@ function VehicleModel({
     0.22,
   )
   const damaged = vehicle.durability / vehicle.maxDurability < 0.38
+  const isPlayer = vehicle.role === 'player'
+  const bodyColor = isPlayer ? '#22c55e' : appearance.body
+  const accentColor = isPlayer ? '#bbf7d0' : appearance.accent
   return (
     <group
       position={[vehicle.x, vehicle.airborneHeight + 0.12, relativeZ]}
@@ -111,15 +114,27 @@ function VehicleModel({
       <mesh castShadow>
         <boxGeometry args={[2.2, 0.62, 4]} />
         <meshStandardMaterial
-          color={appearance.body}
+          name={isPlayer ? 'player-body-green' : undefined}
+          color={bodyColor}
+          emissive={isPlayer ? '#0b4f2d' : '#000000'}
+          emissiveIntensity={isPlayer ? 0.5 : 0}
           roughness={0.55}
           metalness={0.2}
         />
       </mesh>
       <mesh position={[0, 0.58, -0.12]} castShadow>
         <boxGeometry args={[1.62, 0.66, 1.78]} />
-        <meshStandardMaterial color={appearance.accent} roughness={0.4} />
+        <meshStandardMaterial color={accentColor} roughness={0.4} />
       </mesh>
+      {isPlayer ? (
+        <group name="player-marker" position={[0, 2.05, 0]}>
+          <mesh rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.42, 0.8, 4]} />
+            <meshBasicMaterial color="#4ade80" toneMapped={false} />
+          </mesh>
+          <pointLight color="#4ade80" intensity={2.2} distance={5} />
+        </group>
+      ) : null}
       <mesh position={[0, 0.15, 2.03]}>
         <boxGeometry args={[1.74, 0.18, 0.12]} />
         <meshStandardMaterial
@@ -280,25 +295,70 @@ function TrackEffect({
 
 function Ramp({ x, z }: { x: number; z: number }): JSX.Element {
   return (
-    <group position={[x, 0.2, z]}>
-      <mesh rotation={[-0.2, 0, 0]} castShadow receiveShadow>
-        <boxGeometry args={[2.7, 0.35, 5.4]} />
-        <meshStandardMaterial color="#bc6b2c" roughness={0.82} />
+    <group name="jump-ramp" position={[x, 0, z]}>
+      <mesh position={[0, 0.12, 0.4]} castShadow>
+        <boxGeometry args={[3.45, 0.24, 7.5]} />
+        <meshStandardMaterial
+          color="#142634"
+          metalness={0.72}
+          roughness={0.5}
+        />
       </mesh>
-      {[-0.8, 0, 0.8].map((stripe) => (
-        <mesh
-          key={stripe}
-          position={[stripe, 0.38, -0.1]}
-          rotation={[-0.2, 0, 0]}
-        >
-          <boxGeometry args={[0.28, 0.04, 5.25]} />
+      <group position={[0, 1, 0]} rotation={[-0.28, 0, 0]}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[3.15, 0.24, 7.2]} />
           <meshStandardMaterial
-            color="#ffd43b"
-            emissive="#8c6711"
-            emissiveIntensity={0.7}
+            color="#167a8b"
+            metalness={0.68}
+            roughness={0.42}
+          />
+        </mesh>
+        {[-2.7, -1.55, -0.4, 0.75, 1.9].map((offset) => (
+          <mesh key={offset} position={[0, 0.16, offset]}>
+            <boxGeometry args={[2.55, 0.055, 0.38]} />
+            <meshStandardMaterial
+              color="#facc15"
+              emissive="#a16207"
+              emissiveIntensity={1.15}
+            />
+          </mesh>
+        ))}
+        {[-1.48, 1.48].map((railX) => (
+          <mesh key={railX} position={[railX, 0.42, 0]}>
+            <boxGeometry args={[0.13, 0.62, 7.35]} />
+            <meshStandardMaterial
+              color="#22d3ee"
+              emissive="#0e7490"
+              emissiveIntensity={1.1}
+              metalness={0.7}
+            />
+          </mesh>
+        ))}
+      </group>
+      {[-1.68, 1.68].map((postX) => (
+        <mesh key={postX} position={[postX, 1.2, -3.2]} castShadow>
+          <boxGeometry args={[0.18, 2.4, 0.18]} />
+          <meshStandardMaterial
+            color="#22d3ee"
+            emissive="#0891b2"
+            emissiveIntensity={1.2}
           />
         </mesh>
       ))}
+      <mesh position={[0, 2.34, -3.2]}>
+        <boxGeometry args={[3.55, 0.28, 0.24]} />
+        <meshStandardMaterial
+          color="#facc15"
+          emissive="#a16207"
+          emissiveIntensity={1.2}
+        />
+      </mesh>
+      <pointLight
+        position={[0, 2.1, -2.8]}
+        color="#22d3ee"
+        intensity={3.2}
+        distance={9}
+      />
     </group>
   )
 }
@@ -356,7 +416,11 @@ export function RacingScene({
           return feature.kind === 'ramp' ? (
             <Ramp key={`ramp-${feature.index}`} x={x} z={z} />
           ) : (
-            <group key={`obstacle-${feature.index}`} position={[x, 0, z]}>
+            <group
+              name="road-obstacle"
+              key={`obstacle-${feature.index}`}
+              position={[x, 0, z]}
+            >
               <mesh castShadow>
                 <boxGeometry args={[1.65, 1.15, 0.75]} />
                 <meshStandardMaterial color="#d17128" />

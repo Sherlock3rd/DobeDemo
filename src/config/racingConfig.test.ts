@@ -6,7 +6,7 @@ import {
 } from './racingConfig'
 
 describe('racingConfig', () => {
-  it('defines ten ordered alternating one-minute stages', () => {
+  it('defines ten ordered alternating stages with extended race routes', () => {
     expect(racingConfig.stages).toHaveLength(10)
     expect(racingConfig.stages.map((stage) => stage.order)).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -24,10 +24,13 @@ describe('racingConfig', () => {
       'pursuit',
     ])
     for (const stage of racingConfig.stages) {
-      expect(stage.durationMs).toBeGreaterThanOrEqual(60_000)
-      expect(stage.durationMs).toBeLessThanOrEqual(65_000)
       if (stage.mode === 'race') {
+        expect(stage.durationMs).toBe(85_000)
+        expect(stage.distance).toBeGreaterThanOrEqual(3_100)
         expect(stage.opponentSpeeds).toHaveLength(3)
+      } else {
+        expect(stage.durationMs).toBeGreaterThanOrEqual(60_000)
+        expect(stage.durationMs).toBeLessThanOrEqual(65_000)
       }
     }
   })

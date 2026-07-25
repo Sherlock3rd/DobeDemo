@@ -37,7 +37,7 @@ describe('PartSalvageController', () => {
     expect(useAdventureStore.getState().carPartInventory).toEqual([
       {
         id: 'part-1',
-        slot: 'engine',
+        slot: 'tires',
         quality: 'worn',
         level: 1,
       },
