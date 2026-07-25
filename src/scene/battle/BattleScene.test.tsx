@@ -66,11 +66,16 @@ describe('BattleScene', () => {
       ),
     )
     const hitIndex = result.timeline.findIndex((tick) => tick.hits.length > 0)
-    const { rerender } = render(<BattleScene result={result} currentTick={1} />)
+    const { container, rerender } = render(
+      <BattleScene result={result} currentTick={1} />,
+    )
     expect(screen.getAllByTestId('battle-unit')).toHaveLength(
       result.timeline[0].units.length,
     )
     expect(screen.getByTestId('battle-environment')).toBeInTheDocument()
+    expect(
+      container.querySelector('[name="battle-formation-axis"]'),
+    ).toHaveAttribute('rotation', `0,${-Math.PI / 4},0`)
     rerender(<BattleScene result={result} currentTick={hitIndex + 1} />)
     expect(screen.getByTestId('damage-numbers')).toHaveTextContent(
       String(result.timeline[hitIndex].hits.length),

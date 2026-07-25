@@ -11,5 +11,8 @@ describe('BattleEnvironment', () => {
   it('renders ground and slot markers as mesh primitives', () => {
     const { container } = render(<BattleEnvironment />)
     expect(container.querySelectorAll('mesh').length).toBeGreaterThan(0)
+    expect(
+      container.querySelector('[name="battle-formation-markers"]'),
+    ).toHaveAttribute('rotation', `0,${-Math.PI / 4},0`)
   })
 })

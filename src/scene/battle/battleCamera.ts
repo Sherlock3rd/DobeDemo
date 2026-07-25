@@ -1,4 +1,4 @@
-const BATTLE_CAMERA_POSITION = [0, 14, 15] as const
+const BATTLE_CAMERA_POSITION = [0, 14, 17] as const
 
 export const BATTLE_CAMERA_CONFIG = {
   position: BATTLE_CAMERA_POSITION,
@@ -7,7 +7,7 @@ export const BATTLE_CAMERA_CONFIG = {
     0,
     0,
   ] as const,
-  zoom: 48,
+  fov: 40,
   near: 0.1,
   far: 100,
 } as const

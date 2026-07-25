@@ -5,6 +5,7 @@ import { BattleEnvironment } from './BattleEnvironment'
 import { BattleUnit } from './BattleUnit'
 import { DamageNumbers } from './DamageNumbers'
 import { appearanceForUnit } from './battleUnitAppearance'
+import { BATTLE_FORMATION_ROTATION } from './battleLayout'
 
 const EFFECT_HISTORY_TICKS = 5
 
@@ -46,28 +47,30 @@ export function BattleScene({
   return (
     <group>
       <BattleEnvironment />
-      {snapshot.units.map((unit) => {
-        const acting = snapshot.hits.some(
-          (hit) =>
-            hit.attackerSide === unit.side &&
-            hit.attackerGlobalIndex === unit.globalIndex,
-        )
-        return (
-          <BattleUnit
-            key={`${unit.side}-${unit.globalIndex}`}
-            unit={unit}
-            appearance={appearanceForUnit(unit)}
-            acting={acting}
-            actionKey={acting ? snapshot.tick : null}
-          />
-        )
-      })}
-      <BattleEffects
-        events={effectEvents}
-        currentEventKey={snapshot.tick}
-        onPresented={onEffectsPresented}
-      />
-      <DamageNumbers hits={snapshot.hits} />
+      <group name="battle-formation-axis" rotation={BATTLE_FORMATION_ROTATION}>
+        {snapshot.units.map((unit) => {
+          const acting = snapshot.hits.some(
+            (hit) =>
+              hit.attackerSide === unit.side &&
+              hit.attackerGlobalIndex === unit.globalIndex,
+          )
+          return (
+            <BattleUnit
+              key={`${unit.side}-${unit.globalIndex}`}
+              unit={unit}
+              appearance={appearanceForUnit(unit)}
+              acting={acting}
+              actionKey={acting ? snapshot.tick : null}
+            />
+          )
+        })}
+        <BattleEffects
+          events={effectEvents}
+          currentEventKey={snapshot.tick}
+          onPresented={onEffectsPresented}
+        />
+        <DamageNumbers hits={snapshot.hits} />
+      </group>
     </group>
   )
 }

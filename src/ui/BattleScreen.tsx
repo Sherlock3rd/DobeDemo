@@ -203,11 +203,7 @@ function BattleScreenSession({
       data-presented-event-key={presentedEffects.eventKey}
     >
       <div className="battle-screen__canvas-wrap">
-        <Canvas
-          className="battle-screen__canvas"
-          orthographic
-          camera={BATTLE_CAMERA_CONFIG}
-        >
+        <Canvas className="battle-screen__canvas" camera={BATTLE_CAMERA_CONFIG}>
           <BattleScene
             result={boot.result}
             currentTick={currentTick}

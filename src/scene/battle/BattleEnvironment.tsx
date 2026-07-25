@@ -1,4 +1,5 @@
 import type { JSX } from 'react'
+import { BATTLE_FORMATION_ROTATION } from './battleLayout'
 
 const SLOT_MARKERS: ReadonlyArray<{
   side: 'ally' | 'enemy'
@@ -29,24 +30,29 @@ export function BattleEnvironment(): JSX.Element {
         <planeGeometry args={[16, 14]} />
         <meshStandardMaterial color="#3a4550" />
       </mesh>
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[12, 0.12]} />
-        <meshStandardMaterial color="#ffd43b" />
-      </mesh>
-      {SLOT_MARKERS.map((slot) => (
-        <mesh
-          key={`${slot.side}-${slot.x}-${slot.z}`}
-          position={[slot.x, 0.03, slot.z]}
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
-          <ringGeometry args={[0.55, 0.7, 4]} />
-          <meshStandardMaterial
-            color={slot.side === 'ally' ? '#74c0fc' : '#ffa94d'}
-            transparent
-            opacity={0.55}
-          />
+      <group
+        name="battle-formation-markers"
+        rotation={BATTLE_FORMATION_ROTATION}
+      >
+        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[12, 0.12]} />
+          <meshStandardMaterial color="#ffd43b" />
         </mesh>
-      ))}
+        {SLOT_MARKERS.map((slot) => (
+          <mesh
+            key={`${slot.side}-${slot.x}-${slot.z}`}
+            position={[slot.x, 0.03, slot.z]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <ringGeometry args={[0.55, 0.7, 4]} />
+            <meshStandardMaterial
+              color={slot.side === 'ally' ? '#74c0fc' : '#ffa94d'}
+              transparent
+              opacity={0.55}
+            />
+          </mesh>
+        ))}
+      </group>
       <ambientLight intensity={0.65} />
       <directionalLight position={[4, 10, 2]} intensity={1.1} castShadow />
     </group>

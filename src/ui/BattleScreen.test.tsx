@@ -8,8 +8,19 @@ import { useAdventureStore } from '../store/useAdventureStore'
 import { useGangStore } from '../store/useGangStore'
 
 vi.mock('@react-three/fiber', () => ({
-  Canvas: ({ children }: { children?: ReactNode }) => (
-    <div data-testid="battle-canvas">{children}</div>
+  Canvas: ({
+    children,
+    orthographic,
+  }: {
+    children?: ReactNode
+    orthographic?: boolean
+  }) => (
+    <div
+      data-testid="battle-canvas"
+      data-camera-mode={orthographic ? 'orthographic' : 'perspective'}
+    >
+      {children}
+    </div>
   ),
 }))
 
@@ -52,6 +63,14 @@ describe('BattleScreen', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('uses a perspective camera for the diagonal battlefield', () => {
+    render(<BattleScreen stage={1} onExit={() => {}} />)
+    expect(screen.getByTestId('battle-canvas')).toHaveAttribute(
+      'data-camera-mode',
+      'perspective',
+    )
   })
 
   it('plays to victory and commits the first clear exactly once at resolve', () => {
