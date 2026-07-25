@@ -1,12 +1,12 @@
-import { CAMERA_CONFIG } from '../../game/cityLayout'
+const BATTLE_CAMERA_POSITION = [0, 14, 15] as const
 
 export const BATTLE_CAMERA_CONFIG = {
-  position: [
-    CAMERA_CONFIG.position[0] / 2,
-    CAMERA_CONFIG.position[1] / 2,
-    CAMERA_CONFIG.position[2] / 2,
+  position: BATTLE_CAMERA_POSITION,
+  rotation: [
+    -Math.atan2(BATTLE_CAMERA_POSITION[1], BATTLE_CAMERA_POSITION[2]),
+    0,
+    0,
   ] as const,
-  rotation: [-0.6, 0.675, 0] as const,
   zoom: 48,
   near: 0.1,
   far: 100,
