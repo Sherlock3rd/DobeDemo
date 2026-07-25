@@ -8,7 +8,10 @@ import {
   type HeroId,
   type Row,
 } from '../heroes'
-import type { EquipmentByHero } from '../equipmentTypes'
+import type {
+  EquipmentByHero,
+  EquipmentProgressionSnapshot,
+} from '../equipmentTypes'
 import { getHeroEquipmentStats } from '../heroEquipment'
 import {
   effectiveStats,
@@ -137,6 +140,7 @@ export function buildBattleInput(
   heroLevels: Record<HeroId, number>,
   gangLevel: number,
   equipmentByHero?: EquipmentByHero,
+  progression?: EquipmentProgressionSnapshot,
 ): BattleInput {
   if (!Number.isInteger(stage) || stage < 1 || stage > 20) {
     invalidInput('stage')
@@ -194,7 +198,12 @@ export function buildBattleInput(
       )
     }
 
-    const stats = getHeroEquipmentStats(slot.heroId, level, equipmentByHero)
+    const stats = getHeroEquipmentStats(
+      slot.heroId,
+      level,
+      equipmentByHero,
+      progression,
+    )
     return {
       side: 'ally',
       heroId: slot.heroId,

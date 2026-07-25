@@ -1,6 +1,25 @@
 import { HERO_IDS, isHeroId, isHeroUnlocked, type HeroId } from '../game/heroes'
 import type { FormationAssignment } from '../game/combat/power'
-import { isCarId, isGunId, type EquipmentByHero } from '../game/equipmentTypes'
+import {
+  CAR_IDS,
+  CAR_PART_SLOT_IDS,
+  GUN_IDS,
+  isCarId,
+  isCarPartQuality,
+  isCarPartSlot,
+  isGunId,
+  type CarPartInstance,
+  type CarPartSlotsByCar,
+  type EquipmentByHero,
+  type GunUpgradeLevels,
+} from '../game/equipmentTypes'
+import {
+  CAR_PART_INVENTORY_LIMIT,
+  CAR_PART_MAX_LEVEL,
+  GUN_MAX_LEVEL,
+  createInitialCarPartSlots,
+  createInitialGunLevels,
+} from '../game/equipmentProgression'
 import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
 
 export const ADVENTURE_STORAGE_KEY = 'dobe-adventure-progression-v1'
@@ -13,6 +32,12 @@ export interface AdventureDurableState {
   highestClearedRacingStage: number
   equipmentByHero: EquipmentByHero
   idleClock: number
+  spareParts: number
+  gunLevels: GunUpgradeLevels
+  carPartInventory: CarPartInstance[]
+  carPartSlotsByCar: CarPartSlotsByCar
+  partIdleClock: number
+  nextPartSerial: number
 }
 
 const DEFAULT_FORMATION: FormationAssignment = [
@@ -54,7 +79,90 @@ export function createInitialAdventureState(
     highestClearedRacingStage: 0,
     equipmentByHero: createInitialEquipment(),
     idleClock: Number.isFinite(now) ? now : Date.now(),
+    spareParts: 0,
+    gunLevels: createInitialGunLevels(),
+    carPartInventory: [],
+    carPartSlotsByCar: createInitialCarPartSlots(),
+    partIdleClock: Number.isFinite(now) ? now : Date.now(),
+    nextPartSerial: 1,
   }
+}
+
+function normalizeGunLevels(value: unknown): GunUpgradeLevels {
+  const result = createInitialGunLevels()
+  if (!isRecord(value)) return result
+  for (const gunId of GUN_IDS) {
+    result[gunId] = clampInt(value[gunId], 0, GUN_MAX_LEVEL, 0)
+  }
+  return result
+}
+
+function normalizeCarPartInventory(value: unknown): CarPartInstance[] {
+  if (!Array.isArray(value)) return []
+  const result: CarPartInstance[] = []
+  const seen = new Set<string>()
+  for (const raw of value) {
+    if (result.length >= CAR_PART_INVENTORY_LIMIT) break
+    if (
+      !isRecord(raw) ||
+      typeof raw.id !== 'string' ||
+      raw.id.trim() === '' ||
+      seen.has(raw.id) ||
+      typeof raw.slot !== 'string' ||
+      !isCarPartSlot(raw.slot) ||
+      typeof raw.quality !== 'string' ||
+      !isCarPartQuality(raw.quality)
+    ) {
+      continue
+    }
+    seen.add(raw.id)
+    result.push({
+      id: raw.id,
+      slot: raw.slot,
+      quality: raw.quality,
+      level: clampInt(raw.level, 1, CAR_PART_MAX_LEVEL, 1),
+    })
+  }
+  return result
+}
+
+function normalizeCarPartSlots(
+  value: unknown,
+  inventory: readonly CarPartInstance[],
+): CarPartSlotsByCar {
+  const result = createInitialCarPartSlots()
+  if (!isRecord(value)) return result
+  const inventoryById = new Map(inventory.map((part) => [part.id, part]))
+  const installed = new Set<string>()
+  for (const carId of CAR_IDS) {
+    const rawCar = value[carId]
+    if (!isRecord(rawCar)) continue
+    for (const slot of CAR_PART_SLOT_IDS) {
+      const partId = rawCar[slot]
+      if (typeof partId !== 'string' || installed.has(partId)) continue
+      const part = inventoryById.get(partId)
+      if (!part || part.slot !== slot) continue
+      result[carId][slot] = partId
+      installed.add(partId)
+    }
+  }
+  return result
+}
+
+function nextPartSerialFrom(
+  value: unknown,
+  inventory: readonly CarPartInstance[],
+): number {
+  const highestExisting = inventory.reduce((highest, part) => {
+    const match = /^part-(\d+)$/.exec(part.id)
+    if (!match) return highest
+    const serial = Number(match[1])
+    return Number.isSafeInteger(serial) ? Math.max(highest, serial) : highest
+  }, 0)
+  return Math.max(
+    highestExisting + 1,
+    clampInt(value, 1, Number.MAX_SAFE_INTEGER, 1),
+  )
 }
 
 function normalizeEquipment(value: unknown): EquipmentByHero {
@@ -131,6 +239,7 @@ export function normalizeAdventureDurableState(
   for (const id of HERO_IDS) {
     heroLevels[id] = clampInt(levelsSrc[id], 1, 50, 1)
   }
+  const carPartInventory = normalizeCarPartInventory(src.carPartInventory)
   return {
     heroLevels,
     sharedExp: clampInt(src.sharedExp, 0, Number.MAX_SAFE_INTEGER, 0),
@@ -149,6 +258,21 @@ export function normalizeAdventureDurableState(
         : Number.isFinite(now)
           ? now
           : Date.now(),
+    spareParts: clampInt(src.spareParts, 0, Number.MAX_SAFE_INTEGER, 0),
+    gunLevels: normalizeGunLevels(src.gunLevels),
+    carPartInventory,
+    carPartSlotsByCar: normalizeCarPartSlots(
+      src.carPartSlotsByCar,
+      carPartInventory,
+    ),
+    partIdleClock:
+      typeof src.partIdleClock === 'number' &&
+      Number.isFinite(src.partIdleClock)
+        ? src.partIdleClock
+        : Number.isFinite(now)
+          ? now
+          : Date.now(),
+    nextPartSerial: nextPartSerialFrom(src.nextPartSerial, carPartInventory),
   }
 }
 

@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { equipmentConfig } from '../config/equipmentConfig'
 import { getRacingStage } from '../config/racingConfig'
+import { getInstalledPartRacingBonus } from '../game/equipmentProgression'
 import type { HeroId } from '../game/heroes'
 import {
   advanceRace,
@@ -36,11 +37,14 @@ interface RaceBoot {
 }
 
 function boot(stage: number, heroId: HeroId): RaceBoot {
-  const equipment = useAdventureStore.getState().equipmentByHero[heroId]
+  const adventure = useAdventureStore.getState()
+  const equipment = adventure.equipmentByHero[heroId]
   if (!equipment.carId) throw new Error('当前英雄没有装备车辆')
   const loadout: RaceLoadout = {
     carId: equipment.carId,
     gunId: equipment.gunId,
+    gunLevel: equipment.gunId ? adventure.gunLevels[equipment.gunId] : 0,
+    carUpgrade: getInstalledPartRacingBonus(equipment.carId, adventure),
   }
   return { loadout, state: createRaceState(stage, loadout) }
 }
@@ -224,7 +228,9 @@ function RaceSession({
   )
   const carName = equipmentConfig.cars[initial.loadout.carId].name
   const gunName = initial.loadout.gunId
-    ? equipmentConfig.guns[initial.loadout.gunId].name
+    ? `${equipmentConfig.guns[initial.loadout.gunId].name} Lv.${
+        initial.loadout.gunLevel ?? 0
+      }`
     : null
   const target = targetVehicle(state)
   const gun = initial.loadout.gunId

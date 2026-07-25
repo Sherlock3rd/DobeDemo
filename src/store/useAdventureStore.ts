@@ -13,12 +13,25 @@ import {
 import { GANG_MAX_LEVEL, GANG_MIN_LEVEL } from '../game/progressionUnlocks'
 import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
 import {
+  CAR_IDS,
+  CAR_PART_SLOT_IDS,
   isCarId,
+  isCarPartSlot,
   isGunId,
   type CarId,
+  type CarPartSlot,
   type EquipmentByHero,
   type GunId,
 } from '../game/equipmentTypes'
+import {
+  CAR_PART_MAX_LEVEL,
+  GUN_MAX_LEVEL,
+  getCarPartRecycleValue,
+  getCarPartUpgradeCost,
+  getGunUpgradeCost,
+  isPartInstalled,
+  settlePartSalvage as calculatePartSalvage,
+} from '../game/equipmentProgression'
 import type { FormationAssignment } from '../game/combat/power'
 import { createSafeStorage } from './safeStorage'
 import {
@@ -42,6 +55,20 @@ export type UpgradeHeroResult = {
     | 'invalid-request'
 }
 
+export type EquipmentActionResult = {
+  applied: boolean
+  reason:
+    | 'ready'
+    | 'invalid-request'
+    | 'equipment-locked'
+    | 'part-not-found'
+    | 'part-installed'
+    | 'max-level'
+    | 'insufficient-spare-parts'
+  cost?: number
+  gained?: number
+}
+
 export interface AdventureState extends AdventureDurableState {
   claimIdleChest: (now: number) => number
   upgradeHero: (heroId: string, gangLevel: number) => UpgradeHeroResult
@@ -55,6 +82,24 @@ export interface AdventureState extends AdventureDurableState {
   }
   equipCar: (heroId: string, carId: string | null, gangLevel: number) => boolean
   equipGun: (heroId: string, gunId: string | null, gangLevel: number) => boolean
+  settleCarPartIdle: (
+    now: number,
+    recyclingYardLevel: number,
+  ) => { received: number; autoRecycled: number }
+  resetPartIdleClock: (now: number) => void
+  equipCarPart: (
+    carId: string,
+    partId: string,
+    gangLevel: number,
+  ) => EquipmentActionResult
+  unequipCarPart: (
+    carId: string,
+    slot: string,
+    gangLevel: number,
+  ) => EquipmentActionResult
+  recycleCarPart: (partId: string) => EquipmentActionResult
+  upgradeCarPart: (partId: string) => EquipmentActionResult
+  upgradeGun: (gunId: string, gangLevel: number) => EquipmentActionResult
   setFormation: (formation: FormationAssignment, gangLevel: number) => boolean
   reconcileWithGang: (gangLevel: number) => void
   reset: (now?: number) => void
@@ -118,6 +163,35 @@ function unequipGun(equipment: EquipmentByHero, gunId: GunId): void {
       equipment[heroId].gunId = null
     }
   }
+}
+
+function cloneCarPartSlots(
+  source: AdventureDurableState['carPartSlotsByCar'],
+): AdventureDurableState['carPartSlotsByCar'] {
+  return Object.fromEntries(
+    CAR_IDS.map((carId) => [carId, { ...source[carId] }]),
+  ) as AdventureDurableState['carPartSlotsByCar']
+}
+
+function removePartFromSlots(
+  slotsByCar: AdventureDurableState['carPartSlotsByCar'],
+  partId: string,
+): void {
+  for (const carId of CAR_IDS) {
+    for (const slot of CAR_PART_SLOT_IDS) {
+      if (slotsByCar[carId][slot] === partId) {
+        slotsByCar[carId][slot] = null
+      }
+    }
+  }
+}
+
+function isValidGangLevel(gangLevel: number): boolean {
+  return (
+    Number.isSafeInteger(gangLevel) &&
+    gangLevel >= GANG_MIN_LEVEL &&
+    gangLevel <= GANG_MAX_LEVEL
+  )
 }
 
 export const useAdventureStore = create<AdventureState>()(
@@ -261,6 +335,211 @@ export const useAdventureStore = create<AdventureState>()(
         })
         return true
       },
+      settleCarPartIdle: (now, recyclingYardLevel) => {
+        let outcome = { received: 0, autoRecycled: 0 }
+        if (
+          !Number.isFinite(now) ||
+          !Number.isInteger(recyclingYardLevel) ||
+          recyclingYardLevel < 1 ||
+          recyclingYardLevel > 10
+        ) {
+          return outcome
+        }
+        set((state) => {
+          const settlement = calculatePartSalvage({
+            inventory: state.carPartInventory,
+            spareParts: state.spareParts,
+            nextPartSerial: state.nextPartSerial,
+            lastUpdatedAt: state.partIdleClock,
+            now,
+            recyclingYardLevel,
+          })
+          outcome = {
+            received: settlement.received,
+            autoRecycled: settlement.autoRecycled,
+          }
+          if (
+            settlement.received === 0 &&
+            settlement.autoRecycled === 0 &&
+            settlement.nextUpdatedAt === state.partIdleClock
+          ) {
+            return state
+          }
+          return {
+            carPartInventory: settlement.inventory,
+            spareParts: settlement.spareParts,
+            nextPartSerial: settlement.nextPartSerial,
+            partIdleClock: settlement.nextUpdatedAt,
+          }
+        })
+        return outcome
+      },
+      resetPartIdleClock: (now) => {
+        if (!Number.isFinite(now)) return
+        set({ partIdleClock: now })
+      },
+      equipCarPart: (carId, partId, gangLevel) => {
+        if (!isValidGangLevel(gangLevel)) {
+          return { applied: false, reason: 'invalid-request' }
+        }
+        if (
+          !isCarId(carId) ||
+          !isCarUnlocked(carId, gangLevel) ||
+          typeof partId !== 'string'
+        ) {
+          return { applied: false, reason: 'equipment-locked' }
+        }
+        let result: EquipmentActionResult = {
+          applied: false,
+          reason: 'part-not-found',
+        }
+        set((state) => {
+          const part = state.carPartInventory.find(
+            (candidate) => candidate.id === partId,
+          )
+          if (!part) return state
+          const carPartSlotsByCar = cloneCarPartSlots(state.carPartSlotsByCar)
+          removePartFromSlots(carPartSlotsByCar, partId)
+          carPartSlotsByCar[carId][part.slot] = partId
+          result = { applied: true, reason: 'ready' }
+          return { carPartSlotsByCar }
+        })
+        return result
+      },
+      unequipCarPart: (carId, slot, gangLevel) => {
+        if (!isValidGangLevel(gangLevel)) {
+          return { applied: false, reason: 'invalid-request' }
+        }
+        if (
+          !isCarId(carId) ||
+          !isCarUnlocked(carId, gangLevel) ||
+          typeof slot !== 'string' ||
+          !isCarPartSlot(slot)
+        ) {
+          return { applied: false, reason: 'invalid-request' }
+        }
+        let applied = false
+        set((state) => {
+          if (!state.carPartSlotsByCar[carId][slot]) return state
+          const carPartSlotsByCar = cloneCarPartSlots(state.carPartSlotsByCar)
+          carPartSlotsByCar[carId][slot as CarPartSlot] = null
+          applied = true
+          return { carPartSlotsByCar }
+        })
+        return {
+          applied,
+          reason: applied ? 'ready' : 'part-not-found',
+        }
+      },
+      recycleCarPart: (partId) => {
+        if (typeof partId !== 'string' || partId.trim() === '') {
+          return { applied: false, reason: 'invalid-request' }
+        }
+        let result: EquipmentActionResult = {
+          applied: false,
+          reason: 'part-not-found',
+        }
+        set((state) => {
+          const part = state.carPartInventory.find(
+            (candidate) => candidate.id === partId,
+          )
+          if (!part) return state
+          if (isPartInstalled(partId, state.carPartSlotsByCar)) {
+            result = { applied: false, reason: 'part-installed' }
+            return state
+          }
+          const gained = getCarPartRecycleValue(part)
+          result = { applied: true, reason: 'ready', gained }
+          return {
+            carPartInventory: state.carPartInventory.filter(
+              (candidate) => candidate.id !== partId,
+            ),
+            spareParts: Math.min(
+              Number.MAX_SAFE_INTEGER,
+              state.spareParts + gained,
+            ),
+          }
+        })
+        return result
+      },
+      upgradeCarPart: (partId) => {
+        if (typeof partId !== 'string' || partId.trim() === '') {
+          return { applied: false, reason: 'invalid-request' }
+        }
+        let result: EquipmentActionResult = {
+          applied: false,
+          reason: 'part-not-found',
+        }
+        set((state) => {
+          const index = state.carPartInventory.findIndex(
+            (candidate) => candidate.id === partId,
+          )
+          if (index < 0) return state
+          const part = state.carPartInventory[index]
+          if (part.level >= CAR_PART_MAX_LEVEL) {
+            result = { applied: false, reason: 'max-level' }
+            return state
+          }
+          const cost = getCarPartUpgradeCost(part)
+          if (state.spareParts < cost) {
+            result = {
+              applied: false,
+              reason: 'insufficient-spare-parts',
+              cost,
+            }
+            return state
+          }
+          const carPartInventory = state.carPartInventory.map(
+            (candidate, candidateIndex) =>
+              candidateIndex === index
+                ? { ...candidate, level: candidate.level + 1 }
+                : candidate,
+          )
+          result = { applied: true, reason: 'ready', cost }
+          return {
+            carPartInventory,
+            spareParts: state.spareParts - cost,
+          }
+        })
+        return result
+      },
+      upgradeGun: (gunId, gangLevel) => {
+        if (!isValidGangLevel(gangLevel)) {
+          return { applied: false, reason: 'invalid-request' }
+        }
+        if (!isGunId(gunId) || !isGunUnlocked(gunId, gangLevel)) {
+          return { applied: false, reason: 'equipment-locked' }
+        }
+        let result: EquipmentActionResult = {
+          applied: false,
+          reason: 'invalid-request',
+        }
+        set((state) => {
+          const level = state.gunLevels[gunId]
+          if (level >= GUN_MAX_LEVEL) {
+            result = { applied: false, reason: 'max-level' }
+            return state
+          }
+          const cost = getGunUpgradeCost(gunId, level)
+          if (state.spareParts < cost) {
+            result = {
+              applied: false,
+              reason: 'insufficient-spare-parts',
+              cost,
+            }
+            return state
+          }
+          result = { applied: true, reason: 'ready', cost }
+          return {
+            gunLevels: {
+              ...state.gunLevels,
+              [gunId]: Math.min(GUN_MAX_LEVEL, level + 1),
+            },
+            spareParts: state.spareParts - cost,
+          }
+        })
+        return result
+      },
       setFormation: (formation, gangLevel) => {
         if (!isValidFormation(formation, gangLevel)) return false
         set({ formation: formation.map((s) => ({ ...s })) })
@@ -272,7 +551,7 @@ export const useAdventureStore = create<AdventureState>()(
     }),
     {
       name: ADVENTURE_STORAGE_KEY,
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted) => persisted,
       partialize: ({
@@ -283,6 +562,12 @@ export const useAdventureStore = create<AdventureState>()(
         highestClearedRacingStage,
         equipmentByHero,
         idleClock,
+        spareParts,
+        gunLevels,
+        carPartInventory,
+        carPartSlotsByCar,
+        partIdleClock,
+        nextPartSerial,
       }) => ({
         heroLevels,
         sharedExp,
@@ -291,6 +576,12 @@ export const useAdventureStore = create<AdventureState>()(
         highestClearedRacingStage,
         equipmentByHero,
         idleClock,
+        spareParts,
+        gunLevels,
+        carPartInventory,
+        carPartSlotsByCar,
+        partIdleClock,
+        nextPartSerial,
       }),
       merge: (persisted, current) =>
         persisted == null

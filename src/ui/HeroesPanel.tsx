@@ -1,6 +1,37 @@
-import { useEffect, useState, type JSX } from 'react'
-import { expToLevel, heroesConfig } from '../config/heroesConfig'
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type JSX,
+} from 'react'
 import { equipmentConfig } from '../config/equipmentConfig'
+import { expToLevel, heroesConfig } from '../config/heroesConfig'
+import { unitPower } from '../game/combat/power'
+import {
+  CAR_PART_INVENTORY_LIMIT,
+  CAR_PART_MAX_LEVEL,
+  CAR_PART_QUALITY_INFO,
+  CAR_PART_SLOT_INFO,
+  GUN_MAX_LEVEL,
+  getCarPartRecycleValue,
+  getCarPartUpgradeCost,
+  getGunHeroAtk,
+  getGunPursuitDamage,
+  getGunUpgradeCost,
+  getPartDropIntervalMs,
+  isPartInstalled,
+} from '../game/equipmentProgression'
+import {
+  CAR_IDS,
+  CAR_PART_SLOT_IDS,
+  GUN_IDS,
+  type CarId,
+  type CarPartInstance,
+  type GunId,
+} from '../game/equipmentTypes'
+import { getGangLevel, isBuildingUnlocked } from '../game/gangProgression'
+import { getHeroCombatStats } from '../game/heroEquipment'
 import {
   HERO_IDS,
   getHeroLevelCap,
@@ -8,22 +39,18 @@ import {
   isHeroUnlocked,
   type HeroId,
 } from '../game/heroes'
-import {
-  CAR_IDS,
-  GUN_IDS,
-  type CarId,
-  type GunId,
-} from '../game/equipmentTypes'
-import { getHeroCombatStats } from '../game/heroEquipment'
 import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
-import { getGangLevel } from '../game/gangProgression'
 import { useAdventureStore } from '../store/useAdventureStore'
+import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
+import { useChestTick } from '../game/chestTick'
 import { useInitialFocus } from './useInitialFocus'
 
 export interface HeroesPanelProps {
   onClose: () => void
 }
+
+type DevelopmentTab = 'level' | 'car' | 'gun'
 
 const TITLE_ID = 'heroes-panel-title'
 
@@ -47,69 +74,218 @@ function upgradeFeedback(
   }
 }
 
+function HeroPortrait({ heroId }: { heroId: HeroId }): JSX.Element {
+  const appearance = heroesConfig.heroes[heroId].appearance
+  const style = {
+    '--hero-primary': appearance.primaryColor,
+    '--hero-accent': appearance.accentColor,
+  } as CSSProperties
+  return (
+    <div
+      className={`heroes-panel__portrait heroes-panel__portrait--${appearance.silhouette}`}
+      style={style}
+      aria-hidden="true"
+    >
+      <span className="heroes-panel__portrait-glow" />
+      <span className="heroes-panel__portrait-head" />
+      <span className="heroes-panel__portrait-body" />
+      <span
+        className={`heroes-panel__portrait-weapon heroes-panel__portrait-weapon--${appearance.weapon}`}
+      />
+      <span className="heroes-panel__portrait-badge">{appearance.weapon}</span>
+    </div>
+  )
+}
+
+function PartCard({
+  part,
+  compact = false,
+}: {
+  part: CarPartInstance
+  compact?: boolean
+}): JSX.Element {
+  const quality = CAR_PART_QUALITY_INFO[part.quality]
+  return (
+    <span
+      className={`heroes-panel__part-card${
+        compact ? ' heroes-panel__part-card--compact' : ''
+      }`}
+      style={{ '--part-quality': quality.color } as CSSProperties}
+    >
+      <span className="heroes-panel__part-icon">
+        {CAR_PART_SLOT_INFO[part.slot].shortName.slice(0, 1)}
+      </span>
+      <span>
+        <strong>{`${quality.name}·${CAR_PART_SLOT_INFO[part.slot].name}`}</strong>
+        <small>{`Lv.${part.level}`}</small>
+      </span>
+    </span>
+  )
+}
+
 export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
-  const totalReputation = useGangStore((s) => s.totalReputation)
-  const heroLevels = useAdventureStore((s) => s.heroLevels)
-  const sharedExp = useAdventureStore((s) => s.sharedExp)
-  const upgradeHero = useAdventureStore((s) => s.upgradeHero)
-  const equipmentByHero = useAdventureStore((s) => s.equipmentByHero)
-  const equipCar = useAdventureStore((s) => s.equipCar)
-  const equipGun = useAdventureStore((s) => s.equipGun)
+  const totalReputation = useGangStore((state) => state.totalReputation)
+  const heroLevels = useAdventureStore((state) => state.heroLevels)
+  const sharedExp = useAdventureStore((state) => state.sharedExp)
+  const equipmentByHero = useAdventureStore((state) => state.equipmentByHero)
+  const spareParts = useAdventureStore((state) => state.spareParts)
+  const gunLevels = useAdventureStore((state) => state.gunLevels)
+  const carPartInventory = useAdventureStore((state) => state.carPartInventory)
+  const carPartSlotsByCar = useAdventureStore(
+    (state) => state.carPartSlotsByCar,
+  )
+  const partIdleClock = useAdventureStore((state) => state.partIdleClock)
+  const upgradeHero = useAdventureStore((state) => state.upgradeHero)
+  const equipCar = useAdventureStore((state) => state.equipCar)
+  const equipGun = useAdventureStore((state) => state.equipGun)
+  const equipCarPart = useAdventureStore((state) => state.equipCarPart)
+  const unequipCarPart = useAdventureStore((state) => state.unequipCarPart)
+  const recycleCarPart = useAdventureStore((state) => state.recycleCarPart)
+  const upgradeCarPart = useAdventureStore((state) => state.upgradeCarPart)
+  const upgradeGun = useAdventureStore((state) => state.upgradeGun)
+  const recyclingYardLevel = useCityStore(
+    (state) => state.buildingProgress['recycling-yard'].level,
+  )
+  const clockNow = useChestTick((state) => state.now)
+  const [selectedHero, setSelectedHero] = useState<HeroId>('foreman')
+  const [activeTab, setActiveTab] = useState<DevelopmentTab>('level')
   const [status, setStatus] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>()
   const gangLevel = getGangLevel(totalReputation)
   const cap = getHeroLevelCap(gangLevel)
+  const progression = useMemo(
+    () => ({ gunLevels, carPartInventory, carPartSlotsByCar }),
+    [carPartInventory, carPartSlotsByCar, gunLevels],
+  )
+  const selectedDefinition = heroesConfig.heroes[selectedHero]
+  const selectedLevel = heroLevels[selectedHero]
+  const selectedEquipment = equipmentByHero[selectedHero]
+  const selectedStats = getHeroCombatStats(
+    selectedHero,
+    selectedLevel,
+    selectedEquipment,
+    progression,
+  )
+  const selectedPower = unitPower(selectedDefinition.role, selectedStats)
+  const inventoryById = useMemo(
+    () => new Map(carPartInventory.map((part) => [part.id, part])),
+    [carPartInventory],
+  )
+  const availableParts = carPartInventory.filter(
+    (part) => !isPartInstalled(part.id, carPartSlotsByCar),
+  )
+  const yardUnlocked = isBuildingUnlocked('recycling-yard', gangLevel)
+  const dropInterval = getPartDropIntervalMs(recyclingYardLevel)
+  const visibleNow = clockNow > 0 ? clockNow : partIdleClock
+  const elapsedSinceDrop = Math.max(0, visibleNow - partIdleClock)
+  const nextDropSeconds = Math.max(
+    1,
+    Math.ceil((dropInterval - (elapsedSinceDrop % dropInterval)) / 1000),
+  )
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
+      if (event.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
   const stopPropagation = (event: { stopPropagation: () => void }): void => {
     event.stopPropagation()
   }
 
-  const handleUpgrade = (heroId: HeroId): void => {
-    const level = heroLevels[heroId]
-    const name = heroesConfig.heroes[heroId].name
-    const result = upgradeHero(heroId, gangLevel)
-    setStatus(upgradeFeedback(result.reason, name, level, sharedExp))
-  }
-
   const carOwner = (carId: CarId): HeroId | null =>
-    HERO_IDS.find((id) => equipmentByHero[id].carId === carId) ?? null
+    HERO_IDS.find((heroId) => equipmentByHero[heroId].carId === carId) ?? null
 
   const gunOwner = (gunId: GunId): HeroId | null =>
-    HERO_IDS.find((id) => equipmentByHero[id].gunId === gunId) ?? null
+    HERO_IDS.find((heroId) => equipmentByHero[heroId].gunId === gunId) ?? null
 
-  const handleCar = (heroId: HeroId, carId: CarId | null): void => {
-    if (!equipCar(heroId, carId, gangLevel)) {
+  const handleHeroUpgrade = (): void => {
+    const result = upgradeHero(selectedHero, gangLevel)
+    setStatus(
+      upgradeFeedback(
+        result.reason,
+        selectedDefinition.name,
+        selectedLevel,
+        sharedExp,
+      ),
+    )
+  }
+
+  const handleCar = (carId: CarId): void => {
+    if (!equipCar(selectedHero, carId, gangLevel)) {
       setStatus('无法装备该车辆')
       return
     }
     setStatus(
-      carId
-        ? `${equipmentConfig.cars[carId].name} 已装备给 ${heroesConfig.heroes[heroId].name}`
-        : `已卸下 ${heroesConfig.heroes[heroId].name} 的车辆`,
+      `${equipmentConfig.cars[carId].name} 已装备给 ${selectedDefinition.name}`,
     )
   }
 
-  const handleGun = (heroId: HeroId, gunId: GunId | null): void => {
-    if (!equipGun(heroId, gunId, gangLevel)) {
+  const handleGun = (gunId: GunId): void => {
+    if (!equipGun(selectedHero, gunId, gangLevel)) {
       setStatus('无法装备该枪械')
       return
     }
     setStatus(
-      gunId
-        ? `${equipmentConfig.guns[gunId].name} 已装备给 ${heroesConfig.heroes[heroId].name}`
-        : `已卸下 ${heroesConfig.heroes[heroId].name} 的枪械`,
+      `${equipmentConfig.guns[gunId].name} 已装备给 ${selectedDefinition.name}`,
+    )
+  }
+
+  const handleInstallPart = (part: CarPartInstance): void => {
+    if (!selectedEquipment.carId) {
+      setStatus('请先给英雄装备车辆')
+      return
+    }
+    const result = equipCarPart(selectedEquipment.carId, part.id, gangLevel)
+    setStatus(
+      result.applied
+        ? `${CAR_PART_SLOT_INFO[part.slot].name} 已安装到 ${
+            equipmentConfig.cars[selectedEquipment.carId].name
+          }`
+        : '无法安装该配件',
+    )
+  }
+
+  const handleUpgradePart = (part: CarPartInstance): void => {
+    const result = upgradeCarPart(part.id)
+    setStatus(
+      result.applied
+        ? `${CAR_PART_SLOT_INFO[part.slot].name} 已升级至 Lv.${part.level + 1}`
+        : result.reason === 'insufficient-spare-parts'
+          ? `零件不足，需要 ${result.cost ?? 0}`
+          : result.reason === 'max-level'
+            ? '该配件已经满级'
+            : '无法升级该配件',
+    )
+  }
+
+  const handleRecyclePart = (part: CarPartInstance): void => {
+    const result = recycleCarPart(part.id)
+    setStatus(
+      result.applied
+        ? `已回收 ${CAR_PART_SLOT_INFO[part.slot].name}，零件 +${
+            result.gained ?? 0
+          }`
+        : result.reason === 'part-installed'
+          ? '已安装的配件需要先卸下'
+          : '无法回收该配件',
+    )
+  }
+
+  const handleUpgradeGun = (gunId: GunId): void => {
+    const result = upgradeGun(gunId, gangLevel)
+    setStatus(
+      result.applied
+        ? `${equipmentConfig.guns[gunId].name} 已升级至 Lv.${
+            gunLevels[gunId] + 1
+          }`
+        : result.reason === 'insufficient-spare-parts'
+          ? `零件不足，需要 ${result.cost ?? 0}`
+          : result.reason === 'max-level'
+            ? '该枪械已经满级'
+            : '无法升级该枪械',
     )
   }
 
@@ -126,136 +302,491 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
         onPointerDown={stopPropagation}
         onClick={stopPropagation}
       >
-        <button
-          type="button"
-          className="heroes-panel__close"
-          aria-label="关闭英雄培养"
-          onClick={onClose}
-        >
-          关闭
-        </button>
-        <h2
-          ref={titleRef}
-          id={TITLE_ID}
-          className="heroes-panel__title"
-          tabIndex={-1}
-        >
-          英雄培养
-        </h2>
-        <p className="heroes-panel__shared-exp">{`共享英雄经验 ${sharedExp}`}</p>
-        <p className="heroes-panel__cap">{`当前帮派等级上限 Lv.${cap}`}</p>
-        <ul className="heroes-panel__list">
-          {HERO_IDS.map((heroId) => {
-            const def = heroesConfig.heroes[heroId]
-            const level = heroLevels[heroId]
-            const unlocked = isHeroUnlocked(heroId, gangLevel)
-            const equipment = equipmentByHero[heroId]
-            const stats = getHeroCombatStats(heroId, level, equipment)
-            return (
-              <li
-                key={heroId}
-                className="heroes-panel__card"
-                data-hero={heroId}
-              >
-                <h3 className="heroes-panel__name">
-                  {`${def.name}·${def.alias}`}
-                </h3>
-                {!unlocked ? (
-                  <p className="heroes-panel__locked">
-                    {`帮派 Lv.${heroUnlockLevel(heroId)} 解锁`}
-                  </p>
-                ) : (
+        <header className="heroes-panel__header">
+          <div>
+            <p>CREW DEVELOPMENT</p>
+            <h2 ref={titleRef} id={TITLE_ID} tabIndex={-1}>
+              英雄培养
+            </h2>
+          </div>
+          <div className="heroes-panel__resources" aria-label="养成资源">
+            <span>
+              <small>英雄经验</small>
+              <strong>{sharedExp}</strong>
+            </span>
+            <span>
+              <small>零件</small>
+              <strong>{spareParts}</strong>
+            </span>
+            <span>
+              <small>等级上限</small>
+              <strong>{`Lv.${cap}`}</strong>
+            </span>
+          </div>
+          <button
+            type="button"
+            className="heroes-panel__close"
+            aria-label="关闭英雄培养"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </header>
+
+        <div className="heroes-panel__salvage">
+          <span aria-hidden="true">♻</span>
+          <p>
+            <strong>废车回收厂</strong>
+            {yardUnlocked
+              ? `Lv.${recyclingYardLevel} · ${Math.round(
+                  dropInterval / 1000,
+                )}秒/件 · 下件约 ${nextDropSeconds}秒`
+              : '帮派 Lv.8 解锁后开始挂机产出配件'}
+          </p>
+          <span>{`仓库 ${carPartInventory.length}/${CAR_PART_INVENTORY_LIMIT}`}</span>
+        </div>
+
+        <div className="heroes-panel__layout">
+          <nav className="heroes-panel__roster" aria-label="英雄列表">
+            {HERO_IDS.map((heroId) => {
+              const definition = heroesConfig.heroes[heroId]
+              const unlocked = isHeroUnlocked(heroId, gangLevel)
+              return (
+                <button
+                  type="button"
+                  key={heroId}
+                  className="heroes-panel__hero-button"
+                  aria-pressed={selectedHero === heroId}
+                  disabled={!unlocked}
+                  onClick={() => {
+                    setSelectedHero(heroId)
+                    setStatus('')
+                  }}
+                >
+                  <span
+                    className="heroes-panel__hero-swatch"
+                    style={{
+                      background: definition.appearance.primaryColor,
+                    }}
+                  />
+                  <span>
+                    <strong>{`${definition.name}·${definition.alias}`}</strong>
+                    <small>
+                      {unlocked
+                        ? `Lv.${heroLevels[heroId]}`
+                        : `帮派 Lv.${heroUnlockLevel(heroId)} 解锁`}
+                    </small>
+                  </span>
+                  {unlocked ? (
+                    <b>
+                      {unitPower(
+                        definition.role,
+                        getHeroCombatStats(
+                          heroId,
+                          heroLevels[heroId],
+                          equipmentByHero[heroId],
+                          progression,
+                        ),
+                      )}
+                    </b>
+                  ) : (
+                    <b>锁定</b>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+
+          <article className="heroes-panel__showcase">
+            <div className="heroes-panel__identity">
+              <p>{selectedDefinition.alias}</p>
+              <h3>{selectedDefinition.name}</h3>
+              <span>
+                {selectedDefinition.role === 'front' ? '前排防卫' : '后排火力'}
+              </span>
+            </div>
+            <HeroPortrait heroId={selectedHero} />
+            <div className="heroes-panel__power">
+              <small>英雄战力</small>
+              <strong>{selectedPower}</strong>
+            </div>
+            <dl className="heroes-panel__stats">
+              <div>
+                <dt>HP</dt>
+                <dd>{selectedStats.hp}</dd>
+              </div>
+              <div>
+                <dt>ATK</dt>
+                <dd>{selectedStats.atk}</dd>
+              </div>
+              <div>
+                <dt>DEF</dt>
+                <dd>{selectedStats.def}</dd>
+              </div>
+            </dl>
+            <div className="heroes-panel__skill">
+              <span>主动技能</span>
+              <strong>{selectedDefinition.skill.name}</strong>
+            </div>
+          </article>
+
+          <section className="heroes-panel__development">
+            <nav className="heroes-panel__tabs" aria-label="养成分类">
+              {(
+                [
+                  ['level', '等级'],
+                  ['car', '车辆'],
+                  ['gun', '枪械'],
+                ] as const
+              ).map(([tab, label]) => (
+                <button
+                  type="button"
+                  key={tab}
+                  aria-pressed={activeTab === tab}
+                  onClick={() => {
+                    setActiveTab(tab)
+                    setStatus('')
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+
+            {activeTab === 'level' ? (
+              <div className="heroes-panel__level-pane">
+                <div className="heroes-panel__level-ring">
+                  <small>当前等级</small>
+                  <strong>{selectedLevel}</strong>
+                  <span>{`/ ${cap}`}</span>
+                </div>
+                <div className="heroes-panel__level-growth">
+                  <h4>升级成长</h4>
+                  <p>{`HP +${selectedDefinition.hpPerLevel}`}</p>
+                  <p>{`ATK +${selectedDefinition.atkPerLevel}`}</p>
+                  <p>{`DEF +${selectedDefinition.defPerLevel}`}</p>
+                </div>
+                <button
+                  type="button"
+                  className="heroes-panel__primary-action"
+                  onClick={handleHeroUpgrade}
+                >
+                  {selectedLevel >= 50
+                    ? '等级已满'
+                    : `提升至 Lv.${selectedLevel + 1} · 经验 ${expToLevel(
+                        selectedLevel,
+                      )}`}
+                </button>
+              </div>
+            ) : null}
+
+            {activeTab === 'car' ? (
+              <div className="heroes-panel__car-pane">
+                <div
+                  className="heroes-panel__equipment-list"
+                  aria-label="车辆列表"
+                >
+                  {CAR_IDS.filter((carId) =>
+                    isCarUnlocked(carId, gangLevel),
+                  ).map((carId) => {
+                    const owner = carOwner(carId)
+                    const definition = equipmentConfig.cars[carId]
+                    return (
+                      <button
+                        type="button"
+                        key={carId}
+                        aria-pressed={selectedEquipment.carId === carId}
+                        onClick={() => handleCar(carId)}
+                      >
+                        <span
+                          className="heroes-panel__car-chip"
+                          style={
+                            {
+                              '--car-body': definition.appearance.body,
+                              '--car-accent': definition.appearance.accent,
+                            } as CSSProperties
+                          }
+                        />
+                        <span>
+                          <strong>{definition.name}</strong>
+                          <small>
+                            {owner && owner !== selectedHero
+                              ? `${heroesConfig.heroes[owner].name} 使用中`
+                              : `${
+                                  CAR_PART_SLOT_IDS.filter(
+                                    (slot) =>
+                                      carPartSlotsByCar[carId][slot] !== null,
+                                  ).length
+                                }/4 配件`}
+                          </small>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {selectedEquipment.carId ? (
                   <>
-                    <p className="heroes-panel__level">{`Lv.${level}`}</p>
-                    <p className="heroes-panel__stats">
-                      {`HP ${stats.hp} · ATK ${stats.atk} · DEF ${stats.def}`}
-                    </p>
-                    <p className="heroes-panel__skill">{`技能 ${def.skill.name}`}</p>
-                    <div className="heroes-panel__gear">
-                      <p className="heroes-panel__gear-title">
-                        {`车辆 · ${
-                          equipment.carId
-                            ? equipmentConfig.cars[equipment.carId].name
-                            : '未装备'
-                        }`}
-                      </p>
-                      <div className="heroes-panel__gear-options">
-                        {CAR_IDS.filter((carId) =>
-                          isCarUnlocked(carId, gangLevel),
-                        ).map((carId) => {
-                          const owner = carOwner(carId)
-                          return (
-                            <button
-                              type="button"
-                              key={carId}
-                              aria-pressed={equipment.carId === carId}
-                              onClick={() => handleCar(heroId, carId)}
-                            >
-                              {equipmentConfig.cars[carId].name}
-                              {owner && owner !== heroId
-                                ? ` · ${heroesConfig.heroes[owner].name}`
-                                : ''}
-                            </button>
-                          )
-                        })}
-                        {equipment.carId ? (
-                          <button
-                            type="button"
-                            onClick={() => handleCar(heroId, null)}
-                          >
-                            卸下车辆
-                          </button>
-                        ) : null}
+                    <div className="heroes-panel__car-focus">
+                      <div
+                        className="heroes-panel__car-art"
+                        style={
+                          {
+                            '--car-body':
+                              equipmentConfig.cars[selectedEquipment.carId]
+                                .appearance.body,
+                            '--car-accent':
+                              equipmentConfig.cars[selectedEquipment.carId]
+                                .appearance.accent,
+                          } as CSSProperties
+                        }
+                        aria-hidden="true"
+                      >
+                        <span />
+                        <i />
+                        <b />
                       </div>
-                      <p className="heroes-panel__gear-title">
-                        {`枪械 · ${
-                          equipment.gunId
-                            ? equipmentConfig.guns[equipment.gunId].name
-                            : '未装备'
-                        }`}
-                      </p>
-                      <div className="heroes-panel__gear-options">
-                        {GUN_IDS.filter((gunId) =>
-                          isGunUnlocked(gunId, gangLevel),
-                        ).map((gunId) => {
-                          const owner = gunOwner(gunId)
-                          return (
-                            <button
-                              type="button"
-                              key={gunId}
-                              aria-pressed={equipment.gunId === gunId}
-                              onClick={() => handleGun(heroId, gunId)}
-                            >
-                              {equipmentConfig.guns[gunId].name}
-                              {owner && owner !== heroId
-                                ? ` · ${heroesConfig.heroes[owner].name}`
-                                : ''}
-                            </button>
-                          )
-                        })}
-                        {equipment.gunId ? (
-                          <button
-                            type="button"
-                            onClick={() => handleGun(heroId, null)}
-                          >
-                            卸下枪械
-                          </button>
-                        ) : null}
+                      <div>
+                        <small>当前座驾</small>
+                        <strong>
+                          {equipmentConfig.cars[selectedEquipment.carId].name}
+                        </strong>
+                        <p>
+                          {
+                            equipmentConfig.cars[selectedEquipment.carId]
+                              .description
+                          }
+                        </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className="heroes-panel__upgrade"
-                      onClick={() => handleUpgrade(heroId)}
+
+                    <div
+                      className="heroes-panel__part-slots"
+                      aria-label="车辆配件槽"
                     >
-                      {`升级 ${def.name}`}
-                    </button>
+                      {CAR_PART_SLOT_IDS.map((slot) => {
+                        const partId =
+                          carPartSlotsByCar[selectedEquipment.carId as CarId][
+                            slot
+                          ]
+                        const part = partId
+                          ? inventoryById.get(partId)
+                          : undefined
+                        return (
+                          <article key={slot}>
+                            <header>
+                              <span>{CAR_PART_SLOT_INFO[slot].shortName}</span>
+                              <small>
+                                {CAR_PART_SLOT_INFO[slot].description}
+                              </small>
+                            </header>
+                            {part ? (
+                              <>
+                                <PartCard part={part} compact />
+                                <div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpgradePart(part)}
+                                  >
+                                    {part.level >= CAR_PART_MAX_LEVEL
+                                      ? '已满级'
+                                      : `升级 · ${getCarPartUpgradeCost(part)} 零件`}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!selectedEquipment.carId) return
+                                      unequipCarPart(
+                                        selectedEquipment.carId,
+                                        slot,
+                                        gangLevel,
+                                      )
+                                      setStatus(
+                                        `已卸下 ${CAR_PART_SLOT_INFO[slot].name}`,
+                                      )
+                                    }}
+                                  >
+                                    卸下
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <p>等待安装</p>
+                            )}
+                          </article>
+                        )
+                      })}
+                    </div>
+
+                    <div className="heroes-panel__inventory">
+                      <header>
+                        <div>
+                          <h4>配件仓库</h4>
+                          <p>安装到当前车辆，或回收为升级用零件。</p>
+                        </div>
+                        <span>{`可用 ${availableParts.length}`}</span>
+                      </header>
+                      {availableParts.length > 0 ? (
+                        <div className="heroes-panel__inventory-grid">
+                          {availableParts.map((part) => (
+                            <article key={part.id}>
+                              <PartCard part={part} />
+                              <div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleInstallPart(part)}
+                                >
+                                  安装
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRecyclePart(part)}
+                                >
+                                  {`回收 +${getCarPartRecycleValue(part)}`}
+                                </button>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="heroes-panel__empty">
+                          {yardUnlocked
+                            ? '废车回收厂正在搜集下一件配件。'
+                            : '解锁废车回收厂后即可挂机获得车辆配件。'}
+                        </p>
+                      )}
+                    </div>
                   </>
+                ) : (
+                  <p className="heroes-panel__empty">
+                    请先选择一辆已解锁车辆。
+                  </p>
                 )}
-              </li>
-            )
-          })}
-        </ul>
+              </div>
+            ) : null}
+
+            {activeTab === 'gun' ? (
+              <div className="heroes-panel__gun-pane">
+                <div
+                  className="heroes-panel__equipment-list"
+                  aria-label="枪械列表"
+                >
+                  {GUN_IDS.filter((gunId) =>
+                    isGunUnlocked(gunId, gangLevel),
+                  ).map((gunId) => {
+                    const owner = gunOwner(gunId)
+                    const definition = equipmentConfig.guns[gunId]
+                    return (
+                      <button
+                        type="button"
+                        key={gunId}
+                        aria-pressed={selectedEquipment.gunId === gunId}
+                        onClick={() => handleGun(gunId)}
+                      >
+                        <span
+                          className="heroes-panel__gun-chip"
+                          style={
+                            {
+                              '--gun-metal': definition.appearance.metal,
+                              '--gun-flash': definition.appearance.flash,
+                            } as CSSProperties
+                          }
+                        />
+                        <span>
+                          <strong>{definition.name}</strong>
+                          <small>
+                            {owner && owner !== selectedHero
+                              ? `${heroesConfig.heroes[owner].name} 使用中`
+                              : `强化 Lv.${gunLevels[gunId]}`}
+                          </small>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {selectedEquipment.gunId ? (
+                  <div className="heroes-panel__gun-focus">
+                    <div
+                      className="heroes-panel__gun-art"
+                      style={
+                        {
+                          '--gun-metal':
+                            equipmentConfig.guns[selectedEquipment.gunId]
+                              .appearance.metal,
+                          '--gun-flash':
+                            equipmentConfig.guns[selectedEquipment.gunId]
+                              .appearance.flash,
+                        } as CSSProperties
+                      }
+                      aria-hidden="true"
+                    >
+                      <span />
+                      <i />
+                    </div>
+                    <div className="heroes-panel__gun-info">
+                      <p>当前枪械</p>
+                      <h4>
+                        {equipmentConfig.guns[selectedEquipment.gunId].name}
+                      </h4>
+                      <span>{`强化 Lv.${gunLevels[selectedEquipment.gunId]}/${GUN_MAX_LEVEL}`}</span>
+                      <dl>
+                        <div>
+                          <dt>英雄 ATK</dt>
+                          <dd>
+                            {getGunHeroAtk(
+                              selectedEquipment.gunId,
+                              progression,
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>追击伤害</dt>
+                          <dd>
+                            {getGunPursuitDamage(
+                              selectedEquipment.gunId,
+                              gunLevels[selectedEquipment.gunId],
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>射程</dt>
+                          <dd>
+                            {
+                              equipmentConfig.guns[selectedEquipment.gunId]
+                                .pursuit.range
+                            }
+                          </dd>
+                        </div>
+                      </dl>
+                      <button
+                        type="button"
+                        className="heroes-panel__primary-action"
+                        onClick={() =>
+                          handleUpgradeGun(selectedEquipment.gunId as GunId)
+                        }
+                      >
+                        {gunLevels[selectedEquipment.gunId] >= GUN_MAX_LEVEL
+                          ? '枪械已满级'
+                          : `升级至 Lv.${
+                              gunLevels[selectedEquipment.gunId] + 1
+                            } · ${getGunUpgradeCost(
+                              selectedEquipment.gunId,
+                              gunLevels[selectedEquipment.gunId],
+                            )} 零件`}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="heroes-panel__empty">
+                    请先选择一把已解锁枪械。
+                  </p>
+                )}
+              </div>
+            ) : null}
+          </section>
+        </div>
+
         <p className="heroes-panel__status" role="status" aria-live="polite">
           {status}
         </p>

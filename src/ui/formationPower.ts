@@ -1,6 +1,9 @@
 import { getEnemyCount, getStage } from '../config/campaignConfig'
 import { teamPower, type FormationAssignment } from '../game/combat/power'
-import type { EquipmentByHero } from '../game/equipmentTypes'
+import type {
+  EquipmentByHero,
+  EquipmentProgressionSnapshot,
+} from '../game/equipmentTypes'
 import { getHeroEquipmentStats } from '../game/heroEquipment'
 import type { HeroId, Row } from '../game/heroes'
 
@@ -16,6 +19,7 @@ export function computeTeamPowerForFormation(
   formation: FormationAssignment,
   heroLevels: Record<HeroId, number>,
   equipmentByHero?: EquipmentByHero,
+  progression?: EquipmentProgressionSnapshot,
 ): number {
   return teamPower(
     formation.map((s) => ({
@@ -24,6 +28,7 @@ export function computeTeamPowerForFormation(
         s.heroId,
         heroLevels[s.heroId] ?? 1,
         equipmentByHero,
+        progression,
       ),
     })),
   )

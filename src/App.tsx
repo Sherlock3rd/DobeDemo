@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState, type JSX } from 'react'
 import { AdventureIdleClock } from './game/AdventureIdleClock'
 import { EconomyIdleController } from './game/EconomyIdleController'
 import { GangIdleController } from './game/GangIdleController'
+import { PartSalvageController } from './game/PartSalvageController'
 import type { BuildingId } from './game/cityTypes'
 import { CAMERA_CONFIG } from './game/cityLayout'
 import { getGangLevel } from './game/gangProgression'
@@ -239,6 +240,7 @@ export default function App(): JSX.Element {
         />
         <GangIdleController />
         <EconomyIdleController />
+        <PartSalvageController />
         <AdventureIdleClock />
         <div
           aria-hidden={isolateHud || undefined}

@@ -50,6 +50,9 @@ export function FormationPanel({
   const storedFormation = useAdventureStore((s) => s.formation)
   const heroLevels = useAdventureStore((s) => s.heroLevels)
   const equipmentByHero = useAdventureStore((s) => s.equipmentByHero)
+  const gunLevels = useAdventureStore((s) => s.gunLevels)
+  const carPartInventory = useAdventureStore((s) => s.carPartInventory)
+  const carPartSlotsByCar = useAdventureStore((s) => s.carPartSlotsByCar)
   const setFormation = useAdventureStore((s) => s.setFormation)
   const gangLevel = getGangLevel(totalReputation)
   const [draft, setDraft] = useState<FormationAssignment>(() =>
@@ -80,6 +83,7 @@ export function FormationPanel({
     draft,
     heroLevels,
     equipmentByHero,
+    { gunLevels, carPartInventory, carPartSlotsByCar },
   )
   const enemyPower = computeEnemyPowerForStage(stage)
   const occupied = new Set(draft.map((s) => s.heroId))

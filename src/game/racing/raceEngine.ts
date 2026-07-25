@@ -5,6 +5,10 @@ import {
   type RacingStageConfig,
 } from '../../config/racingConfig'
 import { CAR_IDS, type CarId, type GunId } from '../equipmentTypes'
+import {
+  getGunPursuitDamage,
+  type CarRacingUpgradeBonus,
+} from '../equipmentProgression'
 
 export const RACE_TICK_MS = 50
 export const AIR_GRAVITY = 6.2
@@ -77,6 +81,9 @@ export interface VehicleState {
   fireCooldownMs: number
   lastObstacleIndex: number
   lastRampIndex: number
+  maxSpeedBonus: number
+  accelerationBonus: number
+  gripBonus: number
 }
 
 export interface ProjectileState {
@@ -149,6 +156,8 @@ export interface RaceInput {
 export interface RaceLoadout {
   carId: CarId
   gunId: GunId | null
+  gunLevel?: number
+  carUpgrade?: CarRacingUpgradeBonus
 }
 
 export interface TrackFeature {
@@ -193,6 +202,7 @@ function vehicle(
   distance: number,
   speed: number,
   durabilityOverride?: number,
+  carUpgrade?: CarRacingUpgradeBonus,
 ): VehicleState {
   const car = equipmentConfig.cars[carId].racing
   const durability = durabilityOverride ?? car.durability
@@ -225,6 +235,9 @@ function vehicle(
     fireCooldownMs: 0,
     lastObstacleIndex: 0,
     lastRampIndex: 0,
+    maxSpeedBonus: carUpgrade?.maxSpeed ?? 0,
+    accelerationBonus: carUpgrade?.acceleration ?? 0,
+    gripBonus: carUpgrade?.grip ?? 0,
   }
 }
 
@@ -265,6 +278,12 @@ export function createRaceState(
 ): RaceState {
   const stage = getRacingStage(stageNumber)
   const playerCar = equipmentConfig.cars[loadout.carId].racing
+  const carUpgrade = loadout.carUpgrade ?? {
+    maxSpeed: 0,
+    acceleration: 0,
+    durability: 0,
+    grip: 0,
+  }
   if (stage.mode === 'pursuit' && loadout.gunId === null) {
     throw new Error('Pursuit stage requires a gun')
   }
@@ -275,7 +294,10 @@ export function createRaceState(
     1,
     0,
     Math.min(22, playerCar.maxSpeed),
-    stage.mode === 'pursuit' ? playerCar.durability * 2 : undefined,
+    stage.mode === 'pursuit'
+      ? (playerCar.durability + carUpgrade.durability) * 2
+      : playerCar.durability + carUpgrade.durability,
+    carUpgrade,
   )
   const vehicles =
     stage.mode === 'race'
@@ -481,7 +503,7 @@ function updatePlayerControl(
   }
 
   player.desiredSpeed =
-    car.maxSpeed *
+    (car.maxSpeed + player.maxSpeedBonus) *
     (player.superBoosting
       ? 1.72
       : player.boosting
@@ -624,7 +646,8 @@ function integrateVehicle(source: VehicleState, dtMs: number): VehicleState {
   const dt = dtMs / 1000
   const car = equipmentConfig.cars[next.carId].racing
   const acceleration =
-    car.acceleration * (next.superBoosting ? 2.25 : next.boosting ? 1.65 : 1)
+    (car.acceleration + next.accelerationBonus) *
+    (next.superBoosting ? 2.25 : next.boosting ? 1.65 : 1)
   if (next.speed < next.desiredSpeed) {
     next.speed = Math.min(next.desiredSpeed, next.speed + acceleration * dt)
   } else {
@@ -634,7 +657,7 @@ function integrateVehicle(source: VehicleState, dtMs: number): VehicleState {
     )
   }
   const targetX = RACE_LANE_X[next.targetLane]
-  const spring = next.driftActive ? 5.2 : 12.5 * car.grip
+  const spring = next.driftActive ? 5.2 : 12.5 * (car.grip + next.gripBonus)
   const damping = next.driftActive ? 2.1 : 6.4
   next.lateralVelocity +=
     ((targetX - next.x) * spring - next.lateralVelocity * damping) * dt
@@ -988,6 +1011,10 @@ function processPlayerAutoFire(
   if (state.mode !== 'pursuit' || !loadout.gunId) return state
   if (state.player.fireCooldownMs > 0) return state
   const gun = equipmentConfig.guns[loadout.gunId].pursuit
+  const upgradedDamage = getGunPursuitDamage(
+    loadout.gunId,
+    loadout.gunLevel ?? 0,
+  )
   const fireBoosted = state.fireBoostRemainingMs > 0
   const candidates = state.vehicles
     .filter(
@@ -1003,10 +1030,10 @@ function processPlayerAutoFire(
     fireCooldownMs: Math.round(gun.cooldownMs * (fireBoosted ? 0.48 : 1)),
     speed: Math.max(
       5,
-      state.player.speed - (gun.damage * (fireBoosted ? 1.25 : 1)) / 420,
+      state.player.speed - (upgradedDamage * (fireBoosted ? 1.25 : 1)) / 420,
     ),
   }
-  const damage = Math.round(gun.damage * (fireBoosted ? 1.25 : 1))
+  const damage = Math.round(upgradedDamage * (fireBoosted ? 1.25 : 1))
   let next = spawnProjectile(
     { ...state, player, shotsFired: state.shotsFired + 1 },
     'player',

@@ -14,8 +14,19 @@ export const GUN_IDS = [
   'president-cannon',
 ] as const
 
+export const CAR_PART_SLOT_IDS = ['engine', 'armor', 'tires', 'turbo'] as const
+
+export const CAR_PART_QUALITY_IDS = [
+  'worn',
+  'tuned',
+  'elite',
+  'prototype',
+] as const
+
 export type CarId = (typeof CAR_IDS)[number]
 export type GunId = (typeof GUN_IDS)[number]
+export type CarPartSlot = (typeof CAR_PART_SLOT_IDS)[number]
+export type CarPartQuality = (typeof CAR_PART_QUALITY_IDS)[number]
 
 export interface HeroEquipment {
   carId: CarId | null
@@ -24,11 +35,36 @@ export interface HeroEquipment {
 
 export type EquipmentByHero = Record<HeroId, HeroEquipment>
 
+export interface CarPartInstance {
+  id: string
+  slot: CarPartSlot
+  quality: CarPartQuality
+  level: number
+}
+
+export type CarPartSlots = Record<CarPartSlot, string | null>
+export type CarPartSlotsByCar = Record<CarId, CarPartSlots>
+export type GunUpgradeLevels = Record<GunId, number>
+
+export interface EquipmentProgressionSnapshot {
+  gunLevels: GunUpgradeLevels
+  carPartInventory: CarPartInstance[]
+  carPartSlotsByCar: CarPartSlotsByCar
+}
+
 export function isCarId(value: string): value is CarId {
   return CAR_IDS.some((id) => id === value)
 }
 
 export function isGunId(value: string): value is GunId {
   return GUN_IDS.some((id) => id === value)
+}
+
+export function isCarPartSlot(value: string): value is CarPartSlot {
+  return CAR_PART_SLOT_IDS.some((id) => id === value)
+}
+
+export function isCarPartQuality(value: string): value is CarPartQuality {
+  return CAR_PART_QUALITY_IDS.some((id) => id === value)
 }
 import type { HeroId } from './heroes'

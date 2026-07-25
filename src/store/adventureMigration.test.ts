@@ -9,7 +9,8 @@ const NOW = 1_700_000_000_000
 
 describe('adventureMigration', () => {
   it('null persisted keeps initial state', () => {
-    expect(createInitialAdventureState(NOW)).toEqual({
+    const initial = createInitialAdventureState(NOW)
+    expect(initial).toMatchObject({
       heroLevels: { foreman: 1, anvil: 1, skyline: 1 },
       sharedExp: 0,
       formation: [{ heroId: 'foreman', row: 'back', index: 1 }],
@@ -21,7 +22,17 @@ describe('adventureMigration', () => {
         skyline: { carId: null, gunId: null },
       },
       idleClock: NOW,
+      spareParts: 0,
+      partIdleClock: NOW,
+      nextPartSerial: 1,
     })
+    expect(Object.values(initial.gunLevels)).toEqual([0, 0, 0, 0, 0])
+    expect(initial.carPartInventory).toEqual([])
+    expect(
+      Object.values(initial.carPartSlotsByCar).every((slots) =>
+        Object.values(slots).every((partId) => partId === null),
+      ),
+    ).toBe(true)
   })
 
   it('clamps hero levels, drops unknown heroes, backfills missing', () => {
@@ -104,8 +115,53 @@ describe('adventureMigration', () => {
     })
   })
 
+  it('normalizes gun levels, part inventory, installed slots, and serials', () => {
+    const normalized = normalizeAdventureDurableState(
+      {
+        spareParts: 90,
+        gunLevels: { 'rivet-smg': 99, 'double-barrel': 3.8 },
+        carPartInventory: [
+          {
+            id: 'part-4',
+            slot: 'engine',
+            quality: 'elite',
+            level: 99,
+          },
+          {
+            id: 'part-4',
+            slot: 'armor',
+            quality: 'worn',
+            level: 1,
+          },
+          {
+            id: 'bad',
+            slot: 'unknown',
+            quality: 'worn',
+            level: 1,
+          },
+        ],
+        carPartSlotsByCar: {
+          'rust-fox': { engine: 'part-4', armor: 'part-4' },
+          'iron-fang': { engine: 'part-4' },
+        },
+        nextPartSerial: 1,
+      },
+      NOW,
+    )
+    expect(normalized.spareParts).toBe(90)
+    expect(normalized.gunLevels['rivet-smg']).toBe(10)
+    expect(normalized.gunLevels['double-barrel']).toBe(3)
+    expect(normalized.carPartInventory).toEqual([
+      { id: 'part-4', slot: 'engine', quality: 'elite', level: 10 },
+    ])
+    expect(normalized.carPartSlotsByCar['rust-fox'].engine).toBe('part-4')
+    expect(normalized.carPartSlotsByCar['iron-fang'].engine).toBeNull()
+    expect(normalized.nextPartSerial).toBe(5)
+  })
+
   it('reconciles hero levels and formation against gang level', () => {
     const state = {
+      ...createInitialAdventureState(NOW),
       heroLevels: { foreman: 40, anvil: 30, skyline: 20 },
       sharedExp: 0,
       highestClearedStage: 0,
@@ -130,6 +186,7 @@ describe('adventureMigration', () => {
 
   it('drops locked heroes from formation and falls back when empty', () => {
     const state = {
+      ...createInitialAdventureState(NOW),
       heroLevels: { foreman: 1, anvil: 1, skyline: 1 },
       sharedExp: 0,
       highestClearedStage: 0,

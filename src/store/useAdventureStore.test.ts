@@ -4,6 +4,7 @@ import {
   getClaimableIdleExp,
   useAdventureStore,
 } from './useAdventureStore'
+import { getPartDropIntervalMs } from '../game/equipmentProgression'
 
 const NOW = 1_700_000_000_000
 
@@ -23,6 +24,9 @@ describe('useAdventureStore', () => {
     expect(s.sharedExp).toBe(0)
     expect(s.highestClearedStage).toBe(0)
     expect(s.formation).toEqual([{ heroId: 'foreman', row: 'back', index: 1 }])
+    expect(s.spareParts).toBe(0)
+    expect(s.carPartInventory).toEqual([])
+    expect(Object.values(s.gunLevels)).toEqual([0, 0, 0, 0, 0])
   })
 
   it('claim idle chest settles, adds to pool, keeps remainder', () => {
@@ -153,6 +157,90 @@ describe('useAdventureStore', () => {
     })
   })
 
+  it('settles recycling-yard idle drops without granting them before a tick', () => {
+    expect(
+      useAdventureStore.getState().settleCarPartIdle(NOW + 1000, 1),
+    ).toEqual({
+      received: 0,
+      autoRecycled: 0,
+    })
+    const interval = getPartDropIntervalMs(1)
+    expect(
+      useAdventureStore.getState().settleCarPartIdle(NOW + interval, 1),
+    ).toEqual({ received: 1, autoRecycled: 0 })
+    expect(useAdventureStore.getState().carPartInventory).toEqual([
+      { id: 'part-1', slot: 'engine', quality: 'worn', level: 1 },
+    ])
+  })
+
+  it('installs, upgrades, unequips, and recycles a car part atomically', () => {
+    const interval = getPartDropIntervalMs(1)
+    useAdventureStore.getState().settleCarPartIdle(NOW + interval, 1)
+    useAdventureStore.setState({ spareParts: 100 })
+
+    expect(
+      useAdventureStore.getState().equipCarPart('rust-fox', 'part-1', 1),
+    ).toMatchObject({ applied: true, reason: 'ready' })
+    expect(
+      useAdventureStore.getState().carPartSlotsByCar['rust-fox'].engine,
+    ).toBe('part-1')
+    expect(useAdventureStore.getState().recycleCarPart('part-1')).toMatchObject(
+      { applied: false, reason: 'part-installed' },
+    )
+    expect(useAdventureStore.getState().upgradeCarPart('part-1')).toMatchObject(
+      { applied: true, cost: 12 },
+    )
+    expect(useAdventureStore.getState().carPartInventory[0].level).toBe(2)
+    expect(useAdventureStore.getState().spareParts).toBe(88)
+    expect(
+      useAdventureStore.getState().unequipCarPart('rust-fox', 'engine', 1),
+    ).toMatchObject({ applied: true })
+    expect(useAdventureStore.getState().recycleCarPart('part-1')).toMatchObject(
+      { applied: true },
+    )
+    expect(useAdventureStore.getState().carPartInventory).toEqual([])
+    expect(useAdventureStore.getState().spareParts).toBeGreaterThan(88)
+  })
+
+  it('upgrades unlocked guns with spare parts and blocks locked guns', () => {
+    useAdventureStore.setState({ spareParts: 1_000 })
+    expect(
+      useAdventureStore.getState().upgradeGun('rivet-smg', 1),
+    ).toMatchObject({ applied: true, reason: 'ready' })
+    expect(useAdventureStore.getState().gunLevels['rivet-smg']).toBe(1)
+    expect(useAdventureStore.getState().spareParts).toBeLessThan(1_000)
+    expect(
+      useAdventureStore.getState().upgradeGun('president-cannon', 1),
+    ).toMatchObject({ applied: false, reason: 'equipment-locked' })
+    expect(useAdventureStore.getState().gunLevels['president-cannon']).toBe(0)
+  })
+
+  it('rejects invalid gang levels for all new equipment actions', () => {
+    const before = structuredClone({
+      inventory: useAdventureStore.getState().carPartInventory,
+      slots: useAdventureStore.getState().carPartSlotsByCar,
+      gunLevels: useAdventureStore.getState().gunLevels,
+    })
+    expect(
+      useAdventureStore
+        .getState()
+        .equipCarPart('rust-fox', 'part-1', Number.NaN),
+    ).toMatchObject({ applied: false, reason: 'invalid-request' })
+    expect(
+      useAdventureStore
+        .getState()
+        .unequipCarPart('rust-fox', 'engine', Number.POSITIVE_INFINITY),
+    ).toMatchObject({ applied: false, reason: 'invalid-request' })
+    expect(
+      useAdventureStore.getState().upgradeGun('rivet-smg', 0),
+    ).toMatchObject({ applied: false, reason: 'invalid-request' })
+    expect({
+      inventory: useAdventureStore.getState().carPartInventory,
+      slots: useAdventureStore.getState().carPartSlotsByCar,
+      gunLevels: useAdventureStore.getState().gunLevels,
+    }).toEqual(before)
+  })
+
   it('rejects locked gear and locked hero assignments without mutation', () => {
     const before = structuredClone(useAdventureStore.getState().equipmentByHero)
     expect(
@@ -200,6 +288,12 @@ describe('useAdventureStore', () => {
         'highestClearedStage',
         'idleClock',
         'sharedExp',
+        'spareParts',
+        'gunLevels',
+        'carPartInventory',
+        'carPartSlotsByCar',
+        'partIdleClock',
+        'nextPartSerial',
       ].sort(),
     )
   })

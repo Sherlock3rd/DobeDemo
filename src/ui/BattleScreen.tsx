@@ -38,6 +38,7 @@ function bootBattle(stage: number): BootState {
       adventure.heroLevels,
       gangLevel,
       adventure.equipmentByHero,
+      adventure,
     )
     return { ok: true, result: simulateBattle(input) }
   } catch (error) {
