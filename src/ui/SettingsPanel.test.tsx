@@ -74,6 +74,27 @@ describe('SettingsPanel', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
+  it('advances one gang level and reveals the configured drop probabilities', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(Date, 'now').mockReturnValue(BASE_TIME + 5_000)
+    useGangStore.setState({
+      totalReputation: 17,
+      lastUpdatedAt: BASE_TIME,
+    })
+    render(<SettingsPanel onClose={() => {}} />)
+
+    await user.click(screen.getByRole('button', { name: '帮派树升一级' }))
+    expect(useGangStore.getState()).toMatchObject({
+      totalReputation: 30,
+      lastUpdatedAt: BASE_TIME + 5_000,
+    })
+    expect(screen.getByText('帮派等级已提升至 Lv.2')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '查看掉落概率' }))
+    expect(screen.getByText(/Lv\.10 · 12秒\/批/)).toBeInTheDocument()
+    expect(screen.getByText(/原型 25%/)).toBeInTheDocument()
+  })
+
   it('requires a second confirmation before resetting', async () => {
     const user = userEvent.setup()
     const onClose = vi.fn()

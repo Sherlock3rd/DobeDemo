@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { StrictMode, type ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { combatConfig } from '../config/combatConfig'
 import { buildBattleInput, simulateBattle } from '../game/combat/battleEngine'
@@ -28,8 +28,10 @@ vi.mock('../scene/battle/BattleScene', () => ({
   BattleScene: () => <div data-testid="battle-scene-mock" />,
 }))
 
+const motionState = vi.hoisted(() => ({ reduced: false }))
+
 vi.mock('../scene/city/usePrefersReducedMotion', () => ({
-  usePrefersReducedMotion: () => false,
+  usePrefersReducedMotion: () => motionState.reduced,
 }))
 
 const { BattleScreen } = await import('./BattleScreen')
@@ -59,6 +61,7 @@ describe('BattleScreen', () => {
     vi.useFakeTimers()
     useAdventureStore.getState().reset(0)
     useGangStore.getState().reset(0)
+    motionState.reduced = false
   })
 
   afterEach(() => {
@@ -109,6 +112,21 @@ describe('BattleScreen', () => {
     expect(Number(battle.dataset.skillMainHits)).toBe(expectedMetrics.skillMain)
     expect(Number(battle.dataset.damageEvents)).toBe(expectedMetrics.damage)
     expect(Number(battle.dataset.deaths)).toBe(expectedMetrics.deaths)
+  })
+
+  it('shows resolved rewards in StrictMode with reduced motion', () => {
+    motionState.reduced = true
+    render(
+      <StrictMode>
+        <BattleScreen stage={1} onExit={() => {}} />
+      </StrictMode>,
+    )
+    act(() => {
+      vi.runAllTimers()
+    })
+    expect(useAdventureStore.getState().highestClearedStage).toBe(1)
+    expect(screen.getByLabelText('首通奖励')).toBeInTheDocument()
+    expect(screen.getByLabelText('英雄经验 500')).toBeInTheDocument()
   })
 
   it('exit before resolve commits nothing', () => {

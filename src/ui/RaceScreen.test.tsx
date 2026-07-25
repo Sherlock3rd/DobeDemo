@@ -31,7 +31,7 @@ describe('RaceScreen V2', () => {
     expect(
       screen.getByText('纯追击枪战 · 空中特技缩短强化冷却 · 摧毁目标车'),
     ).toBeInTheDocument()
-    expect(screen.getByText(/护卫 5\/5/)).toBeInTheDocument()
+    expect(screen.getByText(/护卫 0\/0/)).toBeInTheDocument()
     expect(screen.getByText(/普通攻击 自动开火/)).toBeInTheDocument()
     expect(screen.getByText(/空中特技 -2.5秒强化冷却/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '火力强化' })).toBeInTheDocument()

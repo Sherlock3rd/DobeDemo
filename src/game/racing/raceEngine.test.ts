@@ -100,15 +100,20 @@ function finish(stage: number, loadout: RaceLoadout): RaceState {
 }
 
 describe('raceEngine V2', () => {
-  it('doubles AI opponents and starts every vehicle with zero nitro', () => {
+  it('spawns six racers, configured pursuit escorts, and zero starting nitro', () => {
     const race = createRaceState(1, STARTER)
     expect(
       race.vehicles.filter((vehicle) => vehicle.role === 'racer'),
     ).toHaveLength(6)
     const pursuit = createRaceState(2, STARTER)
     expect(
-      pursuit.vehicles.filter((vehicle) => vehicle.role === 'escort'),
-    ).toHaveLength(5)
+      [2, 4, 6, 8, 10].map(
+        (stage) =>
+          createRaceState(stage, STARTER).vehicles.filter(
+            (vehicle) => vehicle.role === 'escort',
+          ).length,
+      ),
+    ).toEqual([0, 1, 1, 2, 2])
     expect(
       [
         race.player,
@@ -475,9 +480,9 @@ describe('raceEngine V2', () => {
     ).toBe(true)
   })
 
-  it('doubles pursuit durability, auto-fires, and makes input a fire boost', () => {
+  it('uses equipment durability, auto-fires, and makes input a fire boost', () => {
     let state = createRaceState(2, STARTER)
-    expect(state.player.maxDurability).toBe(200)
+    expect(state.player.maxDurability).toBe(100)
     state = advanceRace(state, { fire: true }, STARTER)
     expect(state.shotsFired).toBe(1)
     expect(state.fireBoostRemainingMs).toBe(FIRE_BOOST_DURATION_MS)

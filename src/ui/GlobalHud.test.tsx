@@ -30,7 +30,12 @@ describe('GlobalHud', () => {
       />,
     )
     const resources = screen.getByLabelText('资源')
-    expect(resources.querySelectorAll('span')).toHaveLength(3)
+    expect(resources.querySelectorAll('.resource-amount')).toHaveLength(3)
+    expect(screen.getByLabelText('钱 10000')).toBeInTheDocument()
+    expect(screen.getByLabelText('油 0')).toBeInTheDocument()
+    expect(screen.getByLabelText('物资 0')).toBeInTheDocument()
+    expect(screen.queryByText(/10秒/)).toBeNull()
+    expect(screen.getByLabelText(/战力 \d+/)).toBeInTheDocument()
     expect(screen.queryByText(/英雄经验/)).toBeNull()
     expect(screen.getByText('Thomas Shelby')).toBeInTheDocument()
   })
@@ -49,6 +54,26 @@ describe('GlobalHud', () => {
     expect(
       screen.getByRole('button', { name: /Full Patch/ }),
     ).toBeInTheDocument()
+  })
+
+  it('uses current formation rows when aggregating account power', () => {
+    render(
+      <GlobalHud
+        onOpenHeroes={() => {}}
+        onOpenGangTree={() => {}}
+        onOpenAdventure={() => {}}
+        onOpenRacing={() => {}}
+        onOpenSettings={() => {}}
+      />,
+    )
+    const before = screen.getByLabelText(/战力 \d+/).getAttribute('aria-label')
+    act(() => {
+      useAdventureStore.setState({
+        formation: [{ heroId: 'foreman', row: 'front', index: 0 }],
+      })
+    })
+    const after = screen.getByLabelText(/战力 \d+/).getAttribute('aria-label')
+    expect(after).not.toBe(before)
   })
 
   it('routes bottom nav callbacks', async () => {

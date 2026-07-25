@@ -8,7 +8,11 @@ import {
 } from 'react'
 import { equipmentConfig } from '../config/equipmentConfig'
 import { getRacingStage } from '../config/racingConfig'
-import { getInstalledPartRacingBonus } from '../game/equipmentProgression'
+import {
+  CAR_PART_QUALITY_INFO,
+  CAR_PART_SLOT_INFO,
+  getInstalledPartRacingBonus,
+} from '../game/equipmentProgression'
 import type { HeroId } from '../game/heroes'
 import {
   advanceRace,
@@ -24,6 +28,7 @@ import {
 } from '../game/racing/raceEngine'
 import { RacingScene } from '../scene/racing/RacingScene'
 import { useAdventureStore } from '../store/useAdventureStore'
+import { ResourceAmount } from './ResourceAmount'
 
 export interface RaceScreenProps {
   stage: number
@@ -94,11 +99,17 @@ function RaceSession({
 }): JSX.Element {
   const definition = getRacingStage(stage)
   const recordVictory = useAdventureStore((state) => state.recordRacingVictory)
+  const lastVictoryReward = useAdventureStore(
+    (state) => state.lastVictoryReward,
+  )
   const [state, setState] = useState(initial.state)
   const [exitPending, setExitPending] = useState(false)
   const inputRef = useRef<RaceInput>({})
   const committedRef = useRef(false)
-  const [reward, setReward] = useState(0)
+  const reward =
+    lastVictoryReward?.mode === 'racing' && lastVictoryReward.stage === stage
+      ? lastVictoryReward.reward
+      : null
 
   useEffect(() => {
     if (state.status !== 'running' || exitPending) return
@@ -175,7 +186,7 @@ function RaceSession({
   useEffect(() => {
     if (state.status !== 'victory' || committedRef.current) return
     committedRef.current = true
-    setReward(recordVictory(stage).rewardExp)
+    recordVictory(stage)
   }, [recordVictory, stage, state.status])
 
   const triggerBoost = (): void => {
@@ -216,7 +227,6 @@ function RaceSession({
 
   const retry = (): void => {
     committedRef.current = false
-    setReward(0)
     setExitPending(false)
     inputRef.current = {}
     setState(createRaceState(stage, initial.loadout))
@@ -356,7 +366,7 @@ function RaceSession({
               目标
               <progress value={state.targetHp} max={state.maxTargetHp} />
             </label>
-            <p className="race-hud__sight">{`${sightStatus} · 护卫 ${escortCount}/5${
+            <p className="race-hud__sight">{`${sightStatus} · 护卫 ${escortCount}/${definition.escortCount}${
               target
                 ? ` · 距离 ${Math.max(
                     0,
@@ -441,17 +451,39 @@ function RaceSession({
       {state.status !== 'running' ? (
         <div className="race-screen__result" role="status">
           <strong>{state.status === 'victory' ? '胜利' : '失败'}</strong>
-          <p>
-            {state.status === 'victory'
-              ? `首通英雄经验 +${reward}`
-              : state.reason === 'escaped'
+          {state.status === 'victory' ? (
+            reward ? (
+              <div className="race-screen__rewards" aria-label="首通奖励">
+                <ResourceAmount kind="experience" amount={reward.rewardExp} />
+                <ResourceAmount kind="money" amount={reward.rewardMoney} />
+                {reward.rewardPart ? (
+                  <ResourceAmount
+                    kind="part"
+                    label={`${CAR_PART_QUALITY_INFO[reward.rewardPart.quality].name}${CAR_PART_SLOT_INFO[reward.rewardPart.slot].shortName}`}
+                    amount={reward.rewardSpareParts > 0 ? '已自动回收' : 1}
+                  />
+                ) : null}
+                {reward.rewardSpareParts > 0 ? (
+                  <ResourceAmount
+                    kind="spare-parts"
+                    amount={`+${reward.rewardSpareParts}`}
+                  />
+                ) : null}
+              </div>
+            ) : (
+              <p>奖励结算中…</p>
+            )
+          ) : (
+            <p>
+              {state.reason === 'escaped'
                 ? '目标已经逃脱'
                 : state.reason === 'destroyed'
                   ? '车辆耐久耗尽'
                   : state.reason === 'timeout'
                     ? '时间耗尽'
                     : '未能率先冲线'}
-          </p>
+            </p>
+          )}
           <div>
             {state.status === 'defeat' ? (
               <button type="button" onClick={retry}>

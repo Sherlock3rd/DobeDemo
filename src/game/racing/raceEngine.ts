@@ -255,7 +255,7 @@ function pursuitVehicles(stage: PursuitStageConfig): VehicleState[] {
     stage.targetSpeed,
     stage.targetHp,
   )
-  const escorts = Array.from({ length: 5 }, (_, index) => {
+  const escorts = Array.from({ length: stage.escortCount }, (_, index) => {
     const escortNumber = index + 1
     const carIndex = clamp(
       Math.floor(stage.order / 2) - 1 + (index % 3),
@@ -297,9 +297,7 @@ export function createRaceState(
     1,
     0,
     Math.min(22, playerCar.maxSpeed),
-    stage.mode === 'pursuit'
-      ? (playerCar.durability + carUpgrade.durability) * 2
-      : playerCar.durability + carUpgrade.durability,
+    playerCar.durability + carUpgrade.durability,
     carUpgrade,
   )
   const vehicles =
@@ -1127,7 +1125,7 @@ function processEnemyFire(
     shooter,
     state.player,
     38 + shooter.speed * 0.25,
-    Math.max(1, Math.round(stage.incomingDamage * 0.72)),
+    Math.max(1, Math.round(stage.incomingDamage * 0.36)),
   )
   return addEffect(next, 'muzzle', shooter.x, shooter.distance - 2, 1, 180)
 }

@@ -7,6 +7,7 @@ import { heroesConfig } from '../config/heroesConfig'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useGangStore } from '../store/useGangStore'
 import { useInitialFocus } from './useInitialFocus'
+import { ResourceAmount } from './ResourceAmount'
 
 export interface RacingPanelProps {
   onClose: () => void
@@ -108,7 +109,33 @@ export function RacingPanel({
                 </div>
                 <div>
                   <dt>首通经验</dt>
-                  <dd>{stage.firstClearExp}</dd>
+                  <dd>
+                    <ResourceAmount
+                      kind="experience"
+                      amount={stage.firstClearExp}
+                      showLabel={false}
+                    />
+                  </dd>
+                </div>
+                <div>
+                  <dt>首通钱</dt>
+                  <dd>
+                    <ResourceAmount
+                      kind="money"
+                      amount={stage.firstClearMoney}
+                      showLabel={false}
+                    />
+                  </dd>
+                </div>
+                <div>
+                  <dt>配件概率</dt>
+                  <dd>
+                    <ResourceAmount
+                      kind="part"
+                      amount={`${Math.round(stage.partDropChance * 100)}%`}
+                      showLabel={false}
+                    />
+                  </dd>
                 </div>
               </dl>
             </article>
@@ -151,7 +178,9 @@ export function RacingPanel({
               <p>
                 {stage.mode === 'race'
                   ? '七车同场：落后车辆会更快补充氮气，利用尾流、冲撞、跳台和特技持续争夺。'
-                  : '纯追击枪战不使用氮气加速；突破五辆护卫取得射界，并在敌方反击下摧毁目标车。'}
+                  : stage.escortCount === 0
+                    ? '纯追击枪战不使用氮气加速；本关目标没有护卫，保持射界并摧毁目标车。'
+                    : `纯追击枪战不使用氮气加速；突破 ${stage.escortCount} 辆护卫取得射界，并在敌方反击下摧毁目标车。`}
               </p>
             </div>
             <button

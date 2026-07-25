@@ -3,6 +3,8 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import {
   MAX_REPUTATION,
   calculateIdleSettlement,
+  getGangLevel,
+  getTotalReputationForLevel,
 } from '../game/gangProgression'
 import { createSafeStorage } from './safeStorage'
 
@@ -17,6 +19,7 @@ interface GangState {
   totalReputation: number
   lastUpdatedAt: number
   syncIdleProgress: (now: number) => void
+  advanceOneLevel: (now: number) => void
   unlockForDebug: (now: number) => void
   reset: (now: number) => void
 }
@@ -54,6 +57,16 @@ export const useGangStore = create<GangState>()(
             MAX_REPUTATION,
           ),
           lastUpdatedAt: settlement.nextUpdatedAt,
+        })
+      },
+      advanceOneLevel: (now) => {
+        if (!Number.isFinite(now)) return
+        const { totalReputation } = get()
+        const currentLevel = getGangLevel(totalReputation)
+        if (currentLevel >= 50) return
+        set({
+          totalReputation: getTotalReputationForLevel(currentLevel + 1),
+          lastUpdatedAt: now,
         })
       },
       unlockForDebug: (now) => {

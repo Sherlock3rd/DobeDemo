@@ -10,24 +10,25 @@ import { expToLevel, heroesConfig } from '../config/heroesConfig'
 import { unitPower } from '../game/combat/power'
 import {
   CAR_PART_INVENTORY_LIMIT,
-  CAR_PART_MAX_LEVEL,
   CAR_PART_QUALITY_INFO,
   CAR_PART_SLOT_INFO,
-  GUN_MAX_LEVEL,
   getCarPartRecycleValue,
   getCarPartUpgradeCost,
   getGunHeroAtk,
   getGunPursuitDamage,
   getGunUpgradeCost,
   getPartDropIntervalMs,
+  getPartSalvageDropProfile,
   isPartInstalled,
 } from '../game/equipmentProgression'
 import {
   CAR_IDS,
+  CAR_PART_QUALITY_IDS,
   CAR_PART_SLOT_IDS,
   GUN_IDS,
   type CarId,
   type CarPartInstance,
+  type CarPartQuality,
   type CarPartSlot,
   type GunId,
 } from '../game/equipmentTypes'
@@ -46,6 +47,7 @@ import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
 import { useChestTick } from '../game/chestTick'
 import { useInitialFocus } from './useInitialFocus'
+import { ResourceAmount } from './ResourceAmount'
 
 export interface HeroesPanelProps {
   onClose: () => void
@@ -147,6 +149,9 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const equipCarPart = useAdventureStore((state) => state.equipCarPart)
   const unequipCarPart = useAdventureStore((state) => state.unequipCarPart)
   const recycleCarPart = useAdventureStore((state) => state.recycleCarPart)
+  const recycleCarPartsByQuality = useAdventureStore(
+    (state) => state.recycleCarPartsByQuality,
+  )
   const upgradeCarPart = useAdventureStore((state) => state.upgradeCarPart)
   const upgradeGun = useAdventureStore((state) => state.upgradeGun)
   const recyclingYardLevel = useCityStore(
@@ -162,6 +167,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const titleRef = useInitialFocus<HTMLHeadingElement>()
   const gangLevel = getGangLevel(totalReputation)
   const cap = getHeroLevelCap(gangLevel)
+  const equipmentLevelCap = Math.max(1, ...Object.values(heroLevels))
   const progression = useMemo(
     () => ({ gunLevels, carPartInventory, carPartSlotsByCar }),
     [carPartInventory, carPartSlotsByCar, gunLevels],
@@ -191,6 +197,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   )
   const yardUnlocked = isBuildingUnlocked('recycling-yard', gangLevel)
   const dropInterval = getPartDropIntervalMs(recyclingYardLevel)
+  const dropProfile = getPartSalvageDropProfile(recyclingYardLevel)
   const visibleNow = clockNow > 0 ? clockNow : partIdleClock
   const elapsedSinceDrop = Math.max(0, visibleNow - partIdleClock)
   const nextDropSeconds = Math.max(
@@ -306,6 +313,17 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
     )
   }
 
+  const handleRecycleQuality = (quality: CarPartQuality): void => {
+    const result = recycleCarPartsByQuality(quality)
+    setStatus(
+      result.applied
+        ? `已回收 ${result.recycledCount ?? 0} 件${
+            CAR_PART_QUALITY_INFO[quality].name
+          }配件，零件 +${result.gained ?? 0}`
+        : `没有可回收的${CAR_PART_QUALITY_INFO[quality].name}配件`,
+    )
+  }
+
   const handleUpgradeGun = (gunId: GunId): void => {
     const result = upgradeGun(gunId, gangLevel)
     setStatus(
@@ -342,14 +360,8 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
             </h2>
           </div>
           <div className="heroes-panel__resources" aria-label="养成资源">
-            <span>
-              <small>英雄经验</small>
-              <strong>{sharedExp}</strong>
-            </span>
-            <span>
-              <small>零件</small>
-              <strong>{spareParts}</strong>
-            </span>
+            <ResourceAmount kind="experience" amount={sharedExp} />
+            <ResourceAmount kind="spare-parts" amount={spareParts} />
             <span>
               <small>等级上限</small>
               <strong>{`Lv.${cap}`}</strong>
@@ -372,7 +384,10 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
             {yardUnlocked
               ? `Lv.${recyclingYardLevel} · ${Math.round(
                   dropInterval / 1000,
-                )}秒/件 · 下件约 ${nextDropSeconds}秒`
+                )}秒/批 · 每批 ${Object.entries(dropProfile.quantityWeights)
+                  .filter(([, weight]) => weight > 0)
+                  .map(([quantity]) => quantity)
+                  .join('–')}件 · 下批约 ${nextDropSeconds}秒`
               : '帮派 Lv.8 解锁后开始挂机产出配件'}
           </p>
           <span>{`仓库 ${carPartInventory.length}/${CAR_PART_INVENTORY_LIMIT}`}</span>
@@ -441,8 +456,11 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
             </div>
             <HeroPortrait heroId={selectedHero} />
             <div className="heroes-panel__power">
-              <small>英雄战力</small>
-              <strong>{selectedPower}</strong>
+              <ResourceAmount
+                kind="power"
+                label="英雄战力"
+                amount={selectedPower}
+              />
             </div>
             <dl className="heroes-panel__stats">
               <div>
@@ -658,7 +676,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                           <dl>
                             <div>
                               <dt>强化等级</dt>
-                              <dd>{`Lv.${gunLevels[gunId]}/${GUN_MAX_LEVEL}`}</dd>
+                              <dd>{`Lv.${gunLevels[gunId]}/${equipmentLevelCap}`}</dd>
                             </div>
                             <div>
                               <dt>英雄 ATK</dt>
@@ -767,7 +785,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                                 <div>
                                   <dt>升级成本</dt>
                                   <dd>
-                                    {part.level >= CAR_PART_MAX_LEVEL
+                                    {part.level >= equipmentLevelCap
                                       ? '已满级'
                                       : `${getCarPartUpgradeCost(part)} 零件`}
                                   </dd>
@@ -895,7 +913,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                                     type="button"
                                     onClick={() => handleUpgradePart(part)}
                                   >
-                                    {part.level >= CAR_PART_MAX_LEVEL
+                                    {part.level >= equipmentLevelCap
                                       ? '已满级'
                                       : `升级 · ${getCarPartUpgradeCost(part)} 零件`}
                                   </button>
@@ -951,6 +969,33 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                         <span>
                           点击固定部位后，只会显示可以安装到该部位的配件。
                         </span>
+                        <div
+                          className="heroes-panel__bulk-recycle"
+                          aria-label="按品质一键回收"
+                        >
+                          {CAR_PART_QUALITY_IDS.map((quality) => {
+                            const parts = availableParts.filter(
+                              (part) => part.quality === quality,
+                            )
+                            const value = parts.reduce(
+                              (total, part) =>
+                                total + getCarPartRecycleValue(part),
+                              0,
+                            )
+                            return (
+                              <button
+                                type="button"
+                                key={quality}
+                                disabled={parts.length === 0}
+                                onClick={() => handleRecycleQuality(quality)}
+                              >
+                                {`一键回收${
+                                  CAR_PART_QUALITY_INFO[quality].name
+                                } ${parts.length}件 · +${value}`}
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
                       <b>{`待命 ${availableParts.length}`}</b>
                     </div>
@@ -998,7 +1043,9 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                       <h4>
                         {equipmentConfig.guns[selectedEquipment.gunId].name}
                       </h4>
-                      <span>{`强化 Lv.${gunLevels[selectedEquipment.gunId]}/${GUN_MAX_LEVEL}`}</span>
+                      <span>{`强化 Lv.${
+                        gunLevels[selectedEquipment.gunId]
+                      }/${equipmentLevelCap}`}</span>
                       <dl>
                         <div>
                           <dt>英雄 ATK</dt>
@@ -1046,7 +1093,8 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                             handleUpgradeGun(selectedEquipment.gunId as GunId)
                           }
                         >
-                          {gunLevels[selectedEquipment.gunId] >= GUN_MAX_LEVEL
+                          {gunLevels[selectedEquipment.gunId] >=
+                          equipmentLevelCap
                             ? '枪械已满级'
                             : `升级至 Lv.${
                                 gunLevels[selectedEquipment.gunId] + 1

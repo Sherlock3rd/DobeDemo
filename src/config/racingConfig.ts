@@ -8,6 +8,8 @@ interface RacingStageBase {
   distance: number
   obstacleEvery: number
   firstClearExp: number
+  firstClearMoney: number
+  partDropChance: number
 }
 
 export interface RaceStageConfig extends RacingStageBase {
@@ -20,6 +22,7 @@ export interface PursuitStageConfig extends RacingStageBase {
   targetSpeed: number
   targetHp: number
   incomingDamage: number
+  escortCount: 0 | 1 | 2
 }
 
 export type RacingStageConfig = RaceStageConfig | PursuitStageConfig
@@ -50,8 +53,32 @@ function positiveInt(value: unknown, path: string): number {
   return result
 }
 
+function escortCount(value: unknown, path: string): 0 | 1 | 2 {
+  if (
+    !Number.isInteger(value) ||
+    typeof value !== 'number' ||
+    value < 0 ||
+    value > 2
+  ) {
+    invalid(path)
+  }
+  return value as 0 | 1 | 2
+}
+
 function string(value: unknown, path: string): string {
   if (typeof value !== 'string' || value.trim() === '') invalid(path)
+  return value
+}
+
+function probability(value: unknown, path: string): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    value < 0 ||
+    value > 1
+  ) {
+    invalid(path)
+  }
   return value
 }
 
@@ -78,6 +105,14 @@ export function parseRacingConfig(value: unknown): RacingConfig {
       firstClearExp: positiveInt(
         candidate.firstClearExp,
         `${path}.firstClearExp`,
+      ),
+      firstClearMoney: positiveInt(
+        candidate.firstClearMoney,
+        `${path}.firstClearMoney`,
+      ),
+      partDropChance: probability(
+        candidate.partDropChance,
+        `${path}.partDropChance`,
       ),
     }
     if (candidate.mode === 'race') {
@@ -108,6 +143,7 @@ export function parseRacingConfig(value: unknown): RacingConfig {
           candidate.incomingDamage,
           `${path}.incomingDamage`,
         ),
+        escortCount: escortCount(candidate.escortCount, `${path}.escortCount`),
       }
     }
     return invalid(`${path}.mode`)

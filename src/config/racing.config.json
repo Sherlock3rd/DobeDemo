@@ -10,7 +10,9 @@
       "distance": 3100,
       "opponentSpeeds": [28, 31, 29.5],
       "obstacleEvery": 185,
-      "firstClearExp": 160
+      "firstClearExp": 160,
+      "firstClearMoney": 150,
+      "partDropChance": 0.2
     },
     {
       "order": 2,
@@ -22,8 +24,11 @@
       "targetSpeed": 29,
       "targetHp": 800,
       "incomingDamage": 6,
+      "escortCount": 0,
       "obstacleEvery": 200,
-      "firstClearExp": 190
+      "firstClearExp": 190,
+      "firstClearMoney": 300,
+      "partDropChance": 0.2
     },
     {
       "order": 3,
@@ -34,7 +39,9 @@
       "distance": 3400,
       "opponentSpeeds": [33, 35, 34],
       "obstacleEvery": 175,
-      "firstClearExp": 230
+      "firstClearExp": 230,
+      "firstClearMoney": 450,
+      "partDropChance": 0.3
     },
     {
       "order": 4,
@@ -46,8 +53,11 @@
       "targetSpeed": 33,
       "targetHp": 1200,
       "incomingDamage": 7,
+      "escortCount": 1,
       "obstacleEvery": 190,
-      "firstClearExp": 270
+      "firstClearExp": 270,
+      "firstClearMoney": 600,
+      "partDropChance": 0.3
     },
     {
       "order": 5,
@@ -58,7 +68,9 @@
       "distance": 3700,
       "opponentSpeeds": [37, 39, 40],
       "obstacleEvery": 165,
-      "firstClearExp": 320
+      "firstClearExp": 320,
+      "firstClearMoney": 750,
+      "partDropChance": 0.4
     },
     {
       "order": 6,
@@ -70,8 +82,11 @@
       "targetSpeed": 36,
       "targetHp": 1800,
       "incomingDamage": 9,
+      "escortCount": 1,
       "obstacleEvery": 180,
-      "firstClearExp": 380
+      "firstClearExp": 380,
+      "firstClearMoney": 900,
+      "partDropChance": 0.4
     },
     {
       "order": 7,
@@ -82,7 +97,9 @@
       "distance": 3950,
       "opponentSpeeds": [41, 43, 44],
       "obstacleEvery": 155,
-      "firstClearExp": 450
+      "firstClearExp": 450,
+      "firstClearMoney": 1050,
+      "partDropChance": 0.5
     },
     {
       "order": 8,
@@ -94,8 +111,11 @@
       "targetSpeed": 40,
       "targetHp": 2600,
       "incomingDamage": 11,
+      "escortCount": 2,
       "obstacleEvery": 170,
-      "firstClearExp": 520
+      "firstClearExp": 520,
+      "firstClearMoney": 1200,
+      "partDropChance": 0.5
     },
     {
       "order": 9,
@@ -106,7 +126,9 @@
       "distance": 4200,
       "opponentSpeeds": [43, 45, 46],
       "obstacleEvery": 150,
-      "firstClearExp": 600
+      "firstClearExp": 600,
+      "firstClearMoney": 1350,
+      "partDropChance": 0.6
     },
     {
       "order": 10,
@@ -118,8 +140,11 @@
       "targetSpeed": 43,
       "targetHp": 3000,
       "incomingDamage": 12,
+      "escortCount": 2,
       "obstacleEvery": 165,
-      "firstClearExp": 750
+      "firstClearExp": 750,
+      "firstClearMoney": 1500,
+      "partDropChance": 0.6
     }
   ]
 }

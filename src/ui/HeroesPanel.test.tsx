@@ -61,8 +61,9 @@ describe('HeroesPanel', () => {
       totalReputation: getTotalReputationForLevel(8),
       lastUpdatedAt: BASE_TIME,
     })
-    useAdventureStore.setState({
+    useAdventureStore.setState((state) => ({
       spareParts: 100,
+      heroLevels: { ...state.heroLevels, foreman: 2 },
       carPartInventory: [
         {
           id: 'part-engine',
@@ -77,7 +78,7 @@ describe('HeroesPanel', () => {
           level: 1,
         },
       ],
-    })
+    }))
     render(<HeroesPanel onClose={() => {}} />)
 
     await userEvent.click(screen.getByRole('button', { name: /^车辆/ }))
@@ -139,7 +140,7 @@ describe('HeroesPanel', () => {
 
     expect(useAdventureStore.getState().gunLevels['rivet-smg']).toBe(1)
     expect(useAdventureStore.getState().spareParts).toBe(60)
-    expect(screen.getByText('强化 Lv.1/10')).toBeInTheDocument()
+    expect(screen.getByText('强化 Lv.1/1')).toBeInTheDocument()
   })
 
   it('shows current loadout first and changes cars in a separate garage screen', async () => {

@@ -9,6 +9,7 @@ import {
 import { getCurrentProductionRates } from '../game/resourceEconomy'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
+import { ResourceAmount } from './ResourceAmount'
 
 export interface CityHudProps {
   onOpenGangTree?: () => void
@@ -45,16 +46,40 @@ export function CityHud({
       </p>
       <div className="city-hud__resources" aria-label="资源">
         <div className="city-hud__resource">
-          <p>{`钱 ${Math.trunc(resources.money)}`}</p>
-          <p>{`钱 +${productionRates.money}/10秒`}</p>
+          <p>
+            <ResourceAmount kind="money" amount={Math.trunc(resources.money)} />
+          </p>
+          <p>
+            <ResourceAmount
+              kind="money"
+              amount={`+${productionRates.money}/10秒`}
+            />
+          </p>
         </div>
         <div className="city-hud__resource">
-          <p>{`油 ${Math.trunc(resources.oil)}`}</p>
-          <p>{`油 +${productionRates.oil}/10秒`}</p>
+          <p>
+            <ResourceAmount kind="oil" amount={Math.trunc(resources.oil)} />
+          </p>
+          <p>
+            <ResourceAmount
+              kind="oil"
+              amount={`+${productionRates.oil}/10秒`}
+            />
+          </p>
         </div>
         <div className="city-hud__resource">
-          <p>{`物资 ${Math.trunc(resources.materials)}`}</p>
-          <p>{`物资 +${productionRates.materials}/10秒`}</p>
+          <p>
+            <ResourceAmount
+              kind="materials"
+              amount={Math.trunc(resources.materials)}
+            />
+          </p>
+          <p>
+            <ResourceAmount
+              kind="materials"
+              amount={`+${productionRates.materials}/10秒`}
+            />
+          </p>
         </div>
       </div>
       <div className="city-hud__actions">

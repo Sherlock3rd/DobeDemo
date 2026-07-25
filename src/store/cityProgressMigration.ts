@@ -10,6 +10,7 @@ import {
   type BuildingLevel,
   type BuildingProgress,
   type ChildBuildingLevel,
+  type PendingMainUpgrade,
 } from '../game/cityTypes'
 import { addWalletSaturated } from '../game/resourceEconomy'
 
@@ -22,6 +23,8 @@ export interface CityDurableState {
   resources: ResourceWallet
   lastResourceUpdatedAt: number
   activeProducerIds: BuildingId[]
+  pendingMainUpgrades: PendingMainUpgrade[]
+  appliedStageRewardIds: string[]
 }
 
 const INITIAL_PRODUCERS: BuildingId[] = ['repair-shop']
@@ -138,6 +141,53 @@ function normalizeActiveProducerIds(value: unknown): BuildingId[] {
   }, [])
 }
 
+function normalizePendingMainUpgrades(
+  value: unknown,
+  progress: BuildingProgressById,
+): PendingMainUpgrade[] {
+  if (!Array.isArray(value)) return []
+  const seen = new Set<BuildingId>()
+  const result: PendingMainUpgrade[] = []
+  for (const raw of value) {
+    if (result.length >= 2) break
+    if (!isRecord(raw)) continue
+    if (
+      typeof raw.buildingId !== 'string' ||
+      !isBuildingId(raw.buildingId) ||
+      seen.has(raw.buildingId) ||
+      typeof raw.targetLevel !== 'number' ||
+      !Number.isInteger(raw.targetLevel) ||
+      raw.targetLevel < 2 ||
+      raw.targetLevel > 10 ||
+      raw.targetLevel !== progress[raw.buildingId].level + 1 ||
+      typeof raw.completesAt !== 'number' ||
+      !Number.isFinite(raw.completesAt)
+    ) {
+      continue
+    }
+    seen.add(raw.buildingId)
+    result.push({
+      buildingId: raw.buildingId,
+      targetLevel: raw.targetLevel as BuildingLevel,
+      completesAt: raw.completesAt,
+    })
+  }
+  return result
+}
+
+function normalizeAppliedStageRewardIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return [
+    ...new Set(
+      value.filter(
+        (item): item is string =>
+          typeof item === 'string' &&
+          /^(campaign|racing):([1-9]|1\d|20)$/.test(item),
+      ),
+    ),
+  ].slice(0, 30)
+}
+
 function validNow(now: number): number {
   return Number.isFinite(now) ? now : Date.now()
 }
@@ -148,10 +198,11 @@ function normalizeLegacyCityDurableState(
 ): CityDurableState {
   const source = isRecord(value) ? value : {}
   const fallbackNow = validNow(now)
+  const buildingProgress = normalizeLegacyBuildingProgressById(
+    source.buildingProgress,
+  )
   return {
-    buildingProgress: normalizeLegacyBuildingProgressById(
-      source.buildingProgress,
-    ),
+    buildingProgress,
     resources: normalizeResources(source.resources),
     lastResourceUpdatedAt:
       typeof source.lastResourceUpdatedAt === 'number' &&
@@ -159,6 +210,13 @@ function normalizeLegacyCityDurableState(
         ? source.lastResourceUpdatedAt
         : fallbackNow,
     activeProducerIds: normalizeActiveProducerIds(source.activeProducerIds),
+    pendingMainUpgrades: normalizePendingMainUpgrades(
+      source.pendingMainUpgrades,
+      buildingProgress,
+    ),
+    appliedStageRewardIds: normalizeAppliedStageRewardIds(
+      source.appliedStageRewardIds,
+    ),
   }
 }
 
@@ -336,6 +394,8 @@ export function migrateCityState(
           resources: { ...EMPTY_RESOURCES },
           lastResourceUpdatedAt: migrationTime,
           activeProducerIds: [...INITIAL_PRODUCERS],
+          pendingMainUpgrades: [],
+          appliedStageRewardIds: [],
         },
         false,
         migrationTime,

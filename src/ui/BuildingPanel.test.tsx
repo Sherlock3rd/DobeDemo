@@ -51,6 +51,18 @@ function setProgress(
   }))
 }
 
+function completeMainUpgrade(buildingId: BuildingId): void {
+  const task = useCityStore
+    .getState()
+    .pendingMainUpgrades.find(
+      (candidate) => candidate.buildingId === buildingId,
+    )
+  if (!task) throw new Error(`Missing pending upgrade for ${buildingId}`)
+  act(() => {
+    useCityStore.getState().syncMainUpgrades(task.completesAt)
+  })
+}
+
 function renderWithScene(children: JSX.Element) {
   return render(
     <>
@@ -446,7 +458,7 @@ describe('BuildingPanel', () => {
       expect(screen.getByRole('button', { name: '确认升级' })).toBeEnabled()
     })
 
-    it('charges exactly once, advances the level, and selects the newly unlocked slot on success', async () => {
+    it('charges once, completes later, and selects the first incomplete slot', async () => {
       const user = userEvent.setup()
       setUpReadyRepairShop()
 
@@ -455,6 +467,7 @@ describe('BuildingPanel', () => {
         screen.getByRole('button', { name: '升级主建筑至 Lv.2' }),
       )
       await user.click(screen.getByRole('button', { name: '确认升级' }))
+      completeMainUpgrade('repair-shop')
 
       expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
         level: 2,
@@ -464,7 +477,7 @@ describe('BuildingPanel', () => {
       expect(screen.getByText('等级 2 / 10')).toBeInTheDocument()
       expect(
         screen.getByRole('radio', {
-          name: new RegExp(repairFragments[1].name),
+          name: new RegExp(repairFragments[0].name),
         }),
       ).toHaveAttribute('aria-checked', 'true')
     })
@@ -482,6 +495,7 @@ describe('BuildingPanel', () => {
         screen.getByRole('button', { name: '升级主建筑至 Lv.6' }),
       )
       await user.click(screen.getByRole('button', { name: '确认升级' }))
+      completeMainUpgrade('repair-shop')
 
       expect(
         useCityStore.getState().buildingProgress['repair-shop'].level,
@@ -596,6 +610,7 @@ describe('BuildingPanel', () => {
           name: `直接升级 Clubhouse 至 Lv.2 · ${costText}`,
         }),
       )
+      completeMainUpgrade('clubhouse')
 
       expect(useCityStore.getState().buildingProgress.clubhouse).toEqual({
         level: 2,
@@ -644,11 +659,13 @@ describe('BuildingPanel', () => {
           name: /直接升级 Clubhouse 至 Lv\.2/,
         }),
       )
+      completeMainUpgrade('clubhouse')
       await user.click(
         screen.getByRole('button', {
           name: /直接升级 Clubhouse 至 Lv\.3/,
         }),
       )
+      completeMainUpgrade('clubhouse')
 
       expect(useCityStore.getState().buildingProgress.clubhouse.level).toBe(3)
       expect(useCityStore.getState().resources).toEqual({

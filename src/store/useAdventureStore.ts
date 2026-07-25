@@ -1,7 +1,10 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { expToLevel } from '../config/heroesConfig'
-import { getFirstClearReward, isStageUnlocked } from '../config/campaignConfig'
+import {
+  getFirstClearRewardDefinition,
+  isStageUnlocked,
+} from '../config/campaignConfig'
 import { getRacingStage, isRacingStageUnlocked } from '../config/racingConfig'
 import { settleIdleExperience } from '../config/idleExperienceConfig'
 import {
@@ -19,12 +22,15 @@ import {
   isCarPartSlot,
   isGunId,
   type CarId,
+  type CarPartQuality,
   type CarPartSlot,
   type EquipmentByHero,
   type GunId,
 } from '../game/equipmentTypes'
 import {
   CAR_PART_MAX_LEVEL,
+  CAR_PART_INVENTORY_LIMIT,
+  CAR_PART_QUALITY_INFO,
   GUN_MAX_LEVEL,
   getCarPartRecycleValue,
   getCarPartUpgradeCost,
@@ -32,8 +38,15 @@ import {
   isPartInstalled,
   settlePartSalvage as calculatePartSalvage,
 } from '../game/equipmentProgression'
+import type { RandomSource } from '../game/equipmentProgression'
+import {
+  getCampaignPartQualityWeights,
+  getRacingPartQualityWeights,
+  rollStageRewardPart,
+} from '../game/stageRewards'
 import type { FormationAssignment } from '../game/combat/power'
 import { createSafeStorage } from './safeStorage'
+import { useCityStore } from './useCityStore'
 import {
   ADVENTURE_STORAGE_KEY,
   createInitialAdventureState,
@@ -67,19 +80,34 @@ export type EquipmentActionResult = {
     | 'insufficient-spare-parts'
   cost?: number
   gained?: number
+  recycledCount?: number
+}
+
+export interface StageVictoryReward {
+  firstClear: boolean
+  rewardExp: number
+  rewardMoney: number
+  rewardPart: AdventureDurableState['carPartInventory'][number] | null
+  rewardSpareParts: number
 }
 
 export interface AdventureState extends AdventureDurableState {
+  lastVictoryReward: {
+    mode: 'campaign' | 'racing'
+    stage: number
+    reward: StageVictoryReward
+  } | null
   claimIdleChest: (now: number) => number
   upgradeHero: (heroId: string, gangLevel: number) => UpgradeHeroResult
   recordVictory: (
     stage: number,
     now: number,
-  ) => { firstClear: boolean; rewardExp: number }
-  recordRacingVictory: (stage: number) => {
-    firstClear: boolean
-    rewardExp: number
-  }
+    random?: RandomSource,
+  ) => StageVictoryReward
+  recordRacingVictory: (
+    stage: number,
+    random?: RandomSource,
+  ) => StageVictoryReward
   equipCar: (heroId: string, carId: string | null, gangLevel: number) => boolean
   equipGun: (heroId: string, gunId: string | null, gangLevel: number) => boolean
   settleCarPartIdle: (
@@ -98,10 +126,12 @@ export interface AdventureState extends AdventureDurableState {
     gangLevel: number,
   ) => EquipmentActionResult
   recycleCarPart: (partId: string) => EquipmentActionResult
+  recycleCarPartsByQuality: (quality: CarPartQuality) => EquipmentActionResult
   upgradeCarPart: (partId: string) => EquipmentActionResult
   upgradeGun: (gunId: string, gangLevel: number) => EquipmentActionResult
   setFormation: (formation: FormationAssignment, gangLevel: number) => boolean
   reconcileWithGang: (gangLevel: number) => void
+  syncCityRewardMoney: () => void
   reset: (now?: number) => void
 }
 
@@ -194,10 +224,30 @@ function isValidGangLevel(gangLevel: number): boolean {
   )
 }
 
+function getHighestHeroLevel(
+  heroLevels: AdventureDurableState['heroLevels'],
+): number {
+  return Math.min(
+    CAR_PART_MAX_LEVEL,
+    Math.max(1, ...Object.values(heroLevels).map((level) => Math.trunc(level))),
+  )
+}
+
+function emptyStageReward(): StageVictoryReward {
+  return {
+    firstClear: false,
+    rewardExp: 0,
+    rewardMoney: 0,
+    rewardPart: null,
+    rewardSpareParts: 0,
+  }
+}
+
 export const useAdventureStore = create<AdventureState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...createInitialAdventureState(Date.now()),
+      lastVictoryReward: null,
       claimIdleChest: (now) => {
         let claimed = 0
         set((state) => {
@@ -259,42 +309,118 @@ export const useAdventureStore = create<AdventureState>()(
         })
         return result
       },
-      recordVictory: (stage, now) => {
-        let outcome = { firstClear: false, rewardExp: 0 }
+      recordVictory: (stage, now, random) => {
+        let outcome = emptyStageReward()
         set((state) => {
           if (stage !== state.highestClearedStage + 1) return state
           if (!isStageUnlocked(stage, state.highestClearedStage)) return state
-          const reward = getFirstClearReward(stage)
+          const reward = getFirstClearRewardDefinition(stage)
+          const rolledPart = rollStageRewardPart({
+            chance: reward.partDropChance,
+            qualityWeights: getCampaignPartQualityWeights(stage),
+            nextPartSerial: state.nextPartSerial,
+            random,
+          })
+          const carPartInventory = [...state.carPartInventory]
+          let spareParts = state.spareParts
+          let rewardSpareParts = 0
+          if (rolledPart.part) {
+            if (carPartInventory.length < CAR_PART_INVENTORY_LIMIT) {
+              carPartInventory.push(rolledPart.part)
+            } else {
+              rewardSpareParts =
+                CAR_PART_QUALITY_INFO[rolledPart.part.quality].recycleBase
+              spareParts = Math.min(
+                Number.MAX_SAFE_INTEGER,
+                spareParts + rewardSpareParts,
+              )
+            }
+          }
           const idleWasClosed = state.highestClearedStage < 1
-          outcome = { firstClear: true, rewardExp: reward }
+          outcome = {
+            firstClear: true,
+            rewardExp: reward.sharedExp,
+            rewardMoney: reward.money,
+            rewardPart: rolledPart.part,
+            rewardSpareParts,
+          }
           return {
             highestClearedStage: stage,
             sharedExp: Math.min(
               Number.MAX_SAFE_INTEGER,
-              state.sharedExp + reward,
+              state.sharedExp + reward.sharedExp,
             ),
             idleClock:
               idleWasClosed && Number.isFinite(now) ? now : state.idleClock,
+            carPartInventory,
+            spareParts,
+            nextPartSerial: rolledPart.nextPartSerial,
+            lastVictoryReward: {
+              mode: 'campaign' as const,
+              stage,
+              reward: outcome,
+            },
           }
         })
+        if (outcome.firstClear) {
+          get().syncCityRewardMoney()
+        }
         return outcome
       },
-      recordRacingVictory: (stage) => {
-        let outcome = { firstClear: false, rewardExp: 0 }
+      recordRacingVictory: (stage, random) => {
+        let outcome = emptyStageReward()
         set((state) => {
           if (!isRacingStageUnlocked(stage, state.highestClearedRacingStage)) {
             return state
           }
-          const reward = getRacingStage(stage).firstClearExp
-          outcome = { firstClear: true, rewardExp: reward }
+          const reward = getRacingStage(stage)
+          const rolledPart = rollStageRewardPart({
+            chance: reward.partDropChance,
+            qualityWeights: getRacingPartQualityWeights(stage),
+            nextPartSerial: state.nextPartSerial,
+            random,
+          })
+          const carPartInventory = [...state.carPartInventory]
+          let spareParts = state.spareParts
+          let rewardSpareParts = 0
+          if (rolledPart.part) {
+            if (carPartInventory.length < CAR_PART_INVENTORY_LIMIT) {
+              carPartInventory.push(rolledPart.part)
+            } else {
+              rewardSpareParts =
+                CAR_PART_QUALITY_INFO[rolledPart.part.quality].recycleBase
+              spareParts = Math.min(
+                Number.MAX_SAFE_INTEGER,
+                spareParts + rewardSpareParts,
+              )
+            }
+          }
+          outcome = {
+            firstClear: true,
+            rewardExp: reward.firstClearExp,
+            rewardMoney: reward.firstClearMoney,
+            rewardPart: rolledPart.part,
+            rewardSpareParts,
+          }
           return {
             highestClearedRacingStage: stage,
             sharedExp: Math.min(
               Number.MAX_SAFE_INTEGER,
-              state.sharedExp + reward,
+              state.sharedExp + reward.firstClearExp,
             ),
+            carPartInventory,
+            spareParts,
+            nextPartSerial: rolledPart.nextPartSerial,
+            lastVictoryReward: {
+              mode: 'racing' as const,
+              stage,
+              reward: outcome,
+            },
           }
         })
+        if (outcome.firstClear) {
+          get().syncCityRewardMoney()
+        }
         return outcome
       },
       equipCar: (heroId, carId, gangLevel) => {
@@ -462,6 +588,47 @@ export const useAdventureStore = create<AdventureState>()(
         })
         return result
       },
+      recycleCarPartsByQuality: (quality) => {
+        let result: EquipmentActionResult = {
+          applied: false,
+          reason: 'part-not-found',
+          recycledCount: 0,
+          gained: 0,
+        }
+        set((state) => {
+          const recyclable = state.carPartInventory.filter(
+            (part) =>
+              part.quality === quality &&
+              !isPartInstalled(part.id, state.carPartSlotsByCar),
+          )
+          if (recyclable.length === 0) return state
+          const recyclableIds = new Set(recyclable.map((part) => part.id))
+          const gained = recyclable.reduce(
+            (total, part) =>
+              Math.min(
+                Number.MAX_SAFE_INTEGER,
+                total + getCarPartRecycleValue(part),
+              ),
+            0,
+          )
+          result = {
+            applied: true,
+            reason: 'ready',
+            recycledCount: recyclable.length,
+            gained,
+          }
+          return {
+            carPartInventory: state.carPartInventory.filter(
+              (part) => !recyclableIds.has(part.id),
+            ),
+            spareParts: Math.min(
+              Number.MAX_SAFE_INTEGER,
+              state.spareParts + gained,
+            ),
+          }
+        })
+        return result
+      },
       upgradeCarPart: (partId) => {
         if (typeof partId !== 'string' || partId.trim() === '') {
           return { applied: false, reason: 'invalid-request' }
@@ -476,7 +643,8 @@ export const useAdventureStore = create<AdventureState>()(
           )
           if (index < 0) return state
           const part = state.carPartInventory[index]
-          if (part.level >= CAR_PART_MAX_LEVEL) {
+          const levelCap = getHighestHeroLevel(state.heroLevels)
+          if (part.level >= levelCap || part.level >= CAR_PART_MAX_LEVEL) {
             result = { applied: false, reason: 'max-level' }
             return state
           }
@@ -516,7 +684,8 @@ export const useAdventureStore = create<AdventureState>()(
         }
         set((state) => {
           const level = state.gunLevels[gunId]
-          if (level >= GUN_MAX_LEVEL) {
+          const levelCap = getHighestHeroLevel(state.heroLevels)
+          if (level >= levelCap || level >= GUN_MAX_LEVEL) {
             result = { applied: false, reason: 'max-level' }
             return state
           }
@@ -547,11 +716,32 @@ export const useAdventureStore = create<AdventureState>()(
       },
       reconcileWithGang: (gangLevel) =>
         set((state) => reconcileAdventureWithGang(state, gangLevel)),
-      reset: (now = Date.now()) => set(createInitialAdventureState(now)),
+      syncCityRewardMoney: () => {
+        const state = get()
+        const city = useCityStore.getState()
+        for (let stage = 1; stage <= state.highestClearedStage; stage += 1) {
+          city.grantRewardMoney(
+            `campaign:${stage}`,
+            getFirstClearRewardDefinition(stage).money,
+          )
+        }
+        for (
+          let stage = 1;
+          stage <= state.highestClearedRacingStage;
+          stage += 1
+        ) {
+          city.grantRewardMoney(
+            `racing:${stage}`,
+            getRacingStage(stage).firstClearMoney,
+          )
+        }
+      },
+      reset: (now = Date.now()) =>
+        set({ ...createInitialAdventureState(now), lastVictoryReward: null }),
     }),
     {
       name: ADVENTURE_STORAGE_KEY,
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted) => persisted,
       partialize: ({

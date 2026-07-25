@@ -1,6 +1,5 @@
 import { Canvas } from '@react-three/fiber'
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
-import { getFirstClearReward } from '../config/campaignConfig'
 import { combatConfig } from '../config/combatConfig'
 import {
   buildBattleInput,
@@ -9,6 +8,10 @@ import {
   type UnitSnapshot,
 } from '../game/combat/battleEngine'
 import { getGangLevel } from '../game/gangProgression'
+import {
+  CAR_PART_QUALITY_INFO,
+  CAR_PART_SLOT_INFO,
+} from '../game/equipmentProgression'
 import { BattleScene } from '../scene/battle/BattleScene'
 import { BATTLE_CAMERA_CONFIG } from '../scene/battle/battleCamera'
 import type { BattlePresentationFrame } from '../scene/battle/BattleEffects'
@@ -17,6 +20,7 @@ import { useAdventureStore } from '../store/useAdventureStore'
 import { useGangStore } from '../store/useGangStore'
 import { BattleErrorBoundary } from './BattleErrorBoundary'
 import { BattleHud, type PlaybackSpeed } from './BattleHud'
+import { ResourceAmount } from './ResourceAmount'
 
 export interface BattleScreenProps {
   stage: number
@@ -65,6 +69,7 @@ function BattleScreenSession({
   onExit,
 }: BattleScreenProps): JSX.Element {
   const recordVictory = useAdventureStore((s) => s.recordVictory)
+  const lastVictoryReward = useAdventureStore((s) => s.lastVictoryReward)
   const highestClearedStage = useAdventureStore((s) => s.highestClearedStage)
   const reducedMotion = usePrefersReducedMotion()
   const [boot] = useState(() => bootBattle(stage))
@@ -165,13 +170,17 @@ function BattleScreenSession({
     },
   )
 
+  const reward =
+    lastVictoryReward?.mode === 'campaign' && lastVictoryReward.stage === stage
+      ? lastVictoryReward.reward
+      : null
   const firstClear =
-    boot.ok &&
-    boot.result.outcome === 'victory' &&
-    phase === 'resolved' &&
-    highestClearedStage >= stage &&
-    highestBefore < stage
-  const rewardExp = firstClear ? getFirstClearReward(stage) : 0
+    reward?.firstClear ??
+    (boot.ok &&
+      boot.result.outcome === 'victory' &&
+      phase === 'resolved' &&
+      highestClearedStage >= stage &&
+      highestBefore < stage)
 
   if (!boot.ok) {
     return (
@@ -226,7 +235,25 @@ function BattleScreenSession({
               ? 'VICTORY · 胜利'
               : 'DEFEAT · 失败'}
           </p>
-          {firstClear ? <p>{`首通奖励 英雄经验 ${rewardExp}`}</p> : null}
+          {firstClear && reward ? (
+            <div className="battle-screen__rewards" aria-label="首通奖励">
+              <ResourceAmount kind="experience" amount={reward.rewardExp} />
+              <ResourceAmount kind="money" amount={reward.rewardMoney} />
+              {reward.rewardPart ? (
+                <ResourceAmount
+                  kind="part"
+                  label={`${CAR_PART_QUALITY_INFO[reward.rewardPart.quality].name}${CAR_PART_SLOT_INFO[reward.rewardPart.slot].shortName}`}
+                  amount={reward.rewardSpareParts > 0 ? '已自动回收' : 1}
+                />
+              ) : null}
+              {reward.rewardSpareParts > 0 ? (
+                <ResourceAmount
+                  kind="spare-parts"
+                  amount={`+${reward.rewardSpareParts}`}
+                />
+              ) : null}
+            </div>
+          ) : null}
           <button type="button" onClick={onExit}>
             继续
           </button>

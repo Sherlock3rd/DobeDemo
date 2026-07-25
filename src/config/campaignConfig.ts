@@ -12,7 +12,11 @@ export interface StageConfig {
   global: number
   enemyCount: number
   enemy: EnemyStats
-  firstClearReward: { sharedExp: number }
+  firstClearReward: {
+    sharedExp: number
+    money: number
+    partDropChance: number
+  }
 }
 
 export interface CampaignConfig {
@@ -56,7 +60,11 @@ const STAGE_KEYS = [
   'firstClearReward',
 ] as const
 const ENEMY_KEYS = ['level', 'hp', 'atk', 'def'] as const
-const FIRST_CLEAR_REWARD_KEYS = ['sharedExp'] as const
+const FIRST_CLEAR_REWARD_KEYS = [
+  'sharedExp',
+  'money',
+  'partDropChance',
+] as const
 
 export function getEnemyCount(g: number): number {
   if (!Number.isInteger(g) || g < 1 || g > 20) {
@@ -71,6 +79,18 @@ export function getEnemyCount(g: number): number {
 
 function parseSafeInt(value: unknown, path: string): number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    invalidConfig(path)
+  }
+  return value
+}
+
+function parseProbability(value: unknown, path: string): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    value < 0 ||
+    value > 1
+  ) {
     invalidConfig(path)
   }
   return value
@@ -141,6 +161,14 @@ export function parseCampaignConfig(value: unknown): CampaignConfig {
           reward.sharedExp,
           `stages.${index}.firstClearReward.sharedExp`,
         ),
+        money: parseSafeInt(
+          reward.money,
+          `stages.${index}.firstClearReward.money`,
+        ),
+        partDropChance: parseProbability(
+          reward.partDropChance,
+          `stages.${index}.firstClearReward.partDropChance`,
+        ),
       },
     }
   })
@@ -160,6 +188,12 @@ export function getStage(g: number): StageConfig {
 
 export function getFirstClearReward(g: number): number {
   return getStage(g).firstClearReward.sharedExp
+}
+
+export function getFirstClearRewardDefinition(
+  g: number,
+): StageConfig['firstClearReward'] {
+  return getStage(g).firstClearReward
 }
 
 export function isStageUnlocked(

@@ -13,10 +13,72 @@ import {
   type GunUpgradeLevels,
 } from './equipmentTypes'
 
-export const CAR_PART_MAX_LEVEL = 10
-export const GUN_MAX_LEVEL = 10
+export const CAR_PART_MAX_LEVEL = 50
+export const GUN_MAX_LEVEL = 50
 export const CAR_PART_INVENTORY_LIMIT = 40
 export const PART_IDLE_CAP_MS = 8 * 60 * 60 * 1000
+
+export type RandomSource = () => number
+export type PartDropQuantity = 1 | 2 | 3 | 4
+
+export interface PartSalvageDropProfile {
+  intervalMs: number
+  quantityWeights: Readonly<Record<PartDropQuantity, number>>
+  qualityWeights: Readonly<Record<CarPartQuality, number>>
+}
+
+const PART_SALVAGE_DROP_PROFILES: readonly PartSalvageDropProfile[] = [
+  {
+    intervalMs: 30_000,
+    quantityWeights: { 1: 1, 2: 0, 3: 0, 4: 0 },
+    qualityWeights: { worn: 1, tuned: 0, elite: 0, prototype: 0 },
+  },
+  {
+    intervalMs: 28_000,
+    quantityWeights: { 1: 1, 2: 0, 3: 0, 4: 0 },
+    qualityWeights: { worn: 0.9, tuned: 0.1, elite: 0, prototype: 0 },
+  },
+  {
+    intervalMs: 26_000,
+    quantityWeights: { 1: 0.8, 2: 0.2, 3: 0, 4: 0 },
+    qualityWeights: { worn: 0.8, tuned: 0.2, elite: 0, prototype: 0 },
+  },
+  {
+    intervalMs: 24_000,
+    quantityWeights: { 1: 0.6, 2: 0.4, 3: 0, 4: 0 },
+    qualityWeights: { worn: 0.7, tuned: 0.25, elite: 0.05, prototype: 0 },
+  },
+  {
+    intervalMs: 22_000,
+    quantityWeights: { 1: 0.4, 2: 0.6, 3: 0, 4: 0 },
+    qualityWeights: { worn: 0.6, tuned: 0.3, elite: 0.1, prototype: 0 },
+  },
+  {
+    intervalMs: 20_000,
+    quantityWeights: { 1: 0.25, 2: 0.65, 3: 0.1, 4: 0 },
+    qualityWeights: { worn: 0.5, tuned: 0.35, elite: 0.15, prototype: 0 },
+  },
+  {
+    intervalMs: 18_000,
+    quantityWeights: { 1: 0.15, 2: 0.65, 3: 0.2, 4: 0 },
+    qualityWeights: { worn: 0.4, tuned: 0.35, elite: 0.2, prototype: 0.05 },
+  },
+  {
+    intervalMs: 16_000,
+    quantityWeights: { 1: 0, 2: 0.7, 3: 0.3, 4: 0 },
+    qualityWeights: { worn: 0.3, tuned: 0.35, elite: 0.25, prototype: 0.1 },
+  },
+  {
+    intervalMs: 14_000,
+    quantityWeights: { 1: 0, 2: 0.5, 3: 0.4, 4: 0.1 },
+    qualityWeights: { worn: 0.2, tuned: 0.35, elite: 0.3, prototype: 0.15 },
+  },
+  {
+    intervalMs: 12_000,
+    quantityWeights: { 1: 0, 2: 0.3, 3: 0.5, 4: 0.2 },
+    qualityWeights: { worn: 0.1, tuned: 0.3, elite: 0.35, prototype: 0.25 },
+  },
+]
 
 export const CAR_PART_SLOT_INFO: Readonly<
   Record<CarPartSlot, { name: string; shortName: string; description: string }>
@@ -117,28 +179,47 @@ export function createInitialCarPartSlots(): CarPartSlotsByCar {
 }
 
 export function getPartDropIntervalMs(recyclingYardLevel: number): number {
+  return getPartSalvageDropProfile(recyclingYardLevel).intervalMs
+}
+
+export function getPartSalvageDropProfile(
+  recyclingYardLevel: number,
+): PartSalvageDropProfile {
   const level = Math.min(10, Math.max(1, Math.trunc(recyclingYardLevel)))
-  return 30_000 - (level - 1) * 2_000
+  return PART_SALVAGE_DROP_PROFILES[level - 1]
 }
 
-function qualityForDrop(
-  serial: number,
-  recyclingYardLevel: number,
-): CarPartQuality {
-  if (recyclingYardLevel >= 8 && serial % 11 === 0) return 'prototype'
-  if (recyclingYardLevel >= 5 && serial % 5 === 0) return 'elite'
-  if (recyclingYardLevel >= 2 && serial % 2 === 0) return 'tuned'
-  return 'worn'
+export function pickWeighted<T>(
+  entries: readonly { value: T; weight: number }[],
+  random: RandomSource = Math.random,
+): T {
+  if (entries.length === 0) throw new RangeError('Weighted entries are empty')
+  if (entries.some(({ weight }) => !Number.isFinite(weight) || weight < 0)) {
+    throw new RangeError('Weights must be finite and non-negative')
+  }
+  const total = entries.reduce((sum, entry) => sum + entry.weight, 0)
+  if (!Number.isFinite(total) || total <= 0) {
+    throw new RangeError('At least one weight must be positive')
+  }
+  const roll = random()
+  if (!Number.isFinite(roll) || roll < 0 || roll >= 1) {
+    throw new RangeError('Random source must return a value in [0, 1)')
+  }
+  let cursor = roll * total
+  for (const entry of entries) {
+    cursor -= entry.weight
+    if (cursor < 0 && entry.weight > 0) return entry.value
+  }
+  const fallback = [...entries].reverse().find(({ weight }) => weight > 0)
+  if (!fallback) throw new RangeError('At least one weight must be positive')
+  return fallback.value
 }
 
-function partForDrop(
-  serial: number,
-  recyclingYardLevel: number,
-): CarPartInstance {
+function partForDrop(serial: number, quality: CarPartQuality): CarPartInstance {
   return {
     id: `part-${serial}`,
     slot: CAR_PART_SLOT_IDS[(serial - 1) % CAR_PART_SLOT_IDS.length],
-    quality: qualityForDrop(serial, recyclingYardLevel),
+    quality,
     level: 1,
   }
 }
@@ -157,6 +238,7 @@ export function settlePartSalvage(input: {
   lastUpdatedAt: number
   now: number
   recyclingYardLevel: number
+  random?: RandomSource
 }): PartSalvageSettlement {
   const inventory = input.inventory.map((part) => ({ ...part }))
   const fallback = {
@@ -177,13 +259,14 @@ export function settlePartSalvage(input: {
     return fallback
   }
 
-  const interval = getPartDropIntervalMs(input.recyclingYardLevel)
+  const profile = getPartSalvageDropProfile(input.recyclingYardLevel)
+  const interval = profile.intervalMs
   const effectiveStart = Math.max(
     input.lastUpdatedAt,
     input.now - PART_IDLE_CAP_MS,
   )
-  const dropCount = Math.floor((input.now - effectiveStart) / interval)
-  if (dropCount <= 0) {
+  const batchCount = Math.floor((input.now - effectiveStart) / interval)
+  if (batchCount <= 0) {
     return {
       ...fallback,
       nextUpdatedAt: effectiveStart,
@@ -194,18 +277,32 @@ export function settlePartSalvage(input: {
   let spareParts = input.spareParts
   let received = 0
   let autoRecycled = 0
-  for (let index = 0; index < dropCount; index += 1) {
-    const part = partForDrop(serial, input.recyclingYardLevel)
-    serial += 1
-    if (inventory.length < CAR_PART_INVENTORY_LIMIT) {
-      inventory.push(part)
-      received += 1
-    } else {
-      spareParts = saturatedAdd(
-        spareParts,
-        CAR_PART_QUALITY_INFO[part.quality].recycleBase,
-      )
-      autoRecycled += 1
+  const random = input.random ?? Math.random
+  const quantityEntries = (
+    Object.entries(profile.quantityWeights) as [string, number][]
+  ).map(([value, weight]) => ({
+    value: Number(value) as PartDropQuantity,
+    weight,
+  }))
+  const qualityEntries = (
+    Object.entries(profile.qualityWeights) as [CarPartQuality, number][]
+  ).map(([value, weight]) => ({ value, weight }))
+  for (let batch = 0; batch < batchCount; batch += 1) {
+    const quantity = pickWeighted(quantityEntries, random)
+    for (let index = 0; index < quantity; index += 1) {
+      const quality = pickWeighted(qualityEntries, random)
+      const part = partForDrop(serial, quality)
+      serial += 1
+      if (inventory.length < CAR_PART_INVENTORY_LIMIT) {
+        inventory.push(part)
+        received += 1
+      } else {
+        spareParts = saturatedAdd(
+          spareParts,
+          CAR_PART_QUALITY_INFO[part.quality].recycleBase,
+        )
+        autoRecycled += 1
+      }
     }
   }
 
@@ -213,10 +310,25 @@ export function settlePartSalvage(input: {
     inventory,
     spareParts,
     nextPartSerial: serial,
-    nextUpdatedAt: effectiveStart + dropCount * interval,
+    nextUpdatedAt: effectiveStart + batchCount * interval,
     received,
     autoRecycled,
   }
+}
+
+export function getEquipmentLevelMultiplier(
+  level: number,
+  growthThroughLevel10: number,
+  growthAfterLevel10: number,
+  startsAtLevelOne = false,
+): number {
+  const normalized = Math.max(startsAtLevelOne ? 1 : 0, Math.trunc(level))
+  const upgrades = startsAtLevelOne ? normalized - 1 : normalized
+  const earlyUpgrades = Math.min(10 - (startsAtLevelOne ? 1 : 0), upgrades)
+  const lateUpgrades = Math.max(0, upgrades - earlyUpgrades)
+  return (
+    1 + earlyUpgrades * growthThroughLevel10 + lateUpgrades * growthAfterLevel10
+  )
 }
 
 export function getCarPartUpgradeCost(part: CarPartInstance): number {
@@ -248,7 +360,8 @@ export function getCarPartRecycleValue(part: CarPartInstance): number {
 
 function partStrength(part: CarPartInstance): number {
   return (
-    CAR_PART_QUALITY_INFO[part.quality].strength * (1 + (part.level - 1) * 0.28)
+    CAR_PART_QUALITY_INFO[part.quality].strength *
+    getEquipmentLevelMultiplier(part.level, 0.28, 0.08, true)
   )
 }
 
@@ -370,14 +483,16 @@ export function getGunHeroAtk(
 ): number {
   const level = progression?.gunLevels[gunId] ?? 0
   return Math.round(
-    equipmentConfig.guns[gunId].heroBonus.atk * (1 + level * 0.08),
+    equipmentConfig.guns[gunId].heroBonus.atk *
+      getEquipmentLevelMultiplier(level, 0.08, 0.025),
   )
 }
 
 export function getGunPursuitDamage(gunId: GunId, gunLevel: number): number {
   const level = Math.min(GUN_MAX_LEVEL, Math.max(0, Math.trunc(gunLevel)))
   return Math.round(
-    equipmentConfig.guns[gunId].pursuit.damage * (1 + level * 0.06),
+    equipmentConfig.guns[gunId].pursuit.damage *
+      getEquipmentLevelMultiplier(level, 0.06, 0.02),
   )
 }
 

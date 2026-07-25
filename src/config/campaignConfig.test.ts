@@ -41,6 +41,31 @@ describe('campaign config', () => {
     expect(getStage(20).id).toBe('2-10')
   })
 
+  it('defines campaign first-clears as exp, money, and banded part chances', () => {
+    expect(getStage(1).firstClearReward).toEqual({
+      sharedExp: 500,
+      money: 100,
+      partDropChance: 0.2,
+    })
+    expect(
+      [5, 6, 10, 11, 15, 16, 20].map((stage) => {
+        const reward = getStage(stage).firstClearReward as Record<
+          string,
+          number
+        >
+        return [reward.money, reward.partDropChance]
+      }),
+    ).toEqual([
+      [500, 0.2],
+      [600, 0.3],
+      [1_000, 0.3],
+      [1_100, 0.4],
+      [1_500, 0.4],
+      [1_600, 0.5],
+      [2_000, 0.5],
+    ])
+  })
+
   it('unlocks only cleared stages and the next stage', () => {
     expect(isStageUnlocked(1, 0)).toBe(true)
     expect(isStageUnlocked(2, 0)).toBe(false)

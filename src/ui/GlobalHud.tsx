@@ -1,7 +1,16 @@
-import type { JSX } from 'react'
+import { useMemo, type JSX } from 'react'
+import { getBuildingPower } from '../config/economyConfig'
+import { heroesConfig } from '../config/heroesConfig'
 import { useChestTick } from '../game/chestTick'
-import { getGangLevel, getGangRole } from '../game/gangProgression'
-import { getCurrentProductionRates } from '../game/resourceEconomy'
+import {
+  getGangLevel,
+  getGangRole,
+  isBuildingUnlocked,
+} from '../game/gangProgression'
+import { BUILDING_IDS } from '../game/cityTypes'
+import { getAccountTotalPower, unitPower } from '../game/combat/power'
+import { getHeroCombatStats } from '../game/heroEquipment'
+import { HERO_IDS, isHeroUnlocked } from '../game/heroes'
 import {
   getClaimableIdleExp,
   useAdventureStore,
@@ -9,6 +18,7 @@ import {
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
 import { hasAdventureRedDot, hasHeroesRedDot } from './redDots'
+import { ResourceAmount } from './ResourceAmount'
 
 export interface GlobalHudProps {
   onOpenHeroes: () => void
@@ -21,9 +31,13 @@ export interface GlobalHudProps {
 export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const resources = useCityStore((s) => s.resources)
   const buildingProgress = useCityStore((s) => s.buildingProgress)
-  const activeProducerIds = useCityStore((s) => s.activeProducerIds)
   const totalReputation = useGangStore((s) => s.totalReputation)
   const heroLevels = useAdventureStore((s) => s.heroLevels)
+  const equipmentByHero = useAdventureStore((s) => s.equipmentByHero)
+  const formation = useAdventureStore((s) => s.formation)
+  const gunLevels = useAdventureStore((s) => s.gunLevels)
+  const carPartInventory = useAdventureStore((s) => s.carPartInventory)
+  const carPartSlotsByCar = useAdventureStore((s) => s.carPartSlotsByCar)
   const sharedExp = useAdventureStore((s) => s.sharedExp)
   const highestClearedStage = useAdventureStore((s) => s.highestClearedStage)
   const idleClock = useAdventureStore((s) => s.idleClock)
@@ -31,7 +45,41 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const now = useChestTick((s) => s.now)
   const gangLevel = getGangLevel(totalReputation)
   const role = getGangRole(gangLevel)
-  const rates = getCurrentProductionRates(buildingProgress, activeProducerIds)
+  const totalPower = useMemo(() => {
+    const progression = { gunLevels, carPartInventory, carPartSlotsByCar }
+    return getAccountTotalPower({
+      unlockedHeroPowers: HERO_IDS.filter((heroId) =>
+        isHeroUnlocked(heroId, gangLevel),
+      ).map((heroId) => {
+        const currentRow =
+          formation.find((slot) => slot.heroId === heroId)?.row ??
+          heroesConfig.heroes[heroId].role
+        return unitPower(
+          currentRow,
+          getHeroCombatStats(
+            heroId,
+            heroLevels[heroId],
+            equipmentByHero[heroId],
+            progression,
+          ),
+        )
+      }),
+      completedBuildingPowers: BUILDING_IDS.filter((buildingId) =>
+        isBuildingUnlocked(buildingId, gangLevel),
+      ).map((buildingId) =>
+        getBuildingPower(buildingId, buildingProgress[buildingId].level),
+      ),
+    })
+  }, [
+    buildingProgress,
+    carPartInventory,
+    carPartSlotsByCar,
+    equipmentByHero,
+    formation,
+    gangLevel,
+    gunLevels,
+    heroLevels,
+  ])
   // tick subscription forces a recompute when AdventureIdleClock advances.
   const claimable = getClaimableIdleExp(
     idleClock,
@@ -60,10 +108,23 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
           {`Lv.${gangLevel} ${role.title}（${role.chineseTitle}）`}
         </button>
         <div className="global-hud__resources" aria-label="资源">
-          <span>{`钱 ${Math.trunc(resources.money)} +${rates.money}/10秒`}</span>
-          <span>{`油 ${Math.trunc(resources.oil)} +${rates.oil}/10秒`}</span>
-          <span>{`物资 ${Math.trunc(resources.materials)} +${rates.materials}/10秒`}</span>
+          <ResourceAmount
+            kind="money"
+            amount={Math.trunc(resources.money)}
+            showLabel={false}
+          />
+          <ResourceAmount
+            kind="oil"
+            amount={Math.trunc(resources.oil)}
+            showLabel={false}
+          />
+          <ResourceAmount
+            kind="materials"
+            amount={Math.trunc(resources.materials)}
+            showLabel={false}
+          />
         </div>
+        <ResourceAmount kind="power" amount={totalPower} />
       </div>
       <nav className="global-hud__bottom" aria-label="主导航">
         <button

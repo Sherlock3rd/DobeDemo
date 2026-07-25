@@ -51,3 +51,17 @@ export function teamPower(
     units.reduce((sum, u) => sum + unitPower(u.row, u), 0),
   )
 }
+
+export function getAccountTotalPower(input: {
+  unlockedHeroPowers: readonly number[]
+  completedBuildingPowers: readonly number[]
+}): number {
+  return [...input.unlockedHeroPowers, ...input.completedBuildingPowers].reduce(
+    (total, value) =>
+      Math.min(
+        Number.MAX_SAFE_INTEGER,
+        total + Math.max(0, Math.trunc(Number.isFinite(value) ? value : 0)),
+      ),
+    0,
+  )
+}

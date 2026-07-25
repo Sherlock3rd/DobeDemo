@@ -16,8 +16,10 @@ import {
   BUILDING_MAX_LEVEL,
   getBuildingStageProgress,
   getChildUpgradeDecision,
+  getMainUpgradeDurationMs,
   getMainUpgradeDecision,
   getUnlockedChildCount,
+  MAIN_UPGRADE_QUEUE_LIMIT,
   type ChildUpgradeDecision,
 } from '../game/buildingUpgrade'
 import type { BuildingId, BuildingLevel } from '../game/cityTypes'
@@ -34,6 +36,7 @@ import {
 import { getBuildingFragments } from '../scene/city/buildingFragmentCatalog'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
+import { useChestTick } from '../game/chestTick'
 import {
   findDefaultChildIndex,
   findNextIncompleteChildIndex,
@@ -42,6 +45,7 @@ import {
   type BuildingPanelView,
   type MainUpgradeBlockReason,
 } from './buildingPanelSession'
+import { ResourceAmount } from './ResourceAmount'
 
 const TITLE_ID = 'building-panel-title'
 const CONFIRM_TITLE_ID = 'building-panel-confirm-title'
@@ -52,15 +56,33 @@ interface PanelSession {
   view: BuildingPanelView
 }
 
-function formatProduction(production: ResourceWallet): string {
+function formatProduction(production: ResourceWallet): JSX.Element | string {
   if (production.money > 0) {
-    return `本建筑产出 钱 +${production.money}/10秒`
+    return (
+      <ResourceAmount
+        kind="money"
+        label="本建筑产出 钱"
+        amount={`+${production.money}/10秒`}
+      />
+    )
   }
   if (production.oil > 0) {
-    return `本建筑产出 油 +${production.oil}/10秒`
+    return (
+      <ResourceAmount
+        kind="oil"
+        label="本建筑产出 油"
+        amount={`+${production.oil}/10秒`}
+      />
+    )
   }
   if (production.materials > 0) {
-    return `本建筑产出 物资 +${production.materials}/10秒`
+    return (
+      <ResourceAmount
+        kind="materials"
+        label="本建筑产出 物资"
+        amount={`+${production.materials}/10秒`}
+      />
+    )
   }
   return '本建筑暂无产出'
 }
@@ -74,6 +96,15 @@ function focusCanvas(): void {
 // API during render.
 function readNow(): number {
   return Date.now()
+}
+
+function formatRemainingTime(milliseconds: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return minutes > 0
+    ? `${minutes}分${seconds.toString().padStart(2, '0')}秒`
+    : `${seconds}秒`
 }
 
 function createDefaultSession(buildingId: BuildingId): PanelSession {
@@ -97,12 +128,17 @@ function createDefaultSession(buildingId: BuildingId): PanelSession {
 // while still giving every open exactly one session per the spec.
 export function BuildingPanel(): JSX.Element | null {
   const selectedBuildingId = useCityStore((state) => state.selectedBuildingId)
+  const selectedBuildingLevel = useCityStore((state) =>
+    selectedBuildingId
+      ? state.buildingProgress[selectedBuildingId].level
+      : null,
+  )
   if (!selectedBuildingId) {
     return null
   }
   return (
     <BuildingPanelSession
-      key={selectedBuildingId}
+      key={`${selectedBuildingId}:${selectedBuildingLevel}`}
       buildingId={selectedBuildingId}
     />
   )
@@ -123,13 +159,22 @@ function BuildingPanelSession({
     (state) => state.buildingProgress.clubhouse,
   )
   const resources = useCityStore((state) => state.resources)
+  const pendingMainUpgrades = useCityStore((state) => state.pendingMainUpgrades)
   const clearSelection = useCityStore((state) => state.clearSelection)
   const upgradeChildBuilding = useCityStore(
     (state) => state.upgradeChildBuilding,
   )
   const upgradeMainBuilding = useCityStore((state) => state.upgradeMainBuilding)
   const totalReputation = useGangStore((state) => state.totalReputation)
+  const clockNow = useChestTick((state) => state.now)
+  const [fallbackNow] = useState(readNow)
   const gangLevel = getGangLevel(totalReputation)
+  const visibleNow = clockNow > 0 ? clockNow : fallbackNow
+  const pendingTask = pendingMainUpgrades.find(
+    (task) => task.buildingId === selectedBuildingId,
+  )
+  const queueFull =
+    pendingMainUpgrades.length >= MAIN_UPGRADE_QUEUE_LIMIT && !pendingTask
 
   const [session, setSession] = useState<PanelSession>(() =>
     createDefaultSession(selectedBuildingId),
@@ -227,6 +272,18 @@ function BuildingPanelSession({
     progress.childLevels,
   )
   const upgradeProgress = getBuildingStageProgress(selectedBuildingId, progress)
+  const queueStatus = (
+    <section className="building-panel__upgrade-queue" aria-label="施工队列">
+      <strong>{`施工队列 ${pendingMainUpgrades.length}/${MAIN_UPGRADE_QUEUE_LIMIT}`}</strong>
+      {pendingTask ? (
+        <span>{`升级至 Lv.${pendingTask.targetLevel} · 剩余 ${formatRemainingTime(
+          pendingTask.completesAt - visibleNow,
+        )}`}</span>
+      ) : (
+        <span>{queueFull ? '施工队列已满' : '可开始主建筑升级'}</span>
+      )}
+    </section>
+  )
 
   const selectChild = (index: number): void => {
     setSession((current) =>
@@ -365,13 +422,22 @@ function BuildingPanelSession({
     const nextPower = targetLevel
       ? getBuildingPower(selectedBuildingId, targetLevel)
       : currentPower
-    const blockerText = mainUpgradeBlockerMessage(directDecision, level)
-    const canUpgrade = directDecision.reason === 'ready'
+    const blockerText = pendingTask
+      ? `主建筑正在升级至 Lv.${pendingTask.targetLevel}`
+      : queueFull
+        ? '施工队列已满，最多同时升级两座主建筑'
+        : mainUpgradeBlockerMessage(directDecision, level)
+    const canUpgrade =
+      directDecision.reason === 'ready' && !pendingTask && !queueFull
     const costText = formatNonZeroCost(cost)
     const directButtonLabel = targetLevel
-      ? costText === '免费'
-        ? `直接升级 Clubhouse 至 Lv.${targetLevel}`
-        : `直接升级 Clubhouse 至 Lv.${targetLevel} · ${costText}`
+      ? pendingTask
+        ? `升级中 · 剩余 ${formatRemainingTime(
+            pendingTask.completesAt - visibleNow,
+          )}`
+        : costText === '免费'
+          ? `直接升级 Clubhouse 至 Lv.${targetLevel}`
+          : `直接升级 Clubhouse 至 Lv.${targetLevel} · ${costText}`
       : null
 
     const handleDirectClubhouseUpgrade = (): void => {
@@ -390,6 +456,7 @@ function BuildingPanelSession({
           {building.name}
         </h2>
         <p className="building-panel__level">{`等级 ${level} / ${BUILDING_MAX_LEVEL}`}</p>
+        {queueStatus}
 
         <section
           className="building-panel__economy-summary"
@@ -399,22 +466,61 @@ function BuildingPanelSession({
             {formatProduction(production)}
           </p>
           <ul className="building-panel__wallet">
-            <li>{`钱 ${Math.trunc(resources.money)}`}</li>
-            <li>{`油 ${Math.trunc(resources.oil)}`}</li>
-            <li>{`物资 ${Math.trunc(resources.materials)}`}</li>
+            <li>
+              <ResourceAmount
+                kind="money"
+                amount={Math.trunc(resources.money)}
+              />
+            </li>
+            <li>
+              <ResourceAmount kind="oil" amount={Math.trunc(resources.oil)} />
+            </li>
+            <li>
+              <ResourceAmount
+                kind="materials"
+                amount={Math.trunc(resources.materials)}
+              />
+            </li>
           </ul>
         </section>
 
-        <p className="building-panel__confirm-power">{`当前建筑战力 ${currentPower}`}</p>
+        <p className="building-panel__confirm-power">
+          <ResourceAmount
+            kind="power"
+            label="当前建筑战力"
+            amount={currentPower}
+          />
+        </p>
         {targetLevel ? (
           <>
-            <p className="building-panel__confirm-power">{`本次战力 +${nextPower - currentPower}`}</p>
-            <p className="building-panel__confirm-power">{`升级后战力 ${nextPower}`}</p>
+            <p className="building-panel__confirm-power">
+              <ResourceAmount
+                kind="power"
+                label="本次战力"
+                amount={`+${nextPower - currentPower}`}
+              />
+            </p>
+            <p className="building-panel__confirm-power">
+              <ResourceAmount
+                kind="power"
+                label="升级后战力"
+                amount={nextPower}
+              />
+            </p>
             <ul className="building-panel__confirm-cost" aria-label="升级成本">
-              <li>{`钱 ${cost.money}`}</li>
-              <li>{`油 ${cost.oil}`}</li>
-              <li>{`物资 ${cost.materials}`}</li>
+              <li>
+                <ResourceAmount kind="money" amount={cost.money} />
+              </li>
+              <li>
+                <ResourceAmount kind="oil" amount={cost.oil} />
+              </li>
+              <li>
+                <ResourceAmount kind="materials" amount={cost.materials} />
+              </li>
             </ul>
+            <p className="building-panel__confirm-power">{`预计用时 ${formatRemainingTime(
+              getMainUpgradeDurationMs(targetLevel),
+            )}`}</p>
             <button
               type="button"
               className="building-panel__main-button"
@@ -465,10 +571,15 @@ function BuildingPanelSession({
       ? getBuildingPower(selectedBuildingId, targetLevel)
       : currentPower
     const powerDelta = nextPower - currentPower
-    const blockerText = confirmDecision
-      ? mainUpgradeBlockerMessage(confirmDecision, level)
-      : '已达到最高等级 Lv.10'
-    const canConfirm = confirmDecision?.reason === 'ready'
+    const blockerText = pendingTask
+      ? `主建筑正在升级至 Lv.${pendingTask.targetLevel}`
+      : queueFull
+        ? '施工队列已满，最多同时升级两座主建筑'
+        : confirmDecision
+          ? mainUpgradeBlockerMessage(confirmDecision, level)
+          : '已达到最高等级 Lv.10'
+    const canConfirm =
+      confirmDecision?.reason === 'ready' && !pendingTask && !queueFull
 
     return (
       <section
@@ -486,14 +597,40 @@ function BuildingPanelSession({
         >
           {`${building.name} · 目标等级 Lv.${targetLevel ?? BUILDING_MAX_LEVEL}`}
         </h2>
+        {queueStatus}
         <ul className="building-panel__confirm-cost" aria-label="升级成本">
-          <li>{`钱 ${cost.money}`}</li>
-          <li>{`油 ${cost.oil}`}</li>
-          <li>{`物资 ${cost.materials}`}</li>
+          <li>
+            <ResourceAmount kind="money" amount={cost.money} />
+          </li>
+          <li>
+            <ResourceAmount kind="oil" amount={cost.oil} />
+          </li>
+          <li>
+            <ResourceAmount kind="materials" amount={cost.materials} />
+          </li>
         </ul>
-        <p className="building-panel__confirm-power">{`当前建筑战力 ${currentPower}`}</p>
-        <p className="building-panel__confirm-power">{`本次战力 +${powerDelta}`}</p>
-        <p className="building-panel__confirm-power">{`升级后战力 ${nextPower}`}</p>
+        <p className="building-panel__confirm-power">
+          <ResourceAmount
+            kind="power"
+            label="当前建筑战力"
+            amount={currentPower}
+          />
+        </p>
+        <p className="building-panel__confirm-power">
+          <ResourceAmount
+            kind="power"
+            label="本次战力"
+            amount={`+${powerDelta}`}
+          />
+        </p>
+        <p className="building-panel__confirm-power">
+          <ResourceAmount kind="power" label="升级后战力" amount={nextPower} />
+        </p>
+        {targetLevel ? (
+          <p className="building-panel__confirm-power">{`预计用时 ${formatRemainingTime(
+            getMainUpgradeDurationMs(targetLevel),
+          )}`}</p>
+        ) : null}
         {!canConfirm ? (
           <p className="building-panel__main-blocker" role="alert">
             {blockerText}
@@ -563,6 +700,7 @@ function BuildingPanelSession({
         {building.name}
       </h2>
       <p className="building-panel__level">{`等级 ${level} / ${BUILDING_MAX_LEVEL}`}</p>
+      {queueStatus}
 
       <section
         className="building-panel__economy-summary"
@@ -572,9 +710,18 @@ function BuildingPanelSession({
           {formatProduction(production)}
         </p>
         <ul className="building-panel__wallet">
-          <li>{`钱 ${Math.trunc(resources.money)}`}</li>
-          <li>{`油 ${Math.trunc(resources.oil)}`}</li>
-          <li>{`物资 ${Math.trunc(resources.materials)}`}</li>
+          <li>
+            <ResourceAmount kind="money" amount={Math.trunc(resources.money)} />
+          </li>
+          <li>
+            <ResourceAmount kind="oil" amount={Math.trunc(resources.oil)} />
+          </li>
+          <li>
+            <ResourceAmount
+              kind="materials"
+              amount={Math.trunc(resources.materials)}
+            />
+          </li>
         </ul>
       </section>
 
@@ -664,9 +811,16 @@ function BuildingPanelSession({
             ref={mainButtonRef}
             type="button"
             className="building-panel__main-button"
+            disabled={Boolean(pendingTask) || queueFull}
             onClick={handleOpenMainConfirm}
           >
-            {`升级主建筑至 Lv.${level + 1}`}
+            {pendingTask
+              ? `升级中 · 剩余 ${formatRemainingTime(
+                  pendingTask.completesAt - visibleNow,
+                )}`
+              : queueFull
+                ? '施工队列已满'
+                : `升级主建筑至 Lv.${level + 1}`}
           </button>
         ) : (
           <p className="building-panel__main-status">

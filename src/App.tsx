@@ -2,6 +2,7 @@ import { Loader } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useEffect, useRef, useState, type JSX } from 'react'
 import { AdventureIdleClock } from './game/AdventureIdleClock'
+import { BuildingUpgradeController } from './game/BuildingUpgradeController'
 import { EconomyIdleController } from './game/EconomyIdleController'
 import { GangIdleController } from './game/GangIdleController'
 import { PartSalvageController } from './game/PartSalvageController'
@@ -85,12 +86,14 @@ export default function App(): JSX.Element {
     const reconcileWhenBothHydrated = (): void => {
       if (
         !useAdventureStore.persist.hasHydrated() ||
-        !useGangStore.persist.hasHydrated()
+        !useGangStore.persist.hasHydrated() ||
+        !useCityStore.persist.hasHydrated()
       ) {
         return
       }
       const level = getGangLevel(useGangStore.getState().totalReputation)
       useAdventureStore.getState().reconcileWithGang(level)
+      useAdventureStore.getState().syncCityRewardMoney()
     }
 
     const unsubAdventure = useAdventureStore.persist.onFinishHydration(
@@ -99,11 +102,15 @@ export default function App(): JSX.Element {
     const unsubGang = useGangStore.persist.onFinishHydration(
       reconcileWhenBothHydrated,
     )
+    const unsubCity = useCityStore.persist.onFinishHydration(
+      reconcileWhenBothHydrated,
+    )
     reconcileWhenBothHydrated()
 
     return () => {
       unsubAdventure()
       unsubGang()
+      unsubCity()
     }
   }, [])
 
@@ -240,6 +247,7 @@ export default function App(): JSX.Element {
         />
         <GangIdleController />
         <EconomyIdleController />
+        <BuildingUpgradeController />
         <PartSalvageController />
         <AdventureIdleClock />
         <div

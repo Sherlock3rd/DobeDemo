@@ -9,9 +9,84 @@ import {
   type BuildingId,
   type BuildingLevel,
   type BuildingProgress,
+  type PendingMainUpgrade,
 } from './cityTypes'
 
 export const BUILDING_MAX_LEVEL = 10
+export const MAIN_UPGRADE_QUEUE_LIMIT = 2
+
+const MAIN_UPGRADE_DURATION_MS: Readonly<Record<BuildingLevel, number>> = {
+  1: 0,
+  2: 10_000,
+  3: 20_000,
+  4: 30_000,
+  5: 60_000,
+  6: 120_000,
+  7: 180_000,
+  8: 300_000,
+  9: 480_000,
+  10: 600_000,
+}
+
+export function getMainUpgradeDurationMs(targetLevel: BuildingLevel): number {
+  const duration = MAIN_UPGRADE_DURATION_MS[targetLevel]
+  if (!duration || targetLevel < 2) {
+    throw new RangeError(`No main-building duration for Lv.${targetLevel}`)
+  }
+  return duration
+}
+
+export function settleDueMainUpgrades(
+  buildingProgress: Readonly<Record<BuildingId, BuildingProgress>>,
+  pendingMainUpgrades: readonly PendingMainUpgrade[],
+  now: number,
+): {
+  buildingProgress: Record<BuildingId, BuildingProgress>
+  pendingMainUpgrades: PendingMainUpgrade[]
+  completed: PendingMainUpgrade[]
+} {
+  if (!Number.isFinite(now)) {
+    return {
+      buildingProgress: buildingProgress as Record<
+        BuildingId,
+        BuildingProgress
+      >,
+      pendingMainUpgrades: [...pendingMainUpgrades],
+      completed: [],
+    }
+  }
+  const due = pendingMainUpgrades.filter((task) => task.completesAt <= now)
+  if (due.length === 0) {
+    return {
+      buildingProgress: buildingProgress as Record<
+        BuildingId,
+        BuildingProgress
+      >,
+      pendingMainUpgrades: [...pendingMainUpgrades],
+      completed: [],
+    }
+  }
+  const nextProgress = { ...buildingProgress } as Record<
+    BuildingId,
+    BuildingProgress
+  >
+  for (const task of due) {
+    const current = nextProgress[task.buildingId]
+    if (task.targetLevel > current.level) {
+      nextProgress[task.buildingId] = {
+        ...current,
+        level: task.targetLevel,
+      }
+    }
+  }
+  return {
+    buildingProgress: nextProgress,
+    pendingMainUpgrades: pendingMainUpgrades.filter(
+      (task) => task.completesAt > now,
+    ),
+    completed: due,
+  }
+}
 
 export interface BuildingUpgradeProgress {
   unlockedChildCount: number

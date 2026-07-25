@@ -16,6 +16,7 @@ import {
   computeTeamPowerForFormation,
 } from './formationPower'
 import { useInitialFocus } from './useInitialFocus'
+import { ResourceAmount } from './ResourceAmount'
 
 export interface FormationPanelProps {
   stage: number
@@ -204,10 +205,12 @@ export function FormationPanel({
         </h2>
 
         <div className="formation-panel__powers">
-          <p aria-label={`我方战力 ${ourPower}`}>{`我方战力 ${ourPower}`}</p>
-          <p
-            aria-label={`敌方战力 ${enemyPower}`}
-          >{`敌方战力 ${enemyPower}`}</p>
+          <p>
+            <ResourceAmount kind="power" label="我方战力" amount={ourPower} />
+          </p>
+          <p>
+            <ResourceAmount kind="power" label="敌方战力" amount={enemyPower} />
+          </p>
         </div>
 
         <div className="formation-panel__slots" aria-label="阵位">

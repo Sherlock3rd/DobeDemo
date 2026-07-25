@@ -4,8 +4,11 @@ import { economyConfig, type ResourceWallet } from '../config/economyConfig'
 import {
   getBuildingChildCount,
   getChildUpgradeDecision,
+  getMainUpgradeDurationMs,
   getMainUpgradeDecision,
   isDirectUpgradeBuilding,
+  MAIN_UPGRADE_QUEUE_LIMIT,
+  settleDueMainUpgrades,
   type ChildUpgradeBlockReason,
   type MainUpgradeBlockReason,
 } from '../game/buildingUpgrade'
@@ -43,7 +46,12 @@ export const INITIAL_RESOURCES: Readonly<ResourceWallet> = {
 
 export interface UpgradeActionResult {
   applied: boolean
-  reason: ChildUpgradeBlockReason | MainUpgradeBlockReason | 'invalid-request'
+  reason:
+    | ChildUpgradeBlockReason
+    | MainUpgradeBlockReason
+    | 'invalid-request'
+    | 'upgrade-already-pending'
+    | 'upgrade-queue-full'
 }
 
 interface CityState extends CityDurableState {
@@ -51,6 +59,7 @@ interface CityState extends CityDurableState {
   selectBuilding: (id: BuildingId) => void
   clearSelection: () => void
   syncResourceProduction: (now: number, gangLevel: number) => void
+  syncMainUpgrades: (now: number) => void
   upgradeChildBuilding: (
     id: string,
     childIndex: number,
@@ -62,6 +71,7 @@ interface CityState extends CityDurableState {
     gangLevel: number,
     now: number,
   ) => UpgradeActionResult
+  grantRewardMoney: (rewardId: string, amount: number) => boolean
   grantDebugResources: (now: number) => void
   reset: (now?: number) => void
 }
@@ -91,6 +101,8 @@ export const useCityStore = create<CityState>()(
       resources: initialResources(),
       lastResourceUpdatedAt: Date.now(),
       activeProducerIds: ['repair-shop'],
+      pendingMainUpgrades: [],
+      appliedStageRewardIds: [],
       selectBuilding: (id) => set({ selectedBuildingId: id }),
       clearSelection: () => set({ selectedBuildingId: null }),
       syncResourceProduction: (now, gangLevel) => {
@@ -124,6 +136,21 @@ export const useCityStore = create<CityState>()(
             resources: settlement.wallet,
             lastResourceUpdatedAt,
             activeProducerIds,
+          }
+        })
+      },
+      syncMainUpgrades: (now) => {
+        if (!Number.isFinite(now)) return
+        set((state) => {
+          const settlement = settleDueMainUpgrades(
+            state.buildingProgress,
+            state.pendingMainUpgrades,
+            now,
+          )
+          if (settlement.completed.length === 0) return state
+          return {
+            buildingProgress: settlement.buildingProgress,
+            pendingMainUpgrades: settlement.pendingMainUpgrades,
           }
         })
       },
@@ -200,19 +227,50 @@ export const useCityStore = create<CityState>()(
           reason: 'invalid-request',
         }
         set((state) => {
+          const upgradeSettlement = settleDueMainUpgrades(
+            state.buildingProgress,
+            state.pendingMainUpgrades,
+            now,
+          )
           const settlement = settleResourceProduction({
             wallet: state.resources,
-            buildingProgress: state.buildingProgress,
+            buildingProgress: upgradeSettlement.buildingProgress,
             activeProducerIds: state.activeProducerIds,
             lastUpdatedAt: state.lastResourceUpdatedAt,
             now,
           })
-          const current = state.buildingProgress[id]
+          const current = upgradeSettlement.buildingProgress[id]
+          if (
+            upgradeSettlement.pendingMainUpgrades.some(
+              (task) => task.buildingId === id,
+            )
+          ) {
+            result = { applied: false, reason: 'upgrade-already-pending' }
+            return {
+              resources: settlement.wallet,
+              lastResourceUpdatedAt: settlement.nextUpdatedAt,
+              buildingProgress: upgradeSettlement.buildingProgress,
+              pendingMainUpgrades: upgradeSettlement.pendingMainUpgrades,
+            }
+          }
+          if (
+            upgradeSettlement.pendingMainUpgrades.length >=
+            MAIN_UPGRADE_QUEUE_LIMIT
+          ) {
+            result = { applied: false, reason: 'upgrade-queue-full' }
+            return {
+              resources: settlement.wallet,
+              lastResourceUpdatedAt: settlement.nextUpdatedAt,
+              buildingProgress: upgradeSettlement.buildingProgress,
+              pendingMainUpgrades: upgradeSettlement.pendingMainUpgrades,
+            }
+          }
           const decision = getMainUpgradeDecision({
             buildingId: id,
             progress: current,
-            repairShopProgress: state.buildingProgress['repair-shop'],
-            clubhouseProgress: state.buildingProgress.clubhouse,
+            repairShopProgress:
+              upgradeSettlement.buildingProgress['repair-shop'],
+            clubhouseProgress: upgradeSettlement.buildingProgress.clubhouse,
             wallet: settlement.wallet,
             gangLevel,
           })
@@ -230,21 +288,56 @@ export const useCityStore = create<CityState>()(
             return {
               resources: settlement.wallet,
               lastResourceUpdatedAt: settlement.nextUpdatedAt,
+              buildingProgress: upgradeSettlement.buildingProgress,
+              pendingMainUpgrades: upgradeSettlement.pendingMainUpgrades,
             }
           }
           return {
             resources: subtractCost(settlement.wallet, decision.cost),
             lastResourceUpdatedAt: settlement.nextUpdatedAt,
-            buildingProgress: {
-              ...state.buildingProgress,
-              [id]: {
-                ...current,
-                level: decision.targetLevel as BuildingLevel,
+            buildingProgress: upgradeSettlement.buildingProgress,
+            pendingMainUpgrades: [
+              ...upgradeSettlement.pendingMainUpgrades,
+              {
+                buildingId: id,
+                targetLevel: decision.targetLevel as BuildingLevel,
+                completesAt:
+                  now +
+                  getMainUpgradeDurationMs(
+                    decision.targetLevel as BuildingLevel,
+                  ),
               },
-            },
+            ],
           }
         })
         return result
+      },
+      grantRewardMoney: (rewardId, amount) => {
+        if (
+          typeof rewardId !== 'string' ||
+          rewardId.trim() === '' ||
+          !Number.isSafeInteger(amount) ||
+          amount <= 0
+        ) {
+          return false
+        }
+        let applied = false
+        set((state) => {
+          if (state.appliedStageRewardIds.includes(rewardId)) return state
+          applied = true
+          return {
+            resources: addWalletSaturated(state.resources, {
+              money: amount,
+              oil: 0,
+              materials: 0,
+            }),
+            appliedStageRewardIds: [
+              ...state.appliedStageRewardIds,
+              rewardId,
+            ].slice(-30),
+          }
+        })
+        return applied
       },
       grantDebugResources: (now) => {
         if (!Number.isFinite(now)) {
@@ -275,11 +368,13 @@ export const useCityStore = create<CityState>()(
           resources: initialResources(),
           lastResourceUpdatedAt: Number.isFinite(now) ? now : Date.now(),
           activeProducerIds: ['repair-shop'],
+          pendingMainUpgrades: [],
+          appliedStageRewardIds: [],
         }),
     }),
     {
       name: CITY_STORAGE_KEY,
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted, version) =>
         migrateCityState(persisted, version, Date.now()),
@@ -288,11 +383,15 @@ export const useCityStore = create<CityState>()(
         resources,
         lastResourceUpdatedAt,
         activeProducerIds,
+        pendingMainUpgrades,
+        appliedStageRewardIds,
       }) => ({
         buildingProgress,
         resources,
         lastResourceUpdatedAt,
         activeProducerIds,
+        pendingMainUpgrades,
+        appliedStageRewardIds,
       }),
       // Zustand calls merge even when nothing is stored, passing `undefined`.
       // Normalizing that would zero the canonical 10000-money initial state for

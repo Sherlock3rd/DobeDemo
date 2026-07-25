@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import * as equipmentProgression from './equipmentProgression'
 import {
   CAR_PART_INVENTORY_LIMIT,
   CAR_PART_MAX_LEVEL,
@@ -22,6 +23,63 @@ import type {
 const NOW = 1_700_000_000_000
 
 describe('equipmentProgression', () => {
+  it('uses injectable weighted randomness at zero, exact, and near-one boundaries', () => {
+    const pickWeighted = (
+      equipmentProgression as unknown as {
+        pickWeighted?: <T>(
+          entries: readonly { value: T; weight: number }[],
+          random: () => number,
+        ) => T
+      }
+    ).pickWeighted
+
+    expect(
+      pickWeighted,
+      'pickWeighted must be a public injectable-random API',
+    ).toBeTypeOf('function')
+    if (!pickWeighted) return
+
+    const entries = [
+      { value: 'first', weight: 0.25 },
+      { value: 'last', weight: 0.75 },
+    ] as const
+    expect(pickWeighted(entries, () => 0)).toBe('first')
+    expect(pickWeighted(entries, () => 0.249_999)).toBe('first')
+    expect(pickWeighted(entries, () => 0.25)).toBe('last')
+    expect(pickWeighted(entries, () => 1 - Number.EPSILON)).toBe('last')
+  })
+
+  it('configures level 10 salvage as 12 seconds, 2-4 parts, and 25% prototype', () => {
+    const getPartSalvageDropProfile = (
+      equipmentProgression as unknown as {
+        getPartSalvageDropProfile?: (level: number) => {
+          intervalMs: number
+          quantityWeights: Record<1 | 2 | 3 | 4, number>
+          qualityWeights: Record<string, number>
+        }
+      }
+    ).getPartSalvageDropProfile
+
+    expect(
+      getPartSalvageDropProfile,
+      'getPartSalvageDropProfile must expose level-driven probabilities',
+    ).toBeTypeOf('function')
+    if (!getPartSalvageDropProfile) return
+
+    const profile = getPartSalvageDropProfile(10)
+    expect(profile.intervalMs).toBe(12_000)
+    expect(profile.quantityWeights[1]).toBe(0)
+    expect(profile.quantityWeights[2]).toBeGreaterThan(0)
+    expect(profile.quantityWeights[3]).toBeGreaterThan(0)
+    expect(profile.quantityWeights[4]).toBeGreaterThan(0)
+    expect(profile.qualityWeights.prototype).toBe(0.25)
+  })
+
+  it('raises gun and car-part hard caps to level 50', () => {
+    expect(equipmentProgression.GUN_MAX_LEVEL).toBe(50)
+    expect(equipmentProgression.CAR_PART_MAX_LEVEL).toBe(50)
+  })
+
   it('creates zeroed gun levels and empty slots for all cars', () => {
     expect(Object.values(createInitialGunLevels())).toEqual([0, 0, 0, 0, 0])
     expect(
@@ -31,31 +89,31 @@ describe('equipmentProgression', () => {
     ).toBe(true)
   })
 
-  it('drops deterministic slot and quality sequences from the recycling yard', () => {
+  it('uses injected randomness for batch quantity and part quality', () => {
+    const rolls = [0.99, 0.05, 0.2, 0.5, 0.9]
     const settlement = settlePartSalvage({
       inventory: [],
       spareParts: 0,
       nextPartSerial: 1,
       lastUpdatedAt: NOW,
-      now: NOW + getPartDropIntervalMs(5) * 5,
-      recyclingYardLevel: 5,
+      now: NOW + getPartDropIntervalMs(10),
+      recyclingYardLevel: 10,
+      random: () => rolls.shift() ?? 0,
     })
-    expect(settlement.received).toBe(5)
+    expect(settlement.received).toBe(4)
     expect(settlement.inventory.map((part) => part.slot)).toEqual([
       'tires',
       'engine',
       'bumper',
       'suspension',
-      'tires',
     ])
     expect(settlement.inventory.map((part) => part.quality)).toEqual([
       'worn',
       'tuned',
-      'worn',
-      'tuned',
       'elite',
+      'prototype',
     ])
-    expect(settlement.nextPartSerial).toBe(6)
+    expect(settlement.nextPartSerial).toBe(5)
   })
 
   it('caps inventory and automatically recycles overflow drops', () => {

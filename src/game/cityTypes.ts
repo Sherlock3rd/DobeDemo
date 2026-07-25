@@ -19,6 +19,12 @@ export interface BuildingProgress {
   childLevels: ChildBuildingLevel[]
 }
 
+export interface PendingMainUpgrade {
+  buildingId: BuildingId
+  targetLevel: BuildingLevel
+  completesAt: number
+}
+
 export interface BuildingDefinition {
   id: BuildingId
   name: string

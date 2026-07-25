@@ -19,6 +19,8 @@ import {
   GUN_MAX_LEVEL,
   createInitialCarPartSlots,
   createInitialGunLevels,
+  getCarPartUpgradeCost,
+  getGunUpgradeCost,
 } from '../game/equipmentProgression'
 import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
 
@@ -130,6 +132,50 @@ function normalizeCarPartInventory(value: unknown): CarPartInstance[] {
     })
   }
   return result
+}
+
+function clampEquipmentToHeroCap(input: {
+  heroLevels: Record<HeroId, number>
+  spareParts: number
+  gunLevels: GunUpgradeLevels
+  carPartInventory: CarPartInstance[]
+}): Pick<
+  AdventureDurableState,
+  'spareParts' | 'gunLevels' | 'carPartInventory'
+> {
+  const cap = Math.min(
+    CAR_PART_MAX_LEVEL,
+    Math.max(1, ...Object.values(input.heroLevels)),
+  )
+  let refund = 0
+  const gunLevels = { ...input.gunLevels }
+  for (const gunId of GUN_IDS) {
+    const previousLevel = gunLevels[gunId]
+    for (let level = cap; level < previousLevel; level += 1) {
+      refund = Math.min(
+        Number.MAX_SAFE_INTEGER,
+        refund + getGunUpgradeCost(gunId, level),
+      )
+    }
+    gunLevels[gunId] = Math.min(previousLevel, cap)
+  }
+  const carPartInventory = input.carPartInventory.map((part) => {
+    for (let level = cap; level < part.level; level += 1) {
+      refund = Math.min(
+        Number.MAX_SAFE_INTEGER,
+        refund + getCarPartUpgradeCost({ ...part, level }),
+      )
+    }
+    return part.level > cap ? { ...part, level: cap } : part
+  })
+  return {
+    spareParts: Math.min(
+      Number.MAX_SAFE_INTEGER,
+      Math.max(0, input.spareParts) + refund,
+    ),
+    gunLevels,
+    carPartInventory,
+  }
 }
 
 function normalizeCarPartSlots(
@@ -248,7 +294,12 @@ export function normalizeAdventureDurableState(
   for (const id of HERO_IDS) {
     heroLevels[id] = clampInt(levelsSrc[id], 1, 50, 1)
   }
-  const carPartInventory = normalizeCarPartInventory(src.carPartInventory)
+  const cappedEquipment = clampEquipmentToHeroCap({
+    heroLevels,
+    spareParts: clampInt(src.spareParts, 0, Number.MAX_SAFE_INTEGER, 0),
+    gunLevels: normalizeGunLevels(src.gunLevels),
+    carPartInventory: normalizeCarPartInventory(src.carPartInventory),
+  })
   return {
     heroLevels,
     sharedExp: clampInt(src.sharedExp, 0, Number.MAX_SAFE_INTEGER, 0),
@@ -267,12 +318,12 @@ export function normalizeAdventureDurableState(
         : Number.isFinite(now)
           ? now
           : Date.now(),
-    spareParts: clampInt(src.spareParts, 0, Number.MAX_SAFE_INTEGER, 0),
-    gunLevels: normalizeGunLevels(src.gunLevels),
-    carPartInventory,
+    spareParts: cappedEquipment.spareParts,
+    gunLevels: cappedEquipment.gunLevels,
+    carPartInventory: cappedEquipment.carPartInventory,
     carPartSlotsByCar: normalizeCarPartSlots(
       src.carPartSlotsByCar,
-      carPartInventory,
+      cappedEquipment.carPartInventory,
     ),
     partIdleClock:
       typeof src.partIdleClock === 'number' &&
@@ -281,7 +332,10 @@ export function normalizeAdventureDurableState(
         : Number.isFinite(now)
           ? now
           : Date.now(),
-    nextPartSerial: nextPartSerialFrom(src.nextPartSerial, carPartInventory),
+    nextPartSerial: nextPartSerialFrom(
+      src.nextPartSerial,
+      cappedEquipment.carPartInventory,
+    ),
   }
 }
 
@@ -297,6 +351,12 @@ export function reconcileAdventureWithGang(
   for (const id of HERO_IDS) {
     heroLevels[id] = Math.min(state.heroLevels[id] ?? 1, cap)
   }
+  const cappedEquipment = clampEquipmentToHeroCap({
+    heroLevels,
+    spareParts: state.spareParts,
+    gunLevels: state.gunLevels,
+    carPartInventory: state.carPartInventory,
+  })
   const formation = state.formation.filter((slot) =>
     isHeroUnlocked(slot.heroId, gangLevel),
   )
@@ -317,6 +377,9 @@ export function reconcileAdventureWithGang(
   return {
     ...state,
     heroLevels,
+    spareParts: cappedEquipment.spareParts,
+    gunLevels: cappedEquipment.gunLevels,
+    carPartInventory: cappedEquipment.carPartInventory,
     equipmentByHero,
     formation:
       formation.length === 0

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import * as buildingUpgrade from './buildingUpgrade'
 import { economyConfig } from '../config/economyConfig'
 import {
   BUILDING_IDS,
@@ -57,6 +58,28 @@ function mainInput(
 }
 
 describe('progressive building shape and progress', () => {
+  it('publishes the target-level main-upgrade durations and two-slot limit', () => {
+    const api = buildingUpgrade as unknown as {
+      MAIN_UPGRADE_QUEUE_LIMIT?: number
+      getMainUpgradeDurationMs?: (targetLevel: BuildingLevel) => number
+    }
+    expect(api.MAIN_UPGRADE_QUEUE_LIMIT).toBe(2)
+    expect(
+      api.getMainUpgradeDurationMs,
+      'main-building timing must be a public pure rule',
+    ).toBeTypeOf('function')
+    if (!api.getMainUpgradeDurationMs) return
+
+    expect(
+      ([2, 3, 4, 5, 6, 7, 8, 9, 10] as BuildingLevel[]).map(
+        api.getMainUpgradeDurationMs,
+      ),
+    ).toEqual([
+      10_000, 20_000, 30_000, 60_000, 120_000, 180_000, 300_000, 480_000,
+      600_000,
+    ])
+  })
+
   it('treats only the clubhouse as a direct-upgrade building', () => {
     for (const buildingId of BUILDING_IDS) {
       expect(isDirectUpgradeBuilding(buildingId)).toBe(

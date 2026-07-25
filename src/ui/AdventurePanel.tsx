@@ -1,11 +1,12 @@
 import { useEffect, useState, type JSX } from 'react'
-import { campaignConfig, getFirstClearReward } from '../config/campaignConfig'
+import { campaignConfig } from '../config/campaignConfig'
 import { useChestTick } from '../game/chestTick'
 import {
   getClaimableIdleExp,
   useAdventureStore,
 } from '../store/useAdventureStore'
 import { useInitialFocus } from './useInitialFocus'
+import { ResourceAmount } from './ResourceAmount'
 
 export interface AdventurePanelProps {
   onClose: () => void
@@ -92,7 +93,23 @@ export function AdventurePanel({
             <>
               <p>{`当前关卡 ${currentStage.id}`}</p>
               <p>{`敌人 Lv.${currentStage.enemy.level} × ${currentStage.enemyCount}`}</p>
-              <p>{`首通奖励 英雄经验 ${getFirstClearReward(currentStage.global)}`}</p>
+              <div className="adventure-panel__rewards" aria-label="首通奖励">
+                <ResourceAmount
+                  kind="experience"
+                  amount={currentStage.firstClearReward.sharedExp}
+                />
+                <ResourceAmount
+                  kind="money"
+                  amount={currentStage.firstClearReward.money}
+                />
+                <ResourceAmount
+                  kind="part"
+                  label="配件概率"
+                  amount={`${Math.round(
+                    currentStage.firstClearReward.partDropChance * 100,
+                  )}%`}
+                />
+              </div>
               <button
                 type="button"
                 className="adventure-panel__challenge"
@@ -107,7 +124,13 @@ export function AdventurePanel({
         </div>
 
         <div className="adventure-panel__chest">
-          <p>{`当前可领取 ${claimable}`}</p>
+          <p>
+            <ResourceAmount
+              kind="experience"
+              label="当前可领取"
+              amount={claimable}
+            />
+          </p>
           <button
             type="button"
             className="adventure-panel__claim"

@@ -5,6 +5,8 @@ import {
   useAdventureStore,
 } from './useAdventureStore'
 import { getPartDropIntervalMs } from '../game/equipmentProgression'
+import type { CarPartQuality } from '../game/equipmentTypes'
+import { useCityStore } from './useCityStore'
 
 const NOW = 1_700_000_000_000
 
@@ -12,6 +14,7 @@ describe('useAdventureStore', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useAdventureStore.getState().reset(NOW)
+    useCityStore.getState().reset(NOW)
   })
 
   afterEach(() => {
@@ -104,19 +107,68 @@ describe('useAdventureStore', () => {
   )
 
   it('records first clear in one transaction and initializes idle clock', () => {
-    const r = useAdventureStore.getState().recordVictory(1, NOW + 5_000)
-    expect(r).toEqual({ firstClear: true, rewardExp: 500 })
+    const r = useAdventureStore
+      .getState()
+      .recordVictory(1, NOW + 5_000, () => 0.99)
+    expect(r).toEqual({
+      firstClear: true,
+      rewardExp: 500,
+      rewardMoney: 100,
+      rewardPart: null,
+      rewardSpareParts: 0,
+    })
     expect(useAdventureStore.getState().highestClearedStage).toBe(1)
     expect(useAdventureStore.getState().sharedExp).toBe(500)
     expect(useAdventureStore.getState().idleClock).toBe(NOW + 5_000)
-    const again = useAdventureStore.getState().recordVictory(1, NOW + 6_000)
-    expect(again).toEqual({ firstClear: false, rewardExp: 0 })
+    expect(useCityStore.getState().resources.money).toBe(10_100)
+    const again = useAdventureStore
+      .getState()
+      .recordVictory(1, NOW + 6_000, () => 0)
+    expect(again).toEqual({
+      firstClear: false,
+      rewardExp: 0,
+      rewardMoney: 0,
+      rewardPart: null,
+      rewardSpareParts: 0,
+    })
     expect(useAdventureStore.getState().sharedExp).toBe(500)
+  })
+
+  it('uses injected randomness to grant a first-clear car part', () => {
+    const reward = useAdventureStore
+      .getState()
+      .recordVictory(1, NOW + 5_000, () => 0)
+    expect(reward.rewardPart).toEqual({
+      id: 'part-1',
+      slot: 'tires',
+      quality: 'worn',
+      level: 1,
+    })
+    expect(useAdventureStore.getState().carPartInventory).toEqual([
+      reward.rewardPart,
+    ])
+    expect(useAdventureStore.getState().nextPartSerial).toBe(2)
+  })
+
+  it('recovers cross-store money rewards idempotently from cleared progress', () => {
+    useAdventureStore.setState({
+      highestClearedStage: 2,
+      highestClearedRacingStage: 1,
+    })
+    useAdventureStore.getState().syncCityRewardMoney()
+    useAdventureStore.getState().syncCityRewardMoney()
+
+    expect(useCityStore.getState().resources.money).toBe(10_450)
+    expect(useCityStore.getState().appliedStageRewardIds).toEqual([
+      'campaign:1',
+      'campaign:2',
+      'racing:1',
+    ])
   })
 
   it('rejects an out-of-order victory', () => {
     const r = useAdventureStore.getState().recordVictory(3, NOW)
-    expect(r).toEqual({ firstClear: false, rewardExp: 0 })
+    expect(r).toMatchObject({ firstClear: false, rewardExp: 0, rewardMoney: 0 })
     expect(useAdventureStore.getState().highestClearedStage).toBe(0)
   })
 
@@ -176,7 +228,10 @@ describe('useAdventureStore', () => {
   it('installs, upgrades, unequips, and recycles a car part atomically', () => {
     const interval = getPartDropIntervalMs(1)
     useAdventureStore.getState().settleCarPartIdle(NOW + interval, 1)
-    useAdventureStore.setState({ spareParts: 100 })
+    useAdventureStore.setState((state) => ({
+      spareParts: 100,
+      heroLevels: { ...state.heroLevels, foreman: 2 },
+    }))
 
     expect(
       useAdventureStore.getState().equipCarPart('rust-fox', 'part-1', 1),
@@ -213,6 +268,84 @@ describe('useAdventureStore', () => {
       useAdventureStore.getState().upgradeGun('president-cannon', 1),
     ).toMatchObject({ applied: false, reason: 'equipment-locked' })
     expect(useAdventureStore.getState().gunLevels['president-cannon']).toBe(0)
+  })
+
+  it('caps gun and car-part upgrades at the highest unlocked hero level', () => {
+    useAdventureStore.setState((state) => ({
+      heroLevels: { foreman: 5, anvil: 1, skyline: 1 },
+      spareParts: 10_000,
+      gunLevels: { ...state.gunLevels, 'rivet-smg': 5 },
+      carPartInventory: [
+        {
+          id: 'dynamic-cap-part',
+          slot: 'engine',
+          quality: 'prototype',
+          level: 5,
+        },
+      ],
+    }))
+
+    expect(
+      useAdventureStore.getState().upgradeGun('rivet-smg', 50),
+    ).toMatchObject({ applied: false, reason: 'max-level' })
+    expect(
+      useAdventureStore.getState().upgradeCarPart('dynamic-cap-part'),
+    ).toMatchObject({ applied: false, reason: 'max-level' })
+    expect(useAdventureStore.getState().gunLevels['rivet-smg']).toBe(5)
+    expect(useAdventureStore.getState().carPartInventory[0].level).toBe(5)
+  })
+
+  it('recycles one quality in bulk while excluding every installed part', () => {
+    useAdventureStore.setState((state) => ({
+      carPartInventory: [
+        { id: 'installed-worn', slot: 'tires', quality: 'worn', level: 1 },
+        { id: 'idle-worn-1', slot: 'engine', quality: 'worn', level: 1 },
+        { id: 'idle-worn-2', slot: 'bumper', quality: 'worn', level: 2 },
+        { id: 'idle-elite', slot: 'suspension', quality: 'elite', level: 1 },
+      ],
+      carPartSlotsByCar: {
+        ...state.carPartSlotsByCar,
+        'rust-fox': {
+          ...state.carPartSlotsByCar['rust-fox'],
+          tires: 'installed-worn',
+        },
+      },
+    }))
+    const store =
+      useAdventureStore.getState() as typeof useAdventureStore extends {
+        getState: () => infer State
+      }
+        ? State & {
+            recycleCarPartsByQuality?: (quality: CarPartQuality) => {
+              applied: boolean
+              recycledCount: number
+              gained: number
+            }
+          }
+        : never
+
+    expect(
+      store.recycleCarPartsByQuality,
+      'AdventureStore must expose quality bulk recycling',
+    ).toBeTypeOf('function')
+    if (!store.recycleCarPartsByQuality) return
+
+    const result = store.recycleCarPartsByQuality('worn')
+    expect(result).toMatchObject({
+      applied: true,
+      recycledCount: 2,
+      gained: expect.any(Number),
+    })
+    expect(result.gained).toBeGreaterThan(0)
+    expect(
+      useAdventureStore
+        .getState()
+        .carPartInventory.map((part) => part.id)
+        .sort(),
+    ).toEqual(['idle-elite', 'installed-worn'])
+    expect(
+      useAdventureStore.getState().carPartSlotsByCar['rust-fox'].tires,
+    ).toBe('installed-worn')
   })
 
   it('rejects invalid gang levels for all new equipment actions', () => {
@@ -253,17 +386,16 @@ describe('useAdventureStore', () => {
   })
 
   it('records racing first-clears only in strict order and grants exp once', () => {
-    expect(useAdventureStore.getState().recordRacingVictory(2)).toEqual({
+    expect(useAdventureStore.getState().recordRacingVictory(2)).toMatchObject({
       firstClear: false,
       rewardExp: 0,
     })
-    expect(useAdventureStore.getState().recordRacingVictory(1)).toEqual({
-      firstClear: true,
-      rewardExp: 160,
-    })
+    expect(
+      useAdventureStore.getState().recordRacingVictory(1, () => 0.99),
+    ).toMatchObject({ firstClear: true, rewardExp: 160, rewardMoney: 150 })
     expect(useAdventureStore.getState().highestClearedRacingStage).toBe(1)
     expect(useAdventureStore.getState().sharedExp).toBe(160)
-    expect(useAdventureStore.getState().recordRacingVictory(1)).toEqual({
+    expect(useAdventureStore.getState().recordRacingVictory(1)).toMatchObject({
       firstClear: false,
       rewardExp: 0,
     })

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import * as power from './power'
 import { effectiveStats, globalIndexOf, teamPower, unitPower } from './power'
 
 describe('power', () => {
@@ -28,5 +29,29 @@ describe('power', () => {
     // back skyline: effHp650*0.5 + effAtk184*2.0 + effDef27*1.5 = 325 + 368 + 40.5 = 733.5 -> round 734
     expect(unitPower('back', { hp: 650, atk: 160, def: 30 })).toBe(734)
     expect(teamPower([{ row: 'back', hp: 650, atk: 160, def: 30 }])).toBe(734)
+  })
+
+  it('aggregates every unlocked hero and completed main-building power', () => {
+    const getAccountTotalPower = (
+      power as unknown as {
+        getAccountTotalPower?: (input: {
+          unlockedHeroPowers: readonly number[]
+          completedBuildingPowers: readonly number[]
+        }) => number
+      }
+    ).getAccountTotalPower
+
+    expect(
+      getAccountTotalPower,
+      'power domain must expose account total-power aggregation',
+    ).toBeTypeOf('function')
+    if (!getAccountTotalPower) return
+
+    expect(
+      getAccountTotalPower({
+        unlockedHeroPowers: [320, 450],
+        completedBuildingPowers: [100, 200],
+      }),
+    ).toBe(1_070)
   })
 })

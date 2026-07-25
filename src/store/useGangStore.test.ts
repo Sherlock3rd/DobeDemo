@@ -126,6 +126,44 @@ describe('useGangStore idle sync', () => {
     })
   })
 
+  it('advances exactly one gang level and resets the idle clock', () => {
+    useGangStore.setState({
+      totalReputation: 17,
+      lastUpdatedAt: BASE_TIME,
+    })
+    const store = useGangStore.getState() as ReturnType<
+      typeof useGangStore.getState
+    > & {
+      advanceOneLevel?: (now: number) => void
+    }
+
+    expect(
+      store.advanceOneLevel,
+      'GangStore must expose advanceOneLevel(now)',
+    ).toBeTypeOf('function')
+    if (!store.advanceOneLevel) return
+
+    store.advanceOneLevel(BASE_TIME + 50_000)
+    expect(useGangStore.getState()).toMatchObject({
+      totalReputation: 30,
+      lastUpdatedAt: BASE_TIME + 50_000,
+    })
+
+    useGangStore.setState({
+      totalReputation: MAX_REPUTATION,
+      lastUpdatedAt: BASE_TIME + 50_000,
+    })
+    ;(
+      useGangStore.getState() as ReturnType<typeof useGangStore.getState> & {
+        advanceOneLevel: (now: number) => void
+      }
+    ).advanceOneLevel(BASE_TIME + 60_000)
+    expect(useGangStore.getState()).toMatchObject({
+      totalReputation: MAX_REPUTATION,
+      lastUpdatedAt: BASE_TIME + 50_000,
+    })
+  })
+
   it('ignores a debug unlock with a non-finite timestamp', () => {
     const before = useGangStore.getState()
 

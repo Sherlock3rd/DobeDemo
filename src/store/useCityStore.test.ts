@@ -27,6 +27,25 @@ describe('useCityStore atomic economy', () => {
     expect(state.activeProducerIds).toEqual(['repair-shop'])
   })
 
+  it('grants stage reward money through the city wallet', () => {
+    useCityStore.setState({
+      resources: { money: 25, oil: 3, materials: 4 },
+    })
+    const grantRewardMoney = (
+      useCityStore.getState() as ReturnType<typeof useCityStore.getState> & {
+        grantRewardMoney?: (rewardId: string, amount: number) => boolean
+      }
+    ).grantRewardMoney
+    expect(grantRewardMoney).toBeTypeOf('function')
+    expect(grantRewardMoney?.('campaign:1', 100)).toBe(true)
+    expect(grantRewardMoney?.('campaign:1', 100)).toBe(false)
+    expect(useCityStore.getState().resources).toEqual({
+      money: 125,
+      oil: 3,
+      materials: 4,
+    })
+  })
+
   it('settles old producers before activating newly unlocked producers', () => {
     useCityStore
       .getState()
@@ -104,7 +123,7 @@ describe('useCityStore atomic economy', () => {
     expect(useCityStore.getState()).toBe(before)
   })
 
-  it('atomically charges and upgrades a caught-up repair main building', () => {
+  it('atomically charges, queues, and later completes a caught-up repair main building', () => {
     useCityStore.setState((state) => ({
       resources: { money: 25, oil: 0, materials: 0 },
       buildingProgress: {
@@ -120,12 +139,17 @@ describe('useCityStore atomic economy', () => {
     expect(result).toEqual({ applied: true, reason: 'ready' })
     expect(useCityStore.getState().resources.money).toBe(0)
     expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
+      level: 1,
+      childLevels: [1, 0, 0, 0, 0],
+    })
+    useCityStore.getState().syncMainUpgrades(START + 10_000)
+    expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
       level: 2,
       childLevels: [1, 0, 0, 0, 0],
     })
   })
 
-  it('directly upgrades clubhouse once with exact main cost and preserves children', () => {
+  it('queues clubhouse with exact main cost and preserves children on completion', () => {
     const cost = economyConfig.buildingUpgradeCostByTargetLevel[2]
     if (!cost) {
       throw new Error('Missing clubhouse level 2 upgrade cost')
@@ -146,10 +170,92 @@ describe('useCityStore atomic economy', () => {
       oil: 0,
       materials: 0,
     })
+    expect(useCityStore.getState().buildingProgress.clubhouse.level).toBe(1)
+    useCityStore.getState().syncMainUpgrades(START + 10_000)
     expect(useCityStore.getState().buildingProgress.clubhouse).toEqual({
       level: 2,
       childLevels: Array(10).fill(0),
     })
+  })
+
+  it('queues clubhouse main upgrades instead of completing them immediately', () => {
+    const cost = economyConfig.buildingUpgradeCostByTargetLevel[2]
+    if (!cost) throw new Error('Missing clubhouse level 2 upgrade cost')
+    useCityStore.setState((state) => ({
+      resources: { ...cost },
+      buildingProgress: {
+        ...state.buildingProgress,
+        clubhouse: { level: 1, childLevels: Array(10).fill(0) as never },
+      },
+    }))
+
+    expect(
+      useCityStore.getState().upgradeMainBuilding('clubhouse', 40, START),
+    ).toMatchObject({ applied: true })
+    const state = useCityStore.getState() as ReturnType<
+      typeof useCityStore.getState
+    > & {
+      pendingMainUpgrades?: Array<{
+        buildingId: string
+        targetLevel: number
+        completesAt: number
+      }>
+    }
+    expect(state.buildingProgress.clubhouse.level).toBe(1)
+    expect(state.pendingMainUpgrades).toEqual([
+      {
+        buildingId: 'clubhouse',
+        targetLevel: 2,
+        completesAt: START + 10_000,
+      },
+    ])
+  })
+
+  it('allows at most two concurrent main-building upgrade tasks', () => {
+    useCityStore.setState((state) => ({
+      resources: { money: 10_000, oil: 10_000, materials: 10_000 },
+      buildingProgress: {
+        ...state.buildingProgress,
+        'repair-shop': {
+          level: 10,
+          childLevels: Array(5).fill(10) as never,
+        },
+        clubhouse: { level: 10, childLevels: Array(10).fill(0) as never },
+        'commercial-street': {
+          level: 1,
+          childLevels: [1, ...Array(9).fill(0)] as never,
+        },
+        'metalworking-plant': {
+          level: 1,
+          childLevels: [1, ...Array(9).fill(0)] as never,
+        },
+        'gas-station': {
+          level: 1,
+          childLevels: [1, ...Array(9).fill(0)] as never,
+        },
+      },
+    }))
+
+    expect(
+      useCityStore
+        .getState()
+        .upgradeMainBuilding('commercial-street', 50, START),
+    ).toMatchObject({ applied: true })
+    expect(
+      useCityStore
+        .getState()
+        .upgradeMainBuilding('metalworking-plant', 50, START),
+    ).toMatchObject({ applied: true })
+    expect(
+      useCityStore.getState().upgradeMainBuilding('gas-station', 50, START),
+    ).toEqual({ applied: false, reason: 'upgrade-queue-full' })
+    expect(
+      (
+        useCityStore.getState() as ReturnType<typeof useCityStore.getState> & {
+          pendingMainUpgrades?: unknown[]
+        }
+      ).pendingMainUpgrades,
+    ).toHaveLength(2)
   })
 
   it('atomically blocks clubhouse main upgrades below gang level 40', () => {
@@ -207,6 +313,10 @@ describe('useCityStore atomic economy', () => {
 
     expect(result).toEqual({ applied: true, reason: 'ready' })
     expect(useCityStore.getState().resources.money).toBe(0)
+    expect(useCityStore.getState().buildingProgress['repair-shop'].level).toBe(
+      1,
+    )
+    useCityStore.getState().syncMainUpgrades(START + 10_000)
     expect(useCityStore.getState().buildingProgress['repair-shop'].level).toBe(
       2,
     )
@@ -345,7 +455,7 @@ describe('useCityStore atomic economy', () => {
     expect(state.activeProducerIds).toEqual(['repair-shop'])
   })
 
-  it('migrates a v3 clubhouse refund once and rehydrates v4 without repeating it', async () => {
+  it('migrates a v3 clubhouse refund once and rehydrates v5 without repeating it', async () => {
     window.localStorage.setItem(
       CITY_STORAGE_KEY,
       JSON.stringify({
@@ -377,7 +487,7 @@ describe('useCityStore atomic economy', () => {
 
     useCityStore.getState().selectBuilding('clubhouse')
     const raw = window.localStorage.getItem(CITY_STORAGE_KEY)
-    expect(JSON.parse(raw as string).version).toBe(4)
+    expect(JSON.parse(raw as string).version).toBe(5)
 
     await useCityStore.persist.rehydrate()
     expect(useCityStore.getState().resources).toEqual({
@@ -418,7 +528,7 @@ describe('useCityStore atomic economy', () => {
     })
   })
 
-  it('persists only the four durable v4 fields', () => {
+  it('persists only the six durable v5 fields', () => {
     useCityStore.getState().selectBuilding('repair-shop')
     useCityStore.getState().syncResourceProduction(START + 10_000, 1)
 
@@ -427,12 +537,14 @@ describe('useCityStore atomic economy', () => {
       version: number
       state: Record<string, unknown>
     }
-    expect(persisted.version).toBe(4)
+    expect(persisted.version).toBe(5)
     expect(Object.keys(persisted.state)).toEqual([
       'buildingProgress',
       'resources',
       'lastResourceUpdatedAt',
       'activeProducerIds',
+      'pendingMainUpgrades',
+      'appliedStageRewardIds',
     ])
     expect(
       BUILDING_IDS.every(

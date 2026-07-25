@@ -118,6 +118,7 @@ describe('adventureMigration', () => {
   it('normalizes gun levels, part inventory, installed slots, and serials', () => {
     const normalized = normalizeAdventureDurableState(
       {
+        heroLevels: { foreman: 50, anvil: 1, skyline: 1 },
         spareParts: 90,
         gunLevels: { 'rivet-smg': 99, 'double-barrel': 3.8 },
         carPartInventory: [
@@ -149,10 +150,10 @@ describe('adventureMigration', () => {
       NOW,
     )
     expect(normalized.spareParts).toBe(90)
-    expect(normalized.gunLevels['rivet-smg']).toBe(10)
+    expect(normalized.gunLevels['rivet-smg']).toBe(50)
     expect(normalized.gunLevels['double-barrel']).toBe(3)
     expect(normalized.carPartInventory).toEqual([
-      { id: 'part-4', slot: 'engine', quality: 'elite', level: 10 },
+      { id: 'part-4', slot: 'engine', quality: 'elite', level: 50 },
     ])
     expect(normalized.carPartSlotsByCar['rust-fox'].engine).toBe('part-4')
     expect(normalized.carPartSlotsByCar['iron-fang'].engine).toBeNull()
@@ -162,6 +163,7 @@ describe('adventureMigration', () => {
   it('migrates legacy armor and turbo parts into bumper and suspension slots', () => {
     const normalized = normalizeAdventureDurableState(
       {
+        heroLevels: { foreman: 3, anvil: 1, skyline: 1 },
         carPartInventory: [
           { id: 'legacy-armor', slot: 'armor', quality: 'worn', level: 2 },
           { id: 'legacy-turbo', slot: 'turbo', quality: 'elite', level: 3 },
@@ -184,6 +186,24 @@ describe('adventureMigration', () => {
     expect(normalized.carPartSlotsByCar['rust-fox'].suspension).toBe(
       'legacy-turbo',
     )
+  })
+
+  it('clamps over-level equipment to the highest hero and refunds upgrades', () => {
+    const normalized = normalizeAdventureDurableState(
+      {
+        heroLevels: { foreman: 2, anvil: 1, skyline: 1 },
+        spareParts: 10,
+        gunLevels: { 'rivet-smg': 4 },
+        carPartInventory: [
+          { id: 'over-cap', slot: 'engine', quality: 'worn', level: 4 },
+        ],
+      },
+      NOW,
+    )
+
+    expect(normalized.gunLevels['rivet-smg']).toBe(2)
+    expect(normalized.carPartInventory[0].level).toBe(2)
+    expect(normalized.spareParts).toBeGreaterThan(10)
   })
 
   it('reconciles hero levels and formation against gang level', () => {

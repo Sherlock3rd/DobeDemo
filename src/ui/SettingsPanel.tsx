@@ -4,6 +4,20 @@ import {
   unlockGangTreeForDebug,
 } from '../game/debugActions'
 import { resetAccount } from '../game/resetAccount'
+import { campaignConfig } from '../config/campaignConfig'
+import { racingConfig } from '../config/racingConfig'
+import {
+  CAR_PART_QUALITY_INFO,
+  getPartSalvageDropProfile,
+} from '../game/equipmentProgression'
+import { CAR_PART_QUALITY_IDS } from '../game/equipmentTypes'
+import { getGangLevel } from '../game/gangProgression'
+import {
+  getCampaignPartQualityWeights,
+  getRacingPartQualityWeights,
+  type PartQualityWeights,
+} from '../game/stageRewards'
+import { useGangStore } from '../store/useGangStore'
 import { useInitialFocus } from './useInitialFocus'
 
 export interface SettingsPanelProps {
@@ -12,10 +26,23 @@ export interface SettingsPanelProps {
 
 const TITLE_ID = 'settings-panel-title'
 
+function formatQualityWeights(weights: PartQualityWeights): string {
+  return CAR_PART_QUALITY_IDS.map(
+    (quality) =>
+      `${CAR_PART_QUALITY_INFO[quality].name} ${Math.round(
+        weights[quality] * 100,
+      )}%`,
+  ).join(' · ')
+}
+
 export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
   const [confirming, setConfirming] = useState(false)
+  const [showProbabilities, setShowProbabilities] = useState(false)
   const [feedback, setFeedback] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>()
+  const totalReputation = useGangStore((state) => state.totalReputation)
+  const advanceOneLevel = useGangStore((state) => state.advanceOneLevel)
+  const gangLevel = getGangLevel(totalReputation)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -50,6 +77,12 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
     if (grantAllResourcesForDebug(Date.now())) {
       setFeedback('钱、油、物资各增加 10000')
     }
+  }
+
+  const advanceGangLevel = (): void => {
+    if (gangLevel >= 50) return
+    advanceOneLevel(Date.now())
+    setFeedback(`帮派等级已提升至 Lv.${gangLevel + 1}`)
   }
 
   return (
@@ -100,6 +133,14 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
             <button
               type="button"
               className="settings-panel__debug-action"
+              disabled={gangLevel >= 50}
+              onClick={advanceGangLevel}
+            >
+              {gangLevel >= 50 ? '帮派树已满级' : '帮派树升一级'}
+            </button>
+            <button
+              type="button"
+              className="settings-panel__debug-action"
               onClick={grantAllResources}
             >
               钱/油/物资各 +10000
@@ -108,6 +149,65 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
           <p className="settings-panel__feedback" aria-live="polite">
             {feedback}
           </p>
+        </div>
+        <div className="settings-panel__item">
+          <h3 className="settings-panel__item-title">掉落概率</h3>
+          <p className="settings-panel__item-description">
+            查看废车回收厂、推关和赛车的真实随机掉落配置。
+          </p>
+          <button
+            type="button"
+            className="settings-panel__debug-action"
+            aria-expanded={showProbabilities}
+            onClick={() => setShowProbabilities((visible) => !visible)}
+          >
+            {showProbabilities ? '收起掉落概率' : '查看掉落概率'}
+          </button>
+          {showProbabilities ? (
+            <div className="settings-panel__probabilities">
+              <h4>废车回收厂</h4>
+              <ul>
+                {Array.from({ length: 10 }, (_, index) => {
+                  const level = index + 1
+                  const profile = getPartSalvageDropProfile(level)
+                  const quantities = Object.entries(profile.quantityWeights)
+                    .map(
+                      ([quantity, weight]) =>
+                        `${quantity}件 ${Math.round(weight * 100)}%`,
+                    )
+                    .join(' · ')
+                  return (
+                    <li key={level}>
+                      {`Lv.${level} · ${profile.intervalMs / 1000}秒/批 · ${quantities} · ${formatQualityWeights(
+                        profile.qualityWeights,
+                      )}`}
+                    </li>
+                  )
+                })}
+              </ul>
+              <h4>推关首通</h4>
+              <ul>
+                {[1, 6, 11, 16].map((stage) => (
+                  <li key={stage}>{`${stage}–${stage + 4}关 · 配件 ${
+                    campaignConfig.stages[stage - 1].firstClearReward
+                      .partDropChance * 100
+                  }% · ${formatQualityWeights(
+                    getCampaignPartQualityWeights(stage),
+                  )}`}</li>
+                ))}
+              </ul>
+              <h4>赛车首通</h4>
+              <ul>
+                {[1, 3, 5, 7, 9].map((stage) => (
+                  <li key={stage}>{`${stage}–${stage + 1}关 · 配件 ${
+                    racingConfig.stages[stage - 1].partDropChance * 100
+                  }% · ${formatQualityWeights(
+                    getRacingPartQualityWeights(stage),
+                  )}`}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
         <div className="settings-panel__item settings-panel__item--danger">
           <h3 className="settings-panel__item-title">账号进度</h3>
