@@ -1,9 +1,6 @@
 export const GANG_MIN_LEVEL = 1
 export const GANG_MAX_LEVEL = 50
 export const REPUTATION_PER_LEVEL = 30
-export const REPUTATION_TICK_SECONDS = 10
-export const REPUTATION_PER_TICK = 1
-export const MAX_OFFLINE_SECONDS = 28_800
 export const MAX_REPUTATION = 1_470
 
 export interface GangRole {
@@ -99,50 +96,4 @@ export function getLevelProgress(totalReputation: number): {
     current: reputation % REPUTATION_PER_LEVEL,
     required: REPUTATION_PER_LEVEL,
   }
-}
-
-export interface IdleSettlement {
-  earnedReputation: number
-  nextUpdatedAt: number
-}
-
-export function calculateIdleSettlement(
-  lastUpdatedAt: number,
-  now: number,
-): IdleSettlement {
-  if (
-    !Number.isFinite(lastUpdatedAt) ||
-    !Number.isFinite(now) ||
-    now <= lastUpdatedAt
-  ) {
-    return { earnedReputation: 0, nextUpdatedAt: lastUpdatedAt }
-  }
-
-  const elapsedMs = now - lastUpdatedAt
-  const tickMs = REPUTATION_TICK_SECONDS * 1_000
-  const maxOfflineMs = MAX_OFFLINE_SECONDS * 1_000
-  const ticks = Math.floor(Math.min(elapsedMs, maxOfflineMs) / tickMs)
-
-  if (ticks < 1) {
-    return { earnedReputation: 0, nextUpdatedAt: lastUpdatedAt }
-  }
-
-  if (elapsedMs >= maxOfflineMs) {
-    return {
-      earnedReputation: ticks * REPUTATION_PER_TICK,
-      nextUpdatedAt: now,
-    }
-  }
-
-  return {
-    earnedReputation: ticks * REPUTATION_PER_TICK,
-    nextUpdatedAt: lastUpdatedAt + ticks * tickMs,
-  }
-}
-
-export function calculateIdleReputation(
-  lastUpdatedAt: number,
-  now: number,
-): number {
-  return calculateIdleSettlement(lastUpdatedAt, now).earnedReputation
 }

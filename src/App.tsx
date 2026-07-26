@@ -4,8 +4,8 @@ import { Suspense, useEffect, useRef, useState, type JSX } from 'react'
 import { AdventureIdleClock } from './game/AdventureIdleClock'
 import { BuildingUpgradeController } from './game/BuildingUpgradeController'
 import { EconomyIdleController } from './game/EconomyIdleController'
-import { GangIdleController } from './game/GangIdleController'
 import { PartSalvageController } from './game/PartSalvageController'
+import type { ChapterTaskRequirement } from './game/chapterProgression'
 import type { BuildingId } from './game/cityTypes'
 import { CAMERA_CONFIG } from './game/cityLayout'
 import { CityScene } from './scene/city/CityScene'
@@ -20,7 +20,7 @@ import { FormationPanel } from './ui/FormationPanel'
 import { GangTreePanel } from './ui/GangTreePanel'
 import { ChapterPanel } from './ui/ChapterPanel'
 import { GlobalHud } from './ui/GlobalHud'
-import { HeroesPanel } from './ui/HeroesPanel'
+import { HeroesPanel, type DevelopmentTab } from './ui/HeroesPanel'
 import { RacingPanel } from './ui/RacingPanel'
 import { RaceScreen } from './ui/RaceScreen'
 import type { HeroId } from './game/heroes'
@@ -35,7 +35,7 @@ export type ActiveOverlay =
   | { kind: 'settings' }
   | { kind: 'adventure' }
   | { kind: 'formation'; stage: number }
-  | { kind: 'heroes' }
+  | { kind: 'heroes'; initialTab?: DevelopmentTab }
   | { kind: 'battle'; stage: number }
   | { kind: 'racing' }
   | { kind: 'race'; stage: number; heroId: HeroId }
@@ -79,6 +79,7 @@ export default function App(): JSX.Element {
   const returnFocusRef = useRef<HTMLElement | null>(null)
   const pendingFocusRestoreRef = useRef(false)
   const selectedBuildingId = useCityStore((s) => s.selectedBuildingId)
+  const selectBuilding = useCityStore((s) => s.selectBuilding)
   const clearSelection = useCityStore((s) => s.clearSelection)
   const gangLevel = useGangStore((s) => s.currentLevel)
   const reconcileWithGang = useAdventureStore((s) => s.reconcileWithGang)
@@ -141,6 +142,29 @@ export default function App(): JSX.Element {
       pendingFocusRestoreRef.current = true
     }
     setPlayOverlay({ kind: 'none' })
+  }
+
+  const navigateFromChapter = (requirement: ChapterTaskRequirement): void => {
+    switch (requirement.kind) {
+      case 'building-level':
+        setPlayOverlay({ kind: 'none' })
+        selectBuilding(requirement.buildingId)
+        return
+      case 'hero-level':
+        setPlayOverlay({ kind: 'heroes', initialTab: 'level' })
+        return
+      case 'part-level':
+        setPlayOverlay({ kind: 'heroes', initialTab: 'car' })
+        return
+      case 'gun-level':
+        setPlayOverlay({ kind: 'heroes', initialTab: 'gun' })
+        return
+      case 'campaign-clears':
+        setPlayOverlay({ kind: 'adventure' })
+        return
+      case 'racing-clears':
+        setPlayOverlay({ kind: 'racing' })
+    }
   }
 
   useEffect(() => {
@@ -247,7 +271,6 @@ export default function App(): JSX.Element {
             `正在加载城市场景… ${progress.toFixed(0)}%`
           }
         />
-        <GangIdleController />
         <EconomyIdleController />
         <BuildingUpgradeController />
         <PartSalvageController />
@@ -272,7 +295,10 @@ export default function App(): JSX.Element {
           onClose={closeOverlay}
         />
         {activeOverlay.kind === 'chapters' ? (
-          <ChapterPanel onClose={closeOverlay} />
+          <ChapterPanel
+            onClose={closeOverlay}
+            onNavigateTask={navigateFromChapter}
+          />
         ) : null}
         {activeOverlay.kind === 'settings' ? (
           <SettingsPanel onClose={closeOverlay} />
@@ -293,7 +319,10 @@ export default function App(): JSX.Element {
           />
         ) : null}
         {activeOverlay.kind === 'heroes' ? (
-          <HeroesPanel onClose={closeOverlay} />
+          <HeroesPanel
+            onClose={closeOverlay}
+            initialTab={activeOverlay.initialTab}
+          />
         ) : null}
         {activeOverlay.kind === 'battle' ? (
           <BattleScreen

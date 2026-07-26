@@ -1,10 +1,5 @@
 import type { JSX } from 'react'
-import {
-  REPUTATION_PER_TICK,
-  REPUTATION_TICK_SECONDS,
-  getGangRole,
-  getLevelProgress,
-} from '../game/gangProgression'
+import { getGangRole, getLevelProgress } from '../game/gangProgression'
 import { getCurrentProductionRates } from '../game/resourceEconomy'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
@@ -40,9 +35,6 @@ export function CityHud({
       <p className="city-hud__role">{`${role.title}（${role.chineseTitle}）`}</p>
       <p className="city-hud__progress-label">{`${current} / ${required}`}</p>
       <progress className="city-hud__progress" max={required} value={current} />
-      <p className="city-hud__rate">
-        {`+${REPUTATION_PER_TICK} 声望/${REPUTATION_TICK_SECONDS}秒`}
-      </p>
       <div className="city-hud__resources" aria-label="资源">
         <div className="city-hud__resource">
           <p>

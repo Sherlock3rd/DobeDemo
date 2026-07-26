@@ -1254,7 +1254,7 @@ function resolveFinish(state: RaceState, stage: RacingStageConfig): RaceState {
       )
     }
   }
-  if (state.elapsedMs >= stage.durationMs) {
+  if (stage.mode === 'pursuit' && state.elapsedMs >= stage.durationMs) {
     return withEvent(
       { ...state, status: 'defeat', reason: 'timeout' },
       'finish',

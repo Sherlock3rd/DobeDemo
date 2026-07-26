@@ -1,6 +1,12 @@
+import type { ResourceWallet } from '../config/economyConfig'
 import { buildingCatalogById } from './buildingCatalog'
 import type { BuildingId } from './cityTypes'
-import type { CarPartQuality, CarPartSlot } from './equipmentTypes'
+import type {
+  CarId,
+  CarPartQuality,
+  CarPartSlot,
+  GunId,
+} from './equipmentTypes'
 import { GANG_ROLES, type GangRole } from './gangProgression'
 import type { AdventureDurableState } from '../store/adventureMigration'
 import type { BuildingProgressById } from '../store/cityProgressMigration'
@@ -25,6 +31,14 @@ export interface ChapterTaskReward {
   carParts: readonly ChapterPartReward[]
 }
 
+export interface ChapterCompletionReward extends ChapterTaskReward {
+  resources: ResourceWallet
+  unlockCarIds: readonly CarId[]
+  unlockGunIds: readonly GunId[]
+}
+
+export type ChapterAdventureReward = ChapterTaskReward | ChapterCompletionReward
+
 export interface ChapterTaskDefinition {
   id: string
   name: string
@@ -41,6 +55,7 @@ export interface ChapterDefinition {
   title: string
   story: string
   tasks: readonly ChapterTaskDefinition[]
+  completionReward: ChapterCompletionReward
 }
 
 export interface ChapterProgressSnapshot {
@@ -70,6 +85,24 @@ const reward = (
   carParts,
 })
 
+const completionReward = (
+  gangReputation: number,
+  heroExperience: number,
+  spareParts: number,
+  resources: ResourceWallet,
+  carParts: readonly ChapterPartReward[] = [],
+  unlockCarIds: readonly CarId[] = [],
+  unlockGunIds: readonly GunId[] = [],
+): ChapterCompletionReward => ({
+  gangReputation,
+  heroExperience,
+  spareParts,
+  resources,
+  carParts,
+  unlockCarIds,
+  unlockGunIds,
+})
+
 const epicSet: readonly ChapterPartReward[] = [
   { slot: 'tires', quality: 'epic' },
   { slot: 'engine', quality: 'epic' },
@@ -86,13 +119,21 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     title: '第一章 · 冷炉初燃',
     story:
       'Thomas 接下废弃修理厂。想让所有人承认这面新旗帜，先要证明这里既能造车，也敢上路。',
+    completionReward: completionReward(
+      132,
+      600,
+      80,
+      { money: 500, oil: 0, materials: 0 },
+      [{ slot: 'engine', quality: 'epic' }],
+      ['iron-fang'],
+    ),
     tasks: [
       {
         id: 'chapter-1-hero',
         name: '领头人就位',
         description: '拥有任意 Lv.1 英雄',
         requirement: { kind: 'hero-level', target: 1 },
-        reward: reward(53, 120, 12),
+        reward: reward(20, 120, 12),
       },
       {
         id: 'chapter-1-building',
@@ -103,21 +144,21 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'repair-shop',
           target: 2,
         },
-        reward: reward(53, 140, 14, [{ slot: 'tires', quality: 'rare' }]),
+        reward: reward(20, 140, 14, [{ slot: 'tires', quality: 'rare' }]),
       },
       {
         id: 'chapter-1-campaign',
         name: '清理街口',
         description: '推关完成 2 关',
         requirement: { kind: 'campaign-clears', target: 2 },
-        reward: reward(53, 160, 16),
+        reward: reward(20, 160, 16),
       },
       {
         id: 'chapter-1-racing',
         name: '第一面完整补丁',
         description: '赛车任务完成 1 关，领取一整套紫色配件',
         requirement: { kind: 'racing-clears', target: 1 },
-        reward: reward(53, 200, 20, epicSet),
+        reward: reward(20, 200, 20, epicSet),
       },
     ],
   },
@@ -129,6 +170,13 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     title: '第二章 · 废铁生意',
     story:
       '正式成员不再只修自己的车。回收厂里每一块废铁，都是帮派在城里扎根的筹码。',
+    completionReward: completionReward(
+      160,
+      900,
+      120,
+      { money: 1_000, oil: 100, materials: 50 },
+      [{ slot: 'bumper', quality: 'epic' }],
+    ),
     tasks: [
       {
         id: 'chapter-2-hero',
@@ -139,7 +187,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'repair-shop',
           target: 3,
         },
-        reward: reward(60, 260, 28),
+        reward: reward(20, 260, 28),
       },
       {
         id: 'chapter-2-building',
@@ -150,21 +198,21 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'recycling-yard',
           target: 2,
         },
-        reward: reward(60, 280, 30, [{ slot: 'engine', quality: 'rare' }]),
+        reward: reward(20, 280, 30, [{ slot: 'engine', quality: 'rare' }]),
       },
       {
         id: 'chapter-2-part',
         name: '扩张运输线',
         description: '赛车任务完成 2 关',
         requirement: { kind: 'racing-clears', target: 2 },
-        reward: reward(60, 300, 32),
+        reward: reward(20, 300, 32),
       },
       {
         id: 'chapter-2-play',
         name: '城里有名',
         description: '推关完成 5 关',
         requirement: { kind: 'campaign-clears', target: 5 },
-        reward: reward(60, 320, 34, [{ slot: 'bumper', quality: 'epic' }]),
+        reward: reward(20, 320, 34, [{ slot: 'bumper', quality: 'epic' }]),
       },
     ],
   },
@@ -176,13 +224,22 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     title: '第三章 · 扳手与账本',
     story:
       '技术骨干要让机器和生意同时运转。商业街的灯亮起来，帮派才有持续扩张的底气。',
+    completionReward: completionReward(
+      160,
+      1_400,
+      180,
+      { money: 1_500, oil: 200, materials: 150 },
+      [{ slot: 'suspension', quality: 'epic' }],
+      [],
+      ['industrial-carbine'],
+    ),
     tasks: [
       {
         id: 'chapter-3-hero',
         name: '骨干训练',
         description: '任意英雄达到 Lv.18',
         requirement: { kind: 'hero-level', target: 18 },
-        reward: reward(60, 380, 38),
+        reward: reward(20, 380, 38),
       },
       {
         id: 'chapter-3-building',
@@ -193,21 +250,21 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'commercial-street',
           target: 2,
         },
-        reward: reward(60, 400, 40, [{ slot: 'suspension', quality: 'epic' }]),
+        reward: reward(20, 400, 40, [{ slot: 'suspension', quality: 'epic' }]),
       },
       {
         id: 'chapter-3-gun',
         name: '清算旧账',
         description: '推关完成 8 关',
         requirement: { kind: 'campaign-clears', target: 8 },
-        reward: reward(60, 420, 42),
+        reward: reward(20, 420, 42),
       },
       {
         id: 'chapter-3-play',
         name: '双线出击',
         description: '赛车任务完成 4 关',
         requirement: { kind: 'racing-clears', target: 4 },
-        reward: reward(60, 440, 44, [{ slot: 'tires', quality: 'epic' }]),
+        reward: reward(20, 440, 44, [{ slot: 'tires', quality: 'epic' }]),
       },
     ],
   },
@@ -219,6 +276,13 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     title: '第四章 · 烈焰联络线',
     story:
       '酒吧里的承诺要靠工厂兑现。金工厂的炉火，将把一次次握手变成真正的地盘。',
+    completionReward: completionReward(
+      160,
+      2_000,
+      260,
+      { money: 2_200, oil: 350, materials: 300 },
+      [{ slot: 'tires', quality: 'epic' }],
+    ),
     tasks: [
       {
         id: 'chapter-4-building',
@@ -229,28 +293,28 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'metalworking-plant',
           target: 2,
         },
-        reward: reward(60, 520, 100),
+        reward: reward(20, 520, 100),
       },
       {
         id: 'chapter-4-hero',
         name: '紫装试制',
         description: '任意配件达到 Lv.3',
         requirement: { kind: 'part-level', target: 3 },
-        reward: reward(60, 540, 100, [{ slot: 'engine', quality: 'epic' }]),
+        reward: reward(20, 540, 100, [{ slot: 'engine', quality: 'epic' }]),
       },
       {
         id: 'chapter-4-gun',
         name: '武器校准',
         description: '任意枪械达到 Lv.3',
         requirement: { kind: 'gun-level', target: 3 },
-        reward: reward(60, 560, 100),
+        reward: reward(20, 560, 100),
       },
       {
         id: 'chapter-4-play',
         name: '穿过封锁',
         description: '推关完成 11 关',
         requirement: { kind: 'campaign-clears', target: 11 },
-        reward: reward(60, 580, 100, [{ slot: 'bumper', quality: 'epic' }]),
+        reward: reward(20, 580, 100, [{ slot: 'bumper', quality: 'epic' }]),
       },
     ],
   },
@@ -261,6 +325,14 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: 40,
     title: '第五章 · 公路号令',
     story: '路线队长掌握油料与道路。车队能跑多远，决定帮派的旗帜能插到哪里。',
+    completionReward: completionReward(
+      160,
+      2_800,
+      400,
+      { money: 3_000, oil: 600, materials: 500 },
+      [{ slot: 'engine', quality: 'legendary' }],
+      ['black-throne'],
+    ),
     tasks: [
       {
         id: 'chapter-5-building',
@@ -271,28 +343,28 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'gas-station',
           target: 2,
         },
-        reward: reward(60, 660, 120),
+        reward: reward(20, 660, 120),
       },
       {
         id: 'chapter-5-hero',
         name: '队长威望',
         description: '任意英雄达到 Lv.34',
         requirement: { kind: 'hero-level', target: 34 },
-        reward: reward(60, 680, 120, [{ slot: 'tires', quality: 'epic' }]),
+        reward: reward(20, 680, 120, [{ slot: 'tires', quality: 'epic' }]),
       },
       {
         id: 'chapter-5-part',
         name: '长途套件',
         description: '任意配件达到 Lv.6',
         requirement: { kind: 'part-level', target: 6 },
-        reward: reward(60, 700, 120),
+        reward: reward(20, 700, 120),
       },
       {
         id: 'chapter-5-play',
         name: '称霸公路',
         description: '赛车任务完成 8 关',
         requirement: { kind: 'racing-clears', target: 8 },
-        reward: reward(60, 720, 120, [
+        reward: reward(20, 720, 120, [
           { slot: 'suspension', quality: 'legendary' },
         ]),
       },
@@ -305,6 +377,16 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: 50,
     title: '第六章 · 黑色议席',
     story: '副主席必须建起真正的会所，让所有产业、枪火与车队都服从同一个命令。',
+    completionReward: completionReward(
+      200,
+      3_800,
+      600,
+      { money: 4_500, oil: 900, materials: 800 },
+      [
+        { slot: 'bumper', quality: 'legendary' },
+        { slot: 'suspension', quality: 'legendary' },
+      ],
+    ),
     tasks: [
       {
         id: 'chapter-6-building',
@@ -315,14 +397,14 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'clubhouse',
           target: 2,
         },
-        reward: reward(75, 820, 150),
+        reward: reward(25, 820, 150),
       },
       {
         id: 'chapter-6-hero',
         name: '副主席卫队',
         description: '任意英雄达到 Lv.42',
         requirement: { kind: 'hero-level', target: 42 },
-        reward: reward(75, 840, 150, [
+        reward: reward(25, 840, 150, [
           { slot: 'engine', quality: 'legendary' },
         ]),
       },
@@ -331,14 +413,14 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
         name: '最后的军火库',
         description: '任意枪械达到 Lv.6',
         requirement: { kind: 'gun-level', target: 6 },
-        reward: reward(75, 860, 150),
+        reward: reward(25, 860, 150),
       },
       {
         id: 'chapter-6-play',
         name: '肃清全城',
         description: '推关完成 18 关',
         requirement: { kind: 'campaign-clears', target: 18 },
-        reward: reward(75, 880, 150, [
+        reward: reward(25, 880, 150, [
           { slot: 'bumper', quality: 'legendary' },
         ]),
       },
@@ -352,6 +434,13 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     title: '第七章 · 主席之路',
     story:
       '王座不是终点。把城市、车队与每一名成员都推向巅峰，才配让 PRESIDENT 的名字留下。',
+    completionReward: completionReward(
+      200,
+      5_000,
+      1_000,
+      { money: 7_000, oil: 1_500, materials: 1_500 },
+      epicSet.map((part) => ({ ...part, quality: 'legendary' as const })),
+    ),
     tasks: [
       {
         id: 'chapter-7-building',
@@ -362,14 +451,14 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'clubhouse',
           target: 4,
         },
-        reward: reward(90, 1_000, 190),
+        reward: reward(25, 1_000, 190),
       },
       {
         id: 'chapter-7-hero',
         name: '传奇领袖',
         description: '任意英雄达到 Lv.50',
         requirement: { kind: 'hero-level', target: 50 },
-        reward: reward(90, 1_100, 200, [
+        reward: reward(25, 1_100, 200, [
           { slot: 'tires', quality: 'legendary' },
         ]),
       },
@@ -378,7 +467,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
         name: '终极改装',
         description: '任意配件达到 Lv.15',
         requirement: { kind: 'part-level', target: 15 },
-        reward: reward(90, 1_200, 220, [
+        reward: reward(25, 1_200, 220, [
           { slot: 'engine', quality: 'legendary' },
         ]),
       },
@@ -387,7 +476,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
         name: '无人能挡',
         description: '推关完成全部 20 关',
         requirement: { kind: 'campaign-clears', target: 20 },
-        reward: reward(90, 1_300, 240, [
+        reward: reward(25, 1_300, 240, [
           { slot: 'bumper', quality: 'legendary' },
           { slot: 'suspension', quality: 'legendary' },
         ]),

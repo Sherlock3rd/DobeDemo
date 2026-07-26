@@ -571,6 +571,21 @@ describe('raceEngine V2', () => {
     ).toThrow(/requires a gun/)
   })
 
+  it('never times out a race stage even after its legacy duration', () => {
+    const state = createRaceState(1, STARTER)
+    state.elapsedMs = 120_000
+    state.player = { ...state.player, distance: 100 }
+    state.vehicles = state.vehicles.map((vehicle, index) => ({
+      ...vehicle,
+      distance: 120 + index * 10,
+    }))
+
+    const next = advanceRace(state, {}, STARTER)
+
+    expect(next.status).toBe('running')
+    expect(next.reason).toBe('running')
+  })
+
   it('keeps the first stage and all endgame stages completable', () => {
     const starterResult = finish(1, STARTER)
     expect(

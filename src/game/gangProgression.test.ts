@@ -4,13 +4,8 @@ import {
   GANG_MAX_LEVEL,
   GANG_MIN_LEVEL,
   GANG_ROLES,
-  MAX_OFFLINE_SECONDS,
   MAX_REPUTATION,
   REPUTATION_PER_LEVEL,
-  REPUTATION_PER_TICK,
-  REPUTATION_TICK_SECONDS,
-  calculateIdleReputation,
-  calculateIdleSettlement,
   getBuildingUnlock,
   getGangLevel,
   getGangRole,
@@ -60,22 +55,16 @@ const EXPECTED_UNLOCKS = [
 ]
 
 describe('gang progression constants', () => {
-  it('exports the specified progression and idle values', () => {
+  it('exports only the specified progression values', () => {
     expect({
       GANG_MIN_LEVEL,
       GANG_MAX_LEVEL,
       REPUTATION_PER_LEVEL,
-      REPUTATION_TICK_SECONDS,
-      REPUTATION_PER_TICK,
-      MAX_OFFLINE_SECONDS,
       MAX_REPUTATION,
     }).toEqual({
       GANG_MIN_LEVEL: 1,
       GANG_MAX_LEVEL: 50,
       REPUTATION_PER_LEVEL: 30,
-      REPUTATION_TICK_SECONDS: 10,
-      REPUTATION_PER_TICK: 1,
-      MAX_OFFLINE_SECONDS: 28_800,
       MAX_REPUTATION: 1_470,
     })
   })
@@ -252,100 +241,5 @@ describe('building unlocks', () => {
     expect(isBuildingUnlocked('recycling-yard', 1.9)).toBe(false)
     expect(isBuildingUnlocked('recycling-yard', 8.9)).toBe(true)
     expect(isBuildingUnlocked('clubhouse', 50.9)).toBe(true)
-  })
-})
-
-describe('idle reputation', () => {
-  it('awards one reputation for each complete ten-second tick', () => {
-    expect(calculateIdleReputation(1_000, 21_000)).toBe(2)
-  })
-
-  it('ignores partial ticks', () => {
-    expect(calculateIdleReputation(1_000, 20_999)).toBe(1)
-    expect(calculateIdleReputation(1_000, 10_999)).toBe(0)
-  })
-
-  it('returns zero for non-positive elapsed time', () => {
-    expect(calculateIdleReputation(2_000, 1_000)).toBe(0)
-    expect(calculateIdleReputation(1_000, 1_000)).toBe(0)
-  })
-
-  it.each([
-    [Number.NaN, 1_000],
-    [1_000, Number.NaN],
-    [Number.NEGATIVE_INFINITY, 1_000],
-    [1_000, Number.POSITIVE_INFINITY],
-  ])('returns zero for non-finite timestamps', (lastUpdatedAt, now) => {
-    expect(calculateIdleReputation(lastUpdatedAt, now)).toBe(0)
-  })
-
-  it('caps idle earnings at eight hours', () => {
-    const eightHoursInMs = MAX_OFFLINE_SECONDS * 1_000
-
-    expect(calculateIdleReputation(0, eightHoursInMs)).toBe(2_880)
-    expect(calculateIdleReputation(0, eightHoursInMs * 2)).toBe(2_880)
-  })
-})
-
-describe('idle settlement', () => {
-  it('settles complete ten-second ticks', () => {
-    expect(calculateIdleSettlement(1_000, 26_000)).toEqual({
-      earnedReputation: 2,
-      nextUpdatedAt: 21_000,
-    })
-  })
-
-  it('settles only complete ticks and keeps the sub-tick remainder', () => {
-    expect(calculateIdleSettlement(1_000, 26_000)).toEqual({
-      earnedReputation: 2,
-      nextUpdatedAt: 21_000,
-    })
-  })
-
-  it('does not advance lastUpdatedAt when less than ten seconds elapsed', () => {
-    expect(calculateIdleSettlement(1_000, 10_999)).toEqual({
-      earnedReputation: 0,
-      nextUpdatedAt: 1_000,
-    })
-  })
-
-  it('caps earnings at eight hours and snaps lastUpdatedAt to now beyond the cap', () => {
-    const eightHoursInMs = MAX_OFFLINE_SECONDS * 1_000
-
-    expect(calculateIdleSettlement(0, eightHoursInMs)).toEqual({
-      earnedReputation: 2_880,
-      nextUpdatedAt: eightHoursInMs,
-    })
-
-    const beyondCapNow = eightHoursInMs * 2 + 500
-    expect(calculateIdleSettlement(0, beyondCapNow)).toEqual({
-      earnedReputation: 2_880,
-      nextUpdatedAt: beyondCapNow,
-    })
-  })
-
-  it('leaves the settlement unchanged for non-positive or non-finite elapsed time', () => {
-    expect(calculateIdleSettlement(2_000, 1_000)).toEqual({
-      earnedReputation: 0,
-      nextUpdatedAt: 2_000,
-    })
-    expect(calculateIdleSettlement(1_000, 1_000)).toEqual({
-      earnedReputation: 0,
-      nextUpdatedAt: 1_000,
-    })
-    expect(calculateIdleSettlement(Number.NaN, 1_000)).toEqual({
-      earnedReputation: 0,
-      nextUpdatedAt: Number.NaN,
-    })
-    expect(calculateIdleSettlement(1_000, Number.POSITIVE_INFINITY)).toEqual({
-      earnedReputation: 0,
-      nextUpdatedAt: 1_000,
-    })
-  })
-
-  it('backs calculateIdleReputation with the settlement earned amount', () => {
-    expect(calculateIdleReputation(1_000, 26_000)).toBe(
-      calculateIdleSettlement(1_000, 26_000).earnedReputation,
-    )
   })
 })

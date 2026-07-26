@@ -107,13 +107,6 @@
   border-radius: 999px;
 }
 
-.city-hud__rate {
-  margin: 0 0 0.5rem;
-  color: #7fd8a4;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
 .city-hud__resources {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1897,7 +1890,9 @@
 
 .chapter-panel__task-action {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.75rem;
 }
 
@@ -1922,7 +1917,89 @@
 }
 
 .chapter-panel__task-action button:disabled,
+.chapter-panel__completion button:disabled,
 .gang-tree-panel__promotion button:disabled {
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #64748b;
+  background: rgba(51, 65, 85, 0.55);
+  cursor: not-allowed;
+}
+
+.chapter-panel__task-action .chapter-panel__task-go {
+  border-color: rgba(125, 211, 252, 0.62);
+  color: #e0f2fe;
+  background: rgba(3, 105, 161, 0.32);
+}
+
+.chapter-panel__completion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(70rem, 100%);
+  margin: 0 auto;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(251, 191, 36, 0.38);
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(120deg, rgba(120, 53, 15, 0.32), transparent 58%),
+    rgba(15, 23, 42, 0.82);
+}
+
+.chapter-panel__completion[data-state='claimable'] {
+  border-color: #fbbf24;
+  box-shadow: 0 0 1.6rem rgba(251, 191, 36, 0.16);
+}
+
+.chapter-panel__completion[data-state='claimed'] {
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+.chapter-panel__completion span,
+.chapter-panel__completion h3,
+.chapter-panel__completion p {
+  margin: 0;
+}
+
+.chapter-panel__completion span {
+  color: #fbbf24;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.chapter-panel__completion h3 {
+  margin-top: 0.2rem;
+  color: #fff7ed;
+}
+
+.chapter-panel__completion p {
+  margin-top: 0.28rem;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+}
+
+.chapter-panel__completion strong {
+  display: block;
+  margin-top: 0.38rem;
+  color: #fde68a;
+  font-size: 0.82rem;
+}
+
+.chapter-panel__completion button {
+  flex: 0 0 auto;
+  min-width: 9.5rem;
+  min-height: 44px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #fbbf24;
+  border-radius: 0.6rem;
+  color: #1c0a02;
+  background: #fbbf24;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.chapter-panel__completion button:disabled {
   border-color: rgba(148, 163, 184, 0.25);
   color: #64748b;
   background: rgba(51, 65, 85, 0.55);
@@ -2428,48 +2505,6 @@
 .heroes-panel__skill p {
   color: #cbd5e1;
   line-height: 1.45;
-}
-
-.heroes-panel__skill-multipliers {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem;
-}
-
-.heroes-panel__skill-multipliers div {
-  padding: 0.35rem 0.4rem;
-  border-radius: 0.35rem;
-  background: rgba(2, 6, 23, 0.38);
-}
-
-.heroes-panel__skill-multipliers dt {
-  color: #94a3b8;
-  font-size: 0.62rem;
-}
-
-.heroes-panel__skill-multipliers dd {
-  margin: 0.08rem 0 0;
-  color: #f8fafc;
-  font-weight: 850;
-}
-
-.heroes-panel__skill-estimate {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.25rem 0.45rem;
-  padding: 0.4rem;
-  border-radius: 0.35rem;
-  background: rgba(14, 116, 144, 0.14);
-}
-
-.heroes-panel__skill-estimate > span {
-  grid-column: 1 / -1;
-  font-size: 0.62rem;
-}
-
-.heroes-panel__skill-estimate strong {
-  color: #67e8f9;
-  font-size: 0.7rem;
 }
 
 .heroes-panel__skill-rage {
@@ -3967,6 +4002,24 @@
   text-align: center;
 }
 
+.race-hud__finish-progress {
+  display: grid;
+  grid-template-columns: auto minmax(4.5rem, 8vw);
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 7.5rem;
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.race-hud__finish-progress progress {
+  width: 100%;
+  height: 0.42rem;
+  accent-color: #f59e0b;
+}
+
 .race-hud__status {
   position: absolute;
   z-index: 2;
@@ -4129,7 +4182,8 @@
 
   .chapter-panel__header,
   .chapter-panel__story,
-  .chapter-panel__task {
+  .chapter-panel__task,
+  .chapter-panel__completion {
     align-items: stretch;
     flex-direction: column;
   }
@@ -4144,6 +4198,10 @@
 
   .chapter-panel__task-action {
     justify-content: flex-end;
+  }
+
+  .chapter-panel__completion button {
+    width: 100%;
   }
 
   .gang-tree-panel__promotion {

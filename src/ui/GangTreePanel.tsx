@@ -20,6 +20,7 @@ import {
 } from '../game/progressionUnlocks'
 import { useGangStore } from '../store/useGangStore'
 import { useAdventureStore } from '../store/useAdventureStore'
+import { useChapterStore } from '../store/useChapterStore'
 import { useCityStore } from '../store/useCityStore'
 import { useInitialFocus } from './useInitialFocus'
 
@@ -112,6 +113,9 @@ export function GangTreePanel({
   const highestClearedRacingStage = useAdventureStore(
     (state) => state.highestClearedRacingStage,
   )
+  const claimedChapterNumbers = useChapterStore(
+    (state) => state.claimedChapterNumbers,
+  )
   const buildingProgress = useCityStore((state) => state.buildingProgress)
   const [feedback, setFeedback] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>(open)
@@ -125,10 +129,11 @@ export function GangTreePanel({
         highestClearedStage,
         highestClearedRacingStage,
         buildingProgress,
-      }),
+      }) && claimedChapterNumbers.includes(currentChapter.number),
     [
       buildingProgress,
       carPartInventory,
+      claimedChapterNumbers,
       currentChapter,
       gunLevels,
       heroLevels,
@@ -224,7 +229,7 @@ export function GangTreePanel({
                 : totalReputation < requiredReputation
                   ? `帮派经验 ${totalReputation}/${requiredReputation}`
                   : crossesRole && !chapterComplete
-                    ? `需完成${currentChapter.title}`
+                    ? `需完成并领取${currentChapter.title}奖励`
                     : '晋升条件已满足'}
             </span>
           </div>
@@ -237,7 +242,7 @@ export function GangTreePanel({
                 result.applied
                   ? `已晋升至 Lv.${currentLevel + 1}`
                   : result.reason === 'chapter-incomplete'
-                    ? '当前章节未完成，无法晋升职级'
+                    ? '请先完成任务并领取当前章节奖励'
                     : '尚未满足晋升条件',
               )
             }}

@@ -4,7 +4,6 @@ import {
   GANG_MAX_LEVEL,
   GANG_MIN_LEVEL,
   MAX_REPUTATION,
-  calculateIdleSettlement,
   getGangLevel,
   getGangRole,
   getTotalReputationForLevel,
@@ -22,7 +21,6 @@ interface GangState {
   totalReputation: number
   currentLevel: number
   lastUpdatedAt: number
-  syncIdleProgress: (now: number) => void
   addReputation: (amount: number, now: number) => boolean
   promoteOneLevel: (
     now: number,
@@ -59,36 +57,6 @@ export const useGangStore = create<GangState>()(
       totalReputation: 0,
       currentLevel: GANG_MIN_LEVEL,
       lastUpdatedAt: Date.now(),
-      syncIdleProgress: (now) => {
-        if (!Number.isFinite(now)) {
-          return
-        }
-
-        const { totalReputation, lastUpdatedAt } = get()
-
-        if (now <= lastUpdatedAt) {
-          return
-        }
-
-        if (totalReputation >= MAX_REPUTATION) {
-          set({ totalReputation: MAX_REPUTATION, lastUpdatedAt: now })
-          return
-        }
-
-        const settlement = calculateIdleSettlement(lastUpdatedAt, now)
-
-        if (settlement.nextUpdatedAt === lastUpdatedAt) {
-          return
-        }
-
-        set({
-          totalReputation: Math.min(
-            totalReputation + settlement.earnedReputation,
-            MAX_REPUTATION,
-          ),
-          lastUpdatedAt: settlement.nextUpdatedAt,
-        })
-      },
       addReputation: (amount, now) => {
         if (
           !Number.isSafeInteger(amount) ||

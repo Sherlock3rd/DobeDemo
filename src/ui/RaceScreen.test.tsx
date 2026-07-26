@@ -58,6 +58,9 @@ describe('RaceScreen V2', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getAllByText('按住漂移')).toHaveLength(2)
+    expect(screen.queryByLabelText('剩余时间')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('距离终点')).toHaveValue(0)
+    expect(screen.getByText('终点 0%')).toBeInTheDocument()
   })
 
   it('uses A/D and left/right arrows for desktop lane changes', () => {

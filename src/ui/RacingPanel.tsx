@@ -101,10 +101,12 @@ export function RacingPanel({
                   <dt>目标里程</dt>
                   <dd>{`${stage.distance} m`}</dd>
                 </div>
-                <div>
-                  <dt>限时</dt>
-                  <dd>{`${Math.round(stage.durationMs / 1000)} 秒`}</dd>
-                </div>
+                {stage.mode === 'pursuit' ? (
+                  <div>
+                    <dt>限时</dt>
+                    <dd>{`${Math.round(stage.durationMs / 1000)} 秒`}</dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt>首通经验</dt>
                   <dd>

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
+import { useAdventureStore } from '../store/useAdventureStore'
 import {
   grantAllResourcesForDebug,
   unlockGangTreeForDebug,
@@ -14,6 +15,7 @@ describe('debug action coordinators', () => {
     window.localStorage.clear()
     useCityStore.getState().reset(START)
     useGangStore.getState().reset(START)
+    useAdventureStore.getState().reset(START)
   })
 
   it('settles only old producers before unlocking the gang tree at the same now', () => {
@@ -32,6 +34,10 @@ describe('debug action coordinators', () => {
         'metalworking-plant',
         'gas-station',
       ],
+    })
+    expect(useAdventureStore.getState()).toMatchObject({
+      chapterUnlockedCarIds: ['iron-fang', 'black-throne'],
+      chapterUnlockedGunIds: ['industrial-carbine'],
     })
   })
 

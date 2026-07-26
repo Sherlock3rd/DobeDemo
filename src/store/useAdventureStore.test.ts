@@ -621,7 +621,7 @@ describe('useAdventureStore', () => {
       state: Record<string, unknown>
       version: number
     }
-    expect(parsed.version).toBe(6)
+    expect(parsed.version).toBe(7)
     const persisted = parsed.state
     expect(Object.keys(persisted).sort()).toEqual(
       [
@@ -638,6 +638,9 @@ describe('useAdventureStore', () => {
         'carPartSlotsByCar',
         'partIdleClock',
         'nextPartSerial',
+        'chapterUnlockedCarIds',
+        'chapterUnlockedGunIds',
+        'chapterEquipmentMigrationVersion',
       ].sort(),
     )
   })

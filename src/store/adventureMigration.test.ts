@@ -34,6 +34,9 @@ describe('adventureMigration', () => {
       spareParts: 0,
       partIdleClock: NOW,
       nextPartSerial: 1,
+      chapterUnlockedCarIds: [],
+      chapterUnlockedGunIds: [],
+      chapterEquipmentMigrationVersion: 1,
     })
     expect(Object.values(initial.gunLevels)).toEqual([0, 0, 0, 0, 0])
     expect(initial.carPartInventory).toEqual([])
@@ -308,5 +311,30 @@ describe('adventureMigration', () => {
     expect(reconciled.formation).toEqual([
       { heroId: 'foreman', row: 'back', index: 1 },
     ])
+  })
+
+  it('preserves legacy gang-level equipment unlocks once during migration', () => {
+    const legacy = {
+      ...createInitialAdventureState(NOW),
+      chapterEquipmentMigrationVersion: 0,
+      chapterUnlockedCarIds: [],
+      chapterUnlockedGunIds: [],
+    }
+
+    expect(reconcileAdventureWithGang(legacy, 40)).toMatchObject({
+      chapterUnlockedCarIds: ['iron-fang', 'black-throne'],
+      chapterUnlockedGunIds: ['industrial-carbine'],
+      chapterEquipmentMigrationVersion: 1,
+    })
+  })
+
+  it('does not grant chapter equipment to a new save from gang level alone', () => {
+    const current = createInitialAdventureState(NOW)
+
+    expect(reconcileAdventureWithGang(current, 50)).toMatchObject({
+      chapterUnlockedCarIds: [],
+      chapterUnlockedGunIds: [],
+      chapterEquipmentMigrationVersion: 1,
+    })
   })
 })

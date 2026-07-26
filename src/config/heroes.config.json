@@ -66,7 +66,7 @@
       "defPerLevel": 3,
       "skill": {
         "name": "散射压制",
-        "description": "对主目标造成250%攻击伤害，并对其他敌人造成80%攻击溅射伤害。",
+        "description": "猛烈轰击主目标，并波及其他敌人。",
         "targetMultiplier": 2.5,
         "splashMultiplier": 0.8,
         "initialCooldownTicks": 30,
@@ -96,7 +96,7 @@
       "defPerLevel": 7,
       "skill": {
         "name": "钢盾镇场",
-        "description": "对主目标造成180%攻击伤害，并对其他敌人造成50%攻击溅射伤害。",
+        "description": "重击主目标，并震伤周围敌人。",
         "targetMultiplier": 1.8,
         "splashMultiplier": 0.5,
         "initialCooldownTicks": 40,
@@ -126,7 +126,7 @@
       "defPerLevel": 2,
       "skill": {
         "name": "长空穿击",
-        "description": "对主目标造成320%攻击伤害，并对其他敌人造成40%攻击溅射伤害。",
+        "description": "狙击主目标，同时压制其他敌人。",
         "targetMultiplier": 3.2,
         "splashMultiplier": 0.4,
         "initialCooldownTicks": 35,

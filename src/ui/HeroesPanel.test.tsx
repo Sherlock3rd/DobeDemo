@@ -13,9 +13,7 @@ import {
 } from 'vitest'
 import { heroesConfig } from '../config/heroesConfig'
 import { useChestTick } from '../game/chestTick'
-import { skillMainDamage, skillSplashDamage } from '../game/combat/damage'
 import { getTotalReputationForLevel } from '../game/gangProgression'
-import { getHeroCombatStats } from '../game/heroEquipment'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
@@ -88,30 +86,8 @@ describe('HeroesPanel', () => {
     expect(showcase?.querySelector('.heroes-panel__power')).toBeNull()
   })
 
-  it('shows a complete accessible skill card with live zero-defense estimates', () => {
-    const state = useAdventureStore.getState()
-    const progression = {
-      gunLevels: state.gunLevels,
-      carPartInventory: state.carPartInventory,
-      carPartSlotsByCar: state.carPartSlotsByCar,
-    }
-    const selectedStats = getHeroCombatStats(
-      'foreman',
-      state.heroLevels.foreman,
-      state.equipmentByHero.foreman,
-      progression,
-    )
+  it('shows a concise accessible skill card without damage estimates', () => {
     const skill = heroesConfig.heroes.foreman.skill
-    const expectedMainDamage = skillMainDamage(
-      selectedStats.atk,
-      0,
-      skill.targetMultiplier,
-    )
-    const expectedSplashDamage = skillSplashDamage(
-      selectedStats.atk,
-      0,
-      skill.splashMultiplier,
-    )
 
     render(<HeroesPanel onClose={() => {}} />)
 
@@ -120,25 +96,10 @@ describe('HeroesPanel', () => {
       within(skillCard).getByRole('heading', { name: skill.name }),
     ).toBeInTheDocument()
     expect(skillCard).toHaveTextContent(skill.description)
-    const mainMultiplier = within(skillCard)
-      .getByText(`ATK × ${skill.targetMultiplier}`)
-      .closest('div')
-    const splashMultiplier = within(skillCard)
-      .getByText(`ATK × ${skill.splashMultiplier}`)
-      .closest('div')
-    expect(mainMultiplier).toHaveTextContent(
-      `主目标ATK × ${skill.targetMultiplier}`,
-    )
-    expect(splashMultiplier).toHaveTextContent(
-      `其余敌人ATK × ${skill.splashMultiplier}`,
-    )
-    expect(skillCard).toHaveTextContent('理论裸防伤害（按 0 DEF）')
-    expect(skillCard).toHaveTextContent(`主目标 ${expectedMainDamage}`)
-    expect(skillCard).toHaveTextContent(`其余敌人 ${expectedSplashDamage}`)
-    expect(skillCard).toHaveTextContent(`怒气 ${skill.rageCost}`)
-    expect(skillCard).toHaveTextContent(`普攻 +${skill.ragePerBasicAttack}`)
-    expect(skillCard).toHaveTextContent(`受击 +${skill.ragePerHitTaken}`)
     expect(skillCard).toHaveTextContent('满怒自动释放')
+    expect(skillCard).not.toHaveTextContent('ATK ×')
+    expect(skillCard).not.toHaveTextContent('理论裸防伤害')
+    expect(skillCard).not.toHaveTextContent('预估伤害')
   })
 
   it('computes clipping, non-negative weapon inset, and identity layering styles', () => {
@@ -197,7 +158,6 @@ describe('HeroesPanel', () => {
       currentLevel: 8,
       lastUpdatedAt: BASE_TIME,
     })
-
     render(<HeroesPanel onClose={() => {}} />)
 
     expect(screen.queryByText('废车回收厂')).not.toBeInTheDocument()
@@ -305,6 +265,7 @@ describe('HeroesPanel', () => {
       currentLevel: 8,
       lastUpdatedAt: BASE_TIME,
     })
+    useAdventureStore.setState({ chapterUnlockedCarIds: ['iron-fang'] })
     render(<HeroesPanel onClose={() => {}} />)
 
     expect(

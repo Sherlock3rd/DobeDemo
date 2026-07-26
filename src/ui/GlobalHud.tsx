@@ -46,6 +46,7 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
     (s) => s.highestClearedRacingStage,
   )
   const claimedTaskIds = useChapterStore((s) => s.claimedTaskIds)
+  const claimedChapterNumbers = useChapterStore((s) => s.claimedChapterNumbers)
   const idleClock = useAdventureStore((s) => s.idleClock)
   const tick = useChestTick((s) => s.tick)
   const now = useChestTick((s) => s.now)
@@ -94,18 +95,24 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const adventureDot = hasAdventureRedDot(highestClearedStage, claimable)
   const heroesDot = hasHeroesRedDot(heroLevels, sharedExp, gangLevel)
   const currentChapter = getChapterForGangLevel(gangLevel)
-  const chapterClaimable = currentChapter.tasks.some(
-    (task) =>
-      !claimedTaskIds.includes(task.id) &&
-      getTaskProgress(task, {
-        heroLevels,
-        gunLevels,
-        carPartInventory,
-        highestClearedStage,
-        highestClearedRacingStage,
-        buildingProgress,
-      }).complete,
-  )
+  const chapterSnapshot = {
+    heroLevels,
+    gunLevels,
+    carPartInventory,
+    highestClearedStage,
+    highestClearedRacingStage,
+    buildingProgress,
+  }
+  const chapterClaimable =
+    currentChapter.tasks.some(
+      (task) =>
+        !claimedTaskIds.includes(task.id) &&
+        getTaskProgress(task, chapterSnapshot).complete,
+    ) ||
+    (!claimedChapterNumbers.includes(currentChapter.number) &&
+      currentChapter.tasks.every(
+        (task) => getTaskProgress(task, chapterSnapshot).complete,
+      ))
 
   return (
     <section className="global-hud" aria-label="主界面 HUD">

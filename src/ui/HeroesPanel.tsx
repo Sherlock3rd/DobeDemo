@@ -7,7 +7,6 @@ import {
 } from 'react'
 import { equipmentConfig } from '../config/equipmentConfig'
 import { expToLevel, heroesConfig } from '../config/heroesConfig'
-import { skillMainDamage, skillSplashDamage } from '../game/combat/damage'
 import { unitPower } from '../game/combat/power'
 import {
   CAR_PART_INVENTORY_LIMIT,
@@ -48,9 +47,10 @@ import { ResourceAmount } from './ResourceAmount'
 
 export interface HeroesPanelProps {
   onClose: () => void
+  initialTab?: DevelopmentTab
 }
 
-type DevelopmentTab = 'level' | 'car' | 'gun'
+export type DevelopmentTab = 'level' | 'car' | 'gun'
 type EquipmentPicker = Exclude<DevelopmentTab, 'level'>
 
 const TITLE_ID = 'heroes-panel-title'
@@ -130,7 +130,10 @@ function PartCard({
   )
 }
 
-export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
+export function HeroesPanel({
+  onClose,
+  initialTab = 'level',
+}: HeroesPanelProps): JSX.Element {
   const gangLevel = useGangStore((state) => state.currentLevel)
   const heroLevels = useAdventureStore((state) => state.heroLevels)
   const sharedExp = useAdventureStore((state) => state.sharedExp)
@@ -140,6 +143,12 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const carPartInventory = useAdventureStore((state) => state.carPartInventory)
   const carPartSlotsByCar = useAdventureStore(
     (state) => state.carPartSlotsByCar,
+  )
+  const chapterUnlockedCarIds = useAdventureStore(
+    (state) => state.chapterUnlockedCarIds,
+  )
+  const chapterUnlockedGunIds = useAdventureStore(
+    (state) => state.chapterUnlockedGunIds,
   )
   const upgradeHero = useAdventureStore((state) => state.upgradeHero)
   const equipCar = useAdventureStore((state) => state.equipCar)
@@ -153,7 +162,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const upgradeCarPart = useAdventureStore((state) => state.upgradeCarPart)
   const upgradeGun = useAdventureStore((state) => state.upgradeGun)
   const [selectedHero, setSelectedHero] = useState<HeroId>('foreman')
-  const [activeTab, setActiveTab] = useState<DevelopmentTab>('level')
+  const [activeTab, setActiveTab] = useState<DevelopmentTab>(initialTab)
   const [equipmentPicker, setEquipmentPicker] =
     useState<EquipmentPicker | null>(null)
   const [partPickerSlot, setPartPickerSlot] = useState<CarPartSlot | null>(null)
@@ -182,16 +191,6 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   )
   const selectedPower = unitPower(selectedDefinition.role, selectedStats)
   const selectedSkill = selectedDefinition.skill
-  const currentSkillMainDamage = skillMainDamage(
-    selectedStats.atk,
-    0,
-    selectedSkill.targetMultiplier,
-  )
-  const currentSkillSplashDamage = skillSplashDamage(
-    selectedStats.atk,
-    0,
-    selectedSkill.splashMultiplier,
-  )
   const inventoryById = useMemo(
     () => new Map(carPartInventory.map((part) => [part.id, part])),
     [carPartInventory],
@@ -465,25 +464,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                 <h4 id={SKILL_TITLE_ID}>{selectedSkill.name}</h4>
               </header>
               <p>{selectedSkill.description}</p>
-              <dl className="heroes-panel__skill-multipliers">
-                <div>
-                  <dt>主目标</dt>
-                  <dd>{`ATK × ${selectedSkill.targetMultiplier}`}</dd>
-                </div>
-                <div>
-                  <dt>其余敌人</dt>
-                  <dd>{`ATK × ${selectedSkill.splashMultiplier}`}</dd>
-                </div>
-              </dl>
-              <div className="heroes-panel__skill-estimate">
-                <span>当前预估 · 理论裸防伤害（按 0 DEF）</span>
-                <strong>{`主目标 ${currentSkillMainDamage}`}</strong>
-                <strong>{`其余敌人 ${currentSkillSplashDamage}`}</strong>
-              </div>
               <div className="heroes-panel__skill-rage">
-                <span>{`怒气 ${selectedSkill.rageCost}`}</span>
-                <span>{`普攻 +${selectedSkill.ragePerBasicAttack}`}</span>
-                <span>{`受击 +${selectedSkill.ragePerHitTaken}`}</span>
                 <strong>满怒自动释放</strong>
               </div>
             </section>
@@ -560,7 +541,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                 </header>
                 <div className="heroes-panel__picker-grid">
                   {CAR_IDS.filter((carId) =>
-                    isCarUnlocked(carId, gangLevel),
+                    isCarUnlocked(carId, gangLevel, chapterUnlockedCarIds),
                   ).map((carId) => {
                     const owner = carOwner(carId)
                     const definition = equipmentConfig.cars[carId]
@@ -647,7 +628,7 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                 </header>
                 <div className="heroes-panel__picker-grid">
                   {GUN_IDS.filter((gunId) =>
-                    isGunUnlocked(gunId, gangLevel),
+                    isGunUnlocked(gunId, gangLevel, chapterUnlockedGunIds),
                   ).map((gunId) => {
                     const owner = gunOwner(gunId)
                     const definition = equipmentConfig.guns[gunId]

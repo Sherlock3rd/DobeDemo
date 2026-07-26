@@ -23,17 +23,16 @@ describe('heroes config', () => {
     expect(heroesConfig.heroes.anvil.role).toBe('front')
     expect(heroesConfig.heroes.skyline.skill.targetMultiplier).toBe(3.2)
     expect(heroesConfig.heroes.foreman.skill).toMatchObject({
-      description:
-        '对主目标造成250%攻击伤害，并对其他敌人造成80%攻击溅射伤害。',
+      description: '猛烈轰击主目标，并波及其他敌人。',
       rageCost: 100,
       ragePerBasicAttack: 20,
       ragePerHitTaken: 10,
     })
     expect(heroesConfig.heroes.anvil.skill.description).toBe(
-      '对主目标造成180%攻击伤害，并对其他敌人造成50%攻击溅射伤害。',
+      '重击主目标，并震伤周围敌人。',
     )
     expect(heroesConfig.heroes.skyline.skill.description).toBe(
-      '对主目标造成320%攻击伤害，并对其他敌人造成40%攻击溅射伤害。',
+      '狙击主目标，同时压制其他敌人。',
     )
   })
 

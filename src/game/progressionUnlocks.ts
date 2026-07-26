@@ -17,6 +17,41 @@ export type ProgressionUnlock =
   | (ProgressionUnlockBase & { kind: 'car'; carId: CarId })
   | (ProgressionUnlockBase & { kind: 'gun'; gunId: GunId })
 
+export type ChapterEquipmentUnlock =
+  | {
+      kind: 'car'
+      carId: CarId
+      chapterNumber: number
+      legacyRequiredLevel: number
+    }
+  | {
+      kind: 'gun'
+      gunId: GunId
+      chapterNumber: number
+      legacyRequiredLevel: number
+    }
+
+export const CHAPTER_EQUIPMENT_UNLOCKS: readonly ChapterEquipmentUnlock[] = [
+  {
+    kind: 'car',
+    carId: 'iron-fang',
+    chapterNumber: 1,
+    legacyRequiredLevel: 8,
+  },
+  {
+    kind: 'gun',
+    gunId: 'industrial-carbine',
+    chapterNumber: 3,
+    legacyRequiredLevel: 24,
+  },
+  {
+    kind: 'car',
+    carId: 'black-throne',
+    chapterNumber: 5,
+    legacyRequiredLevel: 40,
+  },
+]
+
 export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
   {
     kind: 'building',
@@ -67,12 +102,6 @@ export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
     roleTitle: 'Full Patch',
   },
   {
-    kind: 'car',
-    carId: 'iron-fang',
-    requiredLevel: 8,
-    roleTitle: 'Full Patch',
-  },
-  {
     kind: 'hero',
     heroId: 'anvil',
     requiredLevel: 12,
@@ -103,12 +132,6 @@ export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
     roleTitle: 'Bar Liaison',
   },
   {
-    kind: 'gun',
-    gunId: 'industrial-carbine',
-    requiredLevel: 24,
-    roleTitle: 'Bar Liaison',
-  },
-  {
     kind: 'hero',
     heroId: 'skyline',
     requiredLevel: 28,
@@ -135,12 +158,6 @@ export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
   {
     kind: 'building',
     buildingId: 'clubhouse',
-    requiredLevel: 40,
-    roleTitle: 'V. PRESIDENT',
-  },
-  {
-    kind: 'car',
-    carId: 'black-throne',
     requiredLevel: 40,
     roleTitle: 'V. PRESIDENT',
   },
@@ -211,8 +228,12 @@ export function carUnlockLevel(carId: CarId): number {
     (candidate): candidate is ProgressionUnlock & { kind: 'car' } =>
       candidate.kind === 'car' && candidate.carId === carId,
   )
-  if (!unlock) throw new Error(`Unknown car unlock: ${carId}`)
-  return unlock.requiredLevel
+  if (unlock) return unlock.requiredLevel
+  const chapterUnlock = CHAPTER_EQUIPMENT_UNLOCKS.find(
+    (candidate) => candidate.kind === 'car' && candidate.carId === carId,
+  )
+  if (!chapterUnlock) throw new Error(`Unknown car unlock: ${carId}`)
+  return chapterUnlock.legacyRequiredLevel
 }
 
 export function gunUnlockLevel(gunId: GunId): number {
@@ -220,15 +241,41 @@ export function gunUnlockLevel(gunId: GunId): number {
     (candidate): candidate is ProgressionUnlock & { kind: 'gun' } =>
       candidate.kind === 'gun' && candidate.gunId === gunId,
   )
-  if (!unlock) throw new Error(`Unknown gun unlock: ${gunId}`)
-  return unlock.requiredLevel
+  if (unlock) return unlock.requiredLevel
+  const chapterUnlock = CHAPTER_EQUIPMENT_UNLOCKS.find(
+    (candidate) => candidate.kind === 'gun' && candidate.gunId === gunId,
+  )
+  if (!chapterUnlock) throw new Error(`Unknown gun unlock: ${gunId}`)
+  return chapterUnlock.legacyRequiredLevel
 }
 
-export function isCarUnlocked(carId: CarId, gangLevel: number): boolean {
+export function isCarUnlocked(
+  carId: CarId,
+  gangLevel: number,
+  chapterUnlockedCarIds: readonly CarId[] = [],
+): boolean {
+  if (
+    CHAPTER_EQUIPMENT_UNLOCKS.some(
+      (unlock) => unlock.kind === 'car' && unlock.carId === carId,
+    )
+  ) {
+    return chapterUnlockedCarIds.includes(carId)
+  }
   return normalizeGangLevel(gangLevel) >= carUnlockLevel(carId)
 }
 
-export function isGunUnlocked(gunId: GunId, gangLevel: number): boolean {
+export function isGunUnlocked(
+  gunId: GunId,
+  gangLevel: number,
+  chapterUnlockedGunIds: readonly GunId[] = [],
+): boolean {
+  if (
+    CHAPTER_EQUIPMENT_UNLOCKS.some(
+      (unlock) => unlock.kind === 'gun' && unlock.gunId === gunId,
+    )
+  ) {
+    return chapterUnlockedGunIds.includes(gunId)
+  }
   return normalizeGangLevel(gangLevel) >= gunUnlockLevel(gunId)
 }
 

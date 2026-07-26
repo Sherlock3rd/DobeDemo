@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChestTick } from './game/chestTick'
 import { getTotalReputationForLevel } from './game/gangProgression'
 import { useAdventureStore } from './store/useAdventureStore'
+import { useChapterStore } from './store/useChapterStore'
 import { useCityStore } from './store/useCityStore'
 import { useGangStore } from './store/useGangStore'
 
@@ -27,10 +28,6 @@ vi.mock('./scene/city/CityScene', () => ({
   CityScene: () => <div data-testid="city-scene-mock" />,
 }))
 
-vi.mock('./game/GangIdleController', () => ({
-  GangIdleController: () => <div data-testid="gang-idle-controller" />,
-}))
-
 vi.mock('./game/EconomyIdleController', () => ({
   EconomyIdleController: () => <div data-testid="economy-idle-controller" />,
 }))
@@ -43,6 +40,7 @@ vi.mock('./ui/GlobalHud', () => ({
   GlobalHud: (p: {
     onOpenHeroes: () => void
     onOpenGangTree: () => void
+    onOpenChapters: () => void
     onOpenAdventure: () => void
     onOpenRacing: () => void
     onOpenSettings: () => void
@@ -53,6 +51,9 @@ vi.mock('./ui/GlobalHud', () => ({
       </button>
       <button type="button" onClick={p.onOpenGangTree}>
         帮派树
+      </button>
+      <button type="button" onClick={p.onOpenChapters}>
+        章节
       </button>
       <button type="button" onClick={p.onOpenAdventure}>
         推关
@@ -117,8 +118,12 @@ vi.mock('./ui/BattleScreen', () => ({
 }))
 
 vi.mock('./ui/HeroesPanel', () => ({
-  HeroesPanel: () => (
-    <div role="dialog" aria-label="英雄培养">
+  HeroesPanel: (p: { initialTab?: string }) => (
+    <div
+      role="dialog"
+      aria-label="英雄培养"
+      data-initial-tab={p.initialTab ?? ''}
+    >
       <h2 tabIndex={-1} ref={(element) => element?.focus()}>
         英雄培养
       </h2>
@@ -160,6 +165,7 @@ describe('App', () => {
     useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
+    useChapterStore.getState().reset()
     useChestTick.setState({ now: BASE_TIME, tick: 0 })
     canvasPropsSpy.mockClear()
   })
@@ -290,6 +296,28 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
+  it('opens the relevant development tab from a chapter task guide', async () => {
+    render(<App />)
+
+    await userEvent.click(screen.getByRole('button', { name: '章节' }))
+    await userEvent.click(screen.getByRole('button', { name: '前往英雄升级' }))
+
+    expect(screen.getByRole('dialog', { name: '英雄培养' })).toHaveAttribute(
+      'data-initial-tab',
+      'level',
+    )
+  })
+
+  it('selects the relevant city building from a chapter task guide', async () => {
+    render(<App />)
+
+    await userEvent.click(screen.getByRole('button', { name: '章节' }))
+    await userEvent.click(screen.getByRole('button', { name: '前往对应建筑' }))
+
+    expect(useCityStore.getState().selectedBuildingId).toBe('repair-shop')
+    expect(screen.getByRole('heading', { name: '修车厂' })).toBeInTheDocument()
+  })
+
   it('keeps focus inside the adventure, formation, and battle transition chain', async () => {
     render(<App />)
 
@@ -316,13 +344,11 @@ describe('App', () => {
     expect(screen.queryByRole('dialog', { name: /设置/ })).toBeNull()
   })
 
-  it('idle controllers (gang/economy/adventure) mount regardless of overlay', async () => {
+  it('economy and adventure idle controllers mount regardless of overlay', async () => {
     render(<App />)
-    expect(screen.getByTestId('gang-idle-controller')).toBeInTheDocument()
     expect(screen.getByTestId('economy-idle-controller')).toBeInTheDocument()
     expect(screen.getByTestId('adventure-idle-clock')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '推关' }))
-    expect(screen.getByTestId('gang-idle-controller')).toBeInTheDocument()
     expect(screen.getByTestId('economy-idle-controller')).toBeInTheDocument()
     expect(screen.getByTestId('adventure-idle-clock')).toBeInTheDocument()
   })

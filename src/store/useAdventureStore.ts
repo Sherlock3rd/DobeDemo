@@ -14,6 +14,7 @@ import {
   type HeroId,
 } from '../game/heroes'
 import {
+  CHAPTER_EQUIPMENT_UNLOCKS,
   GANG_MAX_LEVEL,
   GANG_MIN_LEVEL,
   isBuildingUnlocked,
@@ -51,7 +52,7 @@ import {
   rollStageRewardPart,
 } from '../game/stageRewards'
 import type { FormationAssignment } from '../game/combat/power'
-import type { ChapterTaskReward } from '../game/chapterProgression'
+import type { ChapterAdventureReward } from '../game/chapterProgression'
 import { createSafeStorage } from './safeStorage'
 import { useCityStore } from './useCityStore'
 import {
@@ -146,7 +147,8 @@ export interface AdventureState extends AdventureDurableState {
   recycleCarPartsByQuality: (quality: CarPartQuality) => EquipmentActionResult
   upgradeCarPart: (partId: string) => EquipmentActionResult
   upgradeGun: (gunId: string, gangLevel: number) => EquipmentActionResult
-  grantChapterReward: (reward: ChapterTaskReward) => void
+  grantChapterReward: (reward: ChapterAdventureReward) => void
+  unlockAllChapterEquipmentForDebug: () => void
   setFormation: (formation: FormationAssignment, gangLevel: number) => boolean
   reconcileWithGang: (gangLevel: number) => void
   syncCityRewardMoney: () => void
@@ -442,11 +444,13 @@ export const useAdventureStore = create<AdventureState>()(
         return outcome
       },
       equipCar: (heroId, carId, gangLevel) => {
+        const chapterUnlockedCarIds = get().chapterUnlockedCarIds
         if (
           !isHeroId(heroId) ||
           !isHeroUnlocked(heroId, gangLevel) ||
           (carId !== null &&
-            (!isCarId(carId) || !isCarUnlocked(carId, gangLevel)))
+            (!isCarId(carId) ||
+              !isCarUnlocked(carId, gangLevel, chapterUnlockedCarIds)))
         ) {
           return false
         }
@@ -461,11 +465,13 @@ export const useAdventureStore = create<AdventureState>()(
         return true
       },
       equipGun: (heroId, gunId, gangLevel) => {
+        const chapterUnlockedGunIds = get().chapterUnlockedGunIds
         if (
           !isHeroId(heroId) ||
           !isHeroUnlocked(heroId, gangLevel) ||
           (gunId !== null &&
-            (!isGunId(gunId) || !isGunUnlocked(gunId, gangLevel)))
+            (!isGunId(gunId) ||
+              !isGunUnlocked(gunId, gangLevel, chapterUnlockedGunIds)))
         ) {
           return false
         }
@@ -541,7 +547,7 @@ export const useAdventureStore = create<AdventureState>()(
         }
         if (
           !isCarId(carId) ||
-          !isCarUnlocked(carId, gangLevel) ||
+          !isCarUnlocked(carId, gangLevel, get().chapterUnlockedCarIds) ||
           typeof partId !== 'string'
         ) {
           return { applied: false, reason: 'equipment-locked' }
@@ -569,7 +575,7 @@ export const useAdventureStore = create<AdventureState>()(
         }
         if (
           !isCarId(carId) ||
-          !isCarUnlocked(carId, gangLevel) ||
+          !isCarUnlocked(carId, gangLevel, get().chapterUnlockedCarIds) ||
           typeof slot !== 'string' ||
           !isCarPartSlot(slot)
         ) {
@@ -706,7 +712,10 @@ export const useAdventureStore = create<AdventureState>()(
         if (!isValidGangLevel(gangLevel)) {
           return { applied: false, reason: 'invalid-request' }
         }
-        if (!isGunId(gunId) || !isGunUnlocked(gunId, gangLevel)) {
+        if (
+          !isGunId(gunId) ||
+          !isGunUnlocked(gunId, gangLevel, get().chapterUnlockedGunIds)
+        ) {
           return { applied: false, reason: 'equipment-locked' }
         }
         let result: EquipmentActionResult = {
@@ -773,9 +782,37 @@ export const useAdventureStore = create<AdventureState>()(
             spareParts,
             carPartInventory,
             nextPartSerial,
+            chapterUnlockedCarIds:
+              'unlockCarIds' in reward
+                ? [
+                    ...new Set([
+                      ...state.chapterUnlockedCarIds,
+                      ...reward.unlockCarIds,
+                    ]),
+                  ]
+                : state.chapterUnlockedCarIds,
+            chapterUnlockedGunIds:
+              'unlockGunIds' in reward
+                ? [
+                    ...new Set([
+                      ...state.chapterUnlockedGunIds,
+                      ...reward.unlockGunIds,
+                    ]),
+                  ]
+                : state.chapterUnlockedGunIds,
           }
         })
       },
+      unlockAllChapterEquipmentForDebug: () =>
+        set({
+          chapterUnlockedCarIds: CHAPTER_EQUIPMENT_UNLOCKS.filter(
+            (unlock) => unlock.kind === 'car',
+          ).map((unlock) => unlock.carId),
+          chapterUnlockedGunIds: CHAPTER_EQUIPMENT_UNLOCKS.filter(
+            (unlock) => unlock.kind === 'gun',
+          ).map((unlock) => unlock.gunId),
+          chapterEquipmentMigrationVersion: 1,
+        }),
       setFormation: (formation, gangLevel) => {
         if (!isValidFormation(formation, gangLevel)) return false
         set({ formation: formation.map((s) => ({ ...s })) })
@@ -808,7 +845,7 @@ export const useAdventureStore = create<AdventureState>()(
     }),
     {
       name: ADVENTURE_STORAGE_KEY,
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted) => persisted,
       partialize: ({
@@ -825,6 +862,9 @@ export const useAdventureStore = create<AdventureState>()(
         carPartSlotsByCar,
         partIdleClock,
         nextPartSerial,
+        chapterUnlockedCarIds,
+        chapterUnlockedGunIds,
+        chapterEquipmentMigrationVersion,
       }) => ({
         heroLevels,
         sharedExp,
@@ -839,6 +879,9 @@ export const useAdventureStore = create<AdventureState>()(
         carPartSlotsByCar,
         partIdleClock,
         nextPartSerial,
+        chapterUnlockedCarIds,
+        chapterUnlockedGunIds,
+        chapterEquipmentMigrationVersion,
       }),
       merge: (persisted, current) =>
         persisted == null

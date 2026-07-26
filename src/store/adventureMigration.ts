@@ -11,7 +11,9 @@ import {
   type CarPartInstance,
   type CarPartQuality,
   type CarPartSlotsByCar,
+  type CarId,
   type EquipmentByHero,
+  type GunId,
   type GunUpgradeLevels,
 } from '../game/equipmentTypes'
 import {
@@ -23,7 +25,11 @@ import {
   getCarPartUpgradeCost,
   getGunUpgradeCost,
 } from '../game/equipmentProgression'
-import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
+import {
+  CHAPTER_EQUIPMENT_UNLOCKS,
+  isCarUnlocked,
+  isGunUnlocked,
+} from '../game/progressionUnlocks'
 
 export const ADVENTURE_STORAGE_KEY = 'dobe-adventure-progression-v1'
 
@@ -41,6 +47,9 @@ export interface AdventureDurableState {
   carPartSlotsByCar: CarPartSlotsByCar
   partIdleClock: number
   nextPartSerial: number
+  chapterUnlockedCarIds: CarId[]
+  chapterUnlockedGunIds: GunId[]
+  chapterEquipmentMigrationVersion: number
 }
 
 const DEFAULT_FORMATION: FormationAssignment = [
@@ -88,7 +97,42 @@ export function createInitialAdventureState(
     carPartSlotsByCar: createInitialCarPartSlots(),
     partIdleClock: Number.isFinite(now) ? now : Date.now(),
     nextPartSerial: 1,
+    chapterUnlockedCarIds: [],
+    chapterUnlockedGunIds: [],
+    chapterEquipmentMigrationVersion: 1,
   }
+}
+
+function normalizeChapterUnlockedCarIds(value: unknown): CarId[] {
+  if (!Array.isArray(value)) return []
+  return [
+    ...new Set(
+      value.filter(
+        (entry): entry is CarId =>
+          typeof entry === 'string' &&
+          isCarId(entry) &&
+          CHAPTER_EQUIPMENT_UNLOCKS.some(
+            (unlock) => unlock.kind === 'car' && unlock.carId === entry,
+          ),
+      ),
+    ),
+  ]
+}
+
+function normalizeChapterUnlockedGunIds(value: unknown): GunId[] {
+  if (!Array.isArray(value)) return []
+  return [
+    ...new Set(
+      value.filter(
+        (entry): entry is GunId =>
+          typeof entry === 'string' &&
+          isGunId(entry) &&
+          CHAPTER_EQUIPMENT_UNLOCKS.some(
+            (unlock) => unlock.kind === 'gun' && unlock.gunId === entry,
+          ),
+      ),
+    ),
+  ]
 }
 
 function normalizeGunLevels(value: unknown): GunUpgradeLevels {
@@ -352,6 +396,18 @@ export function normalizeAdventureDurableState(
       src.nextPartSerial,
       cappedEquipment.carPartInventory,
     ),
+    chapterUnlockedCarIds: normalizeChapterUnlockedCarIds(
+      src.chapterUnlockedCarIds,
+    ),
+    chapterUnlockedGunIds: normalizeChapterUnlockedGunIds(
+      src.chapterUnlockedGunIds,
+    ),
+    chapterEquipmentMigrationVersion: clampInt(
+      src.chapterEquipmentMigrationVersion,
+      0,
+      1,
+      0,
+    ),
   }
 }
 
@@ -376,16 +432,37 @@ export function reconcileAdventureWithGang(
   const formation = state.formation.filter((slot) =>
     isHeroUnlocked(slot.heroId, gangLevel),
   )
+  const chapterUnlockedCarIds = [...state.chapterUnlockedCarIds]
+  const chapterUnlockedGunIds = [...state.chapterUnlockedGunIds]
+  if (state.chapterEquipmentMigrationVersion < 1) {
+    for (const unlock of CHAPTER_EQUIPMENT_UNLOCKS) {
+      if (gangLevel < unlock.legacyRequiredLevel) continue
+      if (
+        unlock.kind === 'car' &&
+        !chapterUnlockedCarIds.includes(unlock.carId)
+      ) {
+        chapterUnlockedCarIds.push(unlock.carId)
+      }
+      if (
+        unlock.kind === 'gun' &&
+        !chapterUnlockedGunIds.includes(unlock.gunId)
+      ) {
+        chapterUnlockedGunIds.push(unlock.gunId)
+      }
+    }
+  }
   const equipmentByHero = {} as EquipmentByHero
   for (const id of HERO_IDS) {
     const equipment = state.equipmentByHero[id]
     equipmentByHero[id] = {
       carId:
-        equipment?.carId && isCarUnlocked(equipment.carId, gangLevel)
+        equipment?.carId &&
+        isCarUnlocked(equipment.carId, gangLevel, chapterUnlockedCarIds)
           ? equipment.carId
           : null,
       gunId:
-        equipment?.gunId && isGunUnlocked(equipment.gunId, gangLevel)
+        equipment?.gunId &&
+        isGunUnlocked(equipment.gunId, gangLevel, chapterUnlockedGunIds)
           ? equipment.gunId
           : null,
     }
@@ -396,6 +473,9 @@ export function reconcileAdventureWithGang(
     spareParts: cappedEquipment.spareParts,
     gunLevels: cappedEquipment.gunLevels,
     carPartInventory: cappedEquipment.carPartInventory,
+    chapterUnlockedCarIds,
+    chapterUnlockedGunIds,
+    chapterEquipmentMigrationVersion: 1,
     equipmentByHero,
     formation:
       formation.length === 0

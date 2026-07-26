@@ -130,7 +130,9 @@ describe('GangTreePanel', () => {
     })
     rerender(<GangTreePanel open onClose={() => {}} />)
     expect(screen.getByRole('button', { name: '晋升一级' })).toBeDisabled()
-    expect(screen.getByText('需完成第一章 · 冷炉初燃')).toBeInTheDocument()
+    expect(
+      screen.getByText('需完成并领取第一章 · 冷炉初燃奖励'),
+    ).toBeInTheDocument()
   })
 
   it('closes when the close button is clicked', async () => {

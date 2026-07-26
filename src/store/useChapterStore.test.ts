@@ -29,7 +29,7 @@ describe('useChapterStore', () => {
     expect(useChapterStore.getState().claimedTaskIds).toEqual([
       'chapter-1-hero',
     ])
-    expect(useGangStore.getState().totalReputation).toBe(53)
+    expect(useGangStore.getState().totalReputation).toBe(20)
     expect(useGangStore.getState().currentLevel).toBe(1)
     expect(useAdventureStore.getState()).toMatchObject({
       sharedExp: 120,
@@ -59,5 +59,42 @@ describe('useChapterStore', () => {
       { slot: 'bumper', quality: 'epic' },
       { slot: 'suspension', quality: 'epic' },
     ])
+  })
+
+  it('claims a completed chapter exactly once and grants its resource and gear unlock reward', () => {
+    useAdventureStore.setState((state) => ({
+      heroLevels: { ...state.heroLevels, foreman: 3 },
+      highestClearedStage: 2,
+      highestClearedRacingStage: 1,
+    }))
+    useCityStore.setState((state) => ({
+      buildingProgress: {
+        ...state.buildingProgress,
+        'repair-shop': {
+          ...state.buildingProgress['repair-shop'],
+          level: 2,
+        },
+      },
+    }))
+
+    expect(useChapterStore.getState().claimChapterReward(1)).toBe(true)
+    expect(useChapterStore.getState().claimChapterReward(1)).toBe(false)
+    expect(useChapterStore.getState().claimedChapterNumbers).toEqual([1])
+    expect(useGangStore.getState().totalReputation).toBe(132)
+    expect(useAdventureStore.getState()).toMatchObject({
+      sharedExp: 600,
+      spareParts: 80,
+      chapterUnlockedCarIds: ['iron-fang'],
+    })
+    expect(useCityStore.getState().resources).toMatchObject({
+      money: 10_500,
+      oil: 0,
+      materials: 0,
+    })
+  })
+
+  it('rejects chapter rewards before all chapter tasks are complete', () => {
+    expect(useChapterStore.getState().claimChapterReward(1)).toBe(false)
+    expect(useChapterStore.getState().claimedChapterNumbers).toEqual([])
   })
 })

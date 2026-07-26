@@ -1,3 +1,4 @@
+import { useAdventureStore } from '../store/useAdventureStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
 
@@ -8,6 +9,7 @@ export function unlockGangTreeForDebug(now: number = Date.now()): boolean {
 
   useCityStore.getState().syncResourceProduction(now, 50)
   useGangStore.getState().unlockForDebug(now)
+  useAdventureStore.getState().unlockAllChapterEquipmentForDebug()
   return true
 }
 

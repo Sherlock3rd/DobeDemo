@@ -272,6 +272,8 @@ function RaceSession({
       : state.fireBoostCooldownMs > 0
         ? `冷却 ${Math.ceil(state.fireBoostCooldownMs / 1000)}秒`
         : '强化就绪'
+  const finishProgress = raceProgress(state)
+  const finishPercent = Math.round(finishProgress * 100)
 
   return (
     <div
@@ -312,7 +314,16 @@ function RaceSession({
               : '纯追击枪战 · 空中特技缩短强化冷却 · 摧毁目标车'}
           </span>
         </div>
-        <div className="race-hud__timer">{remainingSeconds}</div>
+        {definition.mode === 'race' ? (
+          <label className="race-hud__finish-progress">
+            <span>{`终点 ${finishPercent}%`}</span>
+            <progress value={finishProgress} max={1} aria-label="距离终点" />
+          </label>
+        ) : (
+          <div className="race-hud__timer" aria-label="剩余时间">
+            {remainingSeconds}
+          </div>
+        )}
         <button type="button" onClick={() => setExitPending(true)}>
           退出
         </button>
@@ -377,12 +388,14 @@ function RaceSession({
             <p>{`普通攻击 自动开火 · 空中特技 -2.5秒强化冷却 · ${fireBoostStatus}`}</p>
           </>
         )}
-        <progress
-          className="race-hud__progress"
-          value={raceProgress(state)}
-          max={1}
-          aria-label="关卡进度"
-        />
+        {definition.mode === 'pursuit' ? (
+          <progress
+            className="race-hud__progress"
+            value={finishProgress}
+            max={1}
+            aria-label="追击进度"
+          />
+        ) : null}
       </aside>
 
       <div className="race-controls" aria-label="赛车控制">

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type JSX } from 'react'
+import { equipmentConfig } from '../config/equipmentConfig'
 import { CAR_PART_QUALITY_INFO } from '../game/equipmentProgression'
 import {
   CHAPTERS,
   getChapterForGangLevel,
   getTaskProgress,
   type ChapterPartReward,
+  type ChapterTaskRequirement,
 } from '../game/chapterProgression'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useChapterStore } from '../store/useChapterStore'
@@ -14,6 +16,7 @@ import { useInitialFocus } from './useInitialFocus'
 
 export interface ChapterPanelProps {
   onClose: () => void
+  onNavigateTask: (requirement: ChapterTaskRequirement) => void
 }
 
 const TITLE_ID = 'chapter-panel-title'
@@ -29,7 +32,27 @@ function partRewardLabel(part: ChapterPartReward): string {
   return `${CAR_PART_QUALITY_INFO[part.quality].name}${SLOT_NAMES[part.slot]}`
 }
 
-export function ChapterPanel({ onClose }: ChapterPanelProps): JSX.Element {
+function taskDestinationLabel(requirement: ChapterTaskRequirement): string {
+  switch (requirement.kind) {
+    case 'hero-level':
+      return '英雄升级'
+    case 'part-level':
+      return '配件强化'
+    case 'gun-level':
+      return '枪械强化'
+    case 'building-level':
+      return '对应建筑'
+    case 'campaign-clears':
+      return '推关'
+    case 'racing-clears':
+      return '赛车'
+  }
+}
+
+export function ChapterPanel({
+  onClose,
+  onNavigateTask,
+}: ChapterPanelProps): JSX.Element {
   const currentLevel = useGangStore((state) => state.currentLevel)
   const heroLevels = useAdventureStore((state) => state.heroLevels)
   const gunLevels = useAdventureStore((state) => state.gunLevels)
@@ -42,7 +65,13 @@ export function ChapterPanel({ onClose }: ChapterPanelProps): JSX.Element {
   )
   const buildingProgress = useCityStore((state) => state.buildingProgress)
   const claimedTaskIds = useChapterStore((state) => state.claimedTaskIds)
+  const claimedChapterNumbers = useChapterStore(
+    (state) => state.claimedChapterNumbers,
+  )
   const claimTask = useChapterStore((state) => state.claimTask)
+  const claimChapterReward = useChapterStore(
+    (state) => state.claimChapterReward,
+  )
   const [feedback, setFeedback] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>()
   const chapter = getChapterForGangLevel(currentLevel)
@@ -70,6 +99,17 @@ export function ChapterPanel({ onClose }: ChapterPanelProps): JSX.Element {
   const completedCount = taskProgress.filter(
     (progress) => progress.complete,
   ).length
+  const allTasksComplete = completedCount === chapter.tasks.length
+  const chapterRewardClaimed = claimedChapterNumbers.includes(chapter.number)
+  const completionParts = chapter.completionReward.carParts.map(partRewardLabel)
+  const completionUnlocks = [
+    ...chapter.completionReward.unlockCarIds.map(
+      (carId) => `载具·${equipmentConfig.cars[carId].name}`,
+    ),
+    ...chapter.completionReward.unlockGunIds.map(
+      (gunId) => `枪械·${equipmentConfig.guns[gunId].name}`,
+    ),
+  ]
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -175,18 +215,70 @@ export function ChapterPanel({ onClose }: ChapterPanelProps): JSX.Element {
                 >
                   {claimed ? '已领取' : progress.complete ? '领取' : '进行中'}
                 </button>
+                <button
+                  type="button"
+                  className="chapter-panel__task-go"
+                  onClick={() => onNavigateTask(task.requirement)}
+                >
+                  {`前往${taskDestinationLabel(task.requirement)}`}
+                </button>
               </div>
             </article>
           )
         })}
       </div>
 
+      <section
+        className="chapter-panel__completion"
+        data-state={
+          chapterRewardClaimed
+            ? 'claimed'
+            : allTasksComplete
+              ? 'claimable'
+              : 'locked'
+        }
+        aria-label="章节完成奖励"
+      >
+        <div>
+          <span>CHAPTER CLEAR</span>
+          <h3>章节完成奖励</h3>
+          <p>
+            {`帮派经验 +${chapter.completionReward.gangReputation} · 英雄经验 +${chapter.completionReward.heroExperience} · 零件 +${chapter.completionReward.spareParts}`}
+          </p>
+          <p>
+            {`钱 +${chapter.completionReward.resources.money} · 油 +${chapter.completionReward.resources.oil} · 物资 +${chapter.completionReward.resources.materials}`}
+          </p>
+          {[...completionParts, ...completionUnlocks].length > 0 ? (
+            <strong>
+              {[...completionParts, ...completionUnlocks].join(' · ')}
+            </strong>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          disabled={!allTasksComplete || chapterRewardClaimed}
+          onClick={() => {
+            if (claimChapterReward(chapter.number)) {
+              setFeedback(`${chapter.title}完成奖励已领取`)
+            }
+          }}
+        >
+          {chapterRewardClaimed
+            ? '章节奖励已领取'
+            : allTasksComplete
+              ? '领取章节奖励'
+              : '完成全部任务后领取'}
+        </button>
+      </section>
+
       <p className="chapter-panel__feedback" aria-live="polite">
         {feedback ||
-          (completedCount === chapter.tasks.length
-            ? chapter.nextRoleLevel
-              ? '本章任务已完成，可前往帮派树晋升职级。'
-              : '全部章节任务已完成，PRESIDENT 的传奇仍在继续。'
+          (allTasksComplete
+            ? chapterRewardClaimed
+              ? chapter.nextRoleLevel
+                ? '章节奖励已领取，可前往帮派树晋升职级。'
+                : '全部章节奖励已领取，PRESIDENT 的传奇仍在继续。'
+              : '任务已全部完成，请领取章节完成奖励。'
             : '完成任务后在此领取奖励。')}
       </p>
     </section>

@@ -72,6 +72,7 @@ interface CityState extends CityDurableState {
     now: number,
   ) => UpgradeActionResult
   grantRewardMoney: (rewardId: string, amount: number) => boolean
+  grantRewardResources: (rewardId: string, reward: ResourceWallet) => boolean
   grantDebugResources: (now: number) => void
   reset: (now?: number) => void
 }
@@ -95,7 +96,7 @@ function sameIds(left: readonly BuildingId[], right: readonly BuildingId[]) {
 
 export const useCityStore = create<CityState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       selectedBuildingId: null,
       buildingProgress: createInitialBuildingProgress(),
       resources: initialResources(),
@@ -312,12 +313,23 @@ export const useCityStore = create<CityState>()(
         })
         return result
       },
-      grantRewardMoney: (rewardId, amount) => {
+      grantRewardMoney: (rewardId, amount) =>
+        get().grantRewardResources(rewardId, {
+          money: amount,
+          oil: 0,
+          materials: 0,
+        }),
+      grantRewardResources: (rewardId, reward) => {
         if (
           typeof rewardId !== 'string' ||
           rewardId.trim() === '' ||
-          !Number.isSafeInteger(amount) ||
-          amount <= 0
+          !Number.isSafeInteger(reward.money) ||
+          reward.money < 0 ||
+          !Number.isSafeInteger(reward.oil) ||
+          reward.oil < 0 ||
+          !Number.isSafeInteger(reward.materials) ||
+          reward.materials < 0 ||
+          reward.money + reward.oil + reward.materials <= 0
         ) {
           return false
         }
@@ -326,11 +338,7 @@ export const useCityStore = create<CityState>()(
           if (state.appliedStageRewardIds.includes(rewardId)) return state
           applied = true
           return {
-            resources: addWalletSaturated(state.resources, {
-              money: amount,
-              oil: 0,
-              materials: 0,
-            }),
+            resources: addWalletSaturated(state.resources, reward),
             appliedStageRewardIds: [
               ...state.appliedStageRewardIds,
               rewardId,

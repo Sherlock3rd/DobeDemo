@@ -24,13 +24,13 @@ describe('CityHud', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows level 1 Prospect progress and the idle rate at zero reputation', () => {
+  it('shows level 1 Prospect progress without idle reputation', () => {
     render(<CityHud />)
 
     expect(screen.getByText('Lv. 1')).toBeInTheDocument()
     expect(screen.getByText('Prospect（见习）')).toBeInTheDocument()
     expect(screen.getByText('0 / 30')).toBeInTheDocument()
-    expect(screen.getByText('+1 声望/10秒')).toBeInTheDocument()
+    expect(screen.queryByText('+1 声望/10秒')).not.toBeInTheDocument()
     expect(screen.getByText('钱 10000')).toBeInTheDocument()
     expect(screen.getByText('油 0')).toBeInTheDocument()
     expect(screen.getByText('物资 0')).toBeInTheDocument()

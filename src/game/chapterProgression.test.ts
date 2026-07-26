@@ -36,13 +36,22 @@ describe('chapter progression', () => {
     expect(getChapterForGangLevel(50).number).toBe(7)
   })
 
-  it('balances each promotion chapter to its full rank experience interval', () => {
+  it('splits promotion experience between task rewards and chapter completion', () => {
     expect(
       CHAPTERS.slice(0, 6).map((chapter) =>
         chapter.tasks.reduce(
           (sum, task) => sum + task.reward.gangReputation,
           0,
         ),
+      ),
+    ).toEqual([80, 80, 80, 80, 80, 100])
+    expect(
+      CHAPTERS.slice(0, 6).map(
+        (chapter) =>
+          chapter.tasks.reduce(
+            (sum, task) => sum + task.reward.gangReputation,
+            0,
+          ) + chapter.completionReward.gangReputation,
       ),
     ).toEqual([212, 240, 240, 240, 240, 300])
   })

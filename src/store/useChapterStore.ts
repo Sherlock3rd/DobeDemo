@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import {
   CHAPTERS,
   getTaskProgress,
+  isChapterComplete,
   type ChapterProgressSnapshot,
 } from '../game/chapterProgression'
 import { createSafeStorage } from './safeStorage'
@@ -14,7 +15,9 @@ export const CHAPTER_STORAGE_KEY = 'dobe-chapter-progression-v1'
 
 interface ChapterState {
   claimedTaskIds: string[]
+  claimedChapterNumbers: number[]
   claimTask: (taskId: string) => boolean
+  claimChapterReward: (chapterNumber: number) => boolean
   reset: () => void
 }
 
@@ -45,10 +48,25 @@ function normalizeClaimedTaskIds(value: unknown): string[] {
   ]
 }
 
+function normalizeClaimedChapterNumbers(value: unknown): number[] {
+  if (!Array.isArray(value)) return []
+  return [
+    ...new Set(
+      value.filter(
+        (entry): entry is number =>
+          typeof entry === 'number' &&
+          Number.isInteger(entry) &&
+          CHAPTERS.some((chapter) => chapter.number === entry),
+      ),
+    ),
+  ]
+}
+
 export const useChapterStore = create<ChapterState>()(
   persist(
     (set, get) => ({
       claimedTaskIds: [],
+      claimedChapterNumbers: [],
       claimTask: (taskId) => {
         const task = ALL_TASKS.find((candidate) => candidate.id === taskId)
         if (!task || get().claimedTaskIds.includes(taskId)) return false
@@ -73,21 +91,66 @@ export const useChapterStore = create<ChapterState>()(
         useAdventureStore.getState().grantChapterReward(task.reward)
         return true
       },
-      reset: () => set({ claimedTaskIds: [] }),
+      claimChapterReward: (chapterNumber) => {
+        const chapter = CHAPTERS.find(
+          (candidate) => candidate.number === chapterNumber,
+        )
+        if (
+          !chapter ||
+          get().claimedChapterNumbers.includes(chapterNumber) ||
+          useGangStore.getState().currentLevel < chapter.minimumLevel ||
+          !isChapterComplete(chapter, getChapterProgressSnapshot())
+        ) {
+          return false
+        }
+        set((state) => ({
+          claimedChapterNumbers: [
+            ...state.claimedChapterNumbers,
+            chapterNumber,
+          ],
+        }))
+        useGangStore
+          .getState()
+          .addReputation(chapter.completionReward.gangReputation, Date.now())
+        useAdventureStore
+          .getState()
+          .grantChapterReward(chapter.completionReward)
+        useCityStore
+          .getState()
+          .grantRewardResources(
+            `chapter:${chapter.number}`,
+            chapter.completionReward.resources,
+          )
+        return true
+      },
+      reset: () =>
+        set({
+          claimedTaskIds: [],
+          claimedChapterNumbers: [],
+        }),
     }),
     {
       name: CHAPTER_STORAGE_KEY,
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => createSafeStorage()),
-      partialize: ({ claimedTaskIds }) => ({ claimedTaskIds }),
+      partialize: ({ claimedTaskIds, claimedChapterNumbers }) => ({
+        claimedTaskIds,
+        claimedChapterNumbers,
+      }),
       merge: (persisted, current) => {
         const source =
           typeof persisted === 'object' && persisted !== null
-            ? (persisted as { claimedTaskIds?: unknown })
+            ? (persisted as {
+                claimedTaskIds?: unknown
+                claimedChapterNumbers?: unknown
+              })
             : {}
         return {
           ...current,
           claimedTaskIds: normalizeClaimedTaskIds(source.claimedTaskIds),
+          claimedChapterNumbers: normalizeClaimedChapterNumbers(
+            source.claimedChapterNumbers,
+          ),
         }
       },
     },
