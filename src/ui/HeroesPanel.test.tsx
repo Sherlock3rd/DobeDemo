@@ -168,7 +168,11 @@ describe('HeroesPanel', () => {
   })
 
   it('upgrades foreman spending shared exp when cap allows', async () => {
-    useGangStore.setState({ totalReputation: 60, lastUpdatedAt: BASE_TIME })
+    useGangStore.setState({
+      totalReputation: 60,
+      currentLevel: 3,
+      lastUpdatedAt: BASE_TIME,
+    })
     useAdventureStore.setState({ sharedExp: 100 })
     render(<HeroesPanel onClose={() => {}} />)
     await userEvent.click(screen.getByRole('button', { name: /提升至 Lv\.2/ }))
@@ -190,6 +194,7 @@ describe('HeroesPanel', () => {
   it('removes the salvage countdown while keeping storage and five-quality recycling', async () => {
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 8,
       lastUpdatedAt: BASE_TIME,
     })
 
@@ -209,6 +214,7 @@ describe('HeroesPanel', () => {
   it('installs, upgrades, unequips, and recycles car parts from the car tab', async () => {
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 8,
       lastUpdatedAt: BASE_TIME,
     })
     useAdventureStore.setState((state) => ({
@@ -296,6 +302,7 @@ describe('HeroesPanel', () => {
   it('shows current loadout first and changes cars in a separate garage screen', async () => {
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 8,
       lastUpdatedAt: BASE_TIME,
     })
     render(<HeroesPanel onClose={() => {}} />)
@@ -337,6 +344,7 @@ describe('HeroesPanel', () => {
   it('changes guns in a separate weapon screen and Escape returns first', async () => {
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(12),
+      currentLevel: 12,
       lastUpdatedAt: BASE_TIME,
     })
     const onClose = vi.fn()
@@ -376,6 +384,7 @@ describe('HeroesPanel', () => {
   it('treats a fixed-slot part picker as a deeper Escape layer', async () => {
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 8,
       lastUpdatedAt: BASE_TIME,
     })
     const onClose = vi.fn()

@@ -44,7 +44,7 @@ describe('EconomyIdleController', () => {
   it('renders nothing and syncs immediately on mount with current time and gang level', () => {
     const syncSpy = vi.fn<(now: number, gangLevel: number) => void>()
     useCityStore.setState({ syncResourceProduction: syncSpy })
-    useGangStore.setState({ totalReputation: 210 })
+    useGangStore.setState({ totalReputation: 210, currentLevel: 8 })
 
     const { container } = render(<EconomyIdleController />)
 

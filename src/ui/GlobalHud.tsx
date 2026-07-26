@@ -2,11 +2,11 @@ import { useMemo, type JSX } from 'react'
 import { getBuildingPower } from '../config/economyConfig'
 import { heroesConfig } from '../config/heroesConfig'
 import { useChestTick } from '../game/chestTick'
+import { getGangRole, isBuildingUnlocked } from '../game/gangProgression'
 import {
-  getGangLevel,
-  getGangRole,
-  isBuildingUnlocked,
-} from '../game/gangProgression'
+  getChapterForGangLevel,
+  getTaskProgress,
+} from '../game/chapterProgression'
 import { BUILDING_IDS } from '../game/cityTypes'
 import { getAccountTotalPower, unitPower } from '../game/combat/power'
 import { getHeroCombatStats } from '../game/heroEquipment'
@@ -17,12 +17,14 @@ import {
 } from '../store/useAdventureStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
+import { useChapterStore } from '../store/useChapterStore'
 import { hasAdventureRedDot, hasHeroesRedDot } from './redDots'
 import { ResourceAmount } from './ResourceAmount'
 
 export interface GlobalHudProps {
   onOpenHeroes: () => void
   onOpenGangTree: () => void
+  onOpenChapters?: () => void
   onOpenAdventure: () => void
   onOpenRacing: () => void
   onOpenSettings: () => void
@@ -31,7 +33,7 @@ export interface GlobalHudProps {
 export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const resources = useCityStore((s) => s.resources)
   const buildingProgress = useCityStore((s) => s.buildingProgress)
-  const totalReputation = useGangStore((s) => s.totalReputation)
+  const gangLevel = useGangStore((s) => s.currentLevel)
   const heroLevels = useAdventureStore((s) => s.heroLevels)
   const equipmentByHero = useAdventureStore((s) => s.equipmentByHero)
   const formation = useAdventureStore((s) => s.formation)
@@ -40,10 +42,13 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const carPartSlotsByCar = useAdventureStore((s) => s.carPartSlotsByCar)
   const sharedExp = useAdventureStore((s) => s.sharedExp)
   const highestClearedStage = useAdventureStore((s) => s.highestClearedStage)
+  const highestClearedRacingStage = useAdventureStore(
+    (s) => s.highestClearedRacingStage,
+  )
+  const claimedTaskIds = useChapterStore((s) => s.claimedTaskIds)
   const idleClock = useAdventureStore((s) => s.idleClock)
   const tick = useChestTick((s) => s.tick)
   const now = useChestTick((s) => s.now)
-  const gangLevel = getGangLevel(totalReputation)
   const role = getGangRole(gangLevel)
   const totalPower = useMemo(() => {
     const progression = { gunLevels, carPartInventory, carPartSlotsByCar }
@@ -88,6 +93,19 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   )
   const adventureDot = hasAdventureRedDot(highestClearedStage, claimable)
   const heroesDot = hasHeroesRedDot(heroLevels, sharedExp, gangLevel)
+  const currentChapter = getChapterForGangLevel(gangLevel)
+  const chapterClaimable = currentChapter.tasks.some(
+    (task) =>
+      !claimedTaskIds.includes(task.id) &&
+      getTaskProgress(task, {
+        heroLevels,
+        gunLevels,
+        carPartInventory,
+        highestClearedStage,
+        highestClearedRacingStage,
+        buildingProgress,
+      }).complete,
+  )
 
   return (
     <section className="global-hud" aria-label="主界面 HUD">
@@ -126,6 +144,17 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
           />
         </div>
       </div>
+      <button
+        type="button"
+        className="global-hud__chapter"
+        onClick={props.onOpenChapters}
+      >
+        <span>{`章节 ${currentChapter.number}`}</span>
+        <small>{currentChapter.title.replace(/^第.+? · /, '')}</small>
+        {chapterClaimable ? (
+          <span className="global-hud__dot" aria-label="有章节奖励可领取" />
+        ) : null}
+      </button>
       <nav className="global-hud__bottom" aria-label="主导航">
         <button
           type="button"

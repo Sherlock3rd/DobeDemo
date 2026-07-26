@@ -6,7 +6,15 @@ export function getBuildingRenderMode(
   buildingId: string,
   totalReputation: number,
 ): BuildingRenderMode {
-  const level = getGangLevel(totalReputation)
+  return getBuildingRenderModeForLevel(
+    buildingId,
+    getGangLevel(totalReputation),
+  )
+}
 
-  return isBuildingUnlocked(buildingId, level) ? 'unlocked' : 'locked'
+export function getBuildingRenderModeForLevel(
+  buildingId: string,
+  gangLevel: number,
+): BuildingRenderMode {
+  return isBuildingUnlocked(buildingId, gangLevel) ? 'unlocked' : 'locked'
 }

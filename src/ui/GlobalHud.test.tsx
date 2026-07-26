@@ -51,7 +51,11 @@ describe('GlobalHud', () => {
   })
 
   it('shows gang level, role, and account power in one accessible gang entry', () => {
-    useGangStore.setState({ totalReputation: 330, lastUpdatedAt: BASE_TIME })
+    useGangStore.setState({
+      totalReputation: 330,
+      currentLevel: 12,
+      lastUpdatedAt: BASE_TIME,
+    })
     render(
       <GlobalHud
         onOpenHeroes={() => {}}
@@ -91,10 +95,12 @@ describe('GlobalHud', () => {
   it('routes bottom nav callbacks', async () => {
     const onOpenAdventure = vi.fn()
     const onOpenRacing = vi.fn()
+    const onOpenChapters = vi.fn()
     render(
       <GlobalHud
         onOpenHeroes={() => {}}
         onOpenGangTree={() => {}}
+        onOpenChapters={onOpenChapters}
         onOpenAdventure={onOpenAdventure}
         onOpenRacing={onOpenRacing}
         onOpenSettings={() => {}}
@@ -104,6 +110,8 @@ describe('GlobalHud', () => {
     expect(onOpenAdventure).toHaveBeenCalled()
     await userEvent.click(screen.getByRole('button', { name: '赛车' }))
     expect(onOpenRacing).toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: /章节 1/ }))
+    expect(onOpenChapters).toHaveBeenCalled()
   })
 
   it('shows the adventure red dot for a fresh account', () => {

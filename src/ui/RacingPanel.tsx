@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type JSX } from 'react'
 import { equipmentConfig } from '../config/equipmentConfig'
 import { getRacingStage } from '../config/racingConfig'
-import { getGangLevel } from '../game/gangProgression'
 import { HERO_IDS, isHeroUnlocked, type HeroId } from '../game/heroes'
 import { heroesConfig } from '../config/heroesConfig'
 import { useAdventureStore } from '../store/useAdventureStore'
@@ -20,12 +19,11 @@ export function RacingPanel({
   onClose,
   onStart,
 }: RacingPanelProps): JSX.Element {
-  const totalReputation = useGangStore((state) => state.totalReputation)
+  const gangLevel = useGangStore((state) => state.currentLevel)
   const highestCleared = useAdventureStore(
     (state) => state.highestClearedRacingStage,
   )
   const equipmentByHero = useAdventureStore((state) => state.equipmentByHero)
-  const gangLevel = getGangLevel(totalReputation)
   const availableHeroes = useMemo(
     () => HERO_IDS.filter((heroId) => isHeroUnlocked(heroId, gangLevel)),
     [gangLevel],

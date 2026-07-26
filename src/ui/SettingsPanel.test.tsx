@@ -168,7 +168,7 @@ describe('SettingsPanel', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        '声望、职位、建筑解锁、建筑等级和碎片进度都会恢复初始状态，且无法撤销。',
+        '声望、职位、章节奖励、建筑解锁、建筑等级和碎片进度都会恢复初始状态，且无法撤销。',
       ),
     ).toBeInTheDocument()
 

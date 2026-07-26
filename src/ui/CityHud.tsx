@@ -2,7 +2,6 @@ import type { JSX } from 'react'
 import {
   REPUTATION_PER_TICK,
   REPUTATION_TICK_SECONDS,
-  getGangLevel,
   getGangRole,
   getLevelProgress,
 } from '../game/gangProgression'
@@ -21,7 +20,7 @@ export function CityHud({
   onOpenSettings,
 }: CityHudProps = {}): JSX.Element {
   const totalReputation = useGangStore((state) => state.totalReputation)
-  const level = getGangLevel(totalReputation)
+  const level = useGangStore((state) => state.currentLevel)
   const role = getGangRole(level)
   const { current, required } = getLevelProgress(totalReputation)
   const resources = useCityStore((state) => state.resources)

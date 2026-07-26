@@ -7,7 +7,7 @@ import { useCityStore } from '../../store/useCityStore'
 import { useGangStore } from '../../store/useGangStore'
 import { BUILDING_FRAGMENT_ANIMATION_MS } from './buildingFragmentAnimation'
 import { BuildingModel } from './BuildingModel'
-import { getBuildingRenderMode } from './buildingAccess'
+import { getBuildingRenderModeForLevel } from './buildingAccess'
 import { getBuildingFragments } from './buildingFragmentCatalog'
 import { LockedBuildingPlot } from './LockedBuildingPlot'
 
@@ -71,8 +71,8 @@ export function BuildingVisual({
 }: BuildingVisualProps): JSX.Element {
   const definition = buildingCatalogById[id]
   const progress = useCityStore((state) => state.buildingProgress[id])
-  const totalReputation = useGangStore((state) => state.totalReputation)
-  const renderMode = getBuildingRenderMode(id, totalReputation)
+  const gangLevel = useGangStore((state) => state.currentLevel)
+  const renderMode = getBuildingRenderModeForLevel(id, gangLevel)
 
   // "Store info from previous renders" pattern: comparing progress during render
   // is StrictMode-safe (idempotent) and, unlike an effect-diff, never drops the

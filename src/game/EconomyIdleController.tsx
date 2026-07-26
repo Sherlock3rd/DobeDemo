@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
-import { getGangLevel } from './gangProgression'
 
 const SYNC_INTERVAL_MS = 1_000
 
@@ -12,7 +11,7 @@ export function EconomyIdleController(): null {
 
   useEffect(() => {
     const sync = (): void => {
-      const gangLevel = getGangLevel(useGangStore.getState().totalReputation)
+      const gangLevel = useGangStore.getState().currentLevel
       syncResourceProduction(Date.now(), gangLevel)
     }
 

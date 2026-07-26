@@ -8,7 +8,6 @@ import {
   type HeroId,
   type Row,
 } from '../game/heroes'
-import { getGangLevel } from '../game/gangProgression'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useGangStore } from '../store/useGangStore'
 import {
@@ -47,7 +46,7 @@ export function FormationPanel({
   onCancel,
   onStart,
 }: FormationPanelProps): JSX.Element {
-  const totalReputation = useGangStore((s) => s.totalReputation)
+  const gangLevel = useGangStore((s) => s.currentLevel)
   const storedFormation = useAdventureStore((s) => s.formation)
   const heroLevels = useAdventureStore((s) => s.heroLevels)
   const equipmentByHero = useAdventureStore((s) => s.equipmentByHero)
@@ -55,7 +54,6 @@ export function FormationPanel({
   const carPartInventory = useAdventureStore((s) => s.carPartInventory)
   const carPartSlotsByCar = useAdventureStore((s) => s.carPartSlotsByCar)
   const setFormation = useAdventureStore((s) => s.setFormation)
-  const gangLevel = getGangLevel(totalReputation)
   const [draft, setDraft] = useState<FormationAssignment>(() =>
     cloneFormation(storedFormation),
   )

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useGangStore } from '../store/useGangStore'
-import { getGangLevel, isBuildingUnlocked } from './gangProgression'
+import { isBuildingUnlocked } from './gangProgression'
 
 export function PartSalvageController(): null {
   const resetPartIdleClock = useAdventureStore(
@@ -12,7 +12,7 @@ export function PartSalvageController(): null {
     let hydrating = false
     let wasUnlocked = isBuildingUnlocked(
       'recycling-yard',
-      getGangLevel(useGangStore.getState().totalReputation),
+      useGangStore.getState().currentLevel,
     )
 
     const unsubscribeHydrate = useGangStore.persist.onHydrate(() => {
@@ -20,19 +20,13 @@ export function PartSalvageController(): null {
     })
     const unsubscribeFinishHydration = useGangStore.persist.onFinishHydration(
       (state) => {
-        wasUnlocked = isBuildingUnlocked(
-          'recycling-yard',
-          getGangLevel(state.totalReputation),
-        )
+        wasUnlocked = isBuildingUnlocked('recycling-yard', state.currentLevel)
         hydrating = false
       },
     )
     const unsubscribeStore = useGangStore.subscribe((state) => {
       if (hydrating) return
-      const unlocked = isBuildingUnlocked(
-        'recycling-yard',
-        getGangLevel(state.totalReputation),
-      )
+      const unlocked = isBuildingUnlocked('recycling-yard', state.currentLevel)
       if (!wasUnlocked && unlocked) {
         resetPartIdleClock(Date.now())
       }

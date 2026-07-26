@@ -74,7 +74,10 @@ describe('BuildingVisual', () => {
   })
 
   it('switches the recycling yard to its model at the level 8 threshold', () => {
-    useGangStore.setState({ totalReputation: getTotalReputationForLevel(8) })
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 8,
+    })
 
     render(<BuildingVisual id="recycling-yard" highlighted={false} />)
 
@@ -339,6 +342,7 @@ describe('BuildingVisual', () => {
     it('does not animate a child change outside the unlocked prefix', () => {
       useGangStore.setState({
         totalReputation: getTotalReputationForLevel(16),
+        currentLevel: 16,
       })
       useCityStore.setState((state) => ({
         buildingProgress: {

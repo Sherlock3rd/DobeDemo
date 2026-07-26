@@ -11,7 +11,6 @@ import {
   getPartSalvageDropProfile,
 } from '../game/equipmentProgression'
 import { CAR_PART_QUALITY_IDS } from '../game/equipmentTypes'
-import { getGangLevel } from '../game/gangProgression'
 import {
   getCampaignPartQualityWeights,
   getRacingPartQualityWeights,
@@ -40,9 +39,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
   const [showProbabilities, setShowProbabilities] = useState(false)
   const [feedback, setFeedback] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>()
-  const totalReputation = useGangStore((state) => state.totalReputation)
+  const gangLevel = useGangStore((state) => state.currentLevel)
   const advanceOneLevel = useGangStore((state) => state.advanceOneLevel)
-  const gangLevel = getGangLevel(totalReputation)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -212,7 +210,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
         <div className="settings-panel__item settings-panel__item--danger">
           <h3 className="settings-panel__item-title">账号进度</h3>
           <p className="settings-panel__item-description">
-            声望、职位、建筑解锁、建筑等级和碎片进度都会恢复初始状态，且无法撤销。
+            声望、职位、章节奖励、建筑解锁、建筑等级和碎片进度都会恢复初始状态，且无法撤销。
           </p>
           {confirming ? (
             <div className="settings-panel__confirmation">

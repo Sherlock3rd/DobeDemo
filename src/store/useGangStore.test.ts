@@ -129,6 +129,7 @@ describe('useGangStore idle sync', () => {
   it('advances exactly one gang level and resets the idle clock', () => {
     useGangStore.setState({
       totalReputation: 17,
+      currentLevel: 1,
       lastUpdatedAt: BASE_TIME,
     })
     const store = useGangStore.getState() as ReturnType<
@@ -146,11 +147,13 @@ describe('useGangStore idle sync', () => {
     store.advanceOneLevel(BASE_TIME + 50_000)
     expect(useGangStore.getState()).toMatchObject({
       totalReputation: 30,
+      currentLevel: 2,
       lastUpdatedAt: BASE_TIME + 50_000,
     })
 
     useGangStore.setState({
       totalReputation: MAX_REPUTATION,
+      currentLevel: 50,
       lastUpdatedAt: BASE_TIME + 50_000,
     })
     ;(
@@ -162,6 +165,50 @@ describe('useGangStore idle sync', () => {
       totalReputation: MAX_REPUTATION,
       lastUpdatedAt: BASE_TIME + 50_000,
     })
+  })
+
+  it('accumulates reputation without automatically changing explicit level', () => {
+    expect(useGangStore.getState().addReputation(240, BASE_TIME + 1_000)).toBe(
+      true,
+    )
+    expect(useGangStore.getState()).toMatchObject({
+      totalReputation: 240,
+      currentLevel: 1,
+    })
+  })
+
+  it('promotes one level and checks the chapter only when crossing a role', () => {
+    useGangStore.setState({
+      totalReputation: 210,
+      currentLevel: 6,
+      lastUpdatedAt: BASE_TIME,
+    })
+
+    expect(
+      useGangStore.getState().promoteOneLevel(BASE_TIME + 1_000, false),
+    ).toEqual({ applied: true, reason: 'ready' })
+    expect(useGangStore.getState().currentLevel).toBe(7)
+
+    expect(
+      useGangStore.getState().promoteOneLevel(BASE_TIME + 2_000, false),
+    ).toEqual({ applied: false, reason: 'chapter-incomplete' })
+    expect(useGangStore.getState().currentLevel).toBe(7)
+
+    expect(
+      useGangStore.getState().promoteOneLevel(BASE_TIME + 3_000, true),
+    ).toEqual({ applied: true, reason: 'ready' })
+    expect(useGangStore.getState().currentLevel).toBe(8)
+  })
+
+  it('blocks promotion until enough reputation has accumulated', () => {
+    useGangStore.setState({
+      totalReputation: 29,
+      currentLevel: 1,
+      lastUpdatedAt: BASE_TIME,
+    })
+    expect(
+      useGangStore.getState().promoteOneLevel(BASE_TIME + 1_000, true),
+    ).toEqual({ applied: false, reason: 'insufficient-reputation' })
   })
 
   it('ignores a debug unlock with a non-finite timestamp', () => {
@@ -184,7 +231,7 @@ describe('useGangStore persistence', () => {
     window.localStorage.clear()
   })
 
-  it('persists only totalReputation and lastUpdatedAt under the storage key', () => {
+  it('persists reputation, explicit level, and lastUpdatedAt under the storage key', () => {
     useGangStore.getState().syncIdleProgress(BASE_TIME + 20_000)
 
     const raw = window.localStorage.getItem(GANG_STORAGE_KEY)
@@ -194,8 +241,9 @@ describe('useGangStore persistence', () => {
     expect(Object.keys(parsed.state)).toEqual(
       expect.arrayContaining(['totalReputation', 'lastUpdatedAt']),
     )
-    expect(Object.keys(parsed.state)).toHaveLength(2)
+    expect(Object.keys(parsed.state)).toHaveLength(3)
     expect(parsed.state.totalReputation).toBe(2)
+    expect(parsed.state.currentLevel).toBe(1)
     expect(parsed.state.lastUpdatedAt).toBe(BASE_TIME + 20_000)
   })
 
@@ -225,6 +273,27 @@ describe('useGangStore persistence', () => {
 
     expect(useGangStore.getState().totalReputation).toBe(12)
     expect(useGangStore.getState().lastUpdatedAt).toBe(BASE_TIME)
+  })
+
+  it('migrates a v1 reputation-only save into an explicit matching level', async () => {
+    window.localStorage.setItem(
+      GANG_STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          totalReputation: 330,
+          lastUpdatedAt: BASE_TIME,
+        },
+        version: 1,
+      }),
+    )
+
+    await useGangStore.persist.rehydrate()
+
+    expect(useGangStore.getState()).toMatchObject({
+      totalReputation: 330,
+      currentLevel: 12,
+      lastUpdatedAt: BASE_TIME,
+    })
   })
 })
 

@@ -27,7 +27,6 @@ import {
 import type { BuildingId, BuildingLevel } from '../game/cityTypes'
 import {
   getBuildingUnlock,
-  getGangLevel,
   getGangRole,
   isBuildingUnlocked,
 } from '../game/gangProgression'
@@ -221,13 +220,12 @@ function BuildingPanelSession({
     (state) => state.upgradeChildBuilding,
   )
   const upgradeMainBuilding = useCityStore((state) => state.upgradeMainBuilding)
-  const totalReputation = useGangStore((state) => state.totalReputation)
+  const gangLevel = useGangStore((state) => state.currentLevel)
   const partIdleClock = useAdventureStore((state) => state.partIdleClock)
   const carPartInventory = useAdventureStore((state) => state.carPartInventory)
   const claimPartSalvage = useAdventureStore((state) => state.claimPartSalvage)
   const clockNow = useChestTick((state) => state.now)
   const [fallbackNow] = useState(readNow)
-  const gangLevel = getGangLevel(totalReputation)
   const visibleNow = clockNow > 0 ? clockNow : fallbackNow
   const pendingTask = pendingMainUpgrades.find(
     (task) => task.buildingId === selectedBuildingId,

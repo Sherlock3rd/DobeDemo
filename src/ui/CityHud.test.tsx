@@ -45,7 +45,7 @@ describe('CityHud', () => {
   })
 
   it('shows level 8 Full Patch with the remainder progress at 220 reputation', () => {
-    useGangStore.setState({ totalReputation: 220 })
+    useGangStore.setState({ totalReputation: 220, currentLevel: 8 })
 
     render(<CityHud />)
 

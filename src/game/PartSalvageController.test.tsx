@@ -28,6 +28,7 @@ describe('PartSalvageController', () => {
     const random = vi.spyOn(Math, 'random')
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 8,
       lastUpdatedAt: NOW,
     })
     useAdventureStore.setState({
@@ -56,6 +57,7 @@ describe('PartSalvageController', () => {
       vi.setSystemTime(NOW + 5_000)
       useGangStore.setState({
         totalReputation: getTotalReputationForLevel(8),
+        currentLevel: 8,
         lastUpdatedAt: Date.now(),
       })
     })

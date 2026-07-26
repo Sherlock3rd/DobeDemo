@@ -7,6 +7,8 @@ import {
   getTotalReputationForLevel,
 } from '../game/gangProgression'
 import { useGangStore } from '../store/useGangStore'
+import { useAdventureStore } from '../store/useAdventureStore'
+import { useCityStore } from '../store/useCityStore'
 import { GangTreePanel } from './GangTreePanel'
 
 const BASE_TIME = 1_700_000_000_000
@@ -34,6 +36,8 @@ describe('GangTreePanel', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useGangStore.getState().reset(BASE_TIME)
+    useAdventureStore.getState().reset(BASE_TIME)
+    useCityStore.getState().reset(BASE_TIME)
   })
 
   it('renders nothing when closed', () => {
@@ -89,7 +93,10 @@ describe('GangTreePanel', () => {
   })
 
   it('marks levels below the current level as completed and unlocks buildings up to level 16', () => {
-    useGangStore.setState({ totalReputation: getTotalReputationForLevel(16) })
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(16),
+      currentLevel: 16,
+    })
 
     render(<GangTreePanel open onClose={vi.fn()} />)
 
@@ -104,6 +111,26 @@ describe('GangTreePanel', () => {
     expect(screen.getByText('废车回收厂 已解锁')).toBeInTheDocument()
     expect(screen.getByText('商业街 已解锁')).toBeInTheDocument()
     expect(screen.getByText('金属加工厂 待解锁')).toBeInTheDocument()
+  })
+
+  it('promotes one level and blocks a role promotion until the chapter is complete', async () => {
+    const user = userEvent.setup()
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(2),
+      currentLevel: 1,
+    })
+    const { rerender } = render(<GangTreePanel open onClose={() => {}} />)
+
+    await user.click(screen.getByRole('button', { name: '晋升一级' }))
+    expect(useGangStore.getState().currentLevel).toBe(2)
+
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 7,
+    })
+    rerender(<GangTreePanel open onClose={() => {}} />)
+    expect(screen.getByRole('button', { name: '晋升一级' })).toBeDisabled()
+    expect(screen.getByText('需完成第一章 · 冷炉初燃')).toBeInTheDocument()
   })
 
   it('closes when the close button is clicked', async () => {
@@ -147,7 +174,10 @@ describe('GangTreePanel', () => {
   })
 
   it('shows the highest role copy at level 50', () => {
-    useGangStore.setState({ totalReputation: MAX_REPUTATION })
+    useGangStore.setState({
+      totalReputation: MAX_REPUTATION,
+      currentLevel: 50,
+    })
 
     render(<GangTreePanel open onClose={vi.fn()} />)
 
@@ -161,6 +191,7 @@ describe('GangTreePanel', () => {
   it('renders multiple unlocks on a single level node', () => {
     useGangStore.setState({
       totalReputation: MAX_REPUTATION,
+      currentLevel: 50,
       lastUpdatedAt: BASE_TIME,
     })
     render(<GangTreePanel open onClose={() => {}} />)

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BUILDING_IDS } from './cityTypes'
 import { useAdventureStore } from '../store/useAdventureStore'
+import { useChapterStore } from '../store/useChapterStore'
 import { CITY_STORAGE_KEY } from '../store/useCityStore'
 import { GANG_STORAGE_KEY, useGangStore } from '../store/useGangStore'
 import { useCityStore } from '../store/useCityStore'
@@ -32,6 +33,7 @@ describe('resetAccount', () => {
     useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
+    useChapterStore.getState().reset()
   })
 
   afterEach(() => {
@@ -39,6 +41,7 @@ describe('resetAccount', () => {
     useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
+    useChapterStore.getState().reset()
     window.localStorage.clear()
   })
 
@@ -57,6 +60,7 @@ describe('resetAccount', () => {
     resetAccount(RESET_TIME)
 
     expect(useGangStore.getState().totalReputation).toBe(0)
+    expect(useGangStore.getState().currentLevel).toBe(1)
     expect(useGangStore.getState().lastUpdatedAt).toBe(RESET_TIME)
     expect(useCityStore.getState().selectedBuildingId).toBeNull()
     expect(useCityStore.getState().buildingProgress['repair-shop']).toEqual({
@@ -153,5 +157,13 @@ describe('resetAccount', () => {
     expect(useAdventureStore.getState().formation).toEqual([
       { heroId: 'foreman', row: 'back', index: 1 },
     ])
+  })
+
+  it('clears claimed chapter rewards alongside the other progression stores', () => {
+    useChapterStore.setState({ claimedTaskIds: ['chapter-1-hero'] })
+
+    resetAccount(RESET_TIME)
+
+    expect(useChapterStore.getState().claimedTaskIds).toEqual([])
   })
 })

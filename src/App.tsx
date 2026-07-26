@@ -8,7 +8,6 @@ import { GangIdleController } from './game/GangIdleController'
 import { PartSalvageController } from './game/PartSalvageController'
 import type { BuildingId } from './game/cityTypes'
 import { CAMERA_CONFIG } from './game/cityLayout'
-import { getGangLevel } from './game/gangProgression'
 import { CityScene } from './scene/city/CityScene'
 import { useAdventureStore } from './store/useAdventureStore'
 import { useCityStore } from './store/useCityStore'
@@ -19,6 +18,7 @@ import { BattleScreen } from './ui/BattleScreen'
 import { BuildingPanel } from './ui/BuildingPanel'
 import { FormationPanel } from './ui/FormationPanel'
 import { GangTreePanel } from './ui/GangTreePanel'
+import { ChapterPanel } from './ui/ChapterPanel'
 import { GlobalHud } from './ui/GlobalHud'
 import { HeroesPanel } from './ui/HeroesPanel'
 import { RacingPanel } from './ui/RacingPanel'
@@ -31,6 +31,7 @@ export type ActiveOverlay =
   | { kind: 'none' }
   | { kind: 'buildingDetail'; buildingId: BuildingId }
   | { kind: 'gangTree' }
+  | { kind: 'chapters' }
   | { kind: 'settings' }
   | { kind: 'adventure' }
   | { kind: 'formation'; stage: number }
@@ -48,6 +49,7 @@ const FULLSCREEN_KINDS = new Set([
   'battle',
   'racing',
   'race',
+  'chapters',
 ])
 const MODAL_KINDS = new Set([
   'gangTree',
@@ -58,6 +60,7 @@ const MODAL_KINDS = new Set([
   'battle',
   'racing',
   'race',
+  'chapters',
 ])
 
 function resolveActiveOverlay(
@@ -77,8 +80,7 @@ export default function App(): JSX.Element {
   const pendingFocusRestoreRef = useRef(false)
   const selectedBuildingId = useCityStore((s) => s.selectedBuildingId)
   const clearSelection = useCityStore((s) => s.clearSelection)
-  const totalReputation = useGangStore((s) => s.totalReputation)
-  const gangLevel = getGangLevel(totalReputation)
+  const gangLevel = useGangStore((s) => s.currentLevel)
   const reconcileWithGang = useAdventureStore((s) => s.reconcileWithGang)
   const activeOverlay = resolveActiveOverlay(playOverlay, selectedBuildingId)
 
@@ -91,7 +93,7 @@ export default function App(): JSX.Element {
       ) {
         return
       }
-      const level = getGangLevel(useGangStore.getState().totalReputation)
+      const level = useGangStore.getState().currentLevel
       useAdventureStore.getState().reconcileWithGang(level)
       useAdventureStore.getState().syncCityRewardMoney()
     }
@@ -258,6 +260,7 @@ export default function App(): JSX.Element {
           <GlobalHud
             onOpenHeroes={() => openOverlay({ kind: 'heroes' })}
             onOpenGangTree={() => openOverlay({ kind: 'gangTree' })}
+            onOpenChapters={() => openOverlay({ kind: 'chapters' })}
             onOpenAdventure={() => openOverlay({ kind: 'adventure' })}
             onOpenRacing={() => openOverlay({ kind: 'racing' })}
             onOpenSettings={() => openOverlay({ kind: 'settings' })}
@@ -268,6 +271,9 @@ export default function App(): JSX.Element {
           open={activeOverlay.kind === 'gangTree'}
           onClose={closeOverlay}
         />
+        {activeOverlay.kind === 'chapters' ? (
+          <ChapterPanel onClose={closeOverlay} />
+        ) : null}
         {activeOverlay.kind === 'settings' ? (
           <SettingsPanel onClose={closeOverlay} />
         ) : null}

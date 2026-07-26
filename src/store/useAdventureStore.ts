@@ -51,6 +51,7 @@ import {
   rollStageRewardPart,
 } from '../game/stageRewards'
 import type { FormationAssignment } from '../game/combat/power'
+import type { ChapterTaskReward } from '../game/chapterProgression'
 import { createSafeStorage } from './safeStorage'
 import { useCityStore } from './useCityStore'
 import {
@@ -145,6 +146,7 @@ export interface AdventureState extends AdventureDurableState {
   recycleCarPartsByQuality: (quality: CarPartQuality) => EquipmentActionResult
   upgradeCarPart: (partId: string) => EquipmentActionResult
   upgradeGun: (gunId: string, gangLevel: number) => EquipmentActionResult
+  grantChapterReward: (reward: ChapterTaskReward) => void
   setFormation: (formation: FormationAssignment, gangLevel: number) => boolean
   reconcileWithGang: (gangLevel: number) => void
   syncCityRewardMoney: () => void
@@ -737,6 +739,42 @@ export const useAdventureStore = create<AdventureState>()(
           }
         })
         return result
+      },
+      grantChapterReward: (reward) => {
+        set((state) => {
+          const carPartInventory = [...state.carPartInventory]
+          let nextPartSerial = state.nextPartSerial
+          let spareParts = Math.min(
+            Number.MAX_SAFE_INTEGER,
+            state.spareParts + reward.spareParts,
+          )
+          for (const definition of reward.carParts) {
+            const part = {
+              id: `part-${nextPartSerial}`,
+              slot: definition.slot,
+              quality: definition.quality,
+              level: 1,
+            }
+            nextPartSerial += 1
+            if (carPartInventory.length < CAR_PART_INVENTORY_LIMIT) {
+              carPartInventory.push(part)
+            } else {
+              spareParts = Math.min(
+                Number.MAX_SAFE_INTEGER,
+                spareParts + getCarPartRecycleValue(part),
+              )
+            }
+          }
+          return {
+            sharedExp: Math.min(
+              Number.MAX_SAFE_INTEGER,
+              state.sharedExp + reward.heroExperience,
+            ),
+            spareParts,
+            carPartInventory,
+            nextPartSerial,
+          }
+        })
       },
       setFormation: (formation, gangLevel) => {
         if (!isValidFormation(formation, gangLevel)) return false

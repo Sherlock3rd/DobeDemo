@@ -7,7 +7,6 @@ import {
   type BattleResult,
   type UnitSnapshot,
 } from '../game/combat/battleEngine'
-import { getGangLevel } from '../game/gangProgression'
 import {
   CAR_PART_QUALITY_INFO,
   CAR_PART_SLOT_INFO,
@@ -34,7 +33,7 @@ type BootState =
 
 function bootBattle(stage: number): BootState {
   try {
-    const gangLevel = getGangLevel(useGangStore.getState().totalReputation)
+    const gangLevel = useGangStore.getState().currentLevel
     const adventure = useAdventureStore.getState()
     const input = buildBattleInput(
       stage,

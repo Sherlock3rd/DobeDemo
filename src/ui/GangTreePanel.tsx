@@ -1,4 +1,4 @@
-import { useEffect, type JSX } from 'react'
+import { useEffect, useMemo, useState, type JSX } from 'react'
 import { heroesConfig } from '../config/heroesConfig'
 import { equipmentConfig } from '../config/equipmentConfig'
 import { buildingCatalogById } from '../game/buildingCatalog'
@@ -6,15 +6,21 @@ import {
   GANG_MAX_LEVEL,
   GANG_MIN_LEVEL,
   GANG_ROLES,
-  getGangLevel,
   getGangRole,
   getNextGangRole,
+  getTotalReputationForLevel,
 } from '../game/gangProgression'
+import {
+  getChapterForGangLevel,
+  isChapterComplete,
+} from '../game/chapterProgression'
 import {
   PROGRESSION_UNLOCKS,
   type ProgressionUnlock,
 } from '../game/progressionUnlocks'
 import { useGangStore } from '../store/useGangStore'
+import { useAdventureStore } from '../store/useAdventureStore'
+import { useCityStore } from '../store/useCityStore'
 import { useInitialFocus } from './useInitialFocus'
 
 export interface GangTreePanelProps {
@@ -95,7 +101,41 @@ export function GangTreePanel({
   onClose,
 }: GangTreePanelProps): JSX.Element | null {
   const totalReputation = useGangStore((state) => state.totalReputation)
+  const currentLevel = useGangStore((state) => state.currentLevel)
+  const promoteOneLevel = useGangStore((state) => state.promoteOneLevel)
+  const heroLevels = useAdventureStore((state) => state.heroLevels)
+  const gunLevels = useAdventureStore((state) => state.gunLevels)
+  const carPartInventory = useAdventureStore((state) => state.carPartInventory)
+  const highestClearedStage = useAdventureStore(
+    (state) => state.highestClearedStage,
+  )
+  const highestClearedRacingStage = useAdventureStore(
+    (state) => state.highestClearedRacingStage,
+  )
+  const buildingProgress = useCityStore((state) => state.buildingProgress)
+  const [feedback, setFeedback] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>(open)
+  const currentChapter = getChapterForGangLevel(currentLevel)
+  const chapterComplete = useMemo(
+    () =>
+      isChapterComplete(currentChapter, {
+        heroLevels,
+        gunLevels,
+        carPartInventory,
+        highestClearedStage,
+        highestClearedRacingStage,
+        buildingProgress,
+      }),
+    [
+      buildingProgress,
+      carPartInventory,
+      currentChapter,
+      gunLevels,
+      heroLevels,
+      highestClearedRacingStage,
+      highestClearedStage,
+    ],
+  )
 
   useEffect(() => {
     if (!open) {
@@ -119,9 +159,17 @@ export function GangTreePanel({
     return null
   }
 
-  const currentLevel = getGangLevel(totalReputation)
   const currentRole = getGangRole(currentLevel)
   const nextRole = getNextGangRole(currentLevel)
+  const nextLevel = Math.min(GANG_MAX_LEVEL, currentLevel + 1)
+  const requiredReputation = getTotalReputationForLevel(nextLevel)
+  const crossesRole =
+    currentLevel < GANG_MAX_LEVEL &&
+    getGangRole(currentLevel).threshold !== getGangRole(nextLevel).threshold
+  const canPromote =
+    currentLevel < GANG_MAX_LEVEL &&
+    totalReputation >= requiredReputation &&
+    (!crossesRole || chapterComplete)
   const stopPropagation = (event: { stopPropagation: () => void }): void => {
     event.stopPropagation()
   }
@@ -162,6 +210,43 @@ export function GangTreePanel({
           {nextRole
             ? `下一职位：${nextRole.title}（${nextRole.chineseTitle}） · 需要 Lv. ${nextRole.threshold}`
             : '已达到最高职位'}
+        </p>
+        <div className="gang-tree-panel__promotion">
+          <div>
+            <strong>
+              {currentLevel >= GANG_MAX_LEVEL
+                ? '帮派等级已满'
+                : `晋升 Lv.${nextLevel}`}
+            </strong>
+            <span>
+              {currentLevel >= GANG_MAX_LEVEL
+                ? '所有等级均已解锁'
+                : totalReputation < requiredReputation
+                  ? `帮派经验 ${totalReputation}/${requiredReputation}`
+                  : crossesRole && !chapterComplete
+                    ? `需完成${currentChapter.title}`
+                    : '晋升条件已满足'}
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled={!canPromote}
+            onClick={() => {
+              const result = promoteOneLevel(Date.now(), chapterComplete)
+              setFeedback(
+                result.applied
+                  ? `已晋升至 Lv.${currentLevel + 1}`
+                  : result.reason === 'chapter-incomplete'
+                    ? '当前章节未完成，无法晋升职级'
+                    : '尚未满足晋升条件',
+              )
+            }}
+          >
+            {currentLevel >= GANG_MAX_LEVEL ? '已满级' : '晋升一级'}
+          </button>
+        </div>
+        <p className="gang-tree-panel__feedback" aria-live="polite">
+          {feedback}
         </p>
         <ol className="gang-tree-panel__levels">
           {LEVELS.map((level) => {

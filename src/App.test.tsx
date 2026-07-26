@@ -187,6 +187,7 @@ describe('App', () => {
     const user = userEvent.setup()
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 8,
       lastUpdatedAt: BASE_TIME,
     })
     useAdventureStore.setState({ partIdleClock: BASE_TIME })
@@ -342,6 +343,7 @@ describe('App', () => {
     gangHydrated.mockReturnValue(true)
     useGangStore.setState({
       totalReputation: 30 * 19,
+      currentLevel: 20,
       lastUpdatedAt: BASE_TIME,
     })
     act(() => {
@@ -356,6 +358,7 @@ describe('App', () => {
   it('clamps oversized hero levels after both stores hydrate at gang Lv12', () => {
     useGangStore.setState({
       totalReputation: 30 * 11,
+      currentLevel: 12,
       lastUpdatedAt: BASE_TIME,
     })
     useAdventureStore.setState({

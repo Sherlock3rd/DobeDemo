@@ -31,7 +31,7 @@ import {
   type CarPartSlot,
   type GunId,
 } from '../game/equipmentTypes'
-import { getGangLevel, isBuildingUnlocked } from '../game/gangProgression'
+import { isBuildingUnlocked } from '../game/gangProgression'
 import { getHeroCombatStats } from '../game/heroEquipment'
 import {
   HERO_IDS,
@@ -131,7 +131,7 @@ function PartCard({
 }
 
 export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
-  const totalReputation = useGangStore((state) => state.totalReputation)
+  const gangLevel = useGangStore((state) => state.currentLevel)
   const heroLevels = useAdventureStore((state) => state.heroLevels)
   const sharedExp = useAdventureStore((state) => state.sharedExp)
   const equipmentByHero = useAdventureStore((state) => state.equipmentByHero)
@@ -159,7 +159,6 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const [partPickerSlot, setPartPickerSlot] = useState<CarPartSlot | null>(null)
   const [status, setStatus] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>()
-  const gangLevel = getGangLevel(totalReputation)
   const cap = getHeroLevelCap(gangLevel)
   const equipmentLevelCap = Math.max(1, ...Object.values(heroLevels))
   const progression = useMemo(

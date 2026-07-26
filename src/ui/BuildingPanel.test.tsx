@@ -148,6 +148,7 @@ describe('BuildingPanel', () => {
     function openUnlockedYard(level = 1): void {
       useGangStore.setState({
         totalReputation: getTotalReputationForLevel(8),
+        currentLevel: 8,
       })
       setProgress('recycling-yard', level, Array(10).fill(0))
       useCityStore.getState().selectBuilding('recycling-yard')
@@ -511,7 +512,10 @@ describe('BuildingPanel', () => {
     })
 
     it('starts a fresh default-selected session when switching to another building', () => {
-      useGangStore.setState({ totalReputation: getTotalReputationForLevel(16) })
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(16),
+        currentLevel: 16,
+      })
       useCityStore.getState().selectBuilding('repair-shop')
       setProgress('commercial-street', 2, [0, 1, 0, 0, 0, 0, 0, 0, 0, 0])
 
@@ -555,7 +559,10 @@ describe('BuildingPanel', () => {
 
   describe('shared upgrade button and exact progress', () => {
     it('shows the precise percentage, one shared button, and no per-card buttons at commercial Lv.3', () => {
-      useGangStore.setState({ totalReputation: getTotalReputationForLevel(16) })
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(16),
+        currentLevel: 16,
+      })
       useCityStore.getState().selectBuilding('commercial-street')
       setProgress('commercial-street', 3, [3, 2, 1, 0, 0, 0, 0, 0, 0, 0])
       setResources(1000)
@@ -585,7 +592,10 @@ describe('BuildingPanel', () => {
 
     it('advances completed steps and cycles to the next incomplete slot after a successful upgrade', async () => {
       const user = userEvent.setup()
-      useGangStore.setState({ totalReputation: getTotalReputationForLevel(16) })
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(16),
+        currentLevel: 16,
+      })
       useCityStore.getState().selectBuilding('commercial-street')
       setProgress('commercial-street', 3, [3, 2, 1, 0, 0, 0, 0, 0, 0, 0])
       setResources(1000)
@@ -623,7 +633,10 @@ describe('BuildingPanel', () => {
     })
 
     it('keeps the completed 100% progress beside the main upgrade button', () => {
-      useGangStore.setState({ totalReputation: getTotalReputationForLevel(40) })
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(40),
+        currentLevel: 40,
+      })
       useCityStore.getState().selectBuilding('commercial-street')
       setProgress('commercial-street', 3, [3, 3, 3, 0, 0, 0, 0, 0, 0, 0])
       setProgress('repair-shop', 3, [3, 3, 3, 3, 3])
@@ -645,7 +658,10 @@ describe('BuildingPanel', () => {
     })
 
     it('shows only the maxed message at Lv.10', () => {
-      useGangStore.setState({ totalReputation: getTotalReputationForLevel(40) })
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(40),
+        currentLevel: 40,
+      })
       useCityStore.getState().selectBuilding('clubhouse')
       setProgress('clubhouse', 10, Array(10).fill(10))
 
@@ -785,7 +801,10 @@ describe('BuildingPanel', () => {
 
     it('selects the first incomplete slot instead of a new slot for the repair shop Lv.5→6 upgrade', async () => {
       const user = userEvent.setup()
-      useGangStore.setState({ totalReputation: getTotalReputationForLevel(40) })
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(40),
+        currentLevel: 40,
+      })
       useCityStore.getState().selectBuilding('repair-shop')
       setProgress('repair-shop', 5, [5, 5, 5, 5, 5])
       setProgress('clubhouse', 6, Array(10).fill(6))
@@ -810,7 +829,10 @@ describe('BuildingPanel', () => {
 
     it('shows the precise building-threshold blocker text on the confirmation page', async () => {
       const user = userEvent.setup()
-      useGangStore.setState({ totalReputation: getTotalReputationForLevel(16) })
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(16),
+        currentLevel: 16,
+      })
       useCityStore.getState().selectBuilding('commercial-street')
       setProgress('commercial-street', 1, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
       setProgress('repair-shop', 1, [1, 0, 0, 0, 0])
@@ -833,6 +855,7 @@ describe('BuildingPanel', () => {
     ): void {
       useGangStore.setState({
         totalReputation: getTotalReputationForLevel(40),
+        currentLevel: 40,
       })
       useCityStore.getState().selectBuilding('clubhouse')
       setProgress('clubhouse', level, childLevels)
@@ -1027,6 +1050,7 @@ describe('BuildingPanel', () => {
     it('keeps gang Lv.39 on the locked page with no direct action', () => {
       useGangStore.setState({
         totalReputation: getTotalReputationForLevel(39),
+        currentLevel: 39,
       })
       useCityStore.getState().selectBuilding('clubhouse')
 
@@ -1065,6 +1089,7 @@ describe('BuildingPanel', () => {
       const user = userEvent.setup()
       useGangStore.setState({
         totalReputation: getTotalReputationForLevel(40),
+        currentLevel: 40,
       })
       useCityStore.getState().selectBuilding('repair-shop')
       setProgress('repair-shop', 1, [1, 0, 0, 0, 0])
@@ -1307,7 +1332,10 @@ describe('pure BuildingPanel helpers', () => {
 
   describe('stage progress display', () => {
     it('shows 0% → 33% → 66% → 100% for commercial Lv2 [1,0] stage steps', () => {
-      useGangStore.setState({ totalReputation: getTotalReputationForLevel(16) })
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(16),
+        currentLevel: 16,
+      })
       useCityStore.getState().selectBuilding('commercial-street')
       setProgress('commercial-street', 2, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
       setResources(1000)
@@ -1336,7 +1364,10 @@ describe('pure BuildingPanel helpers', () => {
     })
 
     it('shows 20% steps for repair-shop Lv5→6 stage', () => {
-      useGangStore.setState({ totalReputation: getTotalReputationForLevel(40) })
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(40),
+        currentLevel: 40,
+      })
       useCityStore.getState().selectBuilding('repair-shop')
       setProgress('repair-shop', 6, [5, 5, 5, 5, 5])
       setProgress('clubhouse', 6, [6, 6, 6, 6, 6, 6, 6, 6, 6, 6])
