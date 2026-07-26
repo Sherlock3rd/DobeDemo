@@ -8,7 +8,7 @@
 
 > 首次发布完成后即可直接访问。进度保存在浏览器本地，不需要账号。
 >
-> 本轮 HUD、怒气、五品质与回收厂领取改动目前仅在本地工作树完成，尚未提交、推送或发布；上方地址仍是此前公开版本。
+> 当前线上版本已包含 HUD 方案 B、真实怒气、五品质与废车回收厂生产 Tab 手动领取。
 
 ![工业城市默认场景](.superpowers/sdd/gang-tree-demo-screenshot.png)
 
@@ -158,9 +158,9 @@ Clubhouse 直接升级的本地验收脚本为 `.superpowers/sdd/clubhouse-direc
 
 渐进式建筑升级的可重复浏览器验收脚本为 `.superpowers/sdd/progressive-building-upgrade-flow-cdp.mjs`（安全模式：动态选择空闲端口、`--strictPort`、仅终止脚本自建 PID、临时 profile 删除前校验 `dobe-progressive-upgrade-cdp-` 前缀、结果 JSON 只记录 basename、错误脱敏、坏数据/路径脱敏自测、失败非零退出）。它以真实鼠标点击覆盖：fresh v3 存档 10000 钱与仅首槽可见、公用按钮连续升级与对应 3D ROI 变化、手选保持与追平后循环选择、完成态 100% 与主升级按钮、主按钮进入确认页不扣费、完整成本/战力/资源不足禁用、确认一次扣费与新槽自动选中、全部阻止原因优先级、修车厂 Lv.5→6 的 Clubhouse 门槛、Clubhouse 不受修车厂门槛、两个调试动作重复执行、二次确认重置、代表性 v2 一次退款且刷新不重复、桌面 1440×900 与 390×844 布局；结果与截图见 `.superpowers/sdd/progressive-building-upgrade-flow-*`。
 
-战役/英雄/GlobalHud 的本地验收脚本为 `.superpowers/sdd/campaign-heroes-global-hud-cdp.mjs`。Chrome 使用 `--remote-debugging-port=0`，脚本只从隔离 profile 的 `DevToolsActivePort` 读取并校验自有实际端口/WS；Vite 以 `--strictPort` 启动，并在接受 HTTP 前验证 owned 进程存活及应用 HTML 特征。真实 `Input.dispatchMouseEvent` 覆盖 fresh 无非法直达入口、Adventure/Formation Escape、英雄入口关闭建筑详情且 Escape 后不恢复、非 battle HUD 常驻可导航与 battle hidden/inert、1-1 编队/START/自动战斗状态变化/VICTORY/首通、宝箱领取归零及后续 tick、英雄升级、Lv.50 派生解锁、三英雄快速编队、战斗二次确认退出无奖励、建筑完成态 100%、Adventure `state:null`/坏存档、三 store reset，以及 1440×900/390×844 的布局和严格双轴 44×44 热区。严格热区 RED 曾暴露 44px 控件被 `panel-pop-enter scale(0.98)` 缩成 43.12px，以及 Adventure/Building/Settings 尺寸下限不完整；终审又补齐退出冻结和真实战斗表现。BattleEffects 的 mounted callback 写回 BattleScreen `data-presented-*`，配合累计 basic/skill/damage/death 计数，使 CDP 能证明表现层已挂载而非只证明引擎有事件：stage 1 实测 basic 7、damage 7、death 1 与 `presentedBasic`，stage 20 实测 basic 30、skill-main 5、splash 11、damage 46、death 1 与 `currentPresentedSkill`。`campaign-skill.png` 和 running-basic 截图 hash 不同；最终 self-test 11/11、运行期 50/50，本地证据尚未 push 或发布 Pages。
+战役/英雄/GlobalHud 的本地验收脚本为 `.superpowers/sdd/campaign-heroes-global-hud-cdp.mjs`。Chrome 使用 `--remote-debugging-port=0`，脚本只从隔离 profile 的 `DevToolsActivePort` 读取并校验自有实际端口/WS；Vite 以 `--strictPort` 启动，并在接受 HTTP 前验证 owned 进程存活及应用 HTML 特征。真实 `Input.dispatchMouseEvent` 覆盖 fresh 无非法直达入口、Adventure/Formation Escape、英雄入口关闭建筑详情且 Escape 后不恢复、非 battle HUD 常驻可导航与 battle hidden/inert、1-1 编队/START/自动战斗状态变化/VICTORY/首通、宝箱领取归零及后续 tick、英雄升级、Lv.50 派生解锁、三英雄快速编队、战斗二次确认退出无奖励、建筑完成态 100%、Adventure `state:null`/坏存档、三 store reset，以及 1440×900/390×844 的布局和严格双轴 44×44 热区。严格热区 RED 曾暴露 44px 控件被 `panel-pop-enter scale(0.98)` 缩成 43.12px，以及 Adventure/Building/Settings 尺寸下限不完整；终审又补齐退出冻结和真实战斗表现。BattleEffects 的 mounted callback 写回 BattleScreen `data-presented-*`，配合累计 basic/skill/damage/death 计数，使 CDP 能证明表现层已挂载而非只证明引擎有事件：stage 1 实测 basic 7、damage 7、death 1 与 `presentedBasic`，stage 20 实测 basic 30、skill-main 5、splash 11、damage 46、death 1 与 `currentPresentedSkill`。`campaign-skill.png` 和 running-basic 截图 hash 不同；最终 self-test 11/11、运行期 50/50，相关功能已随当前公开版本发布。
 
-HUD B、真实怒气、五品质与回收厂领取的本地验收脚本为 `.superpowers/sdd/progression-economy-combat-smoke.mjs`。脚本默认自建动态空闲端口 Vite `--strictPort` 与 `--remote-debugging-port=0` Chrome，仅连接隔离 profile 的 `DevToolsActivePort`，HTTP/CDP/WebSocket 均有有限超时，只终止自建子进程，并在校验临时目录前缀后清理 profile；覆盖五品质及 0%/传说 25%、五个批量回收按钮、帮派按钮内战力且无独立战力行、技能怒气说明、390×844 无横溢出且立绘不与姓名/战力相交、注入 v6 领取时钟后的生产红点/2 批领取/结果与持久状态推进，以及真实 stage 20 战斗怒气 `0 → 增长 → 100 → 同一英雄技能后清空` 的 DOM 变化观测。本地运行 exit 0、运行时异常与控制台 error 均为 0，截图更新为 `.superpowers/sdd/progression-economy-combat-smoke.png`；本轮尚未 commit、push 或发布 Pages。
+HUD B、真实怒气、五品质与回收厂领取的本地验收脚本为 `.superpowers/sdd/progression-economy-combat-smoke.mjs`。脚本默认自建动态空闲端口 Vite `--strictPort` 与 `--remote-debugging-port=0` Chrome，仅连接隔离 profile 的 `DevToolsActivePort`，HTTP/CDP/WebSocket 均有有限超时，只终止自建子进程，并在校验临时目录前缀后清理 profile；覆盖五品质及 0%/传说 25%、五个批量回收按钮、帮派按钮内战力且无独立战力行、技能怒气说明、390×844 无横溢出且立绘不与姓名/战力相交、注入 v6 领取时钟后的生产红点/2 批领取/结果与持久状态推进，以及真实 stage 20 战斗怒气 `0 → 增长 → 100 → 同一英雄技能后清空` 的 DOM 变化观测。本地与公开 URL 运行均 exit 0，运行时异常与控制台 error 均为 0，截图更新为 `.superpowers/sdd/progression-economy-combat-smoke.png`；功能提交 `92155f5` 与发布产物已上线。
 
 `example/5v5example.mp4` 与 `example/ux/` 中的视频、抽帧和参考图仅用于视觉分析，不属于产品或验收交付，禁止加入仓库提交。
 

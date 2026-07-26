@@ -288,12 +288,12 @@ Expected: 全部 exit 0。
 
 对完整未提交 diff 做只读 defect-first review；所有 Critical/Important 必须修复并复审。
 
-- [ ] **Step 5: 后续提交并推送（本轮不执行）**
+- [x] **Step 5: 提交并推送**
 
-仅在后续获得明确授权时提交功能和发布记录，并普通 push `main`。
+功能提交 `92155f5` 与发布记录已普通 push `main`，未使用 force push。
 
-- [ ] **Step 6: 后续发布 Pages（本轮不执行）**
+- [x] **Step 6: 发布 Pages**
 
-从已推送 `main` fresh build，运行 `scripts/deploy-gh-pages.ps1`；等待 Pages `built`，验证 HTML/JS/CSS 200，并用公开 URL 重跑 smoke。
+已从推送后的 `main` fresh build，运行 `scripts/deploy-gh-pages.ps1` 发布 `gh-pages` `f2a5e88`；Pages 状态为 `built`，HTML/JS/CSS 均为 HTTP 200，公开 URL smoke 通过。
 
-> 当前交接边界：Task1–6 的本地实现、终审与验收由本工作树完成；Step 5–6 仅保留为未来发布流程，本轮不执行，也不记录 commit、push 或 Pages 已完成。
+> 当前交接状态：Task1–6 的实现、终审、本地验收、提交推送、Pages 发布与公开复验均已完成。
