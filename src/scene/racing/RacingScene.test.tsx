@@ -26,6 +26,25 @@ describe('RacingScene nitro effects', () => {
     ).toBeInTheDocument()
   })
 
+  it('keeps a zero-durability vehicle visible in standard races', () => {
+    const state = createRaceState(1, {
+      carId: 'rust-fox',
+      gunId: 'rivet-smg',
+    })
+    state.player = { ...state.player, durability: 0 }
+
+    const { container } = render(
+      <RacingScene state={state} carId="rust-fox" gunId="rivet-smg" />,
+    )
+
+    expect(
+      container.querySelector('meshStandardMaterial[name="player-body-green"]'),
+    ).toBeInTheDocument()
+    expect(
+      container.querySelector('[name="player-marker"]'),
+    ).toBeInTheDocument()
+  })
+
   it('renders a tall cyan jump ramp distinct from orange road obstacles', () => {
     const state = createRaceState(1, {
       carId: 'rust-fox',
@@ -76,7 +95,7 @@ describe('RacingScene nitro effects', () => {
       carId: 'rust-fox',
       gunId: 'rivet-smg',
     })
-    state.player = { ...state.player, distance: 4_550 }
+    state.player = { ...state.player, distance: 3_400 }
 
     const { container } = render(
       <RacingScene state={state} carId="rust-fox" gunId="rivet-smg" />,

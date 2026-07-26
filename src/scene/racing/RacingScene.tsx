@@ -82,12 +82,14 @@ function VehicleModel({
   vehicle,
   playerDistance,
   armed,
+  destructionEnabled,
 }: {
   vehicle: VehicleState
   playerDistance: number
   armed: boolean
+  destructionEnabled: boolean
 }): JSX.Element | null {
-  if (vehicle.durability <= 0) return null
+  if (destructionEnabled && vehicle.durability <= 0) return null
   const appearance = equipmentConfig.cars[vehicle.carId].appearance
   const relativeZ = PLAYER_SCENE_Z - (vehicle.distance - playerDistance)
   if (relativeZ < -185 || relativeZ > 28) return null
@@ -97,7 +99,8 @@ function VehicleModel({
     -0.22,
     0.22,
   )
-  const damaged = vehicle.durability / vehicle.maxDurability < 0.38
+  const damaged =
+    destructionEnabled && vehicle.durability / vehicle.maxDurability < 0.38
   const isPlayer = vehicle.role === 'player'
   const bodyColor = isPlayer ? '#22c55e' : appearance.body
   const accentColor = isPlayer ? '#bbf7d0' : appearance.accent
@@ -513,6 +516,7 @@ export function RacingScene({
               state.mode === 'pursuit' &&
               (vehicle.role !== 'player' || gunId !== null)
             }
+            destructionEnabled={state.mode === 'pursuit'}
           />
         ))}
         {state.projectiles.map((projectile) => {

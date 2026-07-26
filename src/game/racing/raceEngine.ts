@@ -24,7 +24,7 @@ export const NITRO_SUPER_LAUNCH_SPEED = 18
 export const CATCHUP_NITRO_GAP_START = 4
 export const CATCHUP_NITRO_BASE_PER_SECOND = 8
 export const CATCHUP_NITRO_MAX_PER_SECOND = 30
-export const AI_CATCHUP_NITRO_MULTIPLIER = 1.4
+export const AI_CATCHUP_NITRO_MULTIPLIER = 0.75
 export const BAD_LANDING_ANGLE_THRESHOLD = 0.2
 export const BAD_LANDING_SPEED_MULTIPLIER = 0.62
 export const FIRE_BOOST_DURATION_MS = 2400
@@ -763,10 +763,12 @@ function processTrackForVehicle(
         vehicleState.airborneHeight < 0.45
       ) {
         vehicleState.speed = Math.max(7, vehicleState.speed * 0.58)
-        vehicleState.durability = Math.max(
-          0,
-          vehicleState.durability - (vehicleState.role === 'player' ? 13 : 8),
-        )
+        if (nextState.mode === 'pursuit') {
+          vehicleState.durability = Math.max(
+            0,
+            vehicleState.durability - (vehicleState.role === 'player' ? 13 : 8),
+          )
+        }
         vehicleState.yawVelocity += index % 2 === 0 ? 0.9 : -0.9
         nextState = addEffect(
           nextState,
@@ -859,8 +861,10 @@ function processLanding(
   } else if (badLanding) {
     landedVehicle.speed *= BAD_LANDING_SPEED_MULTIPLIER
     landedVehicle.yawVelocity += rotations >= 0 ? 1.2 : -1.2
-    if (landedVehicle.role === 'player') {
+    if (landedVehicle.role === 'player' && state.mode === 'pursuit') {
       landedVehicle.durability = Math.max(0, landedVehicle.durability - 14)
+    }
+    if (landedVehicle.role === 'player') {
       next = withEvent(next, 'collision')
     }
   } else if (landedVehicle.role === 'player') {
@@ -881,15 +885,13 @@ function catchupNitroRate(gap: number): number {
 
 function applyCatchupNitro(state: RaceState, dtMs: number): RaceState {
   if (state.mode !== 'race') return state
-  const activeVehicles = [state.player, ...state.vehicles].filter(
-    (vehicleState) => vehicleState.durability > 0,
-  )
+  const activeVehicles = [state.player, ...state.vehicles]
   const leaderDistance = Math.max(
     state.player.distance,
     ...activeVehicles.map((vehicleState) => vehicleState.distance),
   )
   const refill = (vehicleState: VehicleState): VehicleState => {
-    if (vehicleState.boosting || vehicleState.durability <= 0) {
+    if (vehicleState.boosting) {
       return vehicleState
     }
     const rate =
@@ -922,8 +924,8 @@ function resolveVehicleCollisions(state: RaceState): RaceState {
       const a = all[leftIndex]
       const b = all[rightIndex]
       if (
-        a.durability <= 0 ||
-        b.durability <= 0 ||
+        (state.mode === 'pursuit' &&
+          (a.durability <= 0 || b.durability <= 0)) ||
         a.airborneHeight > 0.7 ||
         b.airborneHeight > 0.7 ||
         a.collisionCooldownMs > 0 ||
@@ -967,8 +969,10 @@ function resolveVehicleCollisions(state: RaceState): RaceState {
       const rearDamage = rear.boosting
         ? Math.max(1, Math.ceil(damage * 0.35))
         : damage
-      rear.durability = Math.max(0, rear.durability - rearDamage)
-      front.durability = Math.max(0, front.durability - damage)
+      if (state.mode === 'pursuit') {
+        rear.durability = Math.max(0, rear.durability - rearDamage)
+        front.durability = Math.max(0, front.durability - damage)
+      }
       a.collisionCooldownMs = 260
       b.collisionCooldownMs = 260
       next = addEffect(
@@ -1311,7 +1315,7 @@ export function advanceRace(
   const slipstream = next.vehicles.some((candidate) => {
     const gap = candidate.distance - next.player.distance
     return (
-      candidate.durability > 0 &&
+      (stage.mode === 'race' || candidate.durability > 0) &&
       gap >= 4 &&
       gap <= 19 &&
       Math.abs(candidate.x - next.player.x) <= 1.45

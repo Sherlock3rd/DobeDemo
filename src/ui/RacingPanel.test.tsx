@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { getRacingStage } from '../config/racingConfig'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useGangStore } from '../store/useGangStore'
 import { RacingPanel } from './RacingPanel'
@@ -20,7 +21,9 @@ describe('RacingPanel', () => {
     expect(screen.getByText(/满三格双击超级飞跃/)).toBeInTheDocument()
     expect(screen.getByText(/七车同场/)).toBeInTheDocument()
     expect(screen.queryByText('限时')).not.toBeInTheDocument()
-    expect(screen.getByText('4650 m')).toBeInTheDocument()
+    expect(
+      screen.getByText(`${getRacingStage(1).distance} m`),
+    ).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '发车' }))
     expect(onStart).toHaveBeenCalledWith(1, 'foreman')
   })

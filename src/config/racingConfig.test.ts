@@ -6,7 +6,7 @@ import {
 } from './racingConfig'
 
 describe('racingConfig', () => {
-  it('defines ten ordered alternating stages with extended race routes', () => {
+  it('defines ten ordered alternating stages with shorter competitive race routes', () => {
     expect(racingConfig.stages).toHaveLength(10)
     expect(racingConfig.stages.map((stage) => stage.order)).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -27,14 +27,25 @@ describe('racingConfig', () => {
       racingConfig.stages
         .filter((stage) => stage.mode === 'race')
         .map((stage) => stage.distance),
-    ).toEqual([4_650, 5_100, 5_550, 5_925, 6_300])
+    ).toEqual([3_500, 3_825, 4_175, 4_450, 4_725])
+    expect(
+      racingConfig.stages
+        .filter((stage) => stage.mode === 'race')
+        .map((stage) => stage.opponentSpeeds),
+    ).toEqual([
+      [30, 32, 34],
+      [38, 40, 42],
+      [39, 41, 43],
+      [46, 48, 50],
+      [44, 46, 48],
+    ])
     expect(racingConfig.stages.map((stage) => stage.requiredPartLevel)).toEqual(
       [0, 0, 0, 0, 0, 2, 2, 3, 3, 4],
     )
     for (const stage of racingConfig.stages) {
       if (stage.mode === 'race') {
         expect(stage.durationMs).toBe(85_000)
-        expect(stage.distance).toBeGreaterThanOrEqual(3_100)
+        expect(stage.distance).toBeGreaterThanOrEqual(3_500)
         expect(stage.opponentSpeeds).toHaveLength(3)
       } else {
         expect(stage.durationMs).toBeGreaterThanOrEqual(60_000)

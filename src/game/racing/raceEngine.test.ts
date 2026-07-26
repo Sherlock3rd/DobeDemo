@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { getRacingStage } from '../../config/racingConfig'
 import {
   AI_CATCHUP_NITRO_MULTIPLIER,
   AIR_GRAVITY,
@@ -167,10 +168,14 @@ describe('raceEngine V2', () => {
     initial.vehicles = initial.vehicles.map((vehicle, index) =>
       index === 0 ? vehicle : { ...vehicle, distance: 80 + index * 10 },
     )
+    const playerDurability = initial.player.durability
+    const opponentDurability = initial.vehicles[0].durability
     const next = advanceRace(initial, {}, ENDGAME, RACE_TICK_MS)
     expect(next.collisions).toBeGreaterThan(0)
     expect(next.player.speed).toBeLessThan(38)
     expect(next.vehicles[0].speed).toBeGreaterThan(14)
+    expect(next.player.durability).toBe(playerDurability)
+    expect(next.vehicles[0].durability).toBe(opponentDurability)
   })
 
   it('enters a physical drift after holding a lane direction', () => {
@@ -430,6 +435,7 @@ describe('raceEngine V2', () => {
       0,
     )
     expect(playerResult.event?.type).toBe('collision')
+    expect(playerResult.player.durability).toBe(playerLanding.player.durability)
 
     const aiLanding = createRaceState(1, STARTER)
     aiLanding.player = { ...aiLanding.player, distance: 100 }
@@ -604,17 +610,51 @@ describe('raceEngine V2', () => {
     expect(pursuitNext.reason).toBe('destroyed')
   })
 
+  it('keeps race durability unchanged after road hazards', () => {
+    const race = createRaceState(1, STARTER)
+    race.player = {
+      ...race.player,
+      lane: 0,
+      targetLane: 0,
+      x: RACE_LANE_X[0],
+      distance: 184.9,
+      speed: 42,
+      desiredSpeed: 42,
+      durability: 1,
+    }
+    race.vehicles = race.vehicles.map((vehicle, index) => ({
+      ...vehicle,
+      distance: 80 + index * 10,
+    }))
+
+    const next = advanceRace(race, {}, STARTER)
+
+    expect(next.collisions).toBeGreaterThan(0)
+    expect(next.player.durability).toBe(1)
+  })
+
+  it('does not let an idle starter car finish first', () => {
+    let state = createRaceState(1, STARTER)
+    for (let tick = 0; tick < 2_200 && state.status === 'running'; tick += 1) {
+      state = advanceRace(state, {}, STARTER)
+    }
+
+    expect(state.status).toBe('defeat')
+    expect(state.pendingResult?.rank).toBeGreaterThan(1)
+  })
+
   it('keeps driving for two seconds after crossing before settling the race', () => {
     let state = createRaceState(1, STARTER)
+    const finishDistance = getRacingStage(1).distance
     state.player = {
       ...state.player,
-      distance: 4_649,
+      distance: finishDistance - 1,
       speed: 42,
       desiredSpeed: 42,
     }
     state.vehicles = state.vehicles.map((vehicle) => ({
       ...vehicle,
-      distance: 4_000,
+      distance: finishDistance - 500,
       speed: 1,
       desiredSpeed: 1,
     }))
