@@ -28,6 +28,9 @@ describe('racingConfig', () => {
         .filter((stage) => stage.mode === 'race')
         .map((stage) => stage.distance),
     ).toEqual([4_650, 5_100, 5_550, 5_925, 6_300])
+    expect(racingConfig.stages.map((stage) => stage.requiredPartLevel)).toEqual(
+      [0, 0, 0, 0, 0, 2, 2, 3, 3, 4],
+    )
     for (const stage of racingConfig.stages) {
       if (stage.mode === 'race') {
         expect(stage.durationMs).toBe(85_000)

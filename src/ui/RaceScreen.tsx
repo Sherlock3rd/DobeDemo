@@ -34,6 +34,7 @@ export interface RaceScreenProps {
   stage: number
   heroId: HeroId
   onExit: () => void
+  onDevelop?: () => void
 }
 
 interface RaceBoot {
@@ -58,6 +59,7 @@ export function RaceScreen({
   stage,
   heroId,
   onExit,
+  onDevelop = onExit,
 }: RaceScreenProps): JSX.Element {
   const [bootResult] = useState<
     { ok: true; value: RaceBoot } | { ok: false; message: string }
@@ -84,17 +86,24 @@ export function RaceScreen({
   }
 
   return (
-    <RaceSession stage={stage} onExit={onExit} initial={bootResult.value} />
+    <RaceSession
+      stage={stage}
+      onExit={onExit}
+      onDevelop={onDevelop}
+      initial={bootResult.value}
+    />
   )
 }
 
 function RaceSession({
   stage,
   onExit,
+  onDevelop,
   initial,
 }: {
   stage: number
   onExit: () => void
+  onDevelop: () => void
   initial: RaceBoot
 }): JSX.Element {
   const definition = getRacingStage(stage)
@@ -340,13 +349,15 @@ function RaceSession({
                 ? ' · 尾流加速'
                 : ''
         }`}</p>
-        <label>
-          耐久
-          <progress
-            value={state.player.durability}
-            max={state.player.maxDurability}
-          />
-        </label>
+        {definition.mode === 'pursuit' ? (
+          <label>
+            耐久
+            <progress
+              value={state.player.durability}
+              max={state.player.maxDurability}
+            />
+          </label>
+        ) : null}
         {definition.mode === 'race' ? (
           <label className="race-hud__nitro-label">
             氮气 · 落后自动加速补充 · 满三格双击超级加速
@@ -487,21 +498,29 @@ function RaceSession({
               <p>奖励结算中…</p>
             )
           ) : (
-            <p>
-              {state.reason === 'escaped'
-                ? '目标已经逃脱'
-                : state.reason === 'destroyed'
-                  ? '车辆耐久耗尽'
-                  : state.reason === 'timeout'
-                    ? '时间耗尽'
-                    : '未能率先冲线'}
-            </p>
+            <>
+              <p>
+                {state.reason === 'escaped'
+                  ? '目标已经逃脱'
+                  : state.reason === 'destroyed'
+                    ? '车辆耐久耗尽'
+                    : state.reason === 'timeout'
+                      ? '时间耗尽'
+                      : '车辆速度不足，未能率先冲线'}
+              </p>
+              <p>前往养成提升车辆与配件后再来挑战。</p>
+            </>
           )}
           <div>
             {state.status === 'defeat' ? (
-              <button type="button" onClick={retry}>
-                重新挑战
-              </button>
+              <>
+                <button type="button" onClick={onDevelop}>
+                  前往养成
+                </button>
+                <button type="button" onClick={retry}>
+                  重新挑战
+                </button>
+              </>
             ) : null}
             <button type="button" onClick={onExit}>
               返回关卡

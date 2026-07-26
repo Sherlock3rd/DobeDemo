@@ -3,6 +3,10 @@ import { equipmentConfig } from '../config/equipmentConfig'
 import { getRacingStage } from '../config/racingConfig'
 import { HERO_IDS, isHeroUnlocked, type HeroId } from '../game/heroes'
 import { heroesConfig } from '../config/heroesConfig'
+import {
+  getHighestInstalledPartLevel,
+  getInstalledPartRacingBonus,
+} from '../game/equipmentProgression'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useGangStore } from '../store/useGangStore'
 import { useInitialFocus } from './useInitialFocus'
@@ -24,6 +28,11 @@ export function RacingPanel({
     (state) => state.highestClearedRacingStage,
   )
   const equipmentByHero = useAdventureStore((state) => state.equipmentByHero)
+  const gunLevels = useAdventureStore((state) => state.gunLevels)
+  const carPartInventory = useAdventureStore((state) => state.carPartInventory)
+  const carPartSlotsByCar = useAdventureStore(
+    (state) => state.carPartSlotsByCar,
+  )
   const availableHeroes = useMemo(
     () => HERO_IDS.filter((heroId) => isHeroUnlocked(heroId, gangLevel)),
     [gangLevel],
@@ -39,9 +48,26 @@ export function RacingPanel({
   const complete = stageNumber > 10
   const stage = complete ? null : getRacingStage(stageNumber)
   const equipment = equipmentByHero[selectedHero]
+  const progression = useMemo(
+    () => ({ gunLevels, carPartInventory, carPartSlotsByCar }),
+    [carPartInventory, carPartSlotsByCar, gunLevels],
+  )
+  const installedPartLevel = equipment.carId
+    ? getHighestInstalledPartLevel(equipment.carId, progression)
+    : 0
+  const racingBonus = equipment.carId
+    ? getInstalledPartRacingBonus(equipment.carId, progression)
+    : null
+  const mappedMaxSpeed = equipment.carId
+    ? equipmentConfig.cars[equipment.carId].racing.maxSpeed +
+      (racingBonus?.maxSpeed ?? 0)
+    : 0
+  const partRequirementMet =
+    stage === null || installedPartLevel >= stage.requiredPartLevel
   const canStart =
     stage !== null &&
     equipment.carId !== null &&
+    partRequirementMet &&
     (stage.mode === 'race' || equipment.gunId !== null)
 
   useEffect(() => {
@@ -60,6 +86,12 @@ export function RacingPanel({
     }
     if (stage.mode === 'pursuit' && !equipment.gunId) {
       setStatus('追击关需要先给该英雄装备枪械')
+      return
+    }
+    if (installedPartLevel < stage.requiredPartLevel) {
+      setStatus(
+        `第 ${stage.order} 关需要任意已安装车辆配件达到 Lv.${stage.requiredPartLevel}`,
+      )
       return
     }
     onStart(stage.order, selectedHero)
@@ -137,6 +169,12 @@ export function RacingPanel({
                     />
                   </dd>
                 </div>
+                {stage.requiredPartLevel > 0 ? (
+                  <div>
+                    <dt>配件要求</dt>
+                    <dd>{`任意已安装配件 Lv.${stage.requiredPartLevel}`}</dd>
+                  </div>
+                ) : null}
               </dl>
             </article>
 
@@ -164,6 +202,9 @@ export function RacingPanel({
                         ? equipmentConfig.guns[gear.gunId].name
                         : '未装备枪械'}
                     </span>
+                    {selectedHero === heroId && gear.carId ? (
+                      <span>{`养成极速 ${Math.round(mappedMaxSpeed * 7.2)} km/h · 配件最高 Lv.${installedPartLevel}`}</span>
+                    ) : null}
                   </button>
                 )
               })}
@@ -194,7 +235,12 @@ export function RacingPanel({
           </>
         ) : null}
         <p className="racing-panel__status" role="status">
-          {status}
+          {status ||
+            (stage &&
+            equipment.carId &&
+            installedPartLevel < stage.requiredPartLevel
+              ? `升级并安装车辆配件至 Lv.${stage.requiredPartLevel} 后才能发车`
+              : '')}
         </p>
       </section>
     </div>

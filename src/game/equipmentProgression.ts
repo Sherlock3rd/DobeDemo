@@ -545,6 +545,16 @@ export function getInstalledParts(
   })
 }
 
+export function getHighestInstalledPartLevel(
+  carId: CarId,
+  progression: EquipmentProgressionSnapshot | undefined,
+): number {
+  return getInstalledParts(carId, progression).reduce(
+    (highest, part) => Math.max(highest, part.level),
+    0,
+  )
+}
+
 export function getInstalledPartHeroBonus(
   carId: CarId,
   progression: EquipmentProgressionSnapshot | undefined,

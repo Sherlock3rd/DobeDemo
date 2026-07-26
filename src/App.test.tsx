@@ -108,10 +108,13 @@ vi.mock('./ui/FormationPanel', () => ({
 }))
 
 vi.mock('./ui/BattleScreen', () => ({
-  BattleScreen: (p: { onExit: () => void }) => (
+  BattleScreen: (p: { onExit: () => void; onDevelop: () => void }) => (
     <div role="dialog" aria-label="战斗">
       <button type="button" onClick={p.onExit}>
         退出战斗
+      </button>
+      <button type="button" onClick={p.onDevelop}>
+        战斗失败养成
       </button>
     </div>
   ),
@@ -148,10 +151,13 @@ vi.mock('./ui/RacingPanel', () => ({
 }))
 
 vi.mock('./ui/RaceScreen', () => ({
-  RaceScreen: (p: { onExit: () => void }) => (
+  RaceScreen: (p: { onExit: () => void; onDevelop: () => void }) => (
     <div role="dialog" aria-label="公路争霸">
       <button type="button" onClick={p.onExit}>
         返回赛车
+      </button>
+      <button type="button" onClick={p.onDevelop}>
+        赛车失败养成
       </button>
     </div>
   ),
@@ -294,6 +300,29 @@ describe('App', () => {
     expect(
       screen.getByRole('dialog', { name: '公路争霸大厅' }),
     ).toBeInTheDocument()
+  })
+
+  it('routes campaign and racing defeats to the relevant development tab', async () => {
+    const campaignApp = render(<App />)
+
+    await userEvent.click(screen.getByRole('button', { name: '推关' }))
+    await userEvent.click(screen.getByRole('button', { name: '挑战 1-1' }))
+    await userEvent.click(screen.getByRole('button', { name: '开始' }))
+    await userEvent.click(screen.getByRole('button', { name: '战斗失败养成' }))
+    expect(screen.getByRole('dialog', { name: '英雄培养' })).toHaveAttribute(
+      'data-initial-tab',
+      'level',
+    )
+
+    campaignApp.unmount()
+    render(<App />)
+    await userEvent.click(screen.getByRole('button', { name: '赛车' }))
+    await userEvent.click(screen.getByRole('button', { name: '发车' }))
+    await userEvent.click(screen.getByRole('button', { name: '赛车失败养成' }))
+    expect(screen.getByRole('dialog', { name: '英雄培养' })).toHaveAttribute(
+      'data-initial-tab',
+      'car',
+    )
   })
 
   it('opens the relevant gameplay surface from an unfinished chapter task guide', async () => {

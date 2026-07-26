@@ -11,6 +11,7 @@ import {
   getGunHeroAtk,
   getGunPursuitDamage,
   getGunUpgradeCost,
+  getHighestInstalledPartLevel,
   getInstalledPartHeroBonus,
   getInstalledPartRacingBonus,
   getPartDropIntervalMs,
@@ -326,6 +327,8 @@ describe('equipmentProgression', () => {
     }
     const heroBonus = getInstalledPartHeroBonus('rust-fox', progression)
     const racingBonus = getInstalledPartRacingBonus('rust-fox', progression)
+    expect(getHighestInstalledPartLevel('rust-fox', progression)).toBe(4)
+    expect(getHighestInstalledPartLevel('iron-fang', progression)).toBe(0)
     expect(heroBonus.atk).toBeGreaterThan(0)
     expect(heroBonus.hp).toBeGreaterThan(0)
     expect(racingBonus.acceleration).toBeGreaterThan(0)

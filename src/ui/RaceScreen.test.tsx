@@ -61,6 +61,7 @@ describe('RaceScreen V2', () => {
     expect(screen.queryByLabelText('剩余时间')).not.toBeInTheDocument()
     expect(screen.getByLabelText('距离终点')).toHaveValue(0)
     expect(screen.getByText('终点 0%')).toBeInTheDocument()
+    expect(screen.queryByText('耐久')).not.toBeInTheDocument()
   })
 
   it('uses A/D and left/right arrows for desktop lane changes', () => {
@@ -94,5 +95,27 @@ describe('RaceScreen V2', () => {
     expect(
       Number(screenRoot.getAttribute('data-fire-cooldown')),
     ).toBeGreaterThan(0)
+  })
+
+  it('guides a defeated racer directly to vehicle development', () => {
+    const onDevelop = vi.fn()
+    render(
+      <RaceScreen
+        stage={9}
+        heroId="foreman"
+        onExit={() => {}}
+        onDevelop={onDevelop}
+      />,
+    )
+
+    act(() => vi.advanceTimersByTime(120_000))
+
+    expect(screen.getByText('失败')).toBeInTheDocument()
+    expect(
+      screen.getByText('前往养成提升车辆与配件后再来挑战。'),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '前往养成' }))
+
+    expect(onDevelop).toHaveBeenCalledTimes(1)
   })
 })

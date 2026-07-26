@@ -6,6 +6,7 @@ interface RacingStageBase {
   title: string
   durationMs: number
   distance: number
+  requiredPartLevel: number
   obstacleEvery: number
   firstClearExp: number
   firstClearMoney: number
@@ -53,6 +54,13 @@ function positiveInt(value: unknown, path: string): number {
   return result
 }
 
+function nonNegativeInt(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    invalid(path)
+  }
+  return value
+}
+
 function escortCount(value: unknown, path: string): 0 | 1 | 2 {
   if (
     !Number.isInteger(value) ||
@@ -98,6 +106,10 @@ export function parseRacingConfig(value: unknown): RacingConfig {
       title: string(candidate.title, `${path}.title`),
       durationMs: positiveInt(candidate.durationMs, `${path}.durationMs`),
       distance: positiveNumber(candidate.distance, `${path}.distance`),
+      requiredPartLevel: nonNegativeInt(
+        candidate.requiredPartLevel,
+        `${path}.requiredPartLevel`,
+      ),
       obstacleEvery: positiveNumber(
         candidate.obstacleEvery,
         `${path}.obstacleEvery`,

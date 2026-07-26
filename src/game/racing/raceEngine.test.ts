@@ -586,6 +586,22 @@ describe('raceEngine V2', () => {
     expect(next.reason).toBe('running')
   })
 
+  it('ignores player durability in races but still checks it in pursuits', () => {
+    const race = createRaceState(1, STARTER)
+    race.player = { ...race.player, durability: 0 }
+    const raceNext = advanceRace(race, {}, STARTER)
+
+    expect(raceNext.status).toBe('running')
+    expect(raceNext.reason).toBe('running')
+
+    const pursuit = createRaceState(2, STARTER)
+    pursuit.player = { ...pursuit.player, durability: 0 }
+    const pursuitNext = advanceRace(pursuit, {}, STARTER)
+
+    expect(pursuitNext.status).toBe('defeat')
+    expect(pursuitNext.reason).toBe('destroyed')
+  })
+
   it('keeps the first stage and all endgame stages completable', () => {
     const starterResult = finish(1, STARTER)
     expect(

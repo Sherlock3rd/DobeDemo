@@ -42,4 +42,53 @@ describe('RacingPanel', () => {
     expect(screen.getByText('十关全部完成')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '发车' })).toBeNull()
   })
+
+  it('requires upgraded installed vehicle parts from stage six onward', () => {
+    const current = useAdventureStore.getState()
+    useAdventureStore.setState({
+      highestClearedRacingStage: 5,
+      carPartInventory: [
+        {
+          id: 'gate-engine',
+          slot: 'engine',
+          quality: 'rare',
+          level: 1,
+        },
+      ],
+      carPartSlotsByCar: {
+        ...current.carPartSlotsByCar,
+        'rust-fox': {
+          ...current.carPartSlotsByCar['rust-fox'],
+          engine: 'gate-engine',
+        },
+      },
+    })
+
+    const { rerender } = render(
+      <RacingPanel onClose={() => {}} onStart={() => {}} />,
+    )
+
+    expect(screen.getByText('第 6 关')).toBeInTheDocument()
+    expect(screen.getByText('任意已安装配件 Lv.2')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '发车' })).toBeDisabled()
+    expect(
+      screen.getByText('升级并安装车辆配件至 Lv.2 后才能发车'),
+    ).toBeInTheDocument()
+
+    useAdventureStore.setState({
+      carPartInventory: [
+        {
+          id: 'gate-engine',
+          slot: 'engine',
+          quality: 'rare',
+          level: 2,
+        },
+      ],
+    })
+    rerender(<RacingPanel onClose={() => {}} onStart={() => {}} />)
+
+    expect(screen.getByRole('button', { name: '发车' })).toBeEnabled()
+    expect(screen.getByText(/养成极速/)).toBeInTheDocument()
+    expect(screen.getByText(/配件最高 Lv.2/)).toBeInTheDocument()
+  })
 })

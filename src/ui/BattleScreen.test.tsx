@@ -148,6 +148,20 @@ describe('BattleScreen', () => {
     expect(screen.getByLabelText('英雄经验 500')).toBeInTheDocument()
   })
 
+  it('guides a defeated player directly to development', () => {
+    const onDevelop = vi.fn()
+    motionState.reduced = true
+    render(<BattleScreen stage={20} onExit={() => {}} onDevelop={onDevelop} />)
+
+    expect(screen.getByText('DEFEAT · 失败')).toBeInTheDocument()
+    expect(
+      screen.getByText('前往养成提升英雄、车辆与装备后再来挑战。'),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '前往养成' }))
+
+    expect(onDevelop).toHaveBeenCalledTimes(1)
+  })
+
   it('exit before resolve commits nothing', () => {
     const onExit = vi.fn()
     render(<BattleScreen stage={1} onExit={onExit} />)

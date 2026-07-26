@@ -328,6 +328,9 @@ export default function App(): JSX.Element {
           <BattleScreen
             stage={activeOverlay.stage}
             onExit={() => setPlayOverlay({ kind: 'adventure' })}
+            onDevelop={() =>
+              setPlayOverlay({ kind: 'heroes', initialTab: 'level' })
+            }
           />
         ) : null}
         {activeOverlay.kind === 'racing' ? (
@@ -343,6 +346,9 @@ export default function App(): JSX.Element {
             stage={activeOverlay.stage}
             heroId={activeOverlay.heroId}
             onExit={() => setPlayOverlay({ kind: 'racing' })}
+            onDevelop={() =>
+              setPlayOverlay({ kind: 'heroes', initialTab: 'car' })
+            }
           />
         ) : null}
       </main>

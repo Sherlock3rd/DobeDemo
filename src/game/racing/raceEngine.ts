@@ -1201,7 +1201,7 @@ function processProjectiles(state: RaceState, dtMs: number): RaceState {
 }
 
 function resolveFinish(state: RaceState, stage: RacingStageConfig): RaceState {
-  if (state.player.durability <= 0) {
+  if (stage.mode === 'pursuit' && state.player.durability <= 0) {
     return withEvent(
       {
         ...state,

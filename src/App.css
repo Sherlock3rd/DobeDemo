@@ -3651,6 +3651,12 @@
   top: 42%;
 }
 
+.battle-screen__result > div {
+  display: flex;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
 .battle-screen__result button,
 .battle-hud button {
   min-width: 44px;

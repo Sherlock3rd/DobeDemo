@@ -24,6 +24,7 @@ import { ResourceAmount } from './ResourceAmount'
 export interface BattleScreenProps {
   stage: number
   onExit: () => void
+  onDevelop?: () => void
 }
 
 type Phase = 'running' | 'paused' | 'resolved'
@@ -55,10 +56,15 @@ function bootBattle(stage: number): BootState {
 export function BattleScreen({
   stage,
   onExit,
+  onDevelop = onExit,
 }: BattleScreenProps): JSX.Element {
   return (
     <BattleErrorBoundary key={stage} onExit={onExit}>
-      <BattleScreenSession stage={stage} onExit={onExit} />
+      <BattleScreenSession
+        stage={stage}
+        onExit={onExit}
+        onDevelop={onDevelop}
+      />
     </BattleErrorBoundary>
   )
 }
@@ -66,6 +72,7 @@ export function BattleScreen({
 function BattleScreenSession({
   stage,
   onExit,
+  onDevelop = onExit,
 }: BattleScreenProps): JSX.Element {
   const recordVictory = useAdventureStore((s) => s.recordVictory)
   const lastVictoryReward = useAdventureStore((s) => s.lastVictoryReward)
@@ -253,9 +260,19 @@ function BattleScreenSession({
               ) : null}
             </div>
           ) : null}
-          <button type="button" onClick={onExit}>
-            继续
-          </button>
+          {boot.result.outcome === 'defeat' ? (
+            <p>前往养成提升英雄、车辆与装备后再来挑战。</p>
+          ) : null}
+          <div>
+            {boot.result.outcome === 'defeat' ? (
+              <button type="button" onClick={onDevelop}>
+                前往养成
+              </button>
+            ) : null}
+            <button type="button" onClick={onExit}>
+              继续
+            </button>
+          </div>
         </div>
       ) : null}
 
