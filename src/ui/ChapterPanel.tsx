@@ -215,13 +215,15 @@ export function ChapterPanel({
                 >
                   {claimed ? '已领取' : progress.complete ? '领取' : '进行中'}
                 </button>
-                <button
-                  type="button"
-                  className="chapter-panel__task-go"
-                  onClick={() => onNavigateTask(task.requirement)}
-                >
-                  {`前往${taskDestinationLabel(task.requirement)}`}
-                </button>
+                {!progress.complete && (
+                  <button
+                    type="button"
+                    className="chapter-panel__task-go"
+                    onClick={() => onNavigateTask(task.requirement)}
+                  >
+                    {`前往${taskDestinationLabel(task.requirement)}`}
+                  </button>
+                )}
               </div>
             </article>
           )

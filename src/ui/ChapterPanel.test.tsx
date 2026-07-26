@@ -28,6 +28,10 @@ describe('ChapterPanel', () => {
     expect(screen.getByLabelText('章节进度').children).toHaveLength(7)
     expect(screen.getAllByRole('button', { name: '进行中' })).toHaveLength(3)
     expect(screen.getByRole('button', { name: '领取' })).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: '前往英雄升级' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /^前往/ })).toHaveLength(3)
     expect(screen.getByText(/史诗轮胎/)).toBeInTheDocument()
   })
 
@@ -45,11 +49,12 @@ describe('ChapterPanel', () => {
     const onNavigateTask = vi.fn()
     render(<ChapterPanel onClose={() => {}} onNavigateTask={onNavigateTask} />)
 
-    await userEvent.click(screen.getByRole('button', { name: '前往英雄升级' }))
+    await userEvent.click(screen.getByRole('button', { name: '前往对应建筑' }))
 
     expect(onNavigateTask).toHaveBeenCalledWith({
-      kind: 'hero-level',
-      target: 1,
+      kind: 'building-level',
+      buildingId: 'repair-shop',
+      target: 2,
     })
   })
 

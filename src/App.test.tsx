@@ -296,16 +296,16 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
-  it('opens the relevant development tab from a chapter task guide', async () => {
+  it('opens the relevant gameplay surface from an unfinished chapter task guide', async () => {
     render(<App />)
 
     await userEvent.click(screen.getByRole('button', { name: '章节' }))
-    await userEvent.click(screen.getByRole('button', { name: '前往英雄升级' }))
+    expect(
+      screen.queryByRole('button', { name: '前往英雄升级' }),
+    ).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '前往推关' }))
 
-    expect(screen.getByRole('dialog', { name: '英雄培养' })).toHaveAttribute(
-      'data-initial-tab',
-      'level',
-    )
+    expect(screen.getByRole('dialog', { name: '推关地图' })).toBeInTheDocument()
   })
 
   it('selects the relevant city building from a chapter task guide', async () => {
