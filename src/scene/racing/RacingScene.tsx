@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { useRef, type JSX } from 'react'
 import { MathUtils, PerspectiveCamera, Vector3 } from 'three'
 import { equipmentConfig } from '../../config/equipmentConfig'
+import { getRacingStage } from '../../config/racingConfig'
 import type { CarId, GunId } from '../../game/equipmentTypes'
 import {
   upcomingTrackFeatures,
@@ -363,12 +364,74 @@ function Ramp({ x, z }: { x: number; z: number }): JSX.Element {
   )
 }
 
+function FinishLine({ z }: { z: number }): JSX.Element {
+  return (
+    <group name="race-finish-line" position={[0, 0, z]}>
+      {Array.from({ length: 24 }, (_, index) => {
+        const column = index % 12
+        const row = Math.floor(index / 12)
+        return (
+          <mesh
+            key={`finish-road-${index}`}
+            position={[-5.05 + column * 0.92, -0.32, -0.52 + row * 1.04]}
+            receiveShadow
+          >
+            <boxGeometry args={[0.92, 0.08, 1.04]} />
+            <meshStandardMaterial
+              color={(column + row) % 2 === 0 ? '#f8fafc' : '#111827'}
+              roughness={0.82}
+            />
+          </mesh>
+        )
+      })}
+      {[-5.3, 5.3].map((x) => (
+        <group key={x} position={[x, 2.6, 0]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.34, 5.6, 0.34]} />
+            <meshStandardMaterial
+              color="#e2e8f0"
+              metalness={0.75}
+              roughness={0.32}
+            />
+          </mesh>
+          <pointLight
+            position={[0, 1.85, 0]}
+            color="#facc15"
+            intensity={2.4}
+            distance={7}
+          />
+        </group>
+      ))}
+      <mesh position={[0, 5.25, 0]} castShadow>
+        <boxGeometry args={[10.95, 1.2, 0.44]} />
+        <meshStandardMaterial
+          color="#facc15"
+          emissive="#854d0e"
+          emissiveIntensity={0.85}
+          metalness={0.55}
+        />
+      </mesh>
+      {Array.from({ length: 10 }, (_, index) => (
+        <mesh
+          key={`finish-banner-${index}`}
+          position={[-4.5 + index, 5.25, -0.24]}
+        >
+          <boxGeometry args={[1, 0.62, 0.05]} />
+          <meshBasicMaterial color={index % 2 === 0 ? '#0f172a' : '#f8fafc'} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 export function RacingScene({
   state,
   carId,
   gunId,
 }: RacingSceneProps): JSX.Element {
   const roadOffset = state.player.distance % 12
+  const stage = getRacingStage(state.stage)
+  const finishZ = PLAYER_SCENE_Z - (stage.distance - state.player.distance)
   const features = upcomingTrackFeatures(state)
   const allVehicles = [state.player, ...state.vehicles]
   const speedRatio = Math.min(1, state.player.speed / 60)
@@ -410,6 +473,9 @@ export function RacingScene({
             )
           }),
         )}
+        {state.mode === 'race' && finishZ >= -210 && finishZ <= 65 ? (
+          <FinishLine z={finishZ} />
+        ) : null}
         {features.map((feature) => {
           const z = PLAYER_SCENE_Z - (feature.distance - state.player.distance)
           const x = [-3.25, 0, 3.25][feature.lane]

@@ -108,14 +108,33 @@ describe('RaceScreen V2', () => {
       />,
     )
 
-    act(() => vi.advanceTimersByTime(120_000))
+    act(() => vi.advanceTimersByTime(180_000))
 
     expect(screen.getByText('失败')).toBeInTheDocument()
+    expect(screen.getByLabelText('竞速成绩')).toHaveTextContent(
+      /通关时长 \d{2}:\d{2}\.\d{2}/,
+    )
+    expect(screen.getByLabelText('竞速成绩')).toHaveTextContent(
+      /最终排名 第 \d\/7/,
+    )
     expect(
       screen.getByText('前往养成提升车辆与配件后再来挑战。'),
     ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '离开' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '前往养成' }))
 
     expect(onDevelop).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows pursuit kill time after the one-second finish beat', () => {
+    render(<RaceScreen stage={2} heroId="foreman" onExit={() => {}} />)
+
+    act(() => vi.advanceTimersByTime(65_000))
+
+    expect(screen.getByText('目标击破')).toBeInTheDocument()
+    expect(screen.getByLabelText('追击成绩')).toHaveTextContent(
+      /击杀耗时 \d{2}:\d{2}\.\d{2}/,
+    )
+    expect(screen.getByRole('button', { name: '离开' })).toBeInTheDocument()
   })
 })

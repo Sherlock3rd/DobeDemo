@@ -70,4 +70,20 @@ describe('RacingScene nitro effects', () => {
       container.querySelectorAll('[name="super-nitro-trail"] torusGeometry'),
     ).toHaveLength(3)
   })
+
+  it('models a checkered finish gantry as the player approaches a race finish', () => {
+    const state = createRaceState(1, {
+      carId: 'rust-fox',
+      gunId: 'rivet-smg',
+    })
+    state.player = { ...state.player, distance: 4_550 }
+
+    const { container } = render(
+      <RacingScene state={state} carId="rust-fox" gunId="rivet-smg" />,
+    )
+
+    const finish = container.querySelector('[name="race-finish-line"]')
+    expect(finish).toBeInTheDocument()
+    expect(finish?.querySelectorAll('meshStandardMaterial')).toHaveLength(27)
+  })
 })

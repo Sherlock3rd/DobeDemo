@@ -42,6 +42,17 @@ interface RaceBoot {
   state: RaceState
 }
 
+function formatResultTime(elapsedMs: number): string {
+  const totalHundredths = Math.max(0, Math.floor(elapsedMs / 10))
+  const minutes = Math.floor(totalHundredths / 6000)
+  const seconds = Math.floor((totalHundredths % 6000) / 100)
+  const hundredths = totalHundredths % 100
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
+    2,
+    '0',
+  )}.${String(hundredths).padStart(2, '0')}`
+}
+
 function boot(stage: number, heroId: HeroId): RaceBoot {
   const adventure = useAdventureStore.getState()
   const equipment = adventure.equipmentByHero[heroId]
@@ -457,6 +468,12 @@ function RaceSession({
         </div>
       </div>
 
+      {state.status === 'running' && state.pendingResult ? (
+        <p className="race-screen__finish-banner" role="status">
+          {definition.mode === 'race' ? '冲线！' : '目标击破！'}
+        </p>
+      ) : null}
+
       {exitPending ? (
         <div className="race-screen__modal" role="alertdialog">
           <strong>退出本次比赛？</strong>
@@ -474,7 +491,30 @@ function RaceSession({
 
       {state.status !== 'running' ? (
         <div className="race-screen__result" role="status">
-          <strong>{state.status === 'victory' ? '胜利' : '失败'}</strong>
+          <strong>
+            {state.status === 'victory'
+              ? definition.mode === 'race'
+                ? '通关'
+                : '目标击破'
+              : '失败'}
+          </strong>
+          {definition.mode === 'race' && state.pendingResult ? (
+            <div className="race-screen__result-meta" aria-label="竞速成绩">
+              <p>{`通关时长 ${formatResultTime(
+                state.pendingResult.triggeredAtMs,
+              )}`}</p>
+              <p>{`最终排名 第 ${state.pendingResult.rank ?? raceRank(state)}/7`}</p>
+            </div>
+          ) : null}
+          {definition.mode === 'pursuit' &&
+          state.status === 'victory' &&
+          state.pendingResult ? (
+            <div className="race-screen__result-meta" aria-label="追击成绩">
+              <p>{`击杀耗时 ${formatResultTime(
+                state.pendingResult.triggeredAtMs,
+              )}`}</p>
+            </div>
+          ) : null}
           {state.status === 'victory' ? (
             reward ? (
               <div className="race-screen__rewards" aria-label="首通奖励">
@@ -523,7 +563,7 @@ function RaceSession({
               </>
             ) : null}
             <button type="button" onClick={onExit}>
-              返回关卡
+              离开
             </button>
           </div>
         </div>

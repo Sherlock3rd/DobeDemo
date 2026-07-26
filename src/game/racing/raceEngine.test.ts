@@ -15,8 +15,10 @@ import {
   NITRO_MAX,
   NITRO_SUPER_DURATION_MS,
   NITRO_SUPER_LAUNCH_SPEED,
+  PURSUIT_SETTLEMENT_DELAY_MS,
   PURSUIT_STUNT_FIRE_COOLDOWN_REDUCTION_MS,
   RACE_LANE_X,
+  RACE_SETTLEMENT_DELAY_MS,
   RACE_TICK_MS,
   raceRank,
   targetVehicle,
@@ -600,6 +602,76 @@ describe('raceEngine V2', () => {
 
     expect(pursuitNext.status).toBe('defeat')
     expect(pursuitNext.reason).toBe('destroyed')
+  })
+
+  it('keeps driving for two seconds after crossing before settling the race', () => {
+    let state = createRaceState(1, STARTER)
+    state.player = {
+      ...state.player,
+      distance: 4_649,
+      speed: 42,
+      desiredSpeed: 42,
+    }
+    state.vehicles = state.vehicles.map((vehicle) => ({
+      ...vehicle,
+      distance: 4_000,
+      speed: 1,
+      desiredSpeed: 1,
+    }))
+
+    state = advanceRace(state, {}, STARTER)
+    const crossedAtDistance = state.player.distance
+
+    expect(state.status).toBe('running')
+    expect(state.pendingResult).toMatchObject({
+      status: 'victory',
+      triggeredAtMs: RACE_TICK_MS,
+      settleAtMs: RACE_TICK_MS + RACE_SETTLEMENT_DELAY_MS,
+      rank: 1,
+    })
+
+    for (
+      let elapsed = RACE_TICK_MS;
+      elapsed < RACE_SETTLEMENT_DELAY_MS;
+      elapsed += RACE_TICK_MS
+    ) {
+      state = advanceRace(state, {}, STARTER)
+    }
+    expect(state.status).toBe('running')
+
+    state = advanceRace(state, {}, STARTER)
+    expect(state.status).toBe('victory')
+    expect(state.player.distance).toBeGreaterThan(crossedAtDistance)
+  })
+
+  it('waits one second after destroying the pursuit target and preserves kill time', () => {
+    let state = createRaceState(2, STARTER)
+    state.vehicles = state.vehicles.map((vehicle) =>
+      vehicle.role === 'target' ? { ...vehicle, durability: 0 } : vehicle,
+    )
+
+    state = advanceRace(state, {}, STARTER)
+
+    expect(state.status).toBe('running')
+    expect(state.pendingResult).toMatchObject({
+      status: 'victory',
+      triggeredAtMs: RACE_TICK_MS,
+      settleAtMs: RACE_TICK_MS + PURSUIT_SETTLEMENT_DELAY_MS,
+      rank: null,
+    })
+
+    for (
+      let elapsed = RACE_TICK_MS;
+      elapsed < PURSUIT_SETTLEMENT_DELAY_MS;
+      elapsed += RACE_TICK_MS
+    ) {
+      state = advanceRace(state, {}, STARTER)
+    }
+    expect(state.status).toBe('running')
+
+    state = advanceRace(state, {}, STARTER)
+    expect(state.status).toBe('victory')
+    expect(state.pendingResult?.triggeredAtMs).toBe(RACE_TICK_MS)
   })
 
   it('keeps the first stage and all endgame stages completable', () => {

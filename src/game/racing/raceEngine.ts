@@ -11,7 +11,8 @@ import {
 } from '../equipmentProgression'
 
 export const RACE_TICK_MS = 50
-export const RACE_FINISH_GRACE_DISTANCE = 4
+export const RACE_SETTLEMENT_DELAY_MS = 2000
+export const PURSUIT_SETTLEMENT_DELAY_MS = 1000
 export const AIR_GRAVITY = 12.4
 export const NATURAL_NITRO_PER_SECOND = 3.5
 export const NITRO_MAX = 100
@@ -53,6 +54,14 @@ export type RaceEventType =
 export interface RaceEvent {
   id: number
   type: RaceEventType
+}
+
+export interface PendingRaceResult {
+  status: Exclude<RaceStatus, 'running'>
+  reason: 'finished'
+  triggeredAtMs: number
+  settleAtMs: number
+  rank: number | null
 }
 
 export interface VehicleState {
@@ -146,6 +155,7 @@ export interface RaceState {
   steerHoldMs: number
   event: RaceEvent | null
   nextEntityId: number
+  pendingResult: PendingRaceResult | null
 }
 
 export interface RaceInput {
@@ -343,6 +353,7 @@ export function createRaceState(
     steerHoldMs: 0,
     event: null,
     nextEntityId: 1,
+    pendingResult: null,
   }
 }
 
@@ -1201,6 +1212,17 @@ function processProjectiles(state: RaceState, dtMs: number): RaceState {
 }
 
 function resolveFinish(state: RaceState, stage: RacingStageConfig): RaceState {
+  if (state.pendingResult) {
+    if (state.elapsedMs < state.pendingResult.settleAtMs) return state
+    return withEvent(
+      {
+        ...state,
+        status: state.pendingResult.status,
+        reason: state.pendingResult.reason,
+      },
+      'finish',
+    )
+  }
   if (stage.mode === 'pursuit' && state.player.durability <= 0) {
     return withEvent(
       {
@@ -1214,38 +1236,34 @@ function resolveFinish(state: RaceState, stage: RacingStageConfig): RaceState {
   }
   if (stage.mode === 'race') {
     if (state.player.distance >= stage.distance) {
-      return withEvent(
-        {
-          ...state,
-          status: raceRank(state) === 1 ? 'victory' : 'defeat',
+      const rank = raceRank(state)
+      return {
+        ...state,
+        pendingResult: {
+          status: rank === 1 ? 'victory' : 'defeat',
           reason: 'finished',
+          triggeredAtMs: state.elapsedMs,
+          settleAtMs: state.elapsedMs + RACE_SETTLEMENT_DELAY_MS,
+          rank,
         },
-        'finish',
-      )
-    }
-    if (
-      state.vehicles.some(
-        (candidate) =>
-          candidate.role === 'racer' &&
-          candidate.distance >= stage.distance &&
-          candidate.distance - state.player.distance >
-            RACE_FINISH_GRACE_DISTANCE,
-      )
-    ) {
-      return withEvent(
-        { ...state, status: 'defeat', reason: 'finished' },
-        'finish',
-      )
+      }
     }
   } else {
     const target = state.vehicles.find(
       (candidate) => candidate.role === 'target',
     )
     if (!target || target.durability <= 0) {
-      return withEvent(
-        { ...state, targetHp: 0, status: 'victory', reason: 'finished' },
-        'finish',
-      )
+      return {
+        ...state,
+        targetHp: 0,
+        pendingResult: {
+          status: 'victory',
+          reason: 'finished',
+          triggeredAtMs: state.elapsedMs,
+          settleAtMs: state.elapsedMs + PURSUIT_SETTLEMENT_DELAY_MS,
+          rank: null,
+        },
+      }
     }
     if (target.distance >= stage.distance) {
       return withEvent(
@@ -1271,6 +1289,7 @@ export function advanceRace(
 ): RaceState {
   if (current.status !== 'running') return current
   const stage = getRacingStage(current.stage)
+  const activeInput = current.pendingResult ? {} : input
   const dtMs = clamp(deltaMs, 1, 250)
   let next: RaceState = {
     ...current,
@@ -1279,10 +1298,10 @@ export function advanceRace(
       .map((effect) => ({ ...effect, ttlMs: effect.ttlMs - dtMs }))
       .filter((effect) => effect.ttlMs > 0),
   }
-  next = updateFireBoost(next, input, dtMs)
+  next = updateFireBoost(next, activeInput, dtMs)
   next = updatePlayerControl(
     next,
-    input,
+    activeInput,
     loadout.carId,
     stage.mode === 'race',
     dtMs,

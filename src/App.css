@@ -4172,6 +4172,39 @@
   font-size: 2rem;
 }
 
+.race-screen__finish-banner {
+  position: absolute;
+  z-index: 4;
+  top: 27%;
+  left: 50%;
+  margin: 0;
+  padding: 0.65rem 1.3rem;
+  transform: translateX(-50%);
+  border: 1px solid rgba(250, 204, 21, 0.68);
+  border-radius: 999px;
+  color: #fef9c3;
+  background: rgba(7, 12, 18, 0.88);
+  box-shadow: 0 0 2rem rgba(250, 204, 21, 0.3);
+  font-size: clamp(1.15rem, 3vw, 1.8rem);
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  animation: overlay-enter 180ms ease-out both;
+}
+
+.race-screen__result .race-screen__result-meta {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 0.65rem;
+  background: rgba(8, 47, 73, 0.32);
+}
+
+.race-screen__result-meta p {
+  color: #e0f2fe;
+  font-weight: 850;
+}
+
 @media (max-width: 620px) {
   .global-hud__chapter {
     top: auto;
@@ -4272,6 +4305,7 @@
   .battle-screen__result,
   .racing-panel,
   .race-screen__modal,
+  .race-screen__finish-banner,
   .race-screen__result {
     animation: none;
   }
