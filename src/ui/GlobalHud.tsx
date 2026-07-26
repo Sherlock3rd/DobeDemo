@@ -2,10 +2,16 @@ import { useMemo, type JSX } from 'react'
 import { getBuildingPower } from '../config/economyConfig'
 import { heroesConfig } from '../config/heroesConfig'
 import { useChestTick } from '../game/chestTick'
-import { getGangRole, isBuildingUnlocked } from '../game/gangProgression'
+import {
+  GANG_MAX_LEVEL,
+  getGangRole,
+  getTotalReputationForLevel,
+  isBuildingUnlocked,
+} from '../game/gangProgression'
 import {
   getChapterForGangLevel,
   getTaskProgress,
+  isChapterComplete,
 } from '../game/chapterProgression'
 import { BUILDING_IDS } from '../game/cityTypes'
 import { getAccountTotalPower, unitPower } from '../game/combat/power'
@@ -34,6 +40,7 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const resources = useCityStore((s) => s.resources)
   const buildingProgress = useCityStore((s) => s.buildingProgress)
   const gangLevel = useGangStore((s) => s.currentLevel)
+  const totalReputation = useGangStore((s) => s.totalReputation)
   const heroLevels = useAdventureStore((s) => s.heroLevels)
   const equipmentByHero = useAdventureStore((s) => s.equipmentByHero)
   const formation = useAdventureStore((s) => s.formation)
@@ -113,6 +120,17 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
       currentChapter.tasks.every(
         (task) => getTaskProgress(task, chapterSnapshot).complete,
       ))
+  const nextGangLevel = Math.min(GANG_MAX_LEVEL, gangLevel + 1)
+  const crossesRole =
+    gangLevel < GANG_MAX_LEVEL &&
+    getGangRole(gangLevel).threshold !== getGangRole(nextGangLevel).threshold
+  const chapterComplete =
+    isChapterComplete(currentChapter, chapterSnapshot) &&
+    claimedChapterNumbers.includes(currentChapter.number)
+  const gangPromotionReady =
+    gangLevel < GANG_MAX_LEVEL &&
+    totalReputation >= getTotalReputationForLevel(nextGangLevel) &&
+    (!crossesRole || chapterComplete)
 
   return (
     <section className="global-hud" aria-label="主界面 HUD">
@@ -128,10 +146,19 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
         <button
           type="button"
           className="global-hud__gang"
+          data-promotion-ready={gangPromotionReady}
           onClick={props.onOpenGangTree}
         >
           <span>{`Lv.${gangLevel} ${role.title}（${role.chineseTitle}）`}</span>
           <ResourceAmount kind="power" amount={totalPower} />
+          {gangPromotionReady ? (
+            <span
+              className="global-hud__promotion-ready"
+              aria-label="帮派等级可晋升"
+            >
+              可晋升
+            </span>
+          ) : null}
         </button>
         <div className="global-hud__resources" aria-label="资源">
           <ResourceAmount

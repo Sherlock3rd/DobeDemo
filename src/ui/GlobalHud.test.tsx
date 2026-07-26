@@ -2,10 +2,12 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChestTick } from '../game/chestTick'
+import { getTotalReputationForLevel } from '../game/gangProgression'
 import { ADVENTURE_STORAGE_KEY } from '../store/adventureMigration'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
+import { useChapterStore } from '../store/useChapterStore'
 import { GlobalHud } from './GlobalHud'
 
 const BASE_TIME = 1_700_000_000_000
@@ -16,6 +18,7 @@ describe('GlobalHud', () => {
     useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
+    useChapterStore.getState().reset()
     useChestTick.setState({ tick: 0, now: 0 })
   })
 
@@ -70,6 +73,51 @@ describe('GlobalHud', () => {
         name: /Lv\.\d+ Full Patch.*战力 \d+/,
       }),
     ).toBeInTheDocument()
+  })
+
+  it('shows and clears a gang promotion prompt as readiness changes', () => {
+    useGangStore.setState({
+      totalReputation: 30,
+      currentLevel: 1,
+    })
+    render(
+      <GlobalHud
+        onOpenHeroes={() => {}}
+        onOpenGangTree={() => {}}
+        onOpenAdventure={() => {}}
+        onOpenRacing={() => {}}
+        onOpenSettings={() => {}}
+      />,
+    )
+
+    expect(screen.getByLabelText('帮派等级可晋升')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Lv\.1.*可晋升/ }),
+    ).toHaveAttribute('data-promotion-ready', 'true')
+
+    act(() => {
+      useGangStore.setState({ currentLevel: 2 })
+    })
+
+    expect(screen.queryByLabelText('帮派等级可晋升')).toBeNull()
+  })
+
+  it('does not show a promotion prompt at a role boundary before chapter completion', () => {
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 7,
+    })
+    render(
+      <GlobalHud
+        onOpenHeroes={() => {}}
+        onOpenGangTree={() => {}}
+        onOpenAdventure={() => {}}
+        onOpenRacing={() => {}}
+        onOpenSettings={() => {}}
+      />,
+    )
+
+    expect(screen.queryByLabelText('帮派等级可晋升')).toBeNull()
   })
 
   it('uses current formation rows when aggregating account power', () => {

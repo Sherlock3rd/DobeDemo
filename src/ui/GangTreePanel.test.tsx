@@ -121,8 +121,12 @@ describe('GangTreePanel', () => {
     })
     const { rerender } = render(<GangTreePanel open onClose={() => {}} />)
 
+    expect(
+      screen.getByRole('status', { name: '帮派等级可晋升' }),
+    ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '晋升一级' }))
     expect(useGangStore.getState().currentLevel).toBe(2)
+    expect(screen.queryByRole('status', { name: '帮派等级可晋升' })).toBeNull()
 
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),

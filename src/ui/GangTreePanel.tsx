@@ -216,8 +216,20 @@ export function GangTreePanel({
             ? `下一职位：${nextRole.title}（${nextRole.chineseTitle}） · 需要 Lv. ${nextRole.threshold}`
             : '已达到最高职位'}
         </p>
-        <div className="gang-tree-panel__promotion">
+        <div
+          className="gang-tree-panel__promotion"
+          data-state={canPromote ? 'ready' : 'waiting'}
+        >
           <div>
+            {canPromote ? (
+              <span
+                className="gang-tree-panel__promotion-ready"
+                role="status"
+                aria-label="帮派等级可晋升"
+              >
+                可晋升
+              </span>
+            ) : null}
             <strong>
               {currentLevel >= GANG_MAX_LEVEL
                 ? '帮派等级已满'
