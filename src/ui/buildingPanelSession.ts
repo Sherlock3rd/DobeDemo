@@ -3,8 +3,10 @@
 import type { ResourceCost } from '../config/economyConfig'
 import type { MainUpgradeDecision } from '../game/buildingUpgrade'
 import type { BuildingLevel, BuildingProgress } from '../game/cityTypes'
+import type { PartSalvageClaimResult } from '../store/useAdventureStore'
 
 export type MainUpgradeBlockReason = MainUpgradeDecision['reason']
+export type RecyclingPanelTab = 'building' | 'production'
 
 export type BuildingPanelView =
   | { kind: 'details'; selectedChildIndex: number | null }
@@ -12,6 +14,11 @@ export type BuildingPanelView =
       kind: 'main-upgrade-confirm'
       selectedChildIndex: number | null
       actionReason: MainUpgradeBlockReason | null
+    }
+  | {
+      kind: 'part-claim-result'
+      selectedChildIndex: number | null
+      result: PartSalvageClaimResult
     }
 
 // Fixed order 钱 → 油 → 物资; zero entries are omitted and an all-zero cost

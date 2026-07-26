@@ -146,7 +146,7 @@ function BattleScreenSession({
     result && currentTick > 0
       ? (result.timeline[Math.min(currentTick, result.endedAtTick) - 1]
           ?.units ?? [])
-      : (result?.timeline[0]?.units ?? [])
+      : (result?.initialUnits ?? [])
   const replayedTimeline = result
     ? result.timeline.slice(0, Math.min(currentTick, result.endedAtTick))
     : []

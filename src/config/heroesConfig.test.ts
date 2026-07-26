@@ -22,7 +22,55 @@ describe('heroes config', () => {
     expect(heroesConfig.heroes.foreman.baseHp).toBe(800)
     expect(heroesConfig.heroes.anvil.role).toBe('front')
     expect(heroesConfig.heroes.skyline.skill.targetMultiplier).toBe(3.2)
+    expect(heroesConfig.heroes.foreman.skill).toMatchObject({
+      description:
+        '对主目标造成250%攻击伤害，并对其他敌人造成80%攻击溅射伤害。',
+      rageCost: 100,
+      ragePerBasicAttack: 20,
+      ragePerHitTaken: 10,
+    })
+    expect(heroesConfig.heroes.anvil.skill.description).toBe(
+      '对主目标造成180%攻击伤害，并对其他敌人造成50%攻击溅射伤害。',
+    )
+    expect(heroesConfig.heroes.skyline.skill.description).toBe(
+      '对主目标造成320%攻击伤害，并对其他敌人造成40%攻击溅射伤害。',
+    )
   })
+
+  it.each([
+    ['rageCost', 101],
+    ['ragePerBasicAttack', 21],
+    ['ragePerHitTaken', 11],
+  ] as const)('rejects a non-literal skill %s', (key, value) => {
+    const bad = structuredClone(heroesConfig) as unknown as Record<
+      string,
+      unknown
+    >
+    const skill = (bad.heroes as Record<string, Record<string, unknown>>)
+      .foreman.skill as Record<string, unknown>
+    skill[key] = value
+
+    expect(() => parseHeroesConfig(bad)).toThrow(
+      `Invalid heroes config: heroes.foreman.skill.${key}`,
+    )
+  })
+
+  it.each(['rageCost', 'ragePerBasicAttack', 'ragePerHitTaken'] as const)(
+    'rejects a non-positive skill %s',
+    (key) => {
+      const bad = structuredClone(heroesConfig) as unknown as Record<
+        string,
+        unknown
+      >
+      const skill = (bad.heroes as Record<string, Record<string, unknown>>)
+        .foreman.skill as Record<string, unknown>
+      skill[key] = 0
+
+      expect(() => parseHeroesConfig(bad)).toThrow(
+        `Invalid heroes config: heroes.foreman.skill.${key}`,
+      )
+    },
+  )
 
   it('materializes expToLevel(L) = 50 * (L + 1)', () => {
     expect(expToLevel(1)).toBe(100)
@@ -97,6 +145,18 @@ describe('heroes config', () => {
     {
       label: 'heroes.foreman.skill.cooldownTicks',
       path: ['heroes', 'foreman', 'skill', 'cooldownTicks'],
+    },
+    {
+      label: 'heroes.foreman.skill.rageCost',
+      path: ['heroes', 'foreman', 'skill', 'rageCost'],
+    },
+    {
+      label: 'heroes.foreman.skill.ragePerBasicAttack',
+      path: ['heroes', 'foreman', 'skill', 'ragePerBasicAttack'],
+    },
+    {
+      label: 'heroes.foreman.skill.ragePerHitTaken',
+      path: ['heroes', 'foreman', 'skill', 'ragePerHitTaken'],
     },
   ])('rejects an unsafe integer for $label', ({ label, path }) => {
     expect(() =>

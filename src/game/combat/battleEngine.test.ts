@@ -115,9 +115,135 @@ describe('battleEngine', () => {
   })
 })
 
-// Supplementary deterministic sub-tests: skill releases after
-// initialCooldownTicks, splash hits multiple living enemies on the same tick,
-// tie-break by globalIndex ascending, dead units removed at tick end.
+describe('battleEngine ally rage / enemy cooldown', () => {
+  function rageScenario(
+    enemyCount = 1,
+    enemyInitialCooldown = 999,
+    allySlot: Pick<BattleUnitInput, 'row' | 'index'> = {
+      row: 'back',
+      index: 1,
+    },
+  ): BattleInput {
+    const ally: BattleUnitInput = {
+      side: 'ally',
+      heroId: 'foreman',
+      level: 1,
+      row: allySlot.row,
+      index: allySlot.index,
+      hp: 100000,
+      atk: 100,
+      def: 50,
+      skill: {
+        targetMultiplier: 2.5,
+        splashMultiplier: 0.8,
+        initialCooldownTicks: 1,
+        cooldownTicks: 1,
+        rageCost: 100,
+        ragePerBasicAttack: 20,
+        ragePerHitTaken: 10,
+      },
+    }
+    const enemies: BattleUnitInput[] = Array.from(
+      { length: enemyCount },
+      () => ({
+        side: 'enemy' as const,
+        level: 1,
+        row: 'front' as const,
+        index: 0,
+        hp: 100000,
+        atk: 1,
+        def: 10,
+        skill: {
+          targetMultiplier: 2,
+          splashMultiplier: 0.5,
+          initialCooldownTicks: enemyInitialCooldown,
+          cooldownTicks: 999,
+        },
+      }),
+    )
+    const allies = [ally]
+    return {
+      stage: 99,
+      allies,
+      enemies,
+      seed: createBattleSeed({ stage: 99, allies, enemies }),
+    }
+  }
+
+  function allyAt(result: ReturnType<typeof simulateBattle>, tick: number) {
+    return result.timeline[tick - 1].units.find((unit) => unit.side === 'ally')!
+  }
+
+  it('starts allies at 0/100 rage', () => {
+    const result = simulateBattle(rageScenario())
+    const ally = result.initialUnits.find((unit) => unit.side === 'ally')
+
+    expect(ally).toMatchObject({ rage: 0, maxRage: 100 })
+  })
+
+  it('keeps a tick-one actor at zero rage until playback advances', () => {
+    const result = simulateBattle(
+      rageScenario(1, 999, { row: 'front', index: 1 }),
+    )
+
+    expect(
+      result.initialUnits.find((unit) => unit.side === 'ally'),
+    ).toMatchObject({ rage: 0, maxRage: 100 })
+    expect(result.timeline[0].hits).toContainEqual(
+      expect.objectContaining({ attackerSide: 'ally', kind: 'basic' }),
+    )
+    expect(allyAt(result, 1).rage).toBe(20)
+  })
+
+  it('adds 20 rage after an allied basic attack hits and ignores ally cooldown', () => {
+    const result = simulateBattle(rageScenario())
+
+    expect(result.timeline[2].hits).toContainEqual(
+      expect.objectContaining({ attackerSide: 'ally', kind: 'basic' }),
+    )
+    expect(allyAt(result, 3).rage).toBe(20)
+  })
+
+  it('adds 10 rage for each damage event received, including repeated hits in one tick', () => {
+    const result = simulateBattle(rageScenario(2))
+    const receivedAtTickFive = result.timeline[4].hits.filter(
+      (hit) => hit.targetSide === 'ally',
+    )
+
+    expect(receivedAtTickFive).toHaveLength(2)
+    expect(allyAt(result, 4).rage).toBe(20)
+    expect(allyAt(result, 5).rage).toBe(40)
+  })
+
+  it('casts on the next action at 100 rage and clears rage after release', () => {
+    const result = simulateBattle(rageScenario())
+    const firstAllySkill = result.timeline.find((tick) =>
+      tick.hits.some(
+        (hit) => hit.attackerSide === 'ally' && hit.kind === 'skill-main',
+      ),
+    )
+
+    expect(allyAt(result, 34).rage).toBe(100)
+    expect(firstAllySkill?.tick).toBe(35)
+    expect(allyAt(result, 35).rage).toBe(0)
+  })
+
+  it('keeps enemy skill release driven by cooldown', () => {
+    const result = simulateBattle(rageScenario(1, 1))
+    const firstEnemyHit = result.timeline
+      .flatMap((tick) => tick.hits.map((hit) => ({ tick: tick.tick, hit })))
+      .find(({ hit }) => hit.attackerSide === 'enemy')
+
+    expect(firstEnemyHit).toMatchObject({
+      tick: 5,
+      hit: { kind: 'skill-main' },
+    })
+  })
+})
+
+// Supplementary deterministic sub-tests: splash hits multiple living enemies
+// on the same tick, tie-break by globalIndex ascending, dead units removed at
+// tick end.
 describe('battleEngine skills / determinism', () => {
   // A durable ally that outlasts its own skill cooldown against three
   // high-HP, negligible-damage dummies so we can observe skill + splash.
@@ -127,6 +253,9 @@ describe('battleEngine skills / determinism', () => {
       splashMultiplier: 0.8,
       initialCooldownTicks: 30,
       cooldownTicks: 90,
+      rageCost: 100,
+      ragePerBasicAttack: 20,
+      ragePerHitTaken: 10,
     }
     const dummySkill = {
       targetMultiplier: 2,
@@ -182,15 +311,13 @@ describe('battleEngine skills / determinism', () => {
     return { stage: 99, allies, enemies, seed }
   }
 
-  it('releases a skill once the cooldown elapses (skill-main event)', () => {
+  it('releases an allied skill once rage reaches its cost', () => {
     const result = simulateBattle(skillScenario())
     const skillMainTicks = result.timeline.filter((t) =>
       t.hits.some((h) => h.kind === 'skill-main'),
     )
     expect(skillMainTicks.length).toBeGreaterThan(0)
-    // ally acts at tick % 8 === 3; cooldown reaches 0 at tick 30 -> first
-    // eligible action tick is 35.
-    expect(skillMainTicks[0]?.tick).toBe(35)
+    expect(skillMainTicks[0]?.tick).toBe(19)
   })
 
   it('splashes all other living enemies on the skill tick', () => {
@@ -345,6 +472,9 @@ describe('createBattleSeed encodes combat-affecting fields', () => {
         splashMultiplier: 0.5,
         initialCooldownTicks: 30,
         cooldownTicks: 90,
+        rageCost: 100,
+        ragePerBasicAttack: 20,
+        ragePerHitTaken: 10,
       },
       ...overrides,
     }
@@ -442,5 +572,32 @@ describe('createBattleSeed encodes combat-affecting fields', () => {
     expect(a).not.toBe(c)
     expect(a).not.toBe(d)
     expect(a).not.toBe(e)
+  })
+
+  it('changes when ally rage tuning differs', () => {
+    const allies = [baseUnit()]
+    const enemies = [
+      baseUnit({ side: 'enemy', heroId: undefined, row: 'front', index: 0 }),
+    ]
+    const a = createBattleSeed({ stage: 1, allies, enemies })
+    const b = createBattleSeed({
+      stage: 1,
+      allies: [
+        baseUnit({
+          skill: {
+            targetMultiplier: 2,
+            splashMultiplier: 0.5,
+            initialCooldownTicks: 30,
+            cooldownTicks: 90,
+            rageCost: 101,
+            ragePerBasicAttack: 20,
+            ragePerHitTaken: 10,
+          },
+        }),
+      ],
+      enemies,
+    })
+
+    expect(a).not.toBe(b)
   })
 })

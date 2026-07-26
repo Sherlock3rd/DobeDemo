@@ -2,6 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useChestTick } from './game/chestTick'
+import { getTotalReputationForLevel } from './game/gangProgression'
 import { useAdventureStore } from './store/useAdventureStore'
 import { useCityStore } from './store/useCityStore'
 import { useGangStore } from './store/useGangStore'
@@ -158,6 +160,7 @@ describe('App', () => {
     useCityStore.getState().reset(BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
+    useChestTick.setState({ now: BASE_TIME, tick: 0 })
     canvasPropsSpy.mockClear()
   })
 
@@ -178,6 +181,44 @@ describe('App', () => {
 
     expect(useCityStore.getState().selectedBuildingId).toBeNull()
     expect(screen.getByRole('button', { name: '推关' })).toBeInTheDocument()
+  })
+
+  it('Escape closes only the claim result and keeps the recycling yard production open', async () => {
+    const user = userEvent.setup()
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      lastUpdatedAt: BASE_TIME,
+    })
+    useAdventureStore.setState({ partIdleClock: BASE_TIME })
+    useChestTick.setState({ now: BASE_TIME + 30_000, tick: 1 })
+    useCityStore.setState((state) => ({
+      buildingProgress: {
+        ...state.buildingProgress,
+        'recycling-yard': {
+          level: 1,
+          childLevels: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        },
+      },
+    }))
+    useCityStore.getState().selectBuilding('recycling-yard')
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /生产/ }))
+    await user.click(screen.getByRole('button', { name: '领取 1 批' }))
+    expect(screen.getByRole('dialog', { name: '领取结果' })).toBeInTheDocument()
+    expect(useCityStore.getState().selectedBuildingId).toBe('recycling-yard')
+
+    await user.keyboard('{Escape}')
+
+    expect(
+      screen.queryByRole('dialog', { name: '领取结果' }),
+    ).not.toBeInTheDocument()
+    expect(useCityStore.getState().selectedBuildingId).toBe('recycling-yard')
+    expect(screen.getByRole('region', { name: '配件生产' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '生产' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
   })
 
   it('hides the global HUD while an overlay is open and isolates the city canvas', async () => {

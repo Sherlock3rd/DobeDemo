@@ -16,6 +16,10 @@ const HERO_IDS: readonly HeroId[] = PROGRESSION_UNLOCKS.filter(
 
 export interface HeroSkillConfig extends SkillConfig {
   name: string
+  description: string
+  rageCost: number
+  ragePerBasicAttack: number
+  ragePerHitTaken: number
 }
 
 export interface HeroAppearance {
@@ -86,10 +90,14 @@ const HERO_KEYS = [
 const DEFAULT_SLOT_KEYS = ['row', 'index'] as const
 const HERO_SKILL_KEYS = [
   'name',
+  'description',
   'targetMultiplier',
   'splashMultiplier',
   'initialCooldownTicks',
   'cooldownTicks',
+  'rageCost',
+  'ragePerBasicAttack',
+  'ragePerHitTaken',
 ] as const
 const APPEARANCE_KEYS = [
   'primaryColor',
@@ -112,6 +120,18 @@ function parsePositiveSafeInt(value: unknown, path: string): number {
     invalidConfig(path)
   }
   return n
+}
+
+function parseLiteralSafeInt<const T extends number>(
+  value: unknown,
+  expected: T,
+  path: string,
+): T {
+  const n = parsePositiveSafeInt(value, path)
+  if (n !== expected) {
+    invalidConfig(path)
+  }
+  return expected
 }
 
 function parsePositiveNumber(value: unknown, path: string): number {
@@ -153,6 +173,7 @@ function parseSkill(value: unknown, path: string): HeroSkillConfig {
   assertKnownKeys(value, HERO_SKILL_KEYS, path)
   return {
     name: parseString(value.name, `${path}.name`),
+    description: parseString(value.description, `${path}.description`),
     targetMultiplier: parsePositiveNumber(
       value.targetMultiplier,
       `${path}.targetMultiplier`,
@@ -168,6 +189,17 @@ function parseSkill(value: unknown, path: string): HeroSkillConfig {
     cooldownTicks: parsePositiveSafeInt(
       value.cooldownTicks,
       `${path}.cooldownTicks`,
+    ),
+    rageCost: parseLiteralSafeInt(value.rageCost, 100, `${path}.rageCost`),
+    ragePerBasicAttack: parseLiteralSafeInt(
+      value.ragePerBasicAttack,
+      20,
+      `${path}.ragePerBasicAttack`,
+    ),
+    ragePerHitTaken: parseLiteralSafeInt(
+      value.ragePerHitTaken,
+      10,
+      `${path}.ragePerHitTaken`,
     ),
   }
 }

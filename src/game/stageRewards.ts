@@ -13,18 +13,30 @@ import {
 export type PartQualityWeights = Readonly<Record<CarPartQuality, number>>
 
 const CAMPAIGN_WEIGHTS: readonly PartQualityWeights[] = [
-  { worn: 0.85, tuned: 0.15, elite: 0, prototype: 0 },
-  { worn: 0.6, tuned: 0.3, elite: 0.1, prototype: 0 },
-  { worn: 0.35, tuned: 0.4, elite: 0.2, prototype: 0.05 },
-  { worn: 0.15, tuned: 0.35, elite: 0.35, prototype: 0.15 },
+  { common: 0.75, uncommon: 0.15, rare: 0.1, epic: 0, legendary: 0 },
+  { common: 0.45, uncommon: 0.2, rare: 0.25, epic: 0.1, legendary: 0 },
+  { common: 0.25, uncommon: 0.2, rare: 0.3, epic: 0.2, legendary: 0.05 },
+  { common: 0.1, uncommon: 0.15, rare: 0.3, epic: 0.3, legendary: 0.15 },
 ]
 
 const RACING_WEIGHTS: readonly PartQualityWeights[] = [
-  { worn: 0.85, tuned: 0.15, elite: 0, prototype: 0 },
-  { worn: 0.65, tuned: 0.3, elite: 0.05, prototype: 0 },
-  { worn: 0.45, tuned: 0.35, elite: 0.15, prototype: 0.05 },
-  { worn: 0.25, tuned: 0.4, elite: 0.25, prototype: 0.1 },
-  { worn: 0.1, tuned: 0.3, elite: 0.4, prototype: 0.2 },
+  { common: 0.75, uncommon: 0.15, rare: 0.1, epic: 0, legendary: 0 },
+  { common: 0.55, uncommon: 0.2, rare: 0.2, epic: 0.05, legendary: 0 },
+  {
+    common: 0.35,
+    uncommon: 0.2,
+    rare: 0.25,
+    epic: 0.15,
+    legendary: 0.05,
+  },
+  { common: 0.2, uncommon: 0.2, rare: 0.3, epic: 0.2, legendary: 0.1 },
+  {
+    common: 0.08,
+    uncommon: 0.12,
+    rare: 0.28,
+    epic: 0.32,
+    legendary: 0.2,
+  },
 ]
 
 export function getCampaignPartQualityWeights(

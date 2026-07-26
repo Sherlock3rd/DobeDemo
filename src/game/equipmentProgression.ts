@@ -27,56 +27,126 @@ export interface PartSalvageDropProfile {
   qualityWeights: Readonly<Record<CarPartQuality, number>>
 }
 
+export interface PartSalvagePreview {
+  accumulatedMs: number
+  batchCount: number
+  progressInBatchMs: number
+  intervalMs: number
+  nextBatchInMs: number
+  canClaim: boolean
+  capped: boolean
+}
+
 const PART_SALVAGE_DROP_PROFILES: readonly PartSalvageDropProfile[] = [
   {
     intervalMs: 30_000,
     quantityWeights: { 1: 1, 2: 0, 3: 0, 4: 0 },
-    qualityWeights: { worn: 1, tuned: 0, elite: 0, prototype: 0 },
+    qualityWeights: {
+      common: 0.85,
+      uncommon: 0.15,
+      rare: 0,
+      epic: 0,
+      legendary: 0,
+    },
   },
   {
     intervalMs: 28_000,
     quantityWeights: { 1: 1, 2: 0, 3: 0, 4: 0 },
-    qualityWeights: { worn: 0.9, tuned: 0.1, elite: 0, prototype: 0 },
+    qualityWeights: {
+      common: 0.75,
+      uncommon: 0.15,
+      rare: 0.1,
+      epic: 0,
+      legendary: 0,
+    },
   },
   {
     intervalMs: 26_000,
     quantityWeights: { 1: 0.8, 2: 0.2, 3: 0, 4: 0 },
-    qualityWeights: { worn: 0.8, tuned: 0.2, elite: 0, prototype: 0 },
+    qualityWeights: {
+      common: 0.65,
+      uncommon: 0.2,
+      rare: 0.15,
+      epic: 0,
+      legendary: 0,
+    },
   },
   {
     intervalMs: 24_000,
     quantityWeights: { 1: 0.6, 2: 0.4, 3: 0, 4: 0 },
-    qualityWeights: { worn: 0.7, tuned: 0.25, elite: 0.05, prototype: 0 },
+    qualityWeights: {
+      common: 0.55,
+      uncommon: 0.2,
+      rare: 0.2,
+      epic: 0.05,
+      legendary: 0,
+    },
   },
   {
     intervalMs: 22_000,
     quantityWeights: { 1: 0.4, 2: 0.6, 3: 0, 4: 0 },
-    qualityWeights: { worn: 0.6, tuned: 0.3, elite: 0.1, prototype: 0 },
+    qualityWeights: {
+      common: 0.45,
+      uncommon: 0.2,
+      rare: 0.25,
+      epic: 0.1,
+      legendary: 0,
+    },
   },
   {
     intervalMs: 20_000,
     quantityWeights: { 1: 0.25, 2: 0.65, 3: 0.1, 4: 0 },
-    qualityWeights: { worn: 0.5, tuned: 0.35, elite: 0.15, prototype: 0 },
+    qualityWeights: {
+      common: 0.35,
+      uncommon: 0.2,
+      rare: 0.3,
+      epic: 0.15,
+      legendary: 0,
+    },
   },
   {
     intervalMs: 18_000,
     quantityWeights: { 1: 0.15, 2: 0.65, 3: 0.2, 4: 0 },
-    qualityWeights: { worn: 0.4, tuned: 0.35, elite: 0.2, prototype: 0.05 },
+    qualityWeights: {
+      common: 0.25,
+      uncommon: 0.2,
+      rare: 0.3,
+      epic: 0.2,
+      legendary: 0.05,
+    },
   },
   {
     intervalMs: 16_000,
     quantityWeights: { 1: 0, 2: 0.7, 3: 0.3, 4: 0 },
-    qualityWeights: { worn: 0.3, tuned: 0.35, elite: 0.25, prototype: 0.1 },
+    qualityWeights: {
+      common: 0.18,
+      uncommon: 0.17,
+      rare: 0.3,
+      epic: 0.25,
+      legendary: 0.1,
+    },
   },
   {
     intervalMs: 14_000,
     quantityWeights: { 1: 0, 2: 0.5, 3: 0.4, 4: 0.1 },
-    qualityWeights: { worn: 0.2, tuned: 0.35, elite: 0.3, prototype: 0.15 },
+    qualityWeights: {
+      common: 0.12,
+      uncommon: 0.13,
+      rare: 0.28,
+      epic: 0.32,
+      legendary: 0.15,
+    },
   },
   {
     intervalMs: 12_000,
     quantityWeights: { 1: 0, 2: 0.3, 3: 0.5, 4: 0.2 },
-    qualityWeights: { worn: 0.1, tuned: 0.3, elite: 0.35, prototype: 0.25 },
+    qualityWeights: {
+      common: 0.08,
+      uncommon: 0.12,
+      rare: 0.25,
+      epic: 0.3,
+      legendary: 0.25,
+    },
   },
 ]
 
@@ -108,32 +178,49 @@ export const CAR_PART_SLOT_INFO: Readonly<
 export const CAR_PART_QUALITY_INFO: Readonly<
   Record<
     CarPartQuality,
-    { name: string; color: string; strength: number; recycleBase: number }
+    {
+      name: string
+      color: string
+      strength: number
+      recycleBase: number
+      upgradeBase: number
+    }
   >
 > = {
-  worn: {
-    name: '旧件',
-    color: '#94a3b8',
+  common: {
+    name: '普通',
+    color: '#e2e8f0',
     strength: 1,
     recycleBase: 8,
+    upgradeBase: 12,
   },
-  tuned: {
-    name: '调校',
-    color: '#38bdf8',
+  uncommon: {
+    name: '优秀',
+    color: '#4ade80',
+    strength: 1.25,
+    recycleBase: 13,
+    upgradeBase: 15,
+  },
+  rare: {
+    name: '精良',
+    color: '#60a5fa',
     strength: 1.5,
     recycleBase: 18,
+    upgradeBase: 18,
   },
-  elite: {
-    name: '精工',
+  epic: {
+    name: '史诗',
     color: '#c084fc',
     strength: 2.2,
     recycleBase: 40,
+    upgradeBase: 28,
   },
-  prototype: {
-    name: '原型',
-    color: '#f59e0b',
+  legendary: {
+    name: '传说',
+    color: '#f97316',
     strength: 3.2,
     recycleBase: 90,
+    upgradeBase: 44,
   },
 }
 
@@ -187,6 +274,28 @@ export function getPartSalvageDropProfile(
 ): PartSalvageDropProfile {
   const level = Math.min(10, Math.max(1, Math.trunc(recyclingYardLevel)))
   return PART_SALVAGE_DROP_PROFILES[level - 1]
+}
+
+export function getPartSalvagePreview(input: {
+  lastUpdatedAt: number
+  now: number
+  recyclingYardLevel: number
+}): PartSalvagePreview {
+  const intervalMs = getPartDropIntervalMs(input.recyclingYardLevel)
+  const elapsedMs = Math.max(0, input.now - input.lastUpdatedAt)
+  const accumulatedMs = Math.min(PART_IDLE_CAP_MS, elapsedMs)
+  const batchCount = Math.floor(accumulatedMs / intervalMs)
+  const progressInBatchMs = accumulatedMs % intervalMs
+
+  return {
+    accumulatedMs,
+    batchCount,
+    progressInBatchMs,
+    intervalMs,
+    nextBatchInMs: intervalMs - progressInBatchMs,
+    canClaim: batchCount > 0,
+    capped: elapsedMs >= PART_IDLE_CAP_MS,
+  }
 }
 
 export function pickWeighted<T>(
@@ -333,13 +442,7 @@ export function getEquipmentLevelMultiplier(
 
 export function getCarPartUpgradeCost(part: CarPartInstance): number {
   if (part.level >= CAR_PART_MAX_LEVEL) return 0
-  const qualityBase: Record<CarPartQuality, number> = {
-    worn: 12,
-    tuned: 18,
-    elite: 28,
-    prototype: 44,
-  }
-  return qualityBase[part.quality] * part.level
+  return CAR_PART_QUALITY_INFO[part.quality].upgradeBase * part.level
 }
 
 export function getGunUpgradeCost(gunId: GunId, currentLevel: number): number {

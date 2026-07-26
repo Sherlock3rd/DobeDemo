@@ -1,7 +1,9 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type JSX,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
@@ -33,7 +35,19 @@ import {
   EMPTY_WALLET,
   getBuildingProductionPerTick,
 } from '../game/resourceEconomy'
+import {
+  CAR_PART_INVENTORY_LIMIT,
+  CAR_PART_QUALITY_INFO,
+  CAR_PART_SLOT_INFO,
+  PART_IDLE_CAP_MS,
+  getPartSalvagePreview,
+} from '../game/equipmentProgression'
+import type { CarPartInstance } from '../game/equipmentTypes'
 import { getBuildingFragments } from '../scene/city/buildingFragmentCatalog'
+import {
+  useAdventureStore,
+  type PartSalvageClaimResult,
+} from '../store/useAdventureStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
 import { useChestTick } from '../game/chestTick'
@@ -44,16 +58,19 @@ import {
   mainUpgradeBlockerMessage,
   type BuildingPanelView,
   type MainUpgradeBlockReason,
+  type RecyclingPanelTab,
 } from './buildingPanelSession'
 import { ResourceAmount } from './ResourceAmount'
 
 const TITLE_ID = 'building-panel-title'
 const CONFIRM_TITLE_ID = 'building-panel-confirm-title'
+const CLAIM_RESULT_TITLE_ID = 'building-panel-claim-result-title'
 const CANVAS_LABEL = '工业城市 3D 场景'
 
 interface PanelSession {
   buildingId: BuildingId
   view: BuildingPanelView
+  recyclingTab: RecyclingPanelTab
 }
 
 function formatProduction(production: ResourceWallet): JSX.Element | string {
@@ -107,6 +124,43 @@ function formatRemainingTime(milliseconds: number): string {
     : `${seconds}秒`
 }
 
+function formatSalvageDuration(milliseconds: number, roundUp = false): string {
+  const totalSeconds = Math.max(
+    0,
+    roundUp ? Math.ceil(milliseconds / 1000) : Math.floor(milliseconds / 1000),
+  )
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const parts: string[] = []
+  if (hours > 0) parts.push(`${hours}小时`)
+  if (minutes > 0) parts.push(`${minutes}分`)
+  if (seconds > 0 || parts.length === 0) parts.push(`${seconds}秒`)
+  return parts.join('')
+}
+
+function SalvageResultPart({ part }: { part: CarPartInstance }): JSX.Element {
+  const quality = CAR_PART_QUALITY_INFO[part.quality]
+  return (
+    <span
+      className="heroes-panel__part-card"
+      style={{ '--part-quality': quality.color } as CSSProperties}
+    >
+      <span className="heroes-panel__part-icon">
+        {CAR_PART_SLOT_INFO[part.slot].shortName.slice(0, 1)}
+      </span>
+      <span>
+        <strong>{CAR_PART_SLOT_INFO[part.slot].name}</strong>
+        <span className="heroes-panel__part-tags">
+          <em>{CAR_PART_SLOT_INFO[part.slot].shortName}</em>
+          <em>{quality.name}</em>
+          <em>{`Lv.${part.level}`}</em>
+        </span>
+      </span>
+    </span>
+  )
+}
+
 function createDefaultSession(buildingId: BuildingId): PanelSession {
   const currentProgress = useCityStore.getState().buildingProgress[buildingId]
   const unlockedCount = getUnlockedChildCount(buildingId, currentProgress.level)
@@ -116,16 +170,17 @@ function createDefaultSession(buildingId: BuildingId): PanelSession {
       kind: 'details',
       selectedChildIndex: findDefaultChildIndex(currentProgress, unlockedCount),
     },
+    recyclingTab: 'building',
   }
 }
 
 // The outer component only tracks which building (if any) is selected. Every
 // selection identity is rendered by a `key`-ed inner instance: switching
 // buildings, or closing then reopening the same building, always mounts a
-// fresh `BuildingPanelSession` whose default slot is computed once via a
-// lazy `useState` initializer. This keeps session identity resets out of
-// render-phase setState calls and out of a `setState`-in-effect as well,
-// while still giving every open exactly one session per the spec.
+// fresh `BuildingPanelSession`. Ordinary buildings also remount on level
+// changes so their default child slot is recomputed. The recycling yard keeps
+// one session across background level completions so production/result UI is
+// not discarded while the panel remains open.
 export function BuildingPanel(): JSX.Element | null {
   const selectedBuildingId = useCityStore((state) => state.selectedBuildingId)
   const selectedBuildingLevel = useCityStore((state) =>
@@ -136,11 +191,12 @@ export function BuildingPanel(): JSX.Element | null {
   if (!selectedBuildingId) {
     return null
   }
+  const sessionKey =
+    selectedBuildingId === 'recycling-yard'
+      ? selectedBuildingId
+      : `${selectedBuildingId}:${selectedBuildingLevel}`
   return (
-    <BuildingPanelSession
-      key={`${selectedBuildingId}:${selectedBuildingLevel}`}
-      buildingId={selectedBuildingId}
-    />
+    <BuildingPanelSession key={sessionKey} buildingId={selectedBuildingId} />
   )
 }
 
@@ -166,6 +222,9 @@ function BuildingPanelSession({
   )
   const upgradeMainBuilding = useCityStore((state) => state.upgradeMainBuilding)
   const totalReputation = useGangStore((state) => state.totalReputation)
+  const partIdleClock = useAdventureStore((state) => state.partIdleClock)
+  const carPartInventory = useAdventureStore((state) => state.carPartInventory)
+  const claimPartSalvage = useAdventureStore((state) => state.claimPartSalvage)
   const clockNow = useChestTick((state) => state.now)
   const [fallbackNow] = useState(readNow)
   const gangLevel = getGangLevel(totalReputation)
@@ -180,9 +239,31 @@ function BuildingPanelSession({
     createDefaultSession(selectedBuildingId),
   )
   const confirmTitleRef = useRef<HTMLHeadingElement | null>(null)
+  const claimResultTitleRef = useRef<HTMLHeadingElement | null>(null)
+  const claimDialogRef = useRef<HTMLElement | null>(null)
   const mainButtonRef = useRef<HTMLButtonElement | null>(null)
+  const productionTabRef = useRef<HTMLButtonElement | null>(null)
   const radioRefs = useRef<Array<HTMLButtonElement | null>>([])
   const pendingReturnFocusRef = useRef(false)
+  const pendingClaimReturnFocusRef = useRef(false)
+  const claimInFlightRef = useRef(false)
+
+  const handleCloseClaimResult = useCallback((): void => {
+    claimInFlightRef.current = false
+    pendingClaimReturnFocusRef.current = true
+    setSession((current) =>
+      current.view.kind === 'part-claim-result'
+        ? {
+            ...current,
+            recyclingTab: 'production',
+            view: {
+              kind: 'details',
+              selectedChildIndex: current.view.selectedChildIndex,
+            },
+          }
+        : current,
+    )
+  }, [])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
@@ -198,6 +279,8 @@ function BuildingPanelSession({
   useEffect(() => {
     if (session.view.kind === 'main-upgrade-confirm') {
       confirmTitleRef.current?.focus()
+    } else if (session.view.kind === 'part-claim-result') {
+      claimResultTitleRef.current?.focus()
     }
   }, [session.view.kind])
 
@@ -207,6 +290,17 @@ function BuildingPanelSession({
       mainButtonRef.current?.focus()
     }
   }, [session.view.kind])
+
+  useEffect(() => {
+    if (
+      session.view.kind === 'details' &&
+      session.recyclingTab === 'production' &&
+      pendingClaimReturnFocusRef.current
+    ) {
+      pendingClaimReturnFocusRef.current = false
+      productionTabRef.current?.focus()
+    }
+  }, [session.recyclingTab, session.view.kind])
 
   const building = buildingCatalogById[selectedBuildingId]
   if (!building) {
@@ -263,6 +357,19 @@ function BuildingPanelSession({
 
   const level = progress.level
   const unlockedChildCount = getUnlockedChildCount(selectedBuildingId, level)
+  const sessionSelectedChildIndex = session.view.selectedChildIndex
+  const sessionSelectionInvalid =
+    sessionSelectedChildIndex === null ||
+    sessionSelectedChildIndex < 0 ||
+    sessionSelectedChildIndex >= unlockedChildCount ||
+    (progress.childLevels[sessionSelectedChildIndex] ?? 0) >= level
+  const selectedChildIndex =
+    selectedBuildingId === 'recycling-yard' &&
+    session.recyclingTab === 'building' &&
+    session.view.kind === 'details' &&
+    sessionSelectionInvalid
+      ? findDefaultChildIndex(progress, unlockedChildCount)
+      : sessionSelectedChildIndex
   const visibleBlueprints = getBuildingFragments(building.kind).slice(
     0,
     unlockedChildCount,
@@ -284,6 +391,130 @@ function BuildingPanelSession({
       )}
     </section>
   )
+  const isRecyclingYard = selectedBuildingId === 'recycling-yard'
+  const salvagePreview = getPartSalvagePreview({
+    lastUpdatedAt: partIdleClock,
+    now: visibleNow,
+    recyclingYardLevel: level,
+  })
+  const salvageProgressPercent =
+    salvagePreview.intervalMs > 0
+      ? (salvagePreview.progressInBatchMs / salvagePreview.intervalMs) * 100
+      : 0
+
+  const selectRecyclingTab = (tab: RecyclingPanelTab): void => {
+    claimInFlightRef.current = false
+    setSession((current) => ({
+      ...current,
+      recyclingTab: tab,
+      view: {
+        kind: 'details',
+        selectedChildIndex:
+          tab === 'building'
+            ? selectedChildIndex
+            : current.view.selectedChildIndex,
+      },
+    }))
+  }
+
+  const recyclingTabs = isRecyclingYard ? (
+    <nav className="building-panel__tabs" aria-label="废车回收厂面板分类">
+      <button
+        type="button"
+        aria-pressed={session.recyclingTab === 'building'}
+        onClick={() => selectRecyclingTab('building')}
+      >
+        建筑
+      </button>
+      <button
+        ref={productionTabRef}
+        type="button"
+        aria-pressed={session.recyclingTab === 'production'}
+        aria-label={
+          salvagePreview.canClaim
+            ? `生产 · 可领取 ${salvagePreview.batchCount} 批`
+            : '生产'
+        }
+        onClick={() => selectRecyclingTab('production')}
+      >
+        生产
+        {salvagePreview.canClaim ? (
+          <>
+            <span className="building-panel__tab-dot" aria-hidden="true" />
+            <span className="building-panel__tab-badge" aria-hidden="true">
+              {salvagePreview.batchCount}
+            </span>
+          </>
+        ) : null}
+      </button>
+    </nav>
+  ) : null
+
+  const handleClaimPartSalvage = (): void => {
+    if (claimInFlightRef.current || !salvagePreview.canClaim) return
+    claimInFlightRef.current = true
+    const result: PartSalvageClaimResult = claimPartSalvage(
+      visibleNow,
+      level,
+      gangLevel,
+    )
+    if (!result.applied) {
+      claimInFlightRef.current = false
+      return
+    }
+    setSession((current) => ({
+      ...current,
+      recyclingTab: 'production',
+      view: {
+        kind: 'part-claim-result',
+        selectedChildIndex: current.view.selectedChildIndex,
+        result,
+      },
+    }))
+  }
+
+  const handleClaimDialogKeyDown = (
+    event: ReactKeyboardEvent<HTMLElement>,
+  ): void => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      event.nativeEvent.stopImmediatePropagation()
+      handleCloseClaimResult()
+      return
+    }
+    if (event.key !== 'Tab') return
+    const dialog = claimDialogRef.current
+    if (!dialog) return
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      ),
+    )
+    if (focusable.length === 0) {
+      event.preventDefault()
+      claimResultTitleRef.current?.focus()
+      return
+    }
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    const active = document.activeElement
+    if (!dialog.contains(active)) {
+      event.preventDefault()
+      const target = event.shiftKey ? last : first
+      target.focus()
+    } else if (!focusable.includes(active as HTMLElement)) {
+      event.preventDefault()
+      const target = event.shiftKey ? last : first
+      target.focus()
+    } else if (event.shiftKey && active === first) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
 
   const selectChild = (index: number): void => {
     setSession((current) =>
@@ -325,6 +556,7 @@ function BuildingPanelSession({
     // Only ever a pure state transition: never reads the clock or the store.
     setSession((current) => ({
       buildingId: current.buildingId,
+      recyclingTab: current.recyclingTab,
       view: {
         kind: 'main-upgrade-confirm',
         selectedChildIndex: current.view.selectedChildIndex,
@@ -337,6 +569,7 @@ function BuildingPanelSession({
     pendingReturnFocusRef.current = true
     setSession((current) => ({
       buildingId: current.buildingId,
+      recyclingTab: current.recyclingTab,
       view: {
         kind: 'details',
         selectedChildIndex: current.view.selectedChildIndex,
@@ -345,13 +578,10 @@ function BuildingPanelSession({
   }
 
   const handleChildUpgrade = (): void => {
-    if (
-      session.view.kind !== 'details' ||
-      session.view.selectedChildIndex === null
-    ) {
+    if (session.view.kind !== 'details' || selectedChildIndex === null) {
       return
     }
-    const index = session.view.selectedChildIndex
+    const index = selectedChildIndex
     const result = upgradeChildBuilding(
       selectedBuildingId,
       index,
@@ -372,6 +602,7 @@ function BuildingPanelSession({
         : findNextIncompleteChildIndex(latest, latestUnlockedCount, index)
     setSession({
       buildingId: selectedBuildingId,
+      recyclingTab: session.recyclingTab,
       view: { kind: 'details', selectedChildIndex: nextIndex },
     })
   }
@@ -403,8 +634,142 @@ function BuildingPanelSession({
         : findDefaultChildIndex(latest, nextUnlocked)
     setSession({
       buildingId: id,
+      recyclingTab: session.recyclingTab,
       view: { kind: 'details', selectedChildIndex },
     })
+  }
+
+  if (session.view.kind === 'part-claim-result') {
+    const result = session.view.result
+    return (
+      <section
+        ref={claimDialogRef}
+        className="building-panel building-panel--claim-result"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={CLAIM_RESULT_TITLE_ID}
+        onKeyDownCapture={handleClaimDialogKeyDown}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="building-panel__close"
+          aria-label="关闭领取结果"
+          onClick={handleCloseClaimResult}
+        >
+          关闭
+        </button>
+        <p className="building-panel__claim-kicker">SALVAGE RECEIVED</p>
+        <h2
+          id={CLAIM_RESULT_TITLE_ID}
+          ref={claimResultTitleRef}
+          tabIndex={-1}
+          className="building-panel__title"
+        >
+          领取结果
+        </h2>
+        <p className="building-panel__claim-summary">
+          {`已结算 ${result.batchCount} 批 · 入库 ${result.receivedParts.length} 件`}
+        </p>
+        {result.receivedParts.length > 0 ? (
+          <div
+            className="building-panel__claim-parts"
+            aria-label="本次入库配件"
+          >
+            {result.receivedParts.map((part) => (
+              <SalvageResultPart key={part.id} part={part} />
+            ))}
+          </div>
+        ) : (
+          <p className="building-panel__claim-empty">本次配件已全部自动回收</p>
+        )}
+        <p className="building-panel__claim-recycled">
+          {`自动回收 ${result.autoRecycled} 件 · 零件 +${result.sparePartsGained}`}
+        </p>
+        <button
+          type="button"
+          className="building-panel__claim-button"
+          onClick={handleCloseClaimResult}
+        >
+          返回生产
+        </button>
+      </section>
+    )
+  }
+
+  if (isRecyclingYard && session.recyclingTab === 'production') {
+    return (
+      <section
+        className="building-panel building-panel--production"
+        aria-labelledby={TITLE_ID}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {closeButton}
+        <h2 id={TITLE_ID} className="building-panel__title">
+          {building.name}
+        </h2>
+        {recyclingTabs}
+        <p className="building-panel__level">{`等级 ${level} / ${BUILDING_MAX_LEVEL}`}</p>
+        <section
+          className="building-panel__salvage-production"
+          aria-label="配件生产"
+        >
+          <div className="building-panel__salvage-stats">
+            <p>{`累计时间 ${formatSalvageDuration(salvagePreview.accumulatedMs)}`}</p>
+            <p>{`已完成批次 ${salvagePreview.batchCount}`}</p>
+            <p>{`仓库 ${carPartInventory.length}/${CAR_PART_INVENTORY_LIMIT}`}</p>
+            <p>{`挂机上限 ${formatSalvageDuration(PART_IDLE_CAP_MS)}`}</p>
+          </div>
+          <div className="building-panel__salvage-progress">
+            <p>{`当前批进度 ${formatSalvageDuration(
+              salvagePreview.progressInBatchMs,
+            )} / ${formatSalvageDuration(salvagePreview.intervalMs)}`}</p>
+            <div
+              className="building-panel__progress-bar"
+              role="progressbar"
+              aria-label="当前生产批次进度"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.floor(salvageProgressPercent)}
+            >
+              <span
+                className="building-panel__progress-fill"
+                style={{ width: `${salvageProgressPercent}%` }}
+              />
+            </div>
+            {!salvagePreview.capped ? (
+              <p>{`下一批 ${formatSalvageDuration(
+                salvagePreview.nextBatchInMs,
+                true,
+              )}`}</p>
+            ) : null}
+          </div>
+          <p
+            className={
+              salvagePreview.capped
+                ? 'building-panel__salvage-cap building-panel__salvage-cap--reached'
+                : 'building-panel__salvage-cap'
+            }
+          >
+            {salvagePreview.capped
+              ? '已达8小时上限，领取后继续累计'
+              : '离线累计最多保留 8小时'}
+          </p>
+          <button
+            type="button"
+            className="building-panel__claim-button"
+            disabled={!salvagePreview.canClaim}
+            onClick={handleClaimPartSalvage}
+          >
+            {salvagePreview.canClaim
+              ? `领取 ${salvagePreview.batchCount} 批`
+              : '暂无可领取批次'}
+          </button>
+        </section>
+      </section>
+    )
   }
 
   if (selectedBuildingId === 'clubhouse') {
@@ -597,6 +962,7 @@ function BuildingPanelSession({
         >
           {`${building.name} · 目标等级 Lv.${targetLevel ?? BUILDING_MAX_LEVEL}`}
         </h2>
+        {recyclingTabs}
         {queueStatus}
         <ul className="building-panel__confirm-cost" aria-label="升级成本">
           <li>
@@ -657,7 +1023,6 @@ function BuildingPanelSession({
     )
   }
 
-  const selectedChildIndex = session.view.selectedChildIndex
   const childDecision: ChildUpgradeDecision =
     selectedChildIndex === null
       ? {
@@ -699,6 +1064,7 @@ function BuildingPanelSession({
       <h2 id={TITLE_ID} className="building-panel__title">
         {building.name}
       </h2>
+      {recyclingTabs}
       <p className="building-panel__level">{`等级 ${level} / ${BUILDING_MAX_LEVEL}`}</p>
       {queueStatus}
 

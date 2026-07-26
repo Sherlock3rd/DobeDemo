@@ -101,7 +101,7 @@ const fragmentMeta: Readonly<Record<BuildingKind, readonly FragmentMeta[]>> = {
     { name: '轮胎工位', description: '轮胎拆装工位，快速换胎与动平衡。' },
     { name: '小型起重机', description: '小型起重机，吊装发动机与总成。' },
     { name: '喷漆间', description: '封闭喷漆间，负责钣金喷涂与烤漆。' },
-    { name: '调校工位', description: '性能调校工位，标定动力与悬挂。' },
+    { name: '性能标定工位', description: '动力标定工位，校准动力与悬挂。' },
     { name: '控制室', description: '维修控制室，统一调度各工位。' },
   ],
   recycling: [

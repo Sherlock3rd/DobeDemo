@@ -20,11 +20,18 @@ export function BattleScene({
   currentTick,
   onEffectsPresented,
 }: BattleSceneProps): JSX.Element {
-  const tickIndex = Math.max(0, Math.min(currentTick, result.endedAtTick) - 1)
+  const displayedTick = Math.max(0, Math.min(currentTick, result.endedAtTick))
   const snapshot =
-    result.timeline[tickIndex] ??
-    result.timeline[result.timeline.length - 1] ??
-    null
+    displayedTick === 0
+      ? {
+          tick: 0,
+          units: result.initialUnits,
+          hits: [],
+          deaths: [],
+        }
+      : (result.timeline[displayedTick - 1] ??
+        result.timeline[result.timeline.length - 1] ??
+        null)
 
   if (!snapshot) {
     return (
@@ -34,15 +41,21 @@ export function BattleScene({
     )
   }
 
-  const effectEvents = result.timeline
-    .slice(Math.max(0, tickIndex - EFFECT_HISTORY_TICKS + 1), tickIndex + 1)
-    .flatMap((effectSnapshot) =>
-      effectSnapshot.hits.map((hit, eventIndex) => ({
-        hit,
-        eventKey: effectSnapshot.tick,
-        eventIndex,
-      })),
-    )
+  const effectEvents =
+    displayedTick === 0
+      ? []
+      : result.timeline
+          .slice(
+            Math.max(0, displayedTick - EFFECT_HISTORY_TICKS),
+            displayedTick,
+          )
+          .flatMap((effectSnapshot) =>
+            effectSnapshot.hits.map((hit, eventIndex) => ({
+              hit,
+              eventKey: effectSnapshot.tick,
+              eventIndex,
+            })),
+          )
 
   return (
     <group>

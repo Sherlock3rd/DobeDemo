@@ -1,14 +1,46 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ADVENTURE_STORAGE_KEY,
   getClaimableIdleExp,
   useAdventureStore,
 } from './useAdventureStore'
-import { getPartDropIntervalMs } from '../game/equipmentProgression'
-import type { CarPartQuality } from '../game/equipmentTypes'
+import {
+  CAR_PART_INVENTORY_LIMIT,
+  PART_IDLE_CAP_MS,
+  getPartDropIntervalMs,
+} from '../game/equipmentProgression'
+import type { CarPartInstance, CarPartQuality } from '../game/equipmentTypes'
 import { useCityStore } from './useCityStore'
 
 const NOW = 1_700_000_000_000
+
+type PartSalvageClaimResult = {
+  applied: boolean
+  receivedParts: CarPartInstance[]
+  autoRecycled: number
+  sparePartsGained: number
+  batchCount: number
+}
+
+function getClaimPartSalvage():
+  | ((
+      now: number,
+      recyclingYardLevel: number,
+      gangLevel: number,
+      random?: () => number,
+    ) => PartSalvageClaimResult)
+  | undefined {
+  return (
+    useAdventureStore.getState() as unknown as {
+      claimPartSalvage?: (
+        now: number,
+        recyclingYardLevel: number,
+        gangLevel: number,
+        random?: () => number,
+      ) => PartSalvageClaimResult
+    }
+  ).claimPartSalvage
+}
 
 describe('useAdventureStore', () => {
   beforeEach(() => {
@@ -18,6 +50,7 @@ describe('useAdventureStore', () => {
   })
 
   afterEach(() => {
+    vi.restoreAllMocks()
     window.localStorage.clear()
     useAdventureStore.getState().reset(NOW)
   })
@@ -141,7 +174,7 @@ describe('useAdventureStore', () => {
     expect(reward.rewardPart).toEqual({
       id: 'part-1',
       slot: 'tires',
-      quality: 'worn',
+      quality: 'common',
       level: 1,
     })
     expect(useAdventureStore.getState().carPartInventory).toEqual([
@@ -209,25 +242,199 @@ describe('useAdventureStore', () => {
     })
   })
 
-  it('settles recycling-yard idle drops without granting them before a tick', () => {
+  it('does not expose the legacy automatic salvage settlement entry point', () => {
+    expect('settleCarPartIdle' in useAdventureStore.getState()).toBe(false)
+  })
+
+  it('does not claim or mutate state before one salvage batch completes', () => {
+    const claimPartSalvage = getClaimPartSalvage()
+    expect(claimPartSalvage).toBeTypeOf('function')
+    if (!claimPartSalvage) return
+    const random = vi.fn(() => 0)
+    const before = useAdventureStore.getState()
+
     expect(
-      useAdventureStore.getState().settleCarPartIdle(NOW + 1000, 1),
+      claimPartSalvage(NOW + getPartDropIntervalMs(1) - 1, 1, 8, random),
     ).toEqual({
-      received: 0,
+      applied: false,
+      receivedParts: [],
       autoRecycled: 0,
+      sparePartsGained: 0,
+      batchCount: 0,
     })
-    const interval = getPartDropIntervalMs(1)
+    expect(useAdventureStore.getState()).toBe(before)
+    expect(random).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [Number.NaN, 1],
+    [Number.POSITIVE_INFINITY, 1],
+    [NOW - 1, 1],
+    [NOW + getPartDropIntervalMs(1), 0],
+    [NOW + getPartDropIntervalMs(1), 11],
+    [NOW + getPartDropIntervalMs(1), 1.5],
+    [NOW + getPartDropIntervalMs(1), Number.NaN],
+  ])(
+    'rejects invalid salvage claim time %s or yard level %s atomically',
+    (now, level) => {
+      const claimPartSalvage = getClaimPartSalvage()
+      expect(claimPartSalvage).toBeTypeOf('function')
+      if (!claimPartSalvage) return
+      const before = useAdventureStore.getState()
+
+      expect(claimPartSalvage(now, level, 8, () => 0)).toEqual({
+        applied: false,
+        receivedParts: [],
+        autoRecycled: 0,
+        sparePartsGained: 0,
+        batchCount: 0,
+      })
+      expect(useAdventureStore.getState()).toBe(before)
+    },
+  )
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, 0, 1.5, 51])(
+    'rejects invalid salvage claim gang level %s atomically',
+    (gangLevel) => {
+      const claimPartSalvage = getClaimPartSalvage()
+      expect(claimPartSalvage).toBeTypeOf('function')
+      if (!claimPartSalvage) return
+      const before = useAdventureStore.getState()
+      const random = vi.fn(() => 0)
+      let result: PartSalvageClaimResult | undefined
+
+      expect(() => {
+        result = claimPartSalvage(
+          NOW + getPartDropIntervalMs(1),
+          1,
+          gangLevel,
+          random,
+        )
+      }).not.toThrow()
+      expect(result).toEqual({
+        applied: false,
+        receivedParts: [],
+        autoRecycled: 0,
+        sparePartsGained: 0,
+        batchCount: 0,
+      })
+      expect(useAdventureStore.getState()).toBe(before)
+      expect(random).not.toHaveBeenCalled()
+    },
+  )
+
+  it('rejects salvage claims while the recycling yard is locked', () => {
+    const claimPartSalvage = getClaimPartSalvage()
+    expect(claimPartSalvage).toBeTypeOf('function')
+    if (!claimPartSalvage) return
+    const before = useAdventureStore.getState()
+    const random = vi.fn(() => 0)
+    let result: PartSalvageClaimResult | undefined
+
+    expect(() => {
+      result = claimPartSalvage(NOW + getPartDropIntervalMs(1), 1, 7, random)
+    }).not.toThrow()
+    expect(result).toEqual({
+      applied: false,
+      receivedParts: [],
+      autoRecycled: 0,
+      sparePartsGained: 0,
+      batchCount: 0,
+    })
+    expect(useAdventureStore.getState()).toBe(before)
+    expect(random).not.toHaveBeenCalled()
+  })
+
+  it('claims injected salvage drops and preserves partial-batch time', () => {
+    const claimPartSalvage = getClaimPartSalvage()
+    expect(claimPartSalvage).toBeTypeOf('function')
+    if (!claimPartSalvage) return
+    const interval = getPartDropIntervalMs(10)
+    const rolls = [0.99, 0, 0.08, 0.2, 0.99]
+
+    const result = claimPartSalvage(
+      NOW + interval + 5_000,
+      10,
+      8,
+      () => rolls.shift() ?? 0,
+    )
+
+    expect(result).toEqual({
+      applied: true,
+      receivedParts: [
+        { id: 'part-1', slot: 'tires', quality: 'common', level: 1 },
+        { id: 'part-2', slot: 'engine', quality: 'uncommon', level: 1 },
+        { id: 'part-3', slot: 'bumper', quality: 'rare', level: 1 },
+        {
+          id: 'part-4',
+          slot: 'suspension',
+          quality: 'legendary',
+          level: 1,
+        },
+      ],
+      autoRecycled: 0,
+      sparePartsGained: 0,
+      batchCount: 1,
+    })
+    expect(useAdventureStore.getState().carPartInventory).toEqual(
+      result.receivedParts,
+    )
+    expect(useAdventureStore.getState().nextPartSerial).toBe(5)
+    expect(useAdventureStore.getState().partIdleClock).toBe(NOW + interval)
+  })
+
+  it('moves the salvage clock to now after claiming the eight-hour cap', () => {
+    const claimPartSalvage = getClaimPartSalvage()
+    expect(claimPartSalvage).toBeTypeOf('function')
+    if (!claimPartSalvage) return
+    const now = NOW + PART_IDLE_CAP_MS + 1_234
+
+    const result = claimPartSalvage(now, 1, 8, () => 0)
+
+    expect(result.applied).toBe(true)
+    expect(result.batchCount).toBe(960)
+    expect(result.receivedParts).toHaveLength(CAR_PART_INVENTORY_LIMIT)
+    expect(result.autoRecycled).toBe(920)
+    expect(result.sparePartsGained).toBe(7_360)
+    expect(useAdventureStore.getState().partIdleClock).toBe(now)
+    expect(useAdventureStore.getState().nextPartSerial).toBe(961)
+  })
+
+  it('auto-recycles full-inventory salvage for its quality base value', () => {
+    const claimPartSalvage = getClaimPartSalvage()
+    expect(claimPartSalvage).toBeTypeOf('function')
+    if (!claimPartSalvage) return
+    useAdventureStore.setState({
+      carPartInventory: Array.from(
+        { length: CAR_PART_INVENTORY_LIMIT },
+        (_, index) => ({
+          id: `stored-${index}`,
+          slot: 'engine' as const,
+          quality: 'common' as const,
+          level: 1,
+        }),
+      ),
+    })
+
     expect(
-      useAdventureStore.getState().settleCarPartIdle(NOW + interval, 1),
-    ).toEqual({ received: 1, autoRecycled: 0 })
-    expect(useAdventureStore.getState().carPartInventory).toEqual([
-      { id: 'part-1', slot: 'tires', quality: 'worn', level: 1 },
-    ])
+      claimPartSalvage(NOW + getPartDropIntervalMs(1), 1, 8, () => 0),
+    ).toEqual({
+      applied: true,
+      receivedParts: [],
+      autoRecycled: 1,
+      sparePartsGained: 8,
+      batchCount: 1,
+    })
+    expect(useAdventureStore.getState().carPartInventory).toHaveLength(
+      CAR_PART_INVENTORY_LIMIT,
+    )
+    expect(useAdventureStore.getState().spareParts).toBe(8)
+    expect(useAdventureStore.getState().nextPartSerial).toBe(2)
   })
 
   it('installs, upgrades, unequips, and recycles a car part atomically', () => {
     const interval = getPartDropIntervalMs(1)
-    useAdventureStore.getState().settleCarPartIdle(NOW + interval, 1)
+    useAdventureStore.getState().claimPartSalvage(NOW + interval, 1, 8, () => 0)
     useAdventureStore.setState((state) => ({
       spareParts: 100,
       heroLevels: { ...state.heroLevels, foreman: 2 },
@@ -279,7 +486,7 @@ describe('useAdventureStore', () => {
         {
           id: 'dynamic-cap-part',
           slot: 'engine',
-          quality: 'prototype',
+          quality: 'legendary',
           level: 5,
         },
       ],
@@ -298,16 +505,16 @@ describe('useAdventureStore', () => {
   it('recycles one quality in bulk while excluding every installed part', () => {
     useAdventureStore.setState((state) => ({
       carPartInventory: [
-        { id: 'installed-worn', slot: 'tires', quality: 'worn', level: 1 },
-        { id: 'idle-worn-1', slot: 'engine', quality: 'worn', level: 1 },
-        { id: 'idle-worn-2', slot: 'bumper', quality: 'worn', level: 2 },
-        { id: 'idle-elite', slot: 'suspension', quality: 'elite', level: 1 },
+        { id: 'installed-common', slot: 'tires', quality: 'common', level: 1 },
+        { id: 'idle-common-1', slot: 'engine', quality: 'common', level: 1 },
+        { id: 'idle-common-2', slot: 'bumper', quality: 'common', level: 2 },
+        { id: 'idle-epic', slot: 'suspension', quality: 'epic', level: 1 },
       ],
       carPartSlotsByCar: {
         ...state.carPartSlotsByCar,
         'rust-fox': {
           ...state.carPartSlotsByCar['rust-fox'],
-          tires: 'installed-worn',
+          tires: 'installed-common',
         },
       },
     }))
@@ -330,7 +537,7 @@ describe('useAdventureStore', () => {
     ).toBeTypeOf('function')
     if (!store.recycleCarPartsByQuality) return
 
-    const result = store.recycleCarPartsByQuality('worn')
+    const result = store.recycleCarPartsByQuality('common')
     expect(result).toMatchObject({
       applied: true,
       recycledCount: 2,
@@ -342,10 +549,10 @@ describe('useAdventureStore', () => {
         .getState()
         .carPartInventory.map((part) => part.id)
         .sort(),
-    ).toEqual(['idle-elite', 'installed-worn'])
+    ).toEqual(['idle-epic', 'installed-common'])
     expect(
       useAdventureStore.getState().carPartSlotsByCar['rust-fox'].tires,
-    ).toBe('installed-worn')
+    ).toBe('installed-common')
   })
 
   it('rejects invalid gang levels for all new equipment actions', () => {
@@ -410,7 +617,12 @@ describe('useAdventureStore', () => {
     })
     const raw = window.localStorage.getItem(ADVENTURE_STORAGE_KEY)
     expect(raw).not.toBeNull()
-    const persisted = JSON.parse(raw as string).state as Record<string, unknown>
+    const parsed = JSON.parse(raw as string) as {
+      state: Record<string, unknown>
+      version: number
+    }
+    expect(parsed.version).toBe(6)
+    const persisted = parsed.state
     expect(Object.keys(persisted).sort()).toEqual(
       [
         'equipmentByHero',

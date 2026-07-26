@@ -76,6 +76,25 @@ describe('BattleScreen', () => {
     )
   })
 
+  it('shows true initial rage before a tick-one action, then advances to 20', () => {
+    expect(
+      useAdventureStore
+        .getState()
+        .setFormation([{ heroId: 'foreman', row: 'front', index: 1 }], 1),
+    ).toBe(true)
+    render(<BattleScreen stage={1} onExit={() => {}} />)
+
+    expect(
+      screen.getByRole('progressbar', { name: '怒气 0/100' }),
+    ).toBeInTheDocument()
+
+    advanceTicks(1)
+
+    expect(
+      screen.getByRole('progressbar', { name: '怒气 20/100' }),
+    ).toBeInTheDocument()
+  })
+
   it('plays to victory and commits the first clear exactly once at resolve', () => {
     const onExit = vi.fn()
     const adventure = useAdventureStore.getState()

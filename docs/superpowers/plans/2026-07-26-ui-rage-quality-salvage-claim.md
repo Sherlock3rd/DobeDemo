@@ -17,7 +17,7 @@
 - 配件挂机期间不得自动入库；只有领取动作可写库存、零件、序号和时钟。
 - 离线上限 8 小时、仓库上限 40、满仓自动回收语义保持。
 - HUD 使用方案 B：战力并入帮派徽标，主资源条保持三格。
-- 完成后普通 push `main`，发布并复验 `gh-pages`；禁止 force push。
+- 本轮只完成本地工作树实现、终审与验收；不 commit、不 push、不发布。后续若单独授权发布，仍禁止 force push。
 
 ---
 
@@ -39,17 +39,17 @@
 - Produces: `normalizeLegacyPartQuality(value): CarPartQuality | null`
 - Produces: 五键 `PartQualityWeights`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 覆盖五品质 ID/名称/颜色/强度、Lv.10 `8/12/25/30/25`、推关/赛车五键权重，以及旧品质迁移后配件和安装关系不丢失。
 
-- [ ] **Step 2: 运行 RED**
+- [x] **Step 2: 运行 RED**
 
 Run: `npx vitest run src/game/equipmentProgression.test.ts src/game/stageRewards.test.ts src/store/adventureMigration.test.ts src/store/useAdventureStore.test.ts`
 
 Expected: FAIL，原因是五品质 ID 和 legacy 映射尚不存在。
 
-- [ ] **Step 3: 实现五品质与迁移**
+- [x] **Step 3: 实现五品质与迁移**
 
 使用设计文档中的数值表替换 `CAR_PART_QUALITY_INFO`、升级成本和全部概率矩阵。在 normalize 校验前执行：
 
@@ -64,7 +64,7 @@ const LEGACY_PART_QUALITY_MAP = {
 
 将 Adventure persist `version` 改为 `6`。
 
-- [ ] **Step 4: 运行 GREEN**
+- [x] **Step 4: 运行 GREEN**
 
 Run: `npx vitest run src/game/equipmentProgression.test.ts src/game/stageRewards.test.ts src/store/adventureMigration.test.ts src/store/useAdventureStore.test.ts`
 
@@ -90,17 +90,17 @@ Expected: PASS。
 - Produces: 玩家 `UnitState`/`UnitSnapshot` 的 `rage`、`maxRage`
 - Preserves: 敌人 cooldown 行为与确定性 timeline
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 测试初始怒气 0、普攻命中 +20、一次受击 +10、100 怒时下次行动施放技能并归零；同时断言敌人仍按 cooldown 施法，BattleHud 展示怒气进度。
 
-- [ ] **Step 2: 运行 RED**
+- [x] **Step 2: 运行 RED**
 
 Run: `npx vitest run src/config/heroesConfig.test.ts src/game/combat/battleEngine.test.ts src/ui/BattleHud.test.tsx src/ui/BattleScreen.test.tsx`
 
 Expected: FAIL，缺少 rage 字段和配置。
 
-- [ ] **Step 3: 实现怒气引擎**
+- [x] **Step 3: 实现怒气引擎**
 
 玩家行动分支：
 
@@ -116,7 +116,7 @@ if (unit.side === 'ally' && unit.rage >= unit.skill.rageCost) {
 
 每个伤害事件命中玩家英雄后独立增加 10。敌方继续检查 cooldown。快照携带 rage，BattleHud 对 ally 渲染 `aria-label="怒气 X/100"`。
 
-- [ ] **Step 4: 运行 GREEN**
+- [x] **Step 4: 运行 GREEN**
 
 Run: `npx vitest run src/config/heroesConfig.test.ts src/game/combat/battleEngine.test.ts src/ui/BattleHud.test.tsx src/ui/BattleScreen.test.tsx`
 
@@ -136,22 +136,22 @@ Expected: PASS。
 
 **Interfaces:**
 - Produces: `getPartSalvagePreview(input): PartSalvagePreview`
-- Produces: `claimPartSalvage(now, recyclingYardLevel, random?): PartSalvageClaimResult`
+- Produces: `claimPartSalvage(now, recyclingYardLevel, gangLevel, random?): PartSalvageClaimResult`
 - `PartSalvageClaimResult.receivedParts` 只包含本次实际入库配件
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
-覆盖 preview 只读、未满一批不可领、领取后时钟/序号/库存推进、8 小时 cap、满仓回收和 Controller 不再自动入库。
+覆盖 preview 只读、未满一批不可领、非法或低于 Lv.8 的 `gangLevel` 零写入、领取后时钟/序号/库存推进、8 小时 cap、满仓回收和 Controller 不再自动入库。
 
-- [ ] **Step 2: 运行 RED**
+- [x] **Step 2: 运行 RED**
 
 Run: `npx vitest run src/game/equipmentProgression.test.ts src/store/useAdventureStore.test.ts src/game/PartSalvageController.test.tsx`
 
 Expected: FAIL，缺少 preview/claim 且 Controller 仍自动 settle。
 
-- [ ] **Step 3: 实现 preview 与 claim**
+- [x] **Step 3: 实现 preview 与 claim**
 
-`getPartSalvagePreview` 只做时间和批次数计算，不调用随机源。`claimPartSalvage` 在一个 Store `set` 中调用 `settlePartSalvage`，通过旧库存 ID 集合提取 `receivedParts`，返回自动回收零件增量。cap 命中后将领取时钟推进到 `now`。
+`getPartSalvagePreview` 只做时间和批次数计算，不调用随机源。`claimPartSalvage` 接收调用方提供的 `gangLevel`，先用 `isBuildingUnlocked('recycling-yard', gangLevel)` 校验废车回收厂已在帮派 Lv.8 解锁；非法或未解锁请求返回未领取且不进入 Store 写事务。合法领取在一个 Store `set` 中调用 `settlePartSalvage`，通过旧库存 ID 集合提取 `receivedParts`，返回自动回收零件增量。cap 命中后将领取时钟推进到 `now`。
 
 Controller 仅保留解锁边沿：
 
@@ -161,7 +161,7 @@ if (!wasUnlocked && unlocked) {
 }
 ```
 
-- [ ] **Step 4: 运行 GREEN**
+- [x] **Step 4: 运行 GREEN**
 
 Run: `npx vitest run src/game/equipmentProgression.test.ts src/store/useAdventureStore.test.ts src/game/PartSalvageController.test.tsx`
 
@@ -181,24 +181,24 @@ Expected: PASS。
 
 **Interfaces:**
 - Produces: `RecyclingPanelTab = 'building' | 'production'`
-- Consumes: `getPartSalvagePreview`、`claimPartSalvage`
+- Consumes: `getPartSalvagePreview`、`claimPartSalvage(now, recyclingYardLevel, gangLevel, random?)`
 - Produces: UI 会话态 `part-claim-result`
 
-- [ ] **Step 1: 写失败 UI 测试**
+- [x] **Step 1: 写失败 UI 测试**
 
 覆盖仅回收厂显示 Tab、默认建筑 Tab、生产红点、累计时间/批次/进度、领取按钮禁用/启用、领取结果配件列表与自动回收文案，以及 HeroesPanel 不再显示回收厂倒计时。
 
-- [ ] **Step 2: 运行 RED**
+- [x] **Step 2: 运行 RED**
 
 Run: `npx vitest run src/ui/BuildingPanel.test.tsx src/ui/HeroesPanel.test.tsx`
 
 Expected: FAIL，生产 Tab 与领取弹窗尚不存在。
 
-- [ ] **Step 3: 实现 UI 状态机**
+- [x] **Step 3: 实现 UI 状态机**
 
-生产 Tab 使用 `useChestTick` 每秒重算 preview，不写 Store。点击领取保存 `PartSalvageClaimResult` 到本地 session，弹窗逐件复用配件卡视觉；关闭后保持 production Tab。其他建筑完全沿用现状。
+生产 Tab 使用 `useChestTick` 每秒重算 preview，不写 Store。点击领取时传入当前 `gangLevel` 与回收厂等级，并保存 `PartSalvageClaimResult` 到本地 session；弹窗逐件复用配件卡视觉，关闭后保持 production Tab。其他建筑完全沿用现状。
 
-- [ ] **Step 4: 运行 GREEN**
+- [x] **Step 4: 运行 GREEN**
 
 Run: `npx vitest run src/ui/BuildingPanel.test.tsx src/ui/HeroesPanel.test.tsx`
 
@@ -220,21 +220,21 @@ Expected: PASS。
 - Consumes: `skillMainDamage`、`skillSplashDamage`
 - Preserves: 三格主资源条
 
-- [ ] **Step 1: 写失败 UI 测试**
+- [x] **Step 1: 写失败 UI 测试**
 
 断言总战力位于帮派按钮内部、顶层不再有独立 power ResourceAmount；英雄姓名行含战力，技能卡含说明、倍率、预估伤害和 `怒气 100 / 普攻 +20 / 受击 +10`。
 
-- [ ] **Step 2: 运行 RED**
+- [x] **Step 2: 运行 RED**
 
 Run: `npx vitest run src/ui/GlobalHud.test.tsx src/ui/HeroesPanel.test.tsx`
 
 Expected: FAIL，现有 DOM 仍有独立战力节点且技能仅显示名称。
 
-- [ ] **Step 3: 实现布局**
+- [x] **Step 3: 实现布局**
 
 把 total power 的 `ResourceAmount` 移入 `.global-hud__gang`，删除 `.global-hud__top > .resource-amount` 独立布局。HeroesPanel identity 行加入战力，技能卡调用真实伤害函数；修复 ≤560px portrait weapon 负偏移与 overflow。
 
-- [ ] **Step 4: 运行 GREEN**
+- [x] **Step 4: 运行 GREEN**
 
 Run: `npx vitest run src/ui/GlobalHud.test.tsx src/ui/HeroesPanel.test.tsx`
 
@@ -242,25 +242,30 @@ Expected: PASS。
 
 ---
 
-### Task 6: 设置概率、文档、集成验收与发布
+### Task 6: 设置概率、文档与本地集成验收
 
 **Files:**
 - Modify: `src/ui/SettingsPanel.tsx`
 - Modify: `src/ui/SettingsPanel.test.tsx`
 - Modify: `.superpowers/sdd/progression-economy-combat-smoke.mjs`
+- Add: `.superpowers/sdd/browser-layout-assertions.mjs`
+- Add: `src/ui/browserLayoutAssertions.test.ts`
+- Update: `.superpowers/sdd/progression-economy-combat-smoke.png`
 - Modify: `README.md`
 - Modify: `session/session.md`
+- Modify: `docs/superpowers/specs/2026-07-26-ui-rage-quality-salvage-claim-design.md`
+- Modify: `docs/superpowers/plans/2026-07-26-ui-rage-quality-salvage-claim.md`
 - Test: all affected tests
 
 **Interfaces:**
 - Consumes: 五品质概率和领取 UI
 - Produces: Chrome smoke 对 HUD、技能怒气、生产 Tab、领取弹窗和五品质的断言
 
-- [ ] **Step 1: 更新设置概率和 smoke 失败断言**
+- [x] **Step 1: 更新设置概率和 smoke 失败断言**
 
 将旧“原型/4 按钮”断言改为“传说/5 按钮”，增加生产 Tab 和怒气 UI 断言。
 
-- [ ] **Step 2: 运行全量门禁**
+- [x] **Step 2: 运行全量门禁**
 
 Run:
 
@@ -270,22 +275,25 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+git diff --check
 ```
 
 Expected: 全部 exit 0。
 
-- [ ] **Step 3: 本地 Chrome 验收**
+- [x] **Step 3: 本地 Chrome 验收**
 
 启动独立 Vite 端口并运行 smoke；验证桌面和 390×844 无横向溢出、HUD 无孤立战力行、英雄战力无遮挡、生产领取与真实怒气可观察。
 
-- [ ] **Step 4: 终审并修复 Critical/Important**
+- [x] **Step 4: 终审并修复 Critical/Important**
 
 对完整未提交 diff 做只读 defect-first review；所有 Critical/Important 必须修复并复审。
 
-- [ ] **Step 5: 提交并推送**
+- [ ] **Step 5: 后续提交并推送（本轮不执行）**
 
-提交功能和发布记录，普通 push `main`。
+仅在后续获得明确授权时提交功能和发布记录，并普通 push `main`。
 
-- [ ] **Step 6: 发布 Pages**
+- [ ] **Step 6: 后续发布 Pages（本轮不执行）**
 
 从已推送 `main` fresh build，运行 `scripts/deploy-gh-pages.ps1`；等待 Pages `built`，验证 HTML/JS/CSS 200，并用公开 URL 重跑 smoke。
+
+> 当前交接边界：Task1–6 的本地实现、终审与验收由本工作树完成；Step 5–6 仅保留为未来发布流程，本轮不执行，也不记录 commit、push 或 Pages 已完成。

@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { equipmentConfig } from '../config/equipmentConfig'
 import { expToLevel, heroesConfig } from '../config/heroesConfig'
+import { skillMainDamage, skillSplashDamage } from '../game/combat/damage'
 import { unitPower } from '../game/combat/power'
 import {
   CAR_PART_INVENTORY_LIMIT,
@@ -17,8 +18,6 @@ import {
   getGunHeroAtk,
   getGunPursuitDamage,
   getGunUpgradeCost,
-  getPartDropIntervalMs,
-  getPartSalvageDropProfile,
   isPartInstalled,
 } from '../game/equipmentProgression'
 import {
@@ -43,9 +42,7 @@ import {
 } from '../game/heroes'
 import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
 import { useAdventureStore } from '../store/useAdventureStore'
-import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
-import { useChestTick } from '../game/chestTick'
 import { useInitialFocus } from './useInitialFocus'
 import { ResourceAmount } from './ResourceAmount'
 
@@ -57,6 +54,8 @@ type DevelopmentTab = 'level' | 'car' | 'gun'
 type EquipmentPicker = Exclude<DevelopmentTab, 'level'>
 
 const TITLE_ID = 'heroes-panel-title'
+const SKILL_LABEL_ID = 'heroes-panel-skill-label'
+const SKILL_TITLE_ID = 'heroes-panel-skill-title'
 
 function upgradeFeedback(
   reason: string,
@@ -142,7 +141,6 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   const carPartSlotsByCar = useAdventureStore(
     (state) => state.carPartSlotsByCar,
   )
-  const partIdleClock = useAdventureStore((state) => state.partIdleClock)
   const upgradeHero = useAdventureStore((state) => state.upgradeHero)
   const equipCar = useAdventureStore((state) => state.equipCar)
   const equipGun = useAdventureStore((state) => state.equipGun)
@@ -154,10 +152,6 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
   )
   const upgradeCarPart = useAdventureStore((state) => state.upgradeCarPart)
   const upgradeGun = useAdventureStore((state) => state.upgradeGun)
-  const recyclingYardLevel = useCityStore(
-    (state) => state.buildingProgress['recycling-yard'].level,
-  )
-  const clockNow = useChestTick((state) => state.now)
   const [selectedHero, setSelectedHero] = useState<HeroId>('foreman')
   const [activeTab, setActiveTab] = useState<DevelopmentTab>('level')
   const [equipmentPicker, setEquipmentPicker] =
@@ -188,6 +182,17 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
     progression,
   )
   const selectedPower = unitPower(selectedDefinition.role, selectedStats)
+  const selectedSkill = selectedDefinition.skill
+  const currentSkillMainDamage = skillMainDamage(
+    selectedStats.atk,
+    0,
+    selectedSkill.targetMultiplier,
+  )
+  const currentSkillSplashDamage = skillSplashDamage(
+    selectedStats.atk,
+    0,
+    selectedSkill.splashMultiplier,
+  )
   const inventoryById = useMemo(
     () => new Map(carPartInventory.map((part) => [part.id, part])),
     [carPartInventory],
@@ -196,14 +201,6 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
     (part) => !isPartInstalled(part.id, carPartSlotsByCar),
   )
   const yardUnlocked = isBuildingUnlocked('recycling-yard', gangLevel)
-  const dropInterval = getPartDropIntervalMs(recyclingYardLevel)
-  const dropProfile = getPartSalvageDropProfile(recyclingYardLevel)
-  const visibleNow = clockNow > 0 ? clockNow : partIdleClock
-  const elapsedSinceDrop = Math.max(0, visibleNow - partIdleClock)
-  const nextDropSeconds = Math.max(
-    1,
-    Math.ceil((dropInterval - (elapsedSinceDrop % dropInterval)) / 1000),
-  )
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -377,22 +374,6 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
           </button>
         </header>
 
-        <div className="heroes-panel__salvage">
-          <span aria-hidden="true">♻</span>
-          <p>
-            <strong>废车回收厂</strong>
-            {yardUnlocked
-              ? `Lv.${recyclingYardLevel} · ${Math.round(
-                  dropInterval / 1000,
-                )}秒/批 · 每批 ${Object.entries(dropProfile.quantityWeights)
-                  .filter(([, weight]) => weight > 0)
-                  .map(([quantity]) => quantity)
-                  .join('–')}件 · 下批约 ${nextDropSeconds}秒`
-              : '帮派 Lv.8 解锁后开始挂机产出配件'}
-          </p>
-          <span>{`仓库 ${carPartInventory.length}/${CAR_PART_INVENTORY_LIMIT}`}</span>
-        </div>
-
         <div className="heroes-panel__layout">
           <nav className="heroes-panel__roster" aria-label="英雄列表">
             {HERO_IDS.map((heroId) => {
@@ -448,20 +429,20 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
 
           <article className="heroes-panel__showcase">
             <div className="heroes-panel__identity">
-              <p>{selectedDefinition.alias}</p>
-              <h3>{selectedDefinition.name}</h3>
-              <span>
-                {selectedDefinition.role === 'front' ? '前排防卫' : '后排火力'}
-              </span>
+              <p>{`${selectedDefinition.alias} · ${
+                selectedDefinition.role === 'front' ? '前排防卫' : '后排火力'
+              }`}</p>
+              <div className="heroes-panel__identity-copy">
+                <h3>{selectedDefinition.name}</h3>
+                <span className="heroes-panel__identity-level">{`Lv.${selectedLevel}`}</span>
+                <ResourceAmount
+                  kind="power"
+                  label="英雄战力"
+                  amount={selectedPower}
+                />
+              </div>
             </div>
             <HeroPortrait heroId={selectedHero} />
-            <div className="heroes-panel__power">
-              <ResourceAmount
-                kind="power"
-                label="英雄战力"
-                amount={selectedPower}
-              />
-            </div>
             <dl className="heroes-panel__stats">
               <div>
                 <dt>HP</dt>
@@ -476,10 +457,37 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                 <dd>{selectedStats.def}</dd>
               </div>
             </dl>
-            <div className="heroes-panel__skill">
-              <span>主动技能</span>
-              <strong>{selectedDefinition.skill.name}</strong>
-            </div>
+            <section
+              className="heroes-panel__skill"
+              aria-labelledby={`${SKILL_LABEL_ID} ${SKILL_TITLE_ID}`}
+            >
+              <header>
+                <span id={SKILL_LABEL_ID}>主动技能</span>
+                <h4 id={SKILL_TITLE_ID}>{selectedSkill.name}</h4>
+              </header>
+              <p>{selectedSkill.description}</p>
+              <dl className="heroes-panel__skill-multipliers">
+                <div>
+                  <dt>主目标</dt>
+                  <dd>{`ATK × ${selectedSkill.targetMultiplier}`}</dd>
+                </div>
+                <div>
+                  <dt>其余敌人</dt>
+                  <dd>{`ATK × ${selectedSkill.splashMultiplier}`}</dd>
+                </div>
+              </dl>
+              <div className="heroes-panel__skill-estimate">
+                <span>当前预估 · 理论裸防伤害（按 0 DEF）</span>
+                <strong>{`主目标 ${currentSkillMainDamage}`}</strong>
+                <strong>{`其余敌人 ${currentSkillSplashDamage}`}</strong>
+              </div>
+              <div className="heroes-panel__skill-rage">
+                <span>{`怒气 ${selectedSkill.rageCost}`}</span>
+                <span>{`普攻 +${selectedSkill.ragePerBasicAttack}`}</span>
+                <span>{`受击 +${selectedSkill.ragePerHitTaken}`}</span>
+                <strong>满怒自动释放</strong>
+              </div>
+            </section>
           </article>
 
           <section className="heroes-panel__development">
@@ -824,8 +832,8 @@ export function HeroesPanel({ onClose }: HeroesPanelProps): JSX.Element {
                   ) : (
                     <p className="heroes-panel__empty">
                       {yardUnlocked
-                        ? `仓库暂无${CAR_PART_SLOT_INFO[partPickerSlot].shortName}配件，废车回收厂会继续挂机产出。`
-                        : '解锁废车回收厂后即可挂机获得车辆配件。'}
+                        ? `仓库暂无${CAR_PART_SLOT_INFO[partPickerSlot].shortName}配件，请前往废车回收厂生产页领取。`
+                        : '解锁废车回收厂后即可在生产页累计并领取车辆配件。'}
                     </p>
                   )}
                 </div>

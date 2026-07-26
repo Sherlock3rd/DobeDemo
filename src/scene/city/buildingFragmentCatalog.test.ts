@@ -57,7 +57,7 @@ const expectedFragmentNames: Readonly<Record<BuildingKind, readonly string[]>> =
       '轮胎工位',
       '小型起重机',
       '喷漆间',
-      '调校工位',
+      '性能标定工位',
       '控制室',
     ],
     recycling: [

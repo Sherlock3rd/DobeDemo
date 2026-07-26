@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useCityStore } from '../store/useCityStore'
@@ -92,7 +92,28 @@ describe('SettingsPanel', () => {
 
     await user.click(screen.getByRole('button', { name: '查看掉落概率' }))
     expect(screen.getByText(/Lv\.10 · 12秒\/批/)).toBeInTheDocument()
-    expect(screen.getByText(/原型 25%/)).toBeInTheDocument()
+    expect(screen.getByText(/传说 25%/)).toBeInTheDocument()
+
+    const probabilities = document.querySelector(
+      '.settings-panel__probabilities',
+    )
+    expect(probabilities).not.toBeNull()
+    const probabilityView = within(probabilities as HTMLElement)
+    expect(
+      probabilityView.getByText(
+        /Lv\.1 · 30秒\/批.*普通 85% · 优秀 15% · 精良 0% · 史诗 0% · 传说 0%/,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      probabilityView.getByText(
+        /1–5关 · 配件 20% · 普通 75% · 优秀 15% · 精良 10% · 史诗 0% · 传说 0%/,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      probabilityView.getByText(
+        /1–2关 · 配件 20% · 普通 75% · 优秀 15% · 精良 10% · 史诗 0% · 传说 0%/,
+      ),
+    ).toBeInTheDocument()
   })
 
   it('requires a second confirmation before resetting', async () => {

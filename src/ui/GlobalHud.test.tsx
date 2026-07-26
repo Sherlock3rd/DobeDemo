@@ -35,12 +35,22 @@ describe('GlobalHud', () => {
     expect(screen.getByLabelText('油 0')).toBeInTheDocument()
     expect(screen.getByLabelText('物资 0')).toBeInTheDocument()
     expect(screen.queryByText(/10秒/)).toBeNull()
-    expect(screen.getByLabelText(/战力 \d+/)).toBeInTheDocument()
     expect(screen.queryByText(/英雄经验/)).toBeNull()
     expect(screen.getByText('Thomas Shelby')).toBeInTheDocument()
+    const top = screen
+      .getByLabelText('主界面 HUD')
+      .querySelector('.global-hud__top')
+    const gangButton = screen.getByRole('button', {
+      name: /Prospect.*战力 \d+/,
+    })
+    expect(top).not.toBeNull()
+    expect(gangButton).toContainElement(screen.getByLabelText(/战力 \d+/))
+    expect(
+      top?.querySelector(':scope > .resource-amount'),
+    ).not.toBeInTheDocument()
   })
 
-  it('shows gang level and role in the gang entry', () => {
+  it('shows gang level, role, and account power in one accessible gang entry', () => {
     useGangStore.setState({ totalReputation: 330, lastUpdatedAt: BASE_TIME })
     render(
       <GlobalHud
@@ -52,7 +62,9 @@ describe('GlobalHud', () => {
       />,
     )
     expect(
-      screen.getByRole('button', { name: /Full Patch/ }),
+      screen.getByRole('button', {
+        name: /Lv\.\d+ Full Patch.*战力 \d+/,
+      }),
     ).toBeInTheDocument()
   })
 

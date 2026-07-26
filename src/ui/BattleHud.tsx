@@ -15,11 +15,6 @@ export interface BattleHudProps {
   units: UnitSnapshot[]
 }
 
-function cooldownSeconds(unit: UnitSnapshot): number {
-  if (unit.cooldownRemaining <= 0) return 0
-  return Math.ceil(unit.cooldownRemaining / 10)
-}
-
 export function BattleHud({
   phase,
   speed,
@@ -97,12 +92,8 @@ export function BattleHud({
 
       <div className="battle-hud__portraits" aria-label="我方英雄状态">
         {allies.map((unit) => {
-          const ready = unit.cooldownRemaining <= 0 && unit.alive
-          const seconds = cooldownSeconds(unit)
-          const fill =
-            unit.cooldownTotal > 0
-              ? 1 - unit.cooldownRemaining / unit.cooldownTotal
-              : 1
+          const ready = unit.rage >= unit.maxRage && unit.alive
+          const fill = unit.maxRage > 0 ? unit.rage / unit.maxRage : 0
           return (
             <div
               key={`${unit.side}-${unit.globalIndex}`}
@@ -111,7 +102,7 @@ export function BattleHud({
                   ? 'battle-hud__portrait battle-hud__portrait--ready'
                   : 'battle-hud__portrait'
               }
-              aria-label={`生命 ${unit.hp}/${unit.maxHp}，技能冷却 ${seconds} 秒`}
+              aria-label={`生命 ${unit.hp}/${unit.maxHp}，怒气 ${unit.rage}/${unit.maxRage}`}
             >
               <div
                 className="battle-hud__hp"
@@ -125,14 +116,15 @@ export function BattleHud({
               <div
                 className="battle-hud__cd"
                 role="progressbar"
+                aria-label={`怒气 ${unit.rage}/${unit.maxRage}`}
                 aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.round(fill * 100)}
+                aria-valuemax={unit.maxRage}
+                aria-valuenow={unit.rage}
               >
                 <span style={{ width: `${fill * 100}%` }} />
               </div>
               <span className="battle-hud__cd-label">
-                {ready ? '就绪' : String(seconds)}
+                {unit.rage}/{unit.maxRage}
               </span>
             </div>
           )

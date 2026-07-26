@@ -1,6 +1,6 @@
 import { getEnemyCount, getStage } from '../../config/campaignConfig'
 import { combatConfig, type SkillConfig } from '../../config/combatConfig'
-import { heroesConfig } from '../../config/heroesConfig'
+import { heroesConfig, type HeroSkillConfig } from '../../config/heroesConfig'
 import {
   getHeroLevelCap,
   isHeroId,
@@ -30,7 +30,7 @@ export interface BattleUnitInput {
   hp: number
   atk: number
   def: number
-  skill: SkillConfig
+  skill: SkillConfig | HeroSkillConfig
 }
 
 export interface BattleInput {
@@ -48,6 +48,8 @@ export interface UnitSnapshot {
   heroId?: HeroId
   hp: number
   maxHp: number
+  rage: number
+  maxRage: number
   cooldownRemaining: number
   cooldownTotal: number
   alive: boolean
@@ -78,6 +80,7 @@ export interface BattleResult {
   outcome: 'victory' | 'defeat'
   endedAtTick: number
   reason: 'enemies-cleared' | 'allies-defeated' | 'timeout'
+  initialUnits: UnitSnapshot[]
   timeline: TickSnapshot[]
   alliesSurvived: number
 }
@@ -92,6 +95,9 @@ interface RuntimeUnit {
   alive: boolean
   cooldown: number
   cooldownTotal: number
+  rage: number
+  maxRage: number
+  rageSkill: HeroSkillConfig | null
 }
 
 export function createBattleSeed(input: Omit<BattleInput, 'seed'>): string {
@@ -110,6 +116,13 @@ export function createBattleSeed(input: Omit<BattleInput, 'seed'>): string {
       `sm${u.skill.splashMultiplier}`,
       `ic${u.skill.initialCooldownTicks}`,
       `cd${u.skill.cooldownTicks}`,
+      ...('rageCost' in u.skill
+        ? [
+            `rc${u.skill.rageCost}`,
+            `rb${u.skill.ragePerBasicAttack}`,
+            `rh${u.skill.ragePerHitTaken}`,
+          ]
+        : []),
     ].join(':')
   return `stage${input.stage}|${input.allies.map(part).join(',')}|${input.enemies
     .map(part)
@@ -242,6 +255,11 @@ export function buildBattleInput(
 export function simulateBattle(input: BattleInput): BattleResult {
   const build = (u: BattleUnitInput): RuntimeUnit => {
     const eff = effectiveStats(u.row, { hp: u.hp, atk: u.atk, def: u.def })
+    const rageSkill =
+      u.side === 'ally' && 'rageCost' in u.skill ? u.skill : null
+    if (u.side === 'ally' && !rageSkill) {
+      invalidInput('ally skill rage')
+    }
     return {
       input: u,
       globalIndex: globalIndexOf(u.row, u.index),
@@ -252,10 +270,28 @@ export function simulateBattle(input: BattleInput): BattleResult {
       alive: true,
       cooldown: u.skill.initialCooldownTicks,
       cooldownTotal: u.skill.cooldownTicks,
+      rage: 0,
+      maxRage: rageSkill?.rageCost ?? 0,
+      rageSkill,
     }
   }
   const allies = input.allies.map(build)
   const enemies = input.enemies.map(build)
+  const snapshot = (u: RuntimeUnit): UnitSnapshot => ({
+    side: u.input.side,
+    globalIndex: u.globalIndex,
+    row: u.input.row,
+    index: u.input.index,
+    heroId: u.input.heroId,
+    hp: u.hp,
+    maxHp: u.maxHp,
+    rage: u.rage,
+    maxRage: u.maxRage,
+    cooldownRemaining: Math.max(0, u.cooldown),
+    cooldownTotal: u.cooldownTotal,
+    alive: u.alive,
+  })
+  const initialUnits = [...allies, ...enemies].map(snapshot)
   const timeline: TickSnapshot[] = []
   const interval = combatConfig.attackIntervalTicks
   let outcome: BattleResult['outcome'] = 'defeat'
@@ -275,8 +311,8 @@ export function simulateBattle(input: BattleInput): BattleResult {
     const hits: HitEvent[] = []
     const deaths: DeathEvent[] = []
 
-    // 1. decrement cooldowns for living units
-    for (const unit of [...allies, ...enemies]) {
+    // 1. decrement cooldowns for living enemies
+    for (const unit of enemies) {
       if (unit.alive && unit.cooldown > 0) unit.cooldown -= 1
     }
 
@@ -302,13 +338,24 @@ export function simulateBattle(input: BattleInput): BattleResult {
           (d) => d.globalIndex === target.globalIndex && d.alive,
         )
         if (!targetUnit) continue
-        if (attacker.cooldown <= 0) {
+        const useSkill =
+          attackerSide === 'ally'
+            ? attacker.rageSkill !== null &&
+              attacker.rage >= attacker.rageSkill.rageCost
+            : attacker.cooldown <= 0
+        if (useSkill) {
           const main = skillMainDamage(
             attacker.effAtk,
             targetUnit.effDef,
             attacker.input.skill.targetMultiplier,
           )
           targetUnit.hp -= main
+          if (targetUnit.rageSkill) {
+            targetUnit.rage = Math.min(
+              targetUnit.maxRage,
+              targetUnit.rage + targetUnit.rageSkill.ragePerHitTaken,
+            )
+          }
           hits.push({
             attackerSide,
             attackerGlobalIndex: attacker.globalIndex,
@@ -325,6 +372,12 @@ export function simulateBattle(input: BattleInput): BattleResult {
               attacker.input.skill.splashMultiplier,
             )
             other.hp -= splash
+            if (other.rageSkill) {
+              other.rage = Math.min(
+                other.maxRage,
+                other.rage + other.rageSkill.ragePerHitTaken,
+              )
+            }
             hits.push({
               attackerSide,
               attackerGlobalIndex: attacker.globalIndex,
@@ -334,10 +387,20 @@ export function simulateBattle(input: BattleInput): BattleResult {
               kind: 'skill-splash',
             })
           }
-          attacker.cooldown = attacker.cooldownTotal
+          if (attackerSide === 'ally') {
+            attacker.rage = 0
+          } else {
+            attacker.cooldown = attacker.cooldownTotal
+          }
         } else {
           const dmg = basicAttackDamage(attacker.effAtk, targetUnit.effDef)
           targetUnit.hp -= dmg
+          if (targetUnit.rageSkill) {
+            targetUnit.rage = Math.min(
+              targetUnit.maxRage,
+              targetUnit.rage + targetUnit.rageSkill.ragePerHitTaken,
+            )
+          }
           hits.push({
             attackerSide,
             attackerGlobalIndex: attacker.globalIndex,
@@ -346,6 +409,12 @@ export function simulateBattle(input: BattleInput): BattleResult {
             amount: dmg,
             kind: 'basic',
           })
+          if (attacker.rageSkill) {
+            attacker.rage = Math.min(
+              attacker.maxRage,
+              attacker.rage + attacker.rageSkill.ragePerBasicAttack,
+            )
+          }
         }
       }
     }
@@ -362,18 +431,6 @@ export function simulateBattle(input: BattleInput): BattleResult {
     }
 
     // 5. snapshot
-    const snapshot = (u: RuntimeUnit): UnitSnapshot => ({
-      side: u.input.side,
-      globalIndex: u.globalIndex,
-      row: u.input.row,
-      index: u.input.index,
-      heroId: u.input.heroId,
-      hp: u.hp,
-      maxHp: u.maxHp,
-      cooldownRemaining: Math.max(0, u.cooldown),
-      cooldownTotal: u.cooldownTotal,
-      alive: u.alive,
-    })
     timeline.push({
       tick,
       units: [...allies, ...enemies].map(snapshot),
@@ -406,6 +463,7 @@ export function simulateBattle(input: BattleInput): BattleResult {
     outcome,
     endedAtTick,
     reason,
+    initialUnits,
     timeline,
     alliesSurvived: allies.filter((u) => u.alive).length,
   }

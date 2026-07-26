@@ -11,6 +11,8 @@ const units = [
     index: 0,
     hp: 800,
     maxHp: 800,
+    rage: 40,
+    maxRage: 100,
     cooldownRemaining: 30,
     cooldownTotal: 90,
     alive: true,
@@ -98,7 +100,7 @@ describe('BattleHud', () => {
     expect(onConfirmExit).toHaveBeenCalledTimes(1)
   })
 
-  it('renders read-only portraits with cooldown seconds', () => {
+  it('renders an accessible ally rage bar without presenting cooldown', () => {
     render(
       <BattleHud
         phase="running"
@@ -112,7 +114,11 @@ describe('BattleHud', () => {
         units={units}
       />,
     )
-    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(
+      screen.getByRole('progressbar', { name: '怒气 40/100' }),
+    ).toHaveAttribute('aria-valuenow', '40')
+    expect(screen.queryByText('3')).toBeNull()
+    expect(screen.queryByText(/冷却/)).toBeNull()
     expect(screen.queryByRole('button', { name: /生命/ })).toBeNull()
   })
 })

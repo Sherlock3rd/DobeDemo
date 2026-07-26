@@ -1,16 +1,40 @@
+// @ts-expect-error Vitest runs in Node; the app tsconfig intentionally omits Node types.
+import { readFileSync } from 'node:fs'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
+import { heroesConfig } from '../config/heroesConfig'
 import { useChestTick } from '../game/chestTick'
+import { skillMainDamage, skillSplashDamage } from '../game/combat/damage'
 import { getTotalReputationForLevel } from '../game/gangProgression'
+import { getHeroCombatStats } from '../game/heroEquipment'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
 import { HeroesPanel } from './HeroesPanel'
 
 const BASE_TIME = 1_700_000_000_000
+const appStyles = readFileSync('src/App.css', 'utf8')
+const styleElement = document.createElement('style')
 
 describe('HeroesPanel', () => {
+  beforeAll(() => {
+    styleElement.textContent = appStyles
+    document.head.append(styleElement)
+  })
+
+  afterAll(() => {
+    styleElement.remove()
+  })
+
   beforeEach(() => {
     window.localStorage.clear()
     useGangStore.getState().reset(BASE_TIME)
@@ -36,6 +60,113 @@ describe('HeroesPanel', () => {
     expect(roster.getByText('Arthur · 帮派 Lv.12 解锁')).toBeInTheDocument()
   })
 
+  it('keeps name, level, and hero power as aligned siblings in one wrapping identity row', () => {
+    render(<HeroesPanel onClose={() => {}} />)
+
+    const showcase = document.querySelector('.heroes-panel__showcase')
+    const identity = showcase?.querySelector('.heroes-panel__identity')
+    const identityCopy = identity?.querySelector('.heroes-panel__identity-copy')
+    expect(showcase).not.toBeNull()
+    expect(identity).not.toBeNull()
+    expect(identityCopy).not.toBeNull()
+    const name = within(identityCopy as HTMLElement).getByRole('heading', {
+      name: 'Thomas Shelby',
+    })
+    const level = within(identityCopy as HTMLElement).getByText('Lv.1')
+    const power = within(identityCopy as HTMLElement).getByLabelText(
+      /英雄战力 \d+/,
+    )
+    expect([...((identityCopy as HTMLElement).children ?? [])]).toEqual([
+      name,
+      level,
+      power,
+    ])
+    const identityCopyStyle = getComputedStyle(identityCopy as HTMLElement)
+    expect(identityCopyStyle.display).toBe('flex')
+    expect(identityCopyStyle.flexWrap).toBe('wrap')
+    expect(identityCopyStyle.alignItems).toBe('baseline')
+    expect(showcase?.querySelector('.heroes-panel__power')).toBeNull()
+  })
+
+  it('shows a complete accessible skill card with live zero-defense estimates', () => {
+    const state = useAdventureStore.getState()
+    const progression = {
+      gunLevels: state.gunLevels,
+      carPartInventory: state.carPartInventory,
+      carPartSlotsByCar: state.carPartSlotsByCar,
+    }
+    const selectedStats = getHeroCombatStats(
+      'foreman',
+      state.heroLevels.foreman,
+      state.equipmentByHero.foreman,
+      progression,
+    )
+    const skill = heroesConfig.heroes.foreman.skill
+    const expectedMainDamage = skillMainDamage(
+      selectedStats.atk,
+      0,
+      skill.targetMultiplier,
+    )
+    const expectedSplashDamage = skillSplashDamage(
+      selectedStats.atk,
+      0,
+      skill.splashMultiplier,
+    )
+
+    render(<HeroesPanel onClose={() => {}} />)
+
+    const skillCard = screen.getByRole('region', { name: /主动技能/ })
+    expect(
+      within(skillCard).getByRole('heading', { name: skill.name }),
+    ).toBeInTheDocument()
+    expect(skillCard).toHaveTextContent(skill.description)
+    const mainMultiplier = within(skillCard)
+      .getByText(`ATK × ${skill.targetMultiplier}`)
+      .closest('div')
+    const splashMultiplier = within(skillCard)
+      .getByText(`ATK × ${skill.splashMultiplier}`)
+      .closest('div')
+    expect(mainMultiplier).toHaveTextContent(
+      `主目标ATK × ${skill.targetMultiplier}`,
+    )
+    expect(splashMultiplier).toHaveTextContent(
+      `其余敌人ATK × ${skill.splashMultiplier}`,
+    )
+    expect(skillCard).toHaveTextContent('理论裸防伤害（按 0 DEF）')
+    expect(skillCard).toHaveTextContent(`主目标 ${expectedMainDamage}`)
+    expect(skillCard).toHaveTextContent(`其余敌人 ${expectedSplashDamage}`)
+    expect(skillCard).toHaveTextContent(`怒气 ${skill.rageCost}`)
+    expect(skillCard).toHaveTextContent(`普攻 +${skill.ragePerBasicAttack}`)
+    expect(skillCard).toHaveTextContent(`受击 +${skill.ragePerHitTaken}`)
+    expect(skillCard).toHaveTextContent('满怒自动释放')
+  })
+
+  it('computes clipping, non-negative weapon inset, and identity layering styles', () => {
+    render(<HeroesPanel onClose={() => {}} />)
+
+    const portrait = document.querySelector(
+      '.heroes-panel__portrait',
+    ) as HTMLElement
+    const weapon = portrait.querySelector(
+      '.heroes-panel__portrait-weapon',
+    ) as HTMLElement
+    const identity = document.querySelector(
+      '.heroes-panel__identity',
+    ) as HTMLElement
+    const power = identity.querySelector('.resource-amount') as HTMLElement
+    const portraitStyle = getComputedStyle(portrait)
+    const weaponStyle = getComputedStyle(weapon)
+    const identityStyle = getComputedStyle(identity)
+    const powerStyle = getComputedStyle(power)
+
+    expect(portraitStyle.overflow).toBe('hidden')
+    expect(portraitStyle.isolation).toBe('isolate')
+    expect(Number.parseFloat(weaponStyle.right)).toBeGreaterThanOrEqual(0)
+    expect(identityStyle.zIndex).toBe('2')
+    expect(powerStyle.position).toBe('relative')
+    expect(powerStyle.zIndex).toBe('1')
+  })
+
   it('upgrades foreman spending shared exp when cap allows', async () => {
     useGangStore.setState({ totalReputation: 60, lastUpdatedAt: BASE_TIME })
     useAdventureStore.setState({ sharedExp: 100 })
@@ -56,6 +187,25 @@ describe('HeroesPanel', () => {
     )
   })
 
+  it('removes the salvage countdown while keeping storage and five-quality recycling', async () => {
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      lastUpdatedAt: BASE_TIME,
+    })
+
+    render(<HeroesPanel onClose={() => {}} />)
+
+    expect(screen.queryByText('废车回收厂')).not.toBeInTheDocument()
+    expect(screen.queryByText(/下批约/)).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /^车辆/ }))
+    expect(screen.getByText('配件仓库 0/40')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /^一键回收/ })).toHaveLength(5)
+    await userEvent.click(screen.getByRole('button', { name: '选择引擎' }))
+    expect(
+      screen.getByText('仓库暂无引擎配件，请前往废车回收厂生产页领取。'),
+    ).toBeInTheDocument()
+  })
+
   it('installs, upgrades, unequips, and recycles car parts from the car tab', async () => {
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
@@ -68,13 +218,13 @@ describe('HeroesPanel', () => {
         {
           id: 'part-engine',
           slot: 'engine',
-          quality: 'worn',
+          quality: 'common',
           level: 1,
         },
         {
           id: 'part-bumper',
           slot: 'bumper',
-          quality: 'worn',
+          quality: 'common',
           level: 1,
         },
       ],
@@ -90,7 +240,7 @@ describe('HeroesPanel', () => {
     const engineCard = screen.getByText('强化引擎').closest('article')
     expect(engineCard).not.toBeNull()
     expect(within(engineCard as HTMLElement).getByText('引擎')).toBeVisible()
-    expect(within(engineCard as HTMLElement).getByText('旧件')).toBeVisible()
+    expect(within(engineCard as HTMLElement).getByText('普通')).toBeVisible()
     expect(within(engineCard as HTMLElement).getByText('Lv.1')).toBeVisible()
     await userEvent.click(
       within(engineCard as HTMLElement).getByRole('button', {

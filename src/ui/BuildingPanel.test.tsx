@@ -1,9 +1,11 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { economyConfig, getBuildingPower } from '../config/economyConfig'
 import { buildingCatalogById } from '../game/buildingCatalog'
+import { useChestTick } from '../game/chestTick'
+import { PART_IDLE_CAP_MS } from '../game/equipmentProgression'
 import type {
   BuildingDefinition,
   BuildingId,
@@ -15,6 +17,10 @@ import {
   getTotalReputationForLevel,
 } from '../game/gangProgression'
 import { getBuildingFragments } from '../scene/city/buildingFragmentCatalog'
+import {
+  useAdventureStore,
+  type PartSalvageClaimResult,
+} from '../store/useAdventureStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
 import { BuildingPanel } from './BuildingPanel'
@@ -26,6 +32,7 @@ import {
 } from './buildingPanelSession'
 
 const BASE_TIME = 1_700_000_000_000
+const originalClaimPartSalvage = useAdventureStore.getState().claimPartSalvage
 
 const repairFragments = getBuildingFragments('repair')
 const commercialFragments = getBuildingFragments('commercial')
@@ -78,6 +85,11 @@ describe('BuildingPanel', () => {
     useCityStore.getState().reset(Date.now())
     setResources(0)
     useGangStore.getState().reset(BASE_TIME)
+    useAdventureStore.getState().reset(BASE_TIME)
+    useAdventureStore.setState({
+      claimPartSalvage: originalClaimPartSalvage,
+    })
+    useChestTick.setState({ now: BASE_TIME, tick: 0 })
   })
 
   it('does not render without a selected building', () => {
@@ -132,6 +144,273 @@ describe('BuildingPanel', () => {
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
   })
 
+  describe('recycling-yard production tabs', () => {
+    function openUnlockedYard(level = 1): void {
+      useGangStore.setState({
+        totalReputation: getTotalReputationForLevel(8),
+      })
+      setProgress('recycling-yard', level, Array(10).fill(0))
+      useCityStore.getState().selectBuilding('recycling-yard')
+    }
+
+    it('shows tabs only for the recycling yard and defaults every open to building', async () => {
+      const user = userEvent.setup()
+      openUnlockedYard()
+
+      render(<BuildingPanel />)
+
+      const tabs = screen.getByRole('navigation', {
+        name: '废车回收厂面板分类',
+      })
+      expect(
+        within(tabs).getByRole('button', { name: '建筑' }),
+      ).toHaveAttribute('aria-pressed', 'true')
+      await user.click(within(tabs).getByRole('button', { name: /生产/ }))
+      expect(
+        within(tabs).getByRole('button', { name: /生产/ }),
+      ).toHaveAttribute('aria-pressed', 'true')
+
+      act(() => {
+        useCityStore.getState().clearSelection()
+      })
+      act(() => {
+        useCityStore.getState().selectBuilding('recycling-yard')
+      })
+      expect(screen.getByRole('button', { name: '建筑' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+
+      act(() => {
+        useCityStore.getState().selectBuilding('repair-shop')
+      })
+      expect(
+        screen.queryByRole('navigation', {
+          name: '废车回收厂面板分类',
+        }),
+      ).not.toBeInTheDocument()
+      expect(screen.getByRole('radiogroup')).toBeInTheDocument()
+    })
+
+    it('renders a read-only tick-driven preview with badge, progress, storage, and cap', async () => {
+      openUnlockedYard()
+      useAdventureStore.setState({ partIdleClock: BASE_TIME })
+      useChestTick.setState({ now: BASE_TIME + 35_000, tick: 1 })
+      const before = {
+        inventory: useAdventureStore.getState().carPartInventory,
+        clock: useAdventureStore.getState().partIdleClock,
+        serial: useAdventureStore.getState().nextPartSerial,
+      }
+
+      render(<BuildingPanel />)
+      await userEvent.click(screen.getByRole('button', { name: /生产/ }))
+
+      const productionTab = screen.getByRole('button', {
+        name: '生产 · 可领取 1 批',
+      })
+      expect(
+        productionTab.querySelector('.building-panel__tab-dot'),
+      ).toBeInTheDocument()
+      const production = screen.getByRole('region', { name: '配件生产' })
+      expect(within(production).getByText('累计时间 35秒')).toBeInTheDocument()
+      expect(within(production).getByText('已完成批次 1')).toBeInTheDocument()
+      expect(
+        within(production).getByText('当前批进度 5秒 / 30秒'),
+      ).toBeInTheDocument()
+      expect(within(production).getByText('下一批 25秒')).toBeInTheDocument()
+      expect(within(production).getByText('仓库 0/40')).toBeInTheDocument()
+      expect(within(production).getByText('挂机上限 8小时')).toBeInTheDocument()
+      expect(
+        within(production).getByRole('button', { name: '领取 1 批' }),
+      ).toBeEnabled()
+      expect({
+        inventory: useAdventureStore.getState().carPartInventory,
+        clock: useAdventureStore.getState().partIdleClock,
+        serial: useAdventureStore.getState().nextPartSerial,
+      }).toEqual(before)
+    })
+
+    it('replaces the next-batch countdown with capped guidance at eight hours', async () => {
+      openUnlockedYard()
+      useAdventureStore.setState({ partIdleClock: BASE_TIME })
+      useChestTick.setState({
+        now: BASE_TIME + PART_IDLE_CAP_MS + 5_000,
+        tick: 1,
+      })
+
+      render(<BuildingPanel />)
+      await userEvent.click(screen.getByRole('button', { name: /生产/ }))
+
+      const production = screen.getByRole('region', { name: '配件生产' })
+      expect(within(production).queryByText(/下一批/)).not.toBeInTheDocument()
+      expect(
+        within(production).getByText('已达8小时上限，领取后继续累计'),
+      ).toBeInTheDocument()
+    })
+
+    it('keeps claim disabled before one batch and enables it on the next UI tick', async () => {
+      openUnlockedYard()
+      useAdventureStore.setState({ partIdleClock: BASE_TIME })
+      useChestTick.setState({ now: BASE_TIME + 29_000, tick: 1 })
+
+      render(<BuildingPanel />)
+      await userEvent.click(screen.getByRole('button', { name: '生产' }))
+
+      expect(
+        screen.getByRole('button', { name: '暂无可领取批次' }),
+      ).toBeDisabled()
+      act(() => {
+        useChestTick.setState({ now: BASE_TIME + 30_000, tick: 2 })
+      })
+      expect(screen.getByRole('button', { name: '领取 1 批' })).toBeEnabled()
+    })
+
+    it('keeps the production tab open when a background yard upgrade completes', async () => {
+      openUnlockedYard()
+
+      render(<BuildingPanel />)
+      await userEvent.click(screen.getByRole('button', { name: '生产' }))
+      act(() => {
+        setProgress('recycling-yard', 2, Array(10).fill(0))
+      })
+
+      expect(screen.getByText('等级 2 / 10')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '生产' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+      expect(
+        screen.getByRole('region', { name: '配件生产' }),
+      ).toBeInTheDocument()
+    })
+
+    it('selects exactly one default child when returning to building after a yard level completes', async () => {
+      openUnlockedYard()
+      setProgress('recycling-yard', 1, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+      render(<BuildingPanel />)
+      expect(
+        screen.getAllByRole('radio').filter((radio) => radio.tabIndex === 0),
+      ).toHaveLength(0)
+      await userEvent.click(screen.getByRole('button', { name: '生产' }))
+      act(() => {
+        setProgress('recycling-yard', 2, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+      })
+      await userEvent.click(screen.getByRole('button', { name: '建筑' }))
+
+      const radios = screen.getAllByRole('radio')
+      expect(radios.filter((radio) => radio.tabIndex === 0)).toHaveLength(1)
+      expect(
+        radios.filter((radio) => radio.getAttribute('aria-checked') === 'true'),
+      ).toHaveLength(1)
+      expect(radios[0]).toHaveAttribute('tabindex', '0')
+      expect(radios[0]).toHaveAttribute('aria-checked', 'true')
+    })
+
+    it('keeps the claim result open when a background yard upgrade completes', async () => {
+      openUnlockedYard()
+      useAdventureStore.setState({
+        partIdleClock: BASE_TIME,
+        claimPartSalvage: vi.fn((): PartSalvageClaimResult => ({
+          applied: true,
+          receivedParts: [],
+          autoRecycled: 1,
+          sparePartsGained: 8,
+          batchCount: 1,
+        })),
+      })
+      useChestTick.setState({ now: BASE_TIME + 30_000, tick: 1 })
+
+      render(<BuildingPanel />)
+      await userEvent.click(screen.getByRole('button', { name: /生产/ }))
+      await userEvent.click(screen.getByRole('button', { name: '领取 1 批' }))
+      act(() => {
+        setProgress('recycling-yard', 2, Array(10).fill(0))
+      })
+
+      expect(
+        screen.getByRole('dialog', { name: '领取结果' }),
+      ).toBeInTheDocument()
+      expect(screen.getByText('已结算 1 批 · 入库 0 件')).toBeInTheDocument()
+    })
+
+    it('claims once, lists five-quality result parts, reports recycling, and closes to production', async () => {
+      const user = userEvent.setup()
+      openUnlockedYard(10)
+      useAdventureStore.setState({ partIdleClock: BASE_TIME })
+      useChestTick.setState({ now: BASE_TIME + 12_000, tick: 1 })
+      const claimPartSalvage = vi.fn((): PartSalvageClaimResult => ({
+        applied: true,
+        receivedParts: [
+          { id: 'result-1', slot: 'tires', quality: 'common', level: 1 },
+          { id: 'result-2', slot: 'engine', quality: 'uncommon', level: 1 },
+          { id: 'result-3', slot: 'bumper', quality: 'rare', level: 1 },
+          { id: 'result-4', slot: 'suspension', quality: 'epic', level: 1 },
+          { id: 'result-5', slot: 'tires', quality: 'legendary', level: 1 },
+        ],
+        autoRecycled: 2,
+        sparePartsGained: 98,
+        batchCount: 1,
+      }))
+      useAdventureStore.setState({ claimPartSalvage })
+
+      render(<BuildingPanel />)
+      await user.click(screen.getByRole('button', { name: /生产/ }))
+      const claimButton = screen.getByRole('button', { name: '领取 1 批' })
+      fireEvent.click(claimButton)
+      fireEvent.click(claimButton)
+
+      expect(claimPartSalvage).toHaveBeenCalledTimes(1)
+      expect(claimPartSalvage).toHaveBeenCalledWith(BASE_TIME + 12_000, 10, 8)
+      const result = screen.getByRole('dialog', { name: '领取结果' })
+      expect(within(result).getAllByText('高抓地轮胎')).toHaveLength(2)
+      expect(within(result).getByText('强化引擎')).toBeInTheDocument()
+      expect(within(result).getByText('防撞保险杠')).toBeInTheDocument()
+      expect(within(result).getByText('运动悬挂')).toBeInTheDocument()
+      for (const quality of ['普通', '优秀', '精良', '史诗', '传说']) {
+        expect(within(result).getByText(quality)).toBeInTheDocument()
+      }
+      expect(within(result).getAllByText('Lv.1')).toHaveLength(5)
+      expect(
+        within(result).getByText('自动回收 2 件 · 零件 +98'),
+      ).toBeInTheDocument()
+
+      const resultTitle = within(result).getByRole('heading', {
+        name: '领取结果',
+      })
+      expect(resultTitle).toHaveAttribute('tabindex', '-1')
+      expect(resultTitle).toHaveFocus()
+      const closeResult = within(result).getByRole('button', {
+        name: '关闭领取结果',
+      })
+      expect(closeResult).toHaveClass('building-panel__close')
+      const returnToProduction = within(result).getByRole('button', {
+        name: '返回生产',
+      })
+      await user.tab()
+      expect(closeResult).toHaveFocus()
+      expect(result).toContainElement(document.activeElement as HTMLElement)
+      await user.tab()
+      expect(returnToProduction).toHaveFocus()
+      expect(result).toContainElement(document.activeElement as HTMLElement)
+      await user.tab()
+      expect(closeResult).toHaveFocus()
+      await user.tab({ shift: true })
+      expect(returnToProduction).toHaveFocus()
+      expect(result).toContainElement(document.activeElement as HTMLElement)
+      await user.tab({ shift: true })
+      expect(closeResult).toHaveFocus()
+      expect(result).toContainElement(document.activeElement as HTMLElement)
+      await user.keyboard('{Escape}')
+      const productionTab = screen.getByRole('button', { name: /生产/ })
+      expect(productionTab).toHaveAttribute('aria-pressed', 'true')
+      expect(productionTab).toHaveFocus()
+      expect(
+        screen.queryByRole('dialog', { name: '领取结果' }),
+      ).not.toBeInTheDocument()
+    })
+  })
+
   describe('session selection state machine', () => {
     it('defaults to the first unlocked slot and hides every other slot at repair Lv.1', () => {
       useCityStore.getState().selectBuilding('repair-shop')
@@ -181,6 +460,28 @@ describe('BuildingPanel', () => {
         }),
       ).toHaveAttribute('aria-checked', 'true')
       expect(screen.queryByText('排气设施')).not.toBeInTheDocument()
+    })
+
+    it('resets another building to its default slot when its level changes', async () => {
+      const user = userEvent.setup()
+      useCityStore.getState().selectBuilding('repair-shop')
+      setProgress('repair-shop', 3, [3, 3, 0, 0, 0])
+
+      render(<BuildingPanel />)
+      await user.click(
+        screen.getByRole('radio', {
+          name: new RegExp(repairFragments[1].name),
+        }),
+      )
+      act(() => {
+        setProgress('repair-shop', 4, [3, 3, 0, 0, 0])
+      })
+
+      expect(
+        screen.getByRole('radio', {
+          name: new RegExp(repairFragments[0].name),
+        }),
+      ).toHaveAttribute('aria-checked', 'true')
     })
 
     it('starts a fresh session with the default slot when the panel is closed and reopened', async () => {

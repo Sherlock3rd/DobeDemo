@@ -22,10 +22,11 @@ export const CAR_PART_SLOT_IDS = [
 ] as const
 
 export const CAR_PART_QUALITY_IDS = [
-  'worn',
-  'tuned',
-  'elite',
-  'prototype',
+  'common',
+  'uncommon',
+  'rare',
+  'epic',
+  'legendary',
 ] as const
 
 export type CarId = (typeof CAR_IDS)[number]

@@ -22,6 +22,8 @@ const ally: UnitSnapshot = {
   heroId: 'foreman',
   hp: 800,
   maxHp: 800,
+  rage: 0,
+  maxRage: 100,
   cooldownRemaining: 30,
   cooldownTotal: 90,
   alive: true,

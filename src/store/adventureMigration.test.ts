@@ -2,12 +2,21 @@ import { describe, expect, it } from 'vitest'
 import {
   createInitialAdventureState,
   normalizeAdventureDurableState,
+  normalizeLegacyPartQuality,
   reconcileAdventureWithGang,
 } from './adventureMigration'
 
 const NOW = 1_700_000_000_000
 
 describe('adventureMigration', () => {
+  it('normalizes legacy and current part quality IDs through the documented interface', () => {
+    expect(
+      ['worn', 'tuned', 'elite', 'prototype'].map(normalizeLegacyPartQuality),
+    ).toEqual(['common', 'rare', 'epic', 'legendary'])
+    expect(normalizeLegacyPartQuality('uncommon')).toBe('uncommon')
+    expect(normalizeLegacyPartQuality('unknown')).toBeNull()
+  })
+
   it('null persisted keeps initial state', () => {
     const initial = createInitialAdventureState(NOW)
     expect(initial).toMatchObject({
@@ -125,19 +134,19 @@ describe('adventureMigration', () => {
           {
             id: 'part-4',
             slot: 'engine',
-            quality: 'elite',
+            quality: 'epic',
             level: 99,
           },
           {
             id: 'part-4',
             slot: 'armor',
-            quality: 'worn',
+            quality: 'common',
             level: 1,
           },
           {
             id: 'bad',
             slot: 'unknown',
-            quality: 'worn',
+            quality: 'common',
             level: 1,
           },
         ],
@@ -153,7 +162,7 @@ describe('adventureMigration', () => {
     expect(normalized.gunLevels['rivet-smg']).toBe(50)
     expect(normalized.gunLevels['double-barrel']).toBe(3)
     expect(normalized.carPartInventory).toEqual([
-      { id: 'part-4', slot: 'engine', quality: 'elite', level: 50 },
+      { id: 'part-4', slot: 'engine', quality: 'epic', level: 50 },
     ])
     expect(normalized.carPartSlotsByCar['rust-fox'].engine).toBe('part-4')
     expect(normalized.carPartSlotsByCar['iron-fang'].engine).toBeNull()
@@ -165,8 +174,8 @@ describe('adventureMigration', () => {
       {
         heroLevels: { foreman: 3, anvil: 1, skyline: 1 },
         carPartInventory: [
-          { id: 'legacy-armor', slot: 'armor', quality: 'worn', level: 2 },
-          { id: 'legacy-turbo', slot: 'turbo', quality: 'elite', level: 3 },
+          { id: 'legacy-armor', slot: 'armor', quality: 'common', level: 2 },
+          { id: 'legacy-turbo', slot: 'turbo', quality: 'epic', level: 3 },
         ],
         carPartSlotsByCar: {
           'rust-fox': {
@@ -179,13 +188,60 @@ describe('adventureMigration', () => {
     )
 
     expect(normalized.carPartInventory).toEqual([
-      { id: 'legacy-armor', slot: 'bumper', quality: 'worn', level: 2 },
-      { id: 'legacy-turbo', slot: 'suspension', quality: 'elite', level: 3 },
+      { id: 'legacy-armor', slot: 'bumper', quality: 'common', level: 2 },
+      { id: 'legacy-turbo', slot: 'suspension', quality: 'epic', level: 3 },
     ])
     expect(normalized.carPartSlotsByCar['rust-fox'].bumper).toBe('legacy-armor')
     expect(normalized.carPartSlotsByCar['rust-fox'].suspension).toBe(
       'legacy-turbo',
     )
+  })
+
+  it('migrates four legacy quality ids before validation and preserves installs', () => {
+    const normalized = normalizeAdventureDurableState(
+      {
+        heroLevels: { foreman: 10, anvil: 1, skyline: 1 },
+        carPartInventory: [
+          { id: 'old-worn', slot: 'tires', quality: 'worn', level: 2 },
+          { id: 'old-tuned', slot: 'engine', quality: 'tuned', level: 3 },
+          { id: 'old-elite', slot: 'bumper', quality: 'elite', level: 4 },
+          {
+            id: 'old-prototype',
+            slot: 'suspension',
+            quality: 'prototype',
+            level: 5,
+          },
+          { id: 'unknown', slot: 'engine', quality: 'mythic', level: 6 },
+        ],
+        carPartSlotsByCar: {
+          'rust-fox': {
+            tires: 'old-worn',
+            engine: 'old-tuned',
+            bumper: 'old-elite',
+            suspension: 'old-prototype',
+          },
+        },
+      },
+      NOW,
+    )
+
+    expect(normalized.carPartInventory).toEqual([
+      { id: 'old-worn', slot: 'tires', quality: 'common', level: 2 },
+      { id: 'old-tuned', slot: 'engine', quality: 'rare', level: 3 },
+      { id: 'old-elite', slot: 'bumper', quality: 'epic', level: 4 },
+      {
+        id: 'old-prototype',
+        slot: 'suspension',
+        quality: 'legendary',
+        level: 5,
+      },
+    ])
+    expect(normalized.carPartSlotsByCar['rust-fox']).toEqual({
+      tires: 'old-worn',
+      engine: 'old-tuned',
+      bumper: 'old-elite',
+      suspension: 'old-prototype',
+    })
   })
 
   it('clamps over-level equipment to the highest hero and refunds upgrades', () => {
@@ -195,7 +251,7 @@ describe('adventureMigration', () => {
         spareParts: 10,
         gunLevels: { 'rivet-smg': 4 },
         carPartInventory: [
-          { id: 'over-cap', slot: 'engine', quality: 'worn', level: 4 },
+          { id: 'over-cap', slot: 'engine', quality: 'common', level: 4 },
         ],
       },
       NOW,

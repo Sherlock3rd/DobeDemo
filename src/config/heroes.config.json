@@ -66,10 +66,14 @@
       "defPerLevel": 3,
       "skill": {
         "name": "散射压制",
+        "description": "对主目标造成250%攻击伤害，并对其他敌人造成80%攻击溅射伤害。",
         "targetMultiplier": 2.5,
         "splashMultiplier": 0.8,
         "initialCooldownTicks": 30,
-        "cooldownTicks": 90
+        "cooldownTicks": 90,
+        "rageCost": 100,
+        "ragePerBasicAttack": 20,
+        "ragePerHitTaken": 10
       },
       "appearance": {
         "primaryColor": "#e8b83a",
@@ -92,10 +96,14 @@
       "defPerLevel": 7,
       "skill": {
         "name": "钢盾镇场",
+        "description": "对主目标造成180%攻击伤害，并对其他敌人造成50%攻击溅射伤害。",
         "targetMultiplier": 1.8,
         "splashMultiplier": 0.5,
         "initialCooldownTicks": 40,
-        "cooldownTicks": 100
+        "cooldownTicks": 100,
+        "rageCost": 100,
+        "ragePerBasicAttack": 20,
+        "ragePerHitTaken": 10
       },
       "appearance": {
         "primaryColor": "#5a5f66",
@@ -118,10 +126,14 @@
       "defPerLevel": 2,
       "skill": {
         "name": "长空穿击",
+        "description": "对主目标造成320%攻击伤害，并对其他敌人造成40%攻击溅射伤害。",
         "targetMultiplier": 3.2,
         "splashMultiplier": 0.4,
         "initialCooldownTicks": 35,
-        "cooldownTicks": 80
+        "cooldownTicks": 80,
+        "rageCost": 100,
+        "ragePerBasicAttack": 20,
+        "ragePerHitTaken": 10
       },
       "appearance": {
         "primaryColor": "#22405f",

@@ -9,6 +9,7 @@ import {
   isCarPartSlot,
   isGunId,
   type CarPartInstance,
+  type CarPartQuality,
   type CarPartSlotsByCar,
   type EquipmentByHero,
   type GunUpgradeLevels,
@@ -105,6 +106,21 @@ function normalizeCarPartSlot(value: unknown): CarPartInstance['slot'] | null {
   return typeof value === 'string' && isCarPartSlot(value) ? value : null
 }
 
+const LEGACY_CAR_PART_QUALITY_IDS: Readonly<Record<string, CarPartQuality>> = {
+  worn: 'common',
+  tuned: 'rare',
+  elite: 'epic',
+  prototype: 'legendary',
+}
+
+export function normalizeLegacyPartQuality(
+  value: unknown,
+): CarPartQuality | null {
+  if (typeof value !== 'string') return null
+  const quality = LEGACY_CAR_PART_QUALITY_IDS[value] ?? value
+  return isCarPartQuality(quality) ? quality : null
+}
+
 function normalizeCarPartInventory(value: unknown): CarPartInstance[] {
   if (!Array.isArray(value)) return []
   const result: CarPartInstance[] = []
@@ -115,19 +131,19 @@ function normalizeCarPartInventory(value: unknown): CarPartInstance[] {
       !isRecord(raw) ||
       typeof raw.id !== 'string' ||
       raw.id.trim() === '' ||
-      seen.has(raw.id) ||
-      typeof raw.quality !== 'string' ||
-      !isCarPartQuality(raw.quality)
+      seen.has(raw.id)
     ) {
       continue
     }
+    const quality = normalizeLegacyPartQuality(raw.quality)
+    if (!quality) continue
     const slot = normalizeCarPartSlot(raw.slot)
     if (!slot) continue
     seen.add(raw.id)
     result.push({
       id: raw.id,
       slot,
-      quality: raw.quality,
+      quality,
       level: clampInt(raw.level, 1, CAR_PART_MAX_LEVEL, 1),
     })
   }

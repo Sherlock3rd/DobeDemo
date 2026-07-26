@@ -13,8 +13,13 @@ import {
   isHeroUnlocked,
   type HeroId,
 } from '../game/heroes'
-import { GANG_MAX_LEVEL, GANG_MIN_LEVEL } from '../game/progressionUnlocks'
-import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
+import {
+  GANG_MAX_LEVEL,
+  GANG_MIN_LEVEL,
+  isBuildingUnlocked,
+  isCarUnlocked,
+  isGunUnlocked,
+} from '../game/progressionUnlocks'
 import {
   CAR_IDS,
   CAR_PART_SLOT_IDS,
@@ -35,6 +40,7 @@ import {
   getCarPartRecycleValue,
   getCarPartUpgradeCost,
   getGunUpgradeCost,
+  getPartSalvagePreview,
   isPartInstalled,
   settlePartSalvage as calculatePartSalvage,
 } from '../game/equipmentProgression'
@@ -91,6 +97,14 @@ export interface StageVictoryReward {
   rewardSpareParts: number
 }
 
+export interface PartSalvageClaimResult {
+  applied: boolean
+  receivedParts: AdventureDurableState['carPartInventory']
+  autoRecycled: number
+  sparePartsGained: number
+  batchCount: number
+}
+
 export interface AdventureState extends AdventureDurableState {
   lastVictoryReward: {
     mode: 'campaign' | 'racing'
@@ -110,10 +124,12 @@ export interface AdventureState extends AdventureDurableState {
   ) => StageVictoryReward
   equipCar: (heroId: string, carId: string | null, gangLevel: number) => boolean
   equipGun: (heroId: string, gunId: string | null, gangLevel: number) => boolean
-  settleCarPartIdle: (
+  claimPartSalvage: (
     now: number,
     recyclingYardLevel: number,
-  ) => { received: number; autoRecycled: number }
+    gangLevel: number,
+    random?: RandomSource,
+  ) => PartSalvageClaimResult
   resetPartIdleClock: (now: number) => void
   equipCarPart: (
     carId: string,
@@ -461,17 +477,33 @@ export const useAdventureStore = create<AdventureState>()(
         })
         return true
       },
-      settleCarPartIdle: (now, recyclingYardLevel) => {
-        let outcome = { received: 0, autoRecycled: 0 }
+      claimPartSalvage: (now, recyclingYardLevel, gangLevel, random) => {
+        let result: PartSalvageClaimResult = {
+          applied: false,
+          receivedParts: [],
+          autoRecycled: 0,
+          sparePartsGained: 0,
+          batchCount: 0,
+        }
         if (
           !Number.isFinite(now) ||
           !Number.isInteger(recyclingYardLevel) ||
           recyclingYardLevel < 1 ||
-          recyclingYardLevel > 10
+          recyclingYardLevel > 10 ||
+          !isValidGangLevel(gangLevel) ||
+          !isBuildingUnlocked('recycling-yard', gangLevel)
         ) {
-          return outcome
+          return result
         }
         set((state) => {
+          const preview = getPartSalvagePreview({
+            lastUpdatedAt: state.partIdleClock,
+            now,
+            recyclingYardLevel,
+          })
+          if (!preview.canClaim) return state
+
+          const previousInventoryLength = state.carPartInventory.length
           const settlement = calculatePartSalvage({
             inventory: state.carPartInventory,
             spareParts: state.spareParts,
@@ -479,26 +511,23 @@ export const useAdventureStore = create<AdventureState>()(
             lastUpdatedAt: state.partIdleClock,
             now,
             recyclingYardLevel,
+            random,
           })
-          outcome = {
-            received: settlement.received,
+          result = {
+            applied: true,
+            receivedParts: settlement.inventory.slice(previousInventoryLength),
             autoRecycled: settlement.autoRecycled,
-          }
-          if (
-            settlement.received === 0 &&
-            settlement.autoRecycled === 0 &&
-            settlement.nextUpdatedAt === state.partIdleClock
-          ) {
-            return state
+            sparePartsGained: settlement.spareParts - state.spareParts,
+            batchCount: preview.batchCount,
           }
           return {
             carPartInventory: settlement.inventory,
             spareParts: settlement.spareParts,
             nextPartSerial: settlement.nextPartSerial,
-            partIdleClock: settlement.nextUpdatedAt,
+            partIdleClock: preview.capped ? now : settlement.nextUpdatedAt,
           }
         })
-        return outcome
+        return result
       },
       resetPartIdleClock: (now) => {
         if (!Number.isFinite(now)) return
@@ -741,7 +770,7 @@ export const useAdventureStore = create<AdventureState>()(
     }),
     {
       name: ADVENTURE_STORAGE_KEY,
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted) => persisted,
       partialize: ({

@@ -21,7 +21,7 @@ export const buildingCatalog: readonly BuildingDefinition[] = [
       '增设轮胎工位',
       '配置小型起重机',
       '建成独立喷漆间',
-      '开放调校工位',
+      '开放性能标定工位',
       '启用维修控制室',
     ],
   },

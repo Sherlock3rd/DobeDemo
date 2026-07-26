@@ -105,7 +105,8 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
           className="global-hud__gang"
           onClick={props.onOpenGangTree}
         >
-          {`Lv.${gangLevel} ${role.title}（${role.chineseTitle}）`}
+          <span>{`Lv.${gangLevel} ${role.title}（${role.chineseTitle}）`}</span>
+          <ResourceAmount kind="power" amount={totalPower} />
         </button>
         <div className="global-hud__resources" aria-label="资源">
           <ResourceAmount
@@ -124,7 +125,6 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
             showLabel={false}
           />
         </div>
-        <ResourceAmount kind="power" amount={totalPower} />
       </div>
       <nav className="global-hud__bottom" aria-label="主导航">
         <button
