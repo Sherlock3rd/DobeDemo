@@ -1,5 +1,6 @@
 import { fireEvent, render } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useChestTick } from '../../game/chestTick'
 import { useCityStore } from '../../store/useCityStore'
 import { cityCursorController } from './cityCursorController'
 import { isPointerEventHandled } from './pointerDragClick'
@@ -11,7 +12,14 @@ vi.mock('./BuildingVisual', () => ({
   ),
 }))
 
+vi.mock('@react-three/drei', () => ({
+  Html: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="html-overlay">{children}</div>
+  ),
+}))
+
 const { InteractiveBuilding } = await import('./InteractiveBuilding')
+const BASE_TIME = 1_700_000_000_000
 
 function renderBuilding() {
   return render(<InteractiveBuilding id="repair-shop" position={[0, 0, 0]} />)
@@ -30,7 +38,8 @@ function getHitbox(container: HTMLElement): Element {
 
 describe('InteractiveBuilding', () => {
   beforeEach(() => {
-    useCityStore.getState().reset()
+    useCityStore.getState().reset(BASE_TIME)
+    useChestTick.setState({ now: BASE_TIME, tick: 0 })
     cityPointerDragTracker.reset()
     cityCursorController.reset()
     vi.restoreAllMocks()
@@ -112,5 +121,34 @@ describe('InteractiveBuilding', () => {
     unmount()
 
     expect(hoverSpy).toHaveBeenCalledWith('repair-shop', false)
+  })
+
+  it('shows the live main-building construction status above the building', () => {
+    useCityStore.setState({
+      pendingMainUpgrades: [
+        {
+          buildingId: 'repair-shop',
+          targetLevel: 2,
+          completesAt: BASE_TIME + 10_000,
+        },
+      ],
+    })
+    useChestTick.setState({ now: BASE_TIME + 5_000, tick: 1 })
+
+    renderBuilding()
+
+    const status = document.querySelector('[role="status"]')
+    const progress = document.querySelector('[role="progressbar"]')
+    expect(status).toHaveAttribute(
+      'aria-label',
+      '修车厂修建中，剩余5秒，进度50%',
+    )
+    expect(progress).toHaveAttribute('aria-valuenow', '50')
+  })
+
+  it('does not show a construction badge for an idle building', () => {
+    renderBuilding()
+
+    expect(document.querySelector('[role="status"]')).not.toBeInTheDocument()
   })
 })

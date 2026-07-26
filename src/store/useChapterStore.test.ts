@@ -38,7 +38,9 @@ describe('useChapterStore', () => {
   })
 
   it('rejects incomplete and future-rank tasks', () => {
-    expect(useChapterStore.getState().claimTask('chapter-1-hero')).toBe(false)
+    expect(useChapterStore.getState().claimTask('chapter-1-building')).toBe(
+      false,
+    )
     useAdventureStore.setState({ highestClearedStage: 20 })
     expect(useChapterStore.getState().claimTask('chapter-7-play')).toBe(false)
   })

@@ -7,6 +7,10 @@ import {
   getTaskProgress,
   isChapterComplete,
 } from './chapterProgression'
+import {
+  getCarPartUpgradeCost,
+  getGunUpgradeCost,
+} from './equipmentProgression'
 import { getBuildingUnlock } from './progressionUnlocks'
 
 function snapshot() {
@@ -66,6 +70,64 @@ describe('chapter progression', () => {
     )
   })
 
+  it('delays deliberate hero growth until chapter three and equipment growth until chapter four', () => {
+    const growthKinds = (chapterIndex: number) =>
+      CHAPTERS[chapterIndex].tasks.map((task) => task.requirement.kind)
+
+    expect(growthKinds(0)).not.toContain('part-level')
+    expect(growthKinds(0)).not.toContain('gun-level')
+    expect(growthKinds(1)).not.toContain('hero-level')
+    expect(growthKinds(1)).not.toContain('part-level')
+    expect(growthKinds(1)).not.toContain('gun-level')
+
+    expect(CHAPTERS[2].tasks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          requirement: { kind: 'hero-level', target: 18 },
+        }),
+      ]),
+    )
+    expect(growthKinds(2)).not.toContain('part-level')
+    expect(growthKinds(2)).not.toContain('gun-level')
+
+    expect(CHAPTERS[3].tasks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          requirement: { kind: 'part-level', target: 3 },
+        }),
+        expect.objectContaining({
+          requirement: { kind: 'gun-level', target: 3 },
+        }),
+      ]),
+    )
+  })
+
+  it('funds the first chapter-four equipment gate from prior chapter rewards', () => {
+    const sparePartsBeforeChapterFour = CHAPTERS.slice(0, 3)
+      .flatMap((chapter) => chapter.tasks)
+      .reduce((sum, task) => sum + task.reward.spareParts, 0)
+    const epicPart = {
+      id: 'budget-check',
+      slot: 'tires' as const,
+      quality: 'epic' as const,
+      level: 1,
+    }
+    const partCost = [1, 2].reduce(
+      (sum, level) => sum + getCarPartUpgradeCost({ ...epicPart, level }),
+      0,
+    )
+    const gunCost = [0, 1, 2].reduce(
+      (sum, level) => sum + getGunUpgradeCost('rivet-smg', level),
+      0,
+    )
+
+    expect(sparePartsBeforeChapterFour).toBe(350)
+    expect(partCost + gunCost).toBe(324)
+    expect(sparePartsBeforeChapterFour).toBeGreaterThanOrEqual(
+      partCost + gunCost,
+    )
+  })
+
   it('evaluates derived task progress and chapter completion', () => {
     const state = snapshot()
     expect(isChapterComplete(CHAPTERS[0], state)).toBe(false)
@@ -84,8 +146,8 @@ describe('chapter progression', () => {
       },
     }
     expect(getTaskProgress(CHAPTERS[0].tasks[0], complete)).toMatchObject({
-      current: 3,
-      target: 3,
+      current: 1,
+      target: 1,
       complete: true,
     })
     expect(isChapterComplete(CHAPTERS[0], complete)).toBe(true)

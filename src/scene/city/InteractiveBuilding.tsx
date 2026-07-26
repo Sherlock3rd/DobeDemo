@@ -7,6 +7,7 @@ import {
 } from '../../game/cityLayout'
 import type { BuildingId } from '../../game/cityTypes'
 import { useCityStore } from '../../store/useCityStore'
+import { BuildingUpgradeBadge } from './BuildingUpgradeBadge'
 import { BuildingVisual } from './BuildingVisual'
 import { cityCursorController } from './cityCursorController'
 import { consumePointerDrag, markPointerEventHandled } from './pointerDragClick'
@@ -67,6 +68,7 @@ export function InteractiveBuilding({
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       <BuildingVisual id={id} highlighted={highlighted} />
+      <BuildingUpgradeBadge buildingId={id} />
 
       {highlighted && (
         <mesh position={[0, 0.07, 0]} receiveShadow>

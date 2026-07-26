@@ -205,6 +205,67 @@
   letter-spacing: 0.01em;
 }
 
+.building-upgrade-badge {
+  width: 8.5rem;
+  padding: 0.45rem 0.55rem 0.5rem;
+  border: 1px solid rgba(255, 212, 59, 0.72);
+  border-radius: 0.5rem;
+  color: #f8fafc;
+  background: rgba(12, 16, 21, 0.92);
+  box-shadow:
+    0 0.6rem 1.5rem rgba(0, 0, 0, 0.5),
+    0 0 1rem rgba(255, 183, 3, 0.16);
+  font-family: Inter, system-ui, sans-serif;
+  pointer-events: none;
+  user-select: none;
+}
+
+.building-upgrade-badge__headline {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.building-upgrade-badge__headline strong {
+  flex: 1;
+  color: #ffd43b;
+  letter-spacing: 0.04em;
+}
+
+.building-upgrade-badge__headline > span:last-child {
+  color: #e2e8f0;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.building-upgrade-badge__time {
+  display: block;
+  margin-top: 0.32rem;
+  color: #f8fafc;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.building-upgrade-badge__progress {
+  height: 0.3rem;
+  margin-top: 0.34rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.14);
+}
+
+.building-upgrade-badge__progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff9f1c, #ffd43b);
+  box-shadow: 0 0 0.5rem rgba(255, 212, 59, 0.5);
+  transition: width 240ms linear;
+}
+
 .building-panel {
   position: absolute;
   z-index: 3;

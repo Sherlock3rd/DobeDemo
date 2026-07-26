@@ -89,9 +89,9 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     tasks: [
       {
         id: 'chapter-1-hero',
-        name: '领头人的分量',
-        description: '任意英雄达到 Lv.3',
-        requirement: { kind: 'hero-level', target: 3 },
+        name: '领头人就位',
+        description: '拥有任意 Lv.1 英雄',
+        requirement: { kind: 'hero-level', target: 1 },
         reward: reward(53, 120, 12),
       },
       {
@@ -132,9 +132,13 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     tasks: [
       {
         id: 'chapter-2-hero',
-        name: '扛住名号',
-        description: '任意英雄达到 Lv.10',
-        requirement: { kind: 'hero-level', target: 10 },
+        name: '稳固总部',
+        description: '修理厂主建筑达到 Lv.3',
+        requirement: {
+          kind: 'building-level',
+          buildingId: 'repair-shop',
+          target: 3,
+        },
         reward: reward(60, 260, 28),
       },
       {
@@ -150,9 +154,9 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
       },
       {
         id: 'chapter-2-part',
-        name: '改出真家伙',
-        description: '任意配件达到 Lv.2',
-        requirement: { kind: 'part-level', target: 2 },
+        name: '扩张运输线',
+        description: '赛车任务完成 2 关',
+        requirement: { kind: 'racing-clears', target: 2 },
         reward: reward(60, 300, 32),
       },
       {
@@ -193,9 +197,9 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
       },
       {
         id: 'chapter-3-gun',
-        name: '枪械保养规程',
-        description: '任意枪械达到 Lv.4',
-        requirement: { kind: 'gun-level', target: 4 },
+        name: '清算旧账',
+        description: '推关完成 8 关',
+        requirement: { kind: 'campaign-clears', target: 8 },
         reward: reward(60, 420, 42),
       },
       {
@@ -225,28 +229,28 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'metalworking-plant',
           target: 2,
         },
-        reward: reward(60, 520, 50),
+        reward: reward(60, 520, 100),
       },
       {
         id: 'chapter-4-hero',
-        name: '联络人的底气',
-        description: '任意英雄达到 Lv.26',
-        requirement: { kind: 'hero-level', target: 26 },
-        reward: reward(60, 540, 52, [{ slot: 'engine', quality: 'epic' }]),
+        name: '紫装试制',
+        description: '任意配件达到 Lv.3',
+        requirement: { kind: 'part-level', target: 3 },
+        reward: reward(60, 540, 100, [{ slot: 'engine', quality: 'epic' }]),
       },
       {
         id: 'chapter-4-gun',
-        name: '工业火力',
-        description: '任意枪械达到 Lv.7',
-        requirement: { kind: 'gun-level', target: 7 },
-        reward: reward(60, 560, 54),
+        name: '武器校准',
+        description: '任意枪械达到 Lv.3',
+        requirement: { kind: 'gun-level', target: 3 },
+        reward: reward(60, 560, 100),
       },
       {
         id: 'chapter-4-play',
         name: '穿过封锁',
         description: '推关完成 11 关',
         requirement: { kind: 'campaign-clears', target: 11 },
-        reward: reward(60, 580, 56, [{ slot: 'bumper', quality: 'epic' }]),
+        reward: reward(60, 580, 100, [{ slot: 'bumper', quality: 'epic' }]),
       },
     ],
   },
@@ -267,28 +271,28 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'gas-station',
           target: 2,
         },
-        reward: reward(60, 660, 62),
+        reward: reward(60, 660, 120),
       },
       {
         id: 'chapter-5-hero',
         name: '队长威望',
         description: '任意英雄达到 Lv.34',
         requirement: { kind: 'hero-level', target: 34 },
-        reward: reward(60, 680, 64, [{ slot: 'tires', quality: 'epic' }]),
+        reward: reward(60, 680, 120, [{ slot: 'tires', quality: 'epic' }]),
       },
       {
         id: 'chapter-5-part',
         name: '长途套件',
-        description: '任意配件达到 Lv.10',
-        requirement: { kind: 'part-level', target: 10 },
-        reward: reward(60, 700, 66),
+        description: '任意配件达到 Lv.6',
+        requirement: { kind: 'part-level', target: 6 },
+        reward: reward(60, 700, 120),
       },
       {
         id: 'chapter-5-play',
         name: '称霸公路',
         description: '赛车任务完成 8 关',
         requirement: { kind: 'racing-clears', target: 8 },
-        reward: reward(60, 720, 68, [
+        reward: reward(60, 720, 120, [
           { slot: 'suspension', quality: 'legendary' },
         ]),
       },
@@ -311,28 +315,32 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'clubhouse',
           target: 2,
         },
-        reward: reward(75, 820, 74),
+        reward: reward(75, 820, 150),
       },
       {
         id: 'chapter-6-hero',
         name: '副主席卫队',
         description: '任意英雄达到 Lv.42',
         requirement: { kind: 'hero-level', target: 42 },
-        reward: reward(75, 840, 76, [{ slot: 'engine', quality: 'legendary' }]),
+        reward: reward(75, 840, 150, [
+          { slot: 'engine', quality: 'legendary' },
+        ]),
       },
       {
         id: 'chapter-6-gun',
         name: '最后的军火库',
-        description: '任意枪械达到 Lv.14',
-        requirement: { kind: 'gun-level', target: 14 },
-        reward: reward(75, 860, 78),
+        description: '任意枪械达到 Lv.6',
+        requirement: { kind: 'gun-level', target: 6 },
+        reward: reward(75, 860, 150),
       },
       {
         id: 'chapter-6-play',
         name: '肃清全城',
         description: '推关完成 18 关',
         requirement: { kind: 'campaign-clears', target: 18 },
-        reward: reward(75, 880, 80, [{ slot: 'bumper', quality: 'legendary' }]),
+        reward: reward(75, 880, 150, [
+          { slot: 'bumper', quality: 'legendary' },
+        ]),
       },
     ],
   },
@@ -354,23 +362,23 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
           buildingId: 'clubhouse',
           target: 4,
         },
-        reward: reward(90, 1_000, 90),
+        reward: reward(90, 1_000, 190),
       },
       {
         id: 'chapter-7-hero',
         name: '传奇领袖',
         description: '任意英雄达到 Lv.50',
         requirement: { kind: 'hero-level', target: 50 },
-        reward: reward(90, 1_100, 100, [
+        reward: reward(90, 1_100, 200, [
           { slot: 'tires', quality: 'legendary' },
         ]),
       },
       {
         id: 'chapter-7-gear',
         name: '终极改装',
-        description: '任意配件达到 Lv.20',
-        requirement: { kind: 'part-level', target: 20 },
-        reward: reward(90, 1_200, 110, [
+        description: '任意配件达到 Lv.15',
+        requirement: { kind: 'part-level', target: 15 },
+        reward: reward(90, 1_200, 220, [
           { slot: 'engine', quality: 'legendary' },
         ]),
       },
@@ -379,7 +387,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
         name: '无人能挡',
         description: '推关完成全部 20 关',
         requirement: { kind: 'campaign-clears', target: 20 },
-        reward: reward(90, 1_300, 120, [
+        reward: reward(90, 1_300, 240, [
           { slot: 'bumper', quality: 'legendary' },
           { slot: 'suspension', quality: 'legendary' },
         ]),
