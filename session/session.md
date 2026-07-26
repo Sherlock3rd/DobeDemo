@@ -2,11 +2,11 @@
 
 ## 当前目标
 
-完成“HUD、怒气技能、五品质与配件领取”本地集成：HUD 方案 B、玩家真实怒气、Adventure v6 五品质迁移，以及废车回收厂生产 Tab 手动领取。
+完成并发布“HUD、怒气技能、五品质与配件领取”：HUD 方案 B、玩家真实怒气、Adventure v6 五品质迁移，以及废车回收厂生产 Tab 手动领取。
 
 ## 当前状态
 
-Task1–6 已在当前工作树完成本地集成：玩家英雄怒气按 `0/100、普攻 +20、受击 +10` 真实结算，敌人保留冷却；五品质为普通/优秀/精良/史诗/传说，Adventure persist 升至 v6 并保留旧档配件关系；废车回收厂只累计批次，生产 Tab 手动领取后才随机入库；HUD 总战力并入帮派按钮，英雄技能卡展示倍率、预估伤害与怒气来源。当前本地基线为 77 个测试文件/840 项测试，format:check、typecheck、lint、测试、build 与 diff-check 均通过；安全隔离 Chrome smoke 覆盖桌面与 390×844、领取持久状态和真实怒气链路，运行时异常与控制台 error 均为 0。当前仅记录本地完成，本轮未 commit、push 或发布 Pages。
+Task1–6 已完成并发布：玩家英雄怒气按 `0/100、普攻 +20、受击 +10` 真实结算，敌人保留冷却；五品质为普通/优秀/精良/史诗/传说，Adventure persist 升至 v6 并保留旧档配件关系；废车回收厂只累计批次，生产 Tab 手动领取后才随机入库；HUD 总战力并入帮派按钮，英雄技能卡展示倍率、预估伤害与怒气来源。最终基线为 77 个测试文件/840 项测试，format:check、typecheck、lint、测试、build 与 diff-check 均通过。`main` 功能提交 `92155f5` 已推送，`gh-pages` `f2a5e88` 状态 `built`；公开 HTML、`index-ej6qA2su.js`、`index-CxEJWKRx.css` 均为 HTTP 200，公开 Chrome smoke 覆盖桌面与 390×844、领取持久状态和真实怒气链路，运行时异常与控制台 error 均为 0。
 
 ## 角色
 
@@ -67,3 +67,4 @@ Task1–6 已在当前工作树完成本地集成：玩家英雄怒气按 `0/100
 | 2026-07-25 | 完成养成、经济与战斗优化：Adventure/City persist 升至 v5；回收厂真随机批量产出、四品质概率与一键回收；枪/配件 Lv.50 且按最高英雄动态封顶；主建筑最多两个离线施工队列；共享资源 SVG 与账号总战力；推关/赛车经验+钱+概率配件；追击护卫 0/1/1/2/2 且耐久不翻倍；设置页逐级升帮派及概率表。format/typecheck/lint/build 全绿，76 文件/782 测试通过；当前 Chrome smoke 无运行异常，终审及复审无 Critical/Important。待 commit/push/Pages。 | 养成经济战斗 |
 | 2026-07-25 | 养成经济战斗版本发布：`main` `7f07ee0` 已推送；fresh `dist` 精确发布为 `gh-pages` `23602c6`，Pages build `1114451810` 状态 `built`。公开 HTML 与当前 JS/CSS 均 HTTP 200；公开隔离 Chrome smoke 复验资源图标与总战力、概率表、推关复合奖励、四品质回收按钮、第 2 关护卫 0/0 和耐久 100，无运行异常。 | GitHub Pages |
 | 2026-07-26 | HUD、怒气技能、五品质与配件领取 Task6 本地集成：补齐设置页五品质与 0% 断言，清除产品旧品质文案并将修车厂同名“调校工位”改为“性能标定工位”；安全 smoke 自建动态端口 Vite、隔离 Chrome/profile/进程并限制 HTTP/CDP/WebSocket 等待，验证 HUD B、技能说明、五品质回收、390 布局、回收厂生产 Tab/领取持久结果及真实战斗同一英雄怒气 `0→增长→100→技能清空`，运行时异常与控制台 error 均为 0。最终 format:check/typecheck/lint/build/diff-check exit 0，77 文件/840 测试全绿；仅本地完成，未 commit、push 或发布 Pages。 | 本地集成验收 |
+| 2026-07-26 | HUD、怒气技能、五品质与配件领取发布：`main` `92155f5` 已普通推送；fresh `dist` 精确发布为 `gh-pages` `f2a5e88`，Pages 状态 `built`。公开 HTML、`index-ej6qA2su.js`、`index-CxEJWKRx.css` 均 HTTP 200；公开隔离 Chrome smoke 复验 HUD B、五品质、回收厂领取、390×844 无横溢出与怒气 `0→100→0`，运行时异常和控制台 error 均为 0。 | GitHub Pages |
