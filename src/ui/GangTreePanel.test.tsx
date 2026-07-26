@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -68,9 +68,12 @@ describe('GangTreePanel', () => {
     expect(screen.getByText('Winston Cole')).toBeInTheDocument()
     expect(screen.getByText('Solomon Price')).toBeInTheDocument()
     expect(screen.getAllByText('管辖')).toHaveLength(7)
+    expect(
+      screen.getByRole('navigation', { name: '选择查看职级' }),
+    ).toBeInTheDocument()
   })
 
-  it('replaces the current seat holder with Thomas and moves the former holder under command', () => {
+  it('grows fixed direct reports by role and gives the current prospect only their predecessor', () => {
     render(<GangTreePanel open onClose={vi.fn()} />)
 
     const currentSeat = document.querySelector(
@@ -81,6 +84,40 @@ describe('GangTreePanel', () => {
     expect(currentSeat).toHaveTextContent('Eddie “Pins” Doyle')
     expect(currentSeat).toHaveTextContent('前任 见习 · 现直属下属')
     expect(currentSeat).toHaveTextContent('你在这里')
+    expect(currentSeat).toHaveTextContent('1 名直属成员')
+
+    for (const [threshold, count] of [
+      [8, 1],
+      [16, 2],
+      [24, 3],
+      [32, 4],
+      [40, 5],
+      [50, 6],
+    ] as const) {
+      expect(
+        document.querySelector(
+          `.gang-tree-panel__tier[data-threshold="${threshold}"]`,
+        ),
+      ).toHaveTextContent(`${count} 名直属成员`)
+    }
+  })
+
+  it('lets portrait layouts select one role for the mobile detail view', async () => {
+    const user = userEvent.setup()
+    render(<GangTreePanel open onClose={vi.fn()} />)
+
+    const nav = screen.getByRole('navigation', { name: '选择查看职级' })
+    const prospect = within(nav).getByRole('button', { name: '见习 Lv.1' })
+    const president = within(nav).getByRole('button', { name: '主席 Lv.50' })
+    expect(prospect).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(president)
+
+    expect(president).toHaveAttribute('aria-pressed', 'true')
+    expect(prospect).toHaveAttribute('aria-pressed', 'false')
+    expect(
+      document.querySelector('.gang-tree-panel__tier[data-threshold="50"]'),
+    ).toHaveAttribute('data-mobile-selected', 'true')
   })
 
   it('shows higher seats as superiors and completed core seats as subordinates', () => {
@@ -114,16 +151,16 @@ describe('GangTreePanel', () => {
 
   it('shows the next level rewards and exact unlock rewards in the lower dock', () => {
     useGangStore.setState({
-      totalReputation: getTotalReputationForLevel(11),
-      currentLevel: 11,
+      totalReputation: getTotalReputationForLevel(15),
+      currentLevel: 15,
     })
 
     render(<GangTreePanel open onClose={vi.fn()} />)
 
     expect(screen.getByText('晋升奖励')).toBeInTheDocument()
-    expect(screen.getByText('帮派等级 Lv.12')).toBeInTheDocument()
+    expect(screen.getByText('帮派等级 Lv.16')).toBeInTheDocument()
     expect(screen.getByText('Arthur Shelby·Arthur')).toBeInTheDocument()
-    expect(screen.getByText('枪械·双管短喷')).toBeInTheDocument()
+    expect(screen.getByText('商业街')).toBeInTheDocument()
     expect(
       screen.getByRole('progressbar', { name: '帮派晋升进度' }),
     ).toBeInTheDocument()

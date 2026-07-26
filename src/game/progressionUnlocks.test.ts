@@ -25,10 +25,10 @@ describe('progression unlocks', () => {
 
   it('exposes hero unlock levels and gang-derived hero unlocks', () => {
     expect(heroUnlockLevel('foreman')).toBe(1)
-    expect(heroUnlockLevel('anvil')).toBe(12)
-    expect(heroUnlockLevel('skyline')).toBe(28)
-    expect(isHeroUnlocked('anvil', 11)).toBe(false)
-    expect(isHeroUnlocked('anvil', 12)).toBe(true)
+    expect(heroUnlockLevel('anvil')).toBe(16)
+    expect(heroUnlockLevel('skyline')).toBe(24)
+    expect(isHeroUnlocked('anvil', 15)).toBe(false)
+    expect(isHeroUnlocked('anvil', 16)).toBe(true)
     expect(isHeroUnlocked('skyline', 50)).toBe(true)
   })
 

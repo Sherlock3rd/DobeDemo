@@ -5,6 +5,7 @@ import {
   type CSSProperties,
   type JSX,
 } from 'react'
+import gangPortraitAtlas from '../assets/peaky-blinders-hierarchy-atlas.png'
 import { equipmentConfig } from '../config/equipmentConfig'
 import { expToLevel, heroesConfig } from '../config/heroesConfig'
 import { unitPower } from '../game/combat/power'
@@ -31,6 +32,12 @@ import {
   type GunId,
 } from '../game/equipmentTypes'
 import { isBuildingUnlocked } from '../game/gangProgression'
+import {
+  GANG_HERO_PROFILES,
+  GANG_NAME,
+  getGangCoreSeat,
+  roleForCoreSeat,
+} from '../game/gangHierarchy'
 import { getHeroCombatStats } from '../game/heroEquipment'
 import {
   HERO_IDS,
@@ -77,25 +84,31 @@ function upgradeFeedback(
   }
 }
 
-function HeroPortrait({ heroId }: { heroId: HeroId }): JSX.Element {
-  const appearance = heroesConfig.heroes[heroId].appearance
+function HeroPortrait({
+  heroId,
+  compact = false,
+}: {
+  heroId: HeroId
+  compact?: boolean
+}): JSX.Element {
+  const portraitIndex = GANG_HERO_PROFILES[heroId].portraitIndex
+  const column = portraitIndex % 4
+  const row = Math.floor(portraitIndex / 4)
   const style = {
-    '--hero-primary': appearance.primaryColor,
-    '--hero-accent': appearance.accentColor,
+    backgroundImage: `url(${gangPortraitAtlas})`,
+    backgroundPosition: `${(column / 3) * 100}% ${row * 100}%`,
   } as CSSProperties
   return (
     <div
-      className={`heroes-panel__portrait heroes-panel__portrait--${appearance.silhouette}`}
+      className={`heroes-panel__portrait${
+        compact ? ' heroes-panel__portrait--compact' : ''
+      }`}
       style={style}
       aria-hidden="true"
     >
-      <span className="heroes-panel__portrait-glow" />
-      <span className="heroes-panel__portrait-head" />
-      <span className="heroes-panel__portrait-body" />
-      <span
-        className={`heroes-panel__portrait-weapon heroes-panel__portrait-weapon--${appearance.weapon}`}
-      />
-      <span className="heroes-panel__portrait-badge">{appearance.weapon}</span>
+      {compact ? null : (
+        <span className="heroes-panel__portrait-badge">{GANG_NAME}</span>
+      )}
     </div>
   )
 }
@@ -175,6 +188,9 @@ export function HeroesPanel({
     [carPartInventory, carPartSlotsByCar, gunLevels],
   )
   const selectedDefinition = heroesConfig.heroes[selectedHero]
+  const selectedGangProfile = GANG_HERO_PROFILES[selectedHero]
+  const selectedGangSeat = getGangCoreSeat(selectedGangProfile.seatThreshold)
+  const selectedGangRole = roleForCoreSeat(selectedGangSeat)
   const selectedLevel = heroLevels[selectedHero]
   const selectedEquipment = equipmentByHero[selectedHero]
   const selectedCarName = selectedEquipment.carId
@@ -391,18 +407,19 @@ export function HeroesPanel({
                     setStatus('')
                   }}
                 >
-                  <span
-                    className="heroes-panel__hero-swatch"
-                    style={{
-                      background: definition.appearance.primaryColor,
-                    }}
-                  />
+                  <HeroPortrait heroId={heroId} compact />
                   <span>
                     <strong>{definition.name}</strong>
                     <small>
                       {unlocked
-                        ? `${definition.alias} · Lv.${heroLevels[heroId]}`
-                        : `${definition.alias} · 帮派 Lv.${heroUnlockLevel(heroId)} 解锁`}
+                        ? `${GANG_HERO_PROFILES[heroId].relation} · Lv.${heroLevels[heroId]}`
+                        : `${
+                            roleForCoreSeat(
+                              getGangCoreSeat(
+                                GANG_HERO_PROFILES[heroId].seatThreshold,
+                              ),
+                            ).chineseTitle
+                          }席位 · 帮派 Lv.${heroUnlockLevel(heroId)} 接掌后加入`}
                     </small>
                   </span>
                   {unlocked ? (
@@ -427,7 +444,7 @@ export function HeroesPanel({
 
           <article className="heroes-panel__showcase">
             <div className="heroes-panel__identity">
-              <p>{`${selectedDefinition.alias} · ${
+              <p>{`${GANG_NAME} · ${selectedGangRole.chineseTitle}席位 · ${
                 selectedDefinition.role === 'front' ? '前排防卫' : '后排火力'
               }`}</p>
               <div className="heroes-panel__identity-copy">

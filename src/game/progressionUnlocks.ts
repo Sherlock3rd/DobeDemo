@@ -104,8 +104,8 @@ export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
   {
     kind: 'hero',
     heroId: 'anvil',
-    requiredLevel: 12,
-    roleTitle: 'Full Patch',
+    requiredLevel: 16,
+    roleTitle: 'Wrench',
   },
   {
     kind: 'gun',
@@ -134,7 +134,7 @@ export const PROGRESSION_UNLOCKS: readonly ProgressionUnlock[] = [
   {
     kind: 'hero',
     heroId: 'skyline',
-    requiredLevel: 28,
+    requiredLevel: 24,
     roleTitle: 'Bar Liaison',
   },
   {

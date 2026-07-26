@@ -282,9 +282,12 @@ describe('adventureMigration', () => {
         { heroId: 'anvil' as const, row: 'front' as const, index: 0 },
       ],
     }
-    const reconciled = reconcileAdventureWithGang(state, 12)
-    expect(reconciled.heroLevels.foreman).toBe(12)
-    expect(reconciled.heroLevels.skyline).toBe(12)
+    expect(reconcileAdventureWithGang(state, 15).formation).toEqual([
+      { heroId: 'foreman', row: 'back', index: 1 },
+    ])
+    const reconciled = reconcileAdventureWithGang(state, 16)
+    expect(reconciled.heroLevels.foreman).toBe(16)
+    expect(reconciled.heroLevels.skyline).toBe(16)
     expect(reconciled.formation).toEqual([
       { heroId: 'anvil', row: 'front', index: 0 },
     ])

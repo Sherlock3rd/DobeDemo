@@ -53,9 +53,15 @@ describe('HeroesPanel', () => {
     render(<HeroesPanel onClose={() => {}} />)
     const roster = within(screen.getByRole('navigation', { name: '英雄列表' }))
     expect(roster.getByText('Thomas Shelby')).toBeInTheDocument()
-    expect(roster.getByText('Tommy · Lv.1')).toBeInTheDocument()
+    expect(roster.getByText('剃刀党掌权人 · Lv.1')).toBeInTheDocument()
     expect(roster.getByText('Arthur Shelby')).toBeInTheDocument()
-    expect(roster.getByText('Arthur · 帮派 Lv.12 解锁')).toBeInTheDocument()
+    expect(
+      roster.getByText('技术骨干席位 · 帮派 Lv.16 接掌后加入'),
+    ).toBeInTheDocument()
+    expect(roster.getByText('Polly Gray')).toBeInTheDocument()
+    expect(
+      roster.getByText('酒吧联络人席位 · 帮派 Lv.24 接掌后加入'),
+    ).toBeInTheDocument()
   })
 
   it('keeps name, level, and hero power as aligned siblings in one wrapping identity row', () => {
@@ -102,27 +108,32 @@ describe('HeroesPanel', () => {
     expect(skillCard).not.toHaveTextContent('预估伤害')
   })
 
-  it('computes clipping, non-negative weapon inset, and identity layering styles', () => {
+  it('uses the shared gang portrait atlas without legacy geometric portrait pieces', () => {
     render(<HeroesPanel onClose={() => {}} />)
 
     const portrait = document.querySelector(
-      '.heroes-panel__portrait',
-    ) as HTMLElement
-    const weapon = portrait.querySelector(
-      '.heroes-panel__portrait-weapon',
+      '.heroes-panel__showcase > .heroes-panel__portrait',
     ) as HTMLElement
     const identity = document.querySelector(
       '.heroes-panel__identity',
     ) as HTMLElement
     const power = identity.querySelector('.resource-amount') as HTMLElement
     const portraitStyle = getComputedStyle(portrait)
-    const weaponStyle = getComputedStyle(weapon)
     const identityStyle = getComputedStyle(identity)
     const powerStyle = getComputedStyle(power)
 
     expect(portraitStyle.overflow).toBe('hidden')
     expect(portraitStyle.isolation).toBe('isolate')
-    expect(Number.parseFloat(weaponStyle.right)).toBeGreaterThanOrEqual(0)
+    expect(portrait.style.backgroundImage).toContain(
+      'peaky-blinders-hierarchy-atlas',
+    )
+    expect(
+      document.querySelectorAll('.heroes-panel__portrait--compact'),
+    ).toHaveLength(3)
+    expect(
+      portrait.querySelector('.heroes-panel__portrait-head'),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('剃刀党 · 见习席位 · 后排火力')).toBeInTheDocument()
     expect(identityStyle.zIndex).toBe('2')
     expect(powerStyle.position).toBe('relative')
     expect(powerStyle.zIndex).toBe('1')
