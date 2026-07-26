@@ -294,6 +294,6 @@ Expected: 全部 exit 0。
 
 - [x] **Step 6: 发布 Pages**
 
-已从推送后的 `main` fresh build，运行 `scripts/deploy-gh-pages.ps1` 发布 `gh-pages` `f2a5e88`；Pages 状态为 `built`，HTML/JS/CSS 均为 HTTP 200，公开 URL smoke 通过。
+已从推送后的 `main` fresh build，运行 `scripts/deploy-gh-pages.ps1` 发布 `gh-pages` `f2a5e88`；发布一致性审计后又以相同产物树重新发布为 `2ab2021`。Pages 状态为 `built`，HTML/JS/CSS 均为 HTTP 200，公开 URL smoke 通过。
 
 > 当前交接状态：Task1–6 的实现、终审、本地验收、提交推送、Pages 发布与公开复验均已完成。

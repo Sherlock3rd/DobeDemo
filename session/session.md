@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-Task1–6 已完成并发布：玩家英雄怒气按 `0/100、普攻 +20、受击 +10` 真实结算，敌人保留冷却；五品质为普通/优秀/精良/史诗/传说，Adventure persist 升至 v6 并保留旧档配件关系；废车回收厂只累计批次，生产 Tab 手动领取后才随机入库；HUD 总战力并入帮派按钮，英雄技能卡展示倍率、预估伤害与怒气来源。最终基线为 77 个测试文件/840 项测试，format:check、typecheck、lint、测试、build 与 diff-check 均通过。`main` 功能提交 `92155f5` 已推送，`gh-pages` `f2a5e88` 状态 `built`；公开 HTML、`index-ej6qA2su.js`、`index-CxEJWKRx.css` 均为 HTTP 200，公开 Chrome smoke 覆盖桌面与 390×844、领取持久状态和真实怒气链路，运行时异常与控制台 error 均为 0。
+Task1–6 已完成并发布：玩家英雄怒气按 `0/100、普攻 +20、受击 +10` 真实结算，敌人保留冷却；五品质为普通/优秀/精良/史诗/传说，Adventure persist 升至 v6 并保留旧档配件关系；废车回收厂只累计批次，生产 Tab 手动领取后才随机入库；HUD 总战力并入帮派按钮，英雄技能卡展示倍率、预估伤害与怒气来源。最终基线为 77 个测试文件/840 项测试，format:check、typecheck、lint、测试、build 与 diff-check 均通过。`main` 功能提交 `92155f5` 已推送，发布审计后的当前 `gh-pages` 为 `2ab2021`，Pages build `1115202218` 状态 `built`；公开 HTML、`index-ej6qA2su.js`、`index-CxEJWKRx.css` 均为 HTTP 200，公开 Chrome smoke 覆盖桌面与 390×844、领取持久状态和真实怒气链路，运行时异常与控制台 error 均为 0。
 
 ## 角色
 
@@ -69,3 +69,4 @@ Task1–6 已完成并发布：玩家英雄怒气按 `0/100、普攻 +20、受�
 | 2026-07-26 | HUD、怒气技能、五品质与配件领取 Task6 本地集成：补齐设置页五品质与 0% 断言，清除产品旧品质文案并将修车厂同名“调校工位”改为“性能标定工位”；安全 smoke 自建动态端口 Vite、隔离 Chrome/profile/进程并限制 HTTP/CDP/WebSocket 等待，验证 HUD B、技能说明、五品质回收、390 布局、回收厂生产 Tab/领取持久结果及真实战斗同一英雄怒气 `0→增长→100→技能清空`，运行时异常与控制台 error 均为 0。最终 format:check/typecheck/lint/build/diff-check exit 0，77 文件/840 测试全绿；仅本地完成，未 commit、push 或发布 Pages。 | 本地集成验收 |
 | 2026-07-26 | HUD、怒气技能、五品质与配件领取发布：`main` `92155f5` 已普通推送；fresh `dist` 精确发布为 `gh-pages` `f2a5e88`，Pages 状态 `built`。公开 HTML、`index-ej6qA2su.js`、`index-CxEJWKRx.css` 均 HTTP 200；公开隔离 Chrome smoke 复验 HUD B、五品质、回收厂领取、390×844 无横溢出与怒气 `0→100→0`，运行时异常和控制台 error 均为 0。 | GitHub Pages |
 | 2026-07-26 | 发布一致性复核：重新执行 format:check、typecheck、lint、77 文件/840 测试、build、本地完整 smoke 与公开 URL smoke，全部通过；`dist` 与 `origin/gh-pages` 的 3 个文件及 blob hash 完全一致，Pages build `1115190301` 状态 `built`。修正 README 与实施计划中遗留的“尚未发布”状态，避免文档与线上事实冲突。 | 发布审计与文档 |
+| 2026-07-26 | 发布审计补充推送：文档状态修正提交 `7ff1f63` 已普通推送 `main`；相同 fresh 产物树重新发布为 `gh-pages` `2ab2021`，Pages build `1115202218` 状态 `built`。最终公开 smoke 再次验证 HUD B、五品质、生产领取、390×844 布局与怒气链路，运行异常和控制台 error 均为 0。 | GitHub Pages |
