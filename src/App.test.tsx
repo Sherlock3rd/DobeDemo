@@ -249,6 +249,7 @@ describe('App', () => {
   })
 
   it('opens the current assessment for an older save without replaying earlier meetings', async () => {
+    const user = userEvent.setup()
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
       currentLevel: 8,
@@ -272,6 +273,11 @@ describe('App', () => {
         name: '第二章 · 废铁生意评定会议',
       }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByLabelText('第一章 · 冷炉初燃成员完成度'),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '宣读评定结论' }))
+    await user.click(screen.getByRole('button', { name: '进入本章任务评定' }))
     expect(screen.getByText('正式成员席位 · 有投票权')).toBeInTheDocument()
   })
 

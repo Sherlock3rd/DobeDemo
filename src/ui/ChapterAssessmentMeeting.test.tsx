@@ -16,6 +16,10 @@ describe('ChapterAssessmentMeeting', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getByText('旁听席 · 无投票权')).toBeInTheDocument()
+    expect(screen.getByText('你的章节任务')).toBeInTheDocument()
+    expect(screen.getByText('其他成员任务')).toBeInTheDocument()
+    expect(screen.getByLabelText('Thomas的章节任务').children).toHaveLength(4)
+    expect(screen.getByLabelText('其他成员分派任务').children).toHaveLength(4)
     expect(screen.getByText('领头人就位')).toBeInTheDocument()
     expect(screen.getByText('点燃修理厂')).toBeInTheDocument()
     expect(screen.getByText('清理街口')).toBeInTheDocument()
@@ -45,6 +49,28 @@ describe('ChapterAssessmentMeeting', () => {
       const view = render(
         <ChapterAssessmentMeeting chapterNumber={2} onComplete={() => {}} />,
       )
+      expect(
+        screen.getByLabelText('第一章 · 冷炉初燃成员完成度'),
+      ).toBeInTheDocument()
+      expect(screen.getByLabelText('Thomas Shelby评级 S')).toBeInTheDocument()
+      for (const grade of ['A', 'B', 'C', 'D']) {
+        expect(
+          view.container.querySelector(`[data-grade="${grade}"]`),
+        ).not.toBeNull()
+      }
+      await userEvent.click(
+        screen.getByRole('button', { name: '宣读评定结论' }),
+      )
+      expect(
+        screen.getByRole('status', {
+          name: '第一章 · 冷炉初燃评定完成',
+        }),
+      ).toHaveTextContent('Thomas Shelby · 本章最佳')
+      await userEvent.click(
+        screen.getByRole('button', { name: '进入本章任务评定' }),
+      )
+      expect(screen.getByText('你的章节任务')).toBeInTheDocument()
+      expect(screen.getByText('其他成员任务')).toBeInTheDocument()
       await userEvent.click(screen.getByRole('button', { name: '进入表决' }))
       await userEvent.click(screen.getByRole('button', { name: buttonName }))
       const result =

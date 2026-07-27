@@ -16,7 +16,12 @@ describe('ProgressionMilestoneOverlay', () => {
     expect(
       screen.getByRole('status', { name: '修车厂管理权已交接' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('管理权已交接')).toBeInTheDocument()
+    expect(screen.getByText('接管生效')).toBeInTheDocument()
+    expect(screen.getByText('修车厂 · 管理权已交接')).toBeInTheDocument()
+    expect(document.querySelector('.takeover-hammer__tool')).toBeInTheDocument()
+    expect(
+      document.querySelector('.takeover-hammer__sparks'),
+    ).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '听取管理简报' }))
     expect(onContinue).toHaveBeenCalledTimes(1)
   })

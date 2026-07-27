@@ -6,14 +6,17 @@ import {
   type JSX,
 } from 'react'
 import gangPortraitAtlas from '../assets/peaky-blinders-hierarchy-atlas.png'
-import { getChapterAssessment } from '../game/chapterAssessment'
+import {
+  getChapterAssessment,
+  getChapterPerformanceReview,
+} from '../game/chapterAssessment'
 
 interface ChapterAssessmentMeetingProps {
   chapterNumber: number
   onComplete: (chapterNumber: number) => void
 }
 
-type MeetingPhase = 'briefing' | 'vote' | 'result'
+type MeetingPhase = 'review' | 'review-result' | 'briefing' | 'vote' | 'result'
 type PlayerVote = 'support' | 'oppose'
 const CHAPTER_NUMERALS = ['一', '二', '三', '四', '五', '六', '七'] as const
 
@@ -31,17 +34,26 @@ export function ChapterAssessmentMeeting({
   onComplete,
 }: ChapterAssessmentMeetingProps): JSX.Element | null {
   const assessment = getChapterAssessment(chapterNumber)
-  const [phase, setPhase] = useState<MeetingPhase>('briefing')
+  const review =
+    chapterNumber > 1 ? getChapterPerformanceReview(chapterNumber - 1) : null
+  const [phase, setPhase] = useState<MeetingPhase>(
+    review ? 'review' : 'briefing',
+  )
   const [playerVote, setPlayerVote] = useState<PlayerVote | null>(null)
   const phaseActionRef = useRef<HTMLButtonElement | null>(null)
+  const agendaRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    phaseActionRef.current?.focus()
+    if (agendaRef.current) {
+      agendaRef.current.scrollTop = 0
+    }
+    phaseActionRef.current?.focus({ preventScroll: true })
   }, [phase])
 
   if (!assessment) return null
 
   const { chapter, chair } = assessment
+  const dialogLabel = `${chapter.title}评定会议`
   const meetingAction = (): void => {
     if (assessment.playerCanVote) {
       setPhase('vote')
@@ -53,6 +65,9 @@ export function ChapterAssessmentMeeting({
     setPlayerVote(vote)
     setPhase('result')
   }
+  const finishMeeting = (): void => {
+    onComplete(chapter.number)
+  }
 
   return (
     <div className="chapter-assessment__overlay">
@@ -60,17 +75,27 @@ export function ChapterAssessmentMeeting({
         className="chapter-assessment"
         role="dialog"
         aria-modal="true"
-        aria-label={`${chapter.title}评定会议`}
+        aria-label={dialogLabel}
         data-phase={phase}
       >
         <header className="chapter-assessment__header">
           <div>
             <span>THE RAZORS · ASSESSMENT COUNCIL</span>
-            <h1>帮派评定会议</h1>
+            <h1>
+              {phase.startsWith('review') ? '上章任务评定' : '帮派评定会议'}
+            </h1>
           </div>
           <div className="chapter-assessment__chapter">
-            <small>{`CHAPTER ${chapter.number} / 7`}</small>
-            <strong>{chapter.title}</strong>
+            <small>
+              {review
+                ? `REVIEW CHAPTER ${review.chapter.number} → CHAPTER ${chapter.number}`
+                : `CHAPTER ${chapter.number} / 7`}
+            </small>
+            <strong>
+              {phase.startsWith('review')
+                ? review?.chapter.title
+                : chapter.title}
+            </strong>
           </div>
         </header>
 
@@ -82,50 +107,201 @@ export function ChapterAssessmentMeeting({
               role="img"
               aria-label={chair.holder}
             />
-            <span>会议主持</span>
+            <span>{phase.startsWith('review') ? '评定主持' : '会议主持'}</span>
             <strong>{chair.holder}</strong>
             <small>{chair.seatDescription}</small>
             <p>
-              {assessment.playerCanVote
-                ? `${chapter.role.chineseTitle}席位 · 有投票权`
-                : '旁听席 · 无投票权'}
+              {phase.startsWith('review')
+                ? '逐项核对上次会议任务'
+                : assessment.playerCanVote
+                  ? `${chapter.role.chineseTitle}席位 · 有投票权`
+                  : '旁听席 · 无投票权'}
             </p>
           </aside>
 
-          <div className="chapter-assessment__agenda">
-            <div className="chapter-assessment__proposal">
-              <span>MANDATE PLAN</span>
-              <h2>{chapter.title}</h2>
-              <p>{chapter.story}</p>
-            </div>
-
-            <ol className="chapter-assessment__tasks" aria-label="本章评定任务">
-              {chapter.tasks.map((task, index) => (
-                <li key={task.id}>
-                  <span>{String(index + 1).padStart(2, '0')}</span>
-                  <div>
-                    <strong>{task.name}</strong>
-                    <small>{task.description}</small>
-                  </div>
-                </li>
-              ))}
-            </ol>
-
-            {phase === 'briefing' ? (
-              <div className="chapter-assessment__briefing">
-                <p>
-                  {assessment.playerCanVote
-                    ? '任务宣讲完毕。你的席位可以对本章行动议案表态。'
-                    : '见习成员只旁听本次评定；委员会决议通过后，任务将直接下达。'}
-                </p>
+          <div ref={agendaRef} className="chapter-assessment__agenda">
+            {phase === 'review' && review ? (
+              <section className="chapter-assessment__performance">
+                <div className="chapter-assessment__proposal">
+                  <span>LAST MANDATE REVIEW</span>
+                  <h2>{`${review.chapter.title} · 完成度评定`}</h2>
+                  <p>
+                    {chair.holder}
+                    ：上次会议分下去的职责，今天按结果逐项结账。
+                  </p>
+                </div>
+                <div className="chapter-assessment__dialogue">
+                  <p>
+                    <strong>{chair.holder}</strong>
+                    产业、路口、车队和账本都摆在桌上。每个人只凭结果拿等级。
+                  </p>
+                  <p data-speaker="player">
+                    <strong>Thomas Shelby</strong>
+                    我的任务已经完成。该交的账，一项不少。
+                  </p>
+                </div>
+                <ol
+                  className="chapter-assessment__grades"
+                  aria-label={`${review.chapter.title}成员完成度`}
+                >
+                  {review.entries.map((entry) => (
+                    <li
+                      key={entry.name}
+                      data-grade={entry.grade}
+                      data-player={entry.isPlayer || undefined}
+                    >
+                      {entry.portraitIndex === null ? (
+                        <span
+                          className="chapter-assessment__grade-initial"
+                          aria-hidden="true"
+                        >
+                          {entry.name.slice(0, 1)}
+                        </span>
+                      ) : (
+                        <span
+                          className="chapter-assessment__grade-portrait"
+                          style={portraitStyle(entry.portraitIndex)}
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span className="chapter-assessment__grade-copy">
+                        <strong>{entry.name}</strong>
+                        <small>{entry.position}</small>
+                        <em>{entry.taskName}</em>
+                      </span>
+                      <b aria-label={`${entry.name}评级 ${entry.grade}`}>
+                        {entry.grade}
+                      </b>
+                    </li>
+                  ))}
+                </ol>
                 <button
                   ref={phaseActionRef}
                   type="button"
-                  onClick={meetingAction}
+                  className="chapter-assessment__primary"
+                  onClick={() => setPhase('review-result')}
                 >
-                  {assessment.playerCanVote ? '进入表决' : '听取会议决议'}
+                  宣读评定结论
                 </button>
-              </div>
+              </section>
+            ) : null}
+
+            {phase === 'review-result' && review ? (
+              <section
+                className="chapter-assessment__review-result"
+                role="status"
+                aria-label={`${review.chapter.title}评定完成`}
+              >
+                <span>PERFORMANCE VERDICT</span>
+                <div>
+                  <b>S</b>
+                  <p>
+                    <strong>Thomas Shelby · 本章最佳</strong>
+                    {review.verdict}
+                  </p>
+                </div>
+                <div className="chapter-assessment__dialogue">
+                  <p>
+                    <strong>{chair.holder}</strong>S
+                    级不是奖章，是你把分内工作全部做完的凭据。上章账目到此归档。
+                  </p>
+                  <p data-speaker="player">
+                    <strong>Thomas Shelby</strong>
+                    那就把这次会议的新任务摆上桌。
+                  </p>
+                </div>
+                <button
+                  ref={phaseActionRef}
+                  type="button"
+                  className="chapter-assessment__primary"
+                  onClick={() => {
+                    setPhase('briefing')
+                  }}
+                >
+                  进入本章任务评定
+                </button>
+              </section>
+            ) : null}
+
+            {phase === 'briefing' ? (
+              <>
+                <div className="chapter-assessment__proposal">
+                  <span>MANDATE PLAN</span>
+                  <h2>{chapter.title}</h2>
+                  <p>{chapter.story}</p>
+                </div>
+
+                <div className="chapter-assessment__assignment-intro">
+                  <strong>整章行动计划</strong>
+                  <span>
+                    委员会同时向 Thomas 和其他成员分派工作；只有标记为 Thomas
+                    的任务会进入玩家章节体。
+                  </span>
+                </div>
+
+                <section className="chapter-assessment__assignment-group">
+                  <header>
+                    <span>THOMAS · PLAYER ORDERS</span>
+                    <strong>你的章节任务</strong>
+                    <small>以下任务由 Thomas 接取，并同步进入章节体</small>
+                  </header>
+                  <ol
+                    className="chapter-assessment__tasks"
+                    aria-label="Thomas的章节任务"
+                  >
+                    {chapter.tasks.map((task, index) => (
+                      <li key={task.id}>
+                        <span>{String(index + 1).padStart(2, '0')}</span>
+                        <div>
+                          <strong>{task.name}</strong>
+                          <small>{task.description}</small>
+                        </div>
+                        <em>Thomas</em>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+
+                <section className="chapter-assessment__assignment-group chapter-assessment__assignment-group--crew">
+                  <header>
+                    <span>CREW ORDERS</span>
+                    <strong>其他成员任务</strong>
+                    <small>由小弟独立执行，下次会议按完成度评级</small>
+                  </header>
+                  <ul
+                    className="chapter-assessment__crew-tasks"
+                    aria-label="其他成员分派任务"
+                  >
+                    {assessment.crewAssignments.map((assignment) => (
+                      <li key={assignment.memberName}>
+                        <span aria-hidden="true">
+                          {assignment.memberName.slice(0, 1)}
+                        </span>
+                        <div>
+                          <strong>{assignment.taskName}</strong>
+                          <small>{assignment.description}</small>
+                          <em>{`${assignment.memberName} · ${assignment.memberPosition}`}</em>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <div className="chapter-assessment__briefing">
+                  <p>
+                    {assessment.playerCanVote
+                      ? '任务宣讲完毕。你的席位可以对本章行动议案表态。'
+                      : '见习成员只旁听本次评定；委员会决议通过后，任务将直接下达。'}
+                  </p>
+                  <button
+                    ref={phaseActionRef}
+                    type="button"
+                    onClick={meetingAction}
+                  >
+                    {assessment.playerCanVote ? '进入表决' : '听取会议决议'}
+                  </button>
+                </div>
+              </>
             ) : null}
 
             {phase === 'vote' ? (
@@ -154,7 +330,7 @@ export function ChapterAssessmentMeeting({
               <div
                 className="chapter-assessment__result"
                 role="status"
-                aria-label={`第${CHAPTER_NUMERALS[chapter.number - 1]}章评定结果`}
+                aria-label={`第${CHAPTER_NUMERALS[assessment.chapter.number - 1]}章评定结果`}
               >
                 <div className="chapter-assessment__result-heading">
                   <span>COUNCIL RESOLUTION</span>
@@ -195,9 +371,9 @@ export function ChapterAssessmentMeeting({
                   <button
                     ref={phaseActionRef}
                     type="button"
-                    onClick={() => onComplete(chapter.number)}
+                    onClick={finishMeeting}
                   >
-                    {assessment.playerCanVote ? '执行会议决议' : '接受本章任务'}
+                    {assessment.playerCanVote ? '发布本章任务' : '接受本章任务'}
                   </button>
                 </div>
               </div>

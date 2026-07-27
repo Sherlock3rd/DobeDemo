@@ -2145,6 +2145,101 @@
     0 0 3rem rgba(45, 212, 191, 0.2);
 }
 
+.progression-milestone--building {
+  border: 3px solid #a37a43;
+  border-radius: 0.35rem;
+  background:
+    radial-gradient(
+      circle at 1rem 1rem,
+      #d6a85f 0 0.22rem,
+      #2b1b10 0.25rem 0.5rem,
+      transparent 0.53rem
+    ),
+    radial-gradient(
+      circle at calc(100% - 1rem) 1rem,
+      #d6a85f 0 0.22rem,
+      #2b1b10 0.25rem 0.5rem,
+      transparent 0.53rem
+    ),
+    radial-gradient(
+      circle at 1rem calc(100% - 1rem),
+      #d6a85f 0 0.22rem,
+      #2b1b10 0.25rem 0.5rem,
+      transparent 0.53rem
+    ),
+    radial-gradient(
+      circle at calc(100% - 1rem) calc(100% - 1rem),
+      #d6a85f 0 0.22rem,
+      #2b1b10 0.25rem 0.5rem,
+      transparent 0.53rem
+    ),
+    linear-gradient(145deg, rgba(96, 56, 28, 0.42), transparent 38%),
+    repeating-linear-gradient(
+      118deg,
+      rgba(255, 255, 255, 0.02) 0 1px,
+      transparent 1px 7px
+    ),
+    #16120f;
+  box-shadow:
+    inset 0 0 0 0.35rem #24170f,
+    inset 0 0 0 0.45rem rgba(214, 168, 95, 0.45),
+    0 2rem 5rem rgba(0, 0, 0, 0.76),
+    0 0 3.5rem rgba(251, 191, 36, 0.25);
+}
+
+.progression-milestone--building > p {
+  color: #d6a85f;
+}
+
+.progression-milestone--building h2 {
+  color: #f6e2b7;
+  font-size: clamp(2.2rem, 8vw, 4rem);
+  letter-spacing: 0.08em;
+  text-shadow:
+    0 2px #4a2b12,
+    0 0 1.7rem rgba(251, 191, 36, 0.38);
+}
+
+.takeover-hammer {
+  position: relative;
+  width: min(17rem, 72vw);
+  height: 10.5rem;
+  margin: -0.5rem 0 0.35rem;
+  filter: drop-shadow(0 1rem 1rem rgba(0, 0, 0, 0.62));
+}
+
+.takeover-hammer svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.takeover-hammer__tool {
+  transform-box: fill-box;
+  transform-origin: 38% 68%;
+  animation: takeover-hammer-strike 1.15s cubic-bezier(0.3, 0.05, 0.25, 1) both;
+}
+
+.takeover-hammer__base {
+  animation: takeover-base-impact 500ms 620ms ease-out both;
+}
+
+.takeover-hammer__sparks,
+.takeover-hammer__impact {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.takeover-hammer__sparks {
+  animation: takeover-sparks 650ms 610ms ease-out both;
+}
+
+.takeover-hammer__impact {
+  animation: takeover-impact-ring 620ms 600ms ease-out both;
+}
+
 .progression-milestone__rays {
   position: absolute;
   width: 42rem;
@@ -2552,6 +2647,7 @@
 
 .chapter-assessment__tasks li > div {
   display: grid;
+  flex: 1 1 auto;
   min-width: 0;
   gap: 0.12rem;
 }
@@ -2571,6 +2667,346 @@
 .chapter-assessment__tasks small {
   color: #94a3b8;
   font-size: 0.68rem;
+}
+
+.chapter-assessment__tasks li > em {
+  flex: 0 0 auto;
+  padding: 0.18rem 0.38rem;
+  border: 1px solid rgba(251, 191, 36, 0.38);
+  border-radius: 999px;
+  color: #fde68a;
+  background: rgba(120, 53, 15, 0.25);
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.chapter-assessment__assignment-intro {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  border-radius: 0.55rem;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.chapter-assessment__assignment-intro strong {
+  flex: 0 0 auto;
+  color: #f8fafc;
+  font-size: 0.75rem;
+}
+
+.chapter-assessment__assignment-intro span {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.chapter-assessment__assignment-group {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 0.65rem;
+  background: rgba(120, 53, 15, 0.1);
+}
+
+.chapter-assessment__assignment-group--crew {
+  border-color: rgba(94, 234, 212, 0.27);
+  background: rgba(8, 47, 46, 0.16);
+}
+
+.chapter-assessment__assignment-group > header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  column-gap: 0.65rem;
+}
+
+.chapter-assessment__assignment-group > header span {
+  grid-column: 1 / -1;
+  color: #fbbf24;
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+}
+
+.chapter-assessment__assignment-group--crew > header span {
+  color: #5eead4;
+}
+
+.chapter-assessment__assignment-group > header strong {
+  color: #fff7ed;
+  font-size: 0.9rem;
+}
+
+.chapter-assessment__assignment-group > header small {
+  color: #94a3b8;
+  font-size: 0.65rem;
+  text-align: right;
+}
+
+.chapter-assessment__crew-tasks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chapter-assessment__crew-tasks li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid rgba(94, 234, 212, 0.18);
+  border-radius: 0.55rem;
+  background: rgba(3, 14, 16, 0.66);
+}
+
+.chapter-assessment__crew-tasks li > span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid rgba(94, 234, 212, 0.45);
+  border-radius: 50%;
+  color: #ccfbf1;
+  background: rgba(13, 148, 136, 0.2);
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.chapter-assessment__crew-tasks li > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.08rem;
+}
+
+.chapter-assessment__crew-tasks strong {
+  color: #f8fafc;
+  font-size: 0.75rem;
+}
+
+.chapter-assessment__crew-tasks small,
+.chapter-assessment__crew-tasks em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.6rem;
+}
+
+.chapter-assessment__crew-tasks small {
+  color: #94a3b8;
+}
+
+.chapter-assessment__crew-tasks em {
+  color: #5eead4;
+  font-style: normal;
+}
+
+.chapter-assessment__performance,
+.chapter-assessment__review-result {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.chapter-assessment__dialogue {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.chapter-assessment__dialogue p {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-left: 3px solid #5eead4;
+  border-radius: 0.35rem;
+  color: #cbd5e1;
+  background: rgba(8, 47, 46, 0.28);
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
+
+.chapter-assessment__dialogue p[data-speaker='player'] {
+  border-left-color: #fbbf24;
+  background: rgba(120, 53, 15, 0.18);
+}
+
+.chapter-assessment__dialogue strong {
+  display: block;
+  margin-bottom: 0.12rem;
+  color: #f8fafc;
+}
+
+.chapter-assessment__grades {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chapter-assessment__grades li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.6rem 0.45rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.65rem;
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.chapter-assessment__grades li[data-player] {
+  border-color: rgba(251, 191, 36, 0.65);
+  background:
+    radial-gradient(circle at top, rgba(251, 191, 36, 0.16), transparent 60%),
+    rgba(120, 53, 15, 0.14);
+  box-shadow: 0 0 1.4rem rgba(251, 191, 36, 0.12);
+}
+
+.chapter-assessment__grade-portrait,
+.chapter-assessment__grade-initial {
+  display: grid;
+  width: 3.4rem;
+  height: 3.4rem;
+  place-items: center;
+  border: 1px solid rgba(94, 234, 212, 0.32);
+  border-radius: 50%;
+  color: #ccfbf1;
+  background-color: rgba(13, 148, 136, 0.18);
+  background-repeat: no-repeat;
+  background-size: 400% 200%;
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.chapter-assessment__grade-copy {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  justify-items: center;
+  gap: 0.08rem;
+  text-align: center;
+}
+
+.chapter-assessment__grade-copy strong,
+.chapter-assessment__grade-copy small,
+.chapter-assessment__grade-copy em {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chapter-assessment__grade-copy strong {
+  color: #f8fafc;
+  font-size: 0.68rem;
+}
+
+.chapter-assessment__grade-copy small,
+.chapter-assessment__grade-copy em {
+  color: #94a3b8;
+  font-size: 0.58rem;
+}
+
+.chapter-assessment__grade-copy em {
+  color: #5eead4;
+  font-style: normal;
+}
+
+.chapter-assessment__grades li > b {
+  color: #e2e8f0;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.chapter-assessment__grades li[data-grade='S'] > b {
+  color: #fbbf24;
+  text-shadow: 0 0 1rem rgba(251, 191, 36, 0.5);
+}
+
+.chapter-assessment__grades li[data-grade='A'] > b {
+  color: #86efac;
+}
+
+.chapter-assessment__grades li[data-grade='B'] > b {
+  color: #67e8f9;
+}
+
+.chapter-assessment__grades li[data-grade='C'] > b {
+  color: #c4b5fd;
+}
+
+.chapter-assessment__grades li[data-grade='D'] > b {
+  color: #fca5a5;
+}
+
+.chapter-assessment__primary {
+  justify-self: end;
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+  border: 1px solid #5eead4;
+  border-radius: 0.55rem;
+  color: #042f2e;
+  background: #5eead4;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.chapter-assessment__review-result {
+  align-content: center;
+  min-height: 100%;
+  padding: clamp(0.8rem, 2vw, 1.4rem);
+  border: 1px solid rgba(251, 191, 36, 0.34);
+  border-radius: 0.8rem;
+  background:
+    radial-gradient(
+      circle at 25% 38%,
+      rgba(251, 191, 36, 0.14),
+      transparent 35%
+    ),
+    rgba(15, 23, 42, 0.56);
+}
+
+.chapter-assessment__review-result > span {
+  color: #5eead4;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+
+.chapter-assessment__review-result > div:first-of-type {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.chapter-assessment__review-result > div:first-of-type > b {
+  color: #fbbf24;
+  font-size: clamp(4rem, 11vw, 7rem);
+  line-height: 0.9;
+  text-shadow: 0 0 2rem rgba(251, 191, 36, 0.45);
+}
+
+.chapter-assessment__review-result > div:first-of-type p {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+
+.chapter-assessment__review-result > div:first-of-type strong {
+  color: #fff7ed;
+  font-size: 1.1rem;
 }
 
 .chapter-assessment__briefing,
@@ -2758,6 +3194,64 @@
   from {
     opacity: 0;
     transform: scale(1.08);
+  }
+}
+
+@keyframes takeover-hammer-strike {
+  0% {
+    transform: translate(18px, -10px) rotate(-38deg);
+  }
+
+  58% {
+    transform: translate(0, 26px) rotate(-5deg);
+  }
+
+  68% {
+    transform: translate(2px, 21px) rotate(-8deg);
+  }
+
+  78%,
+  100% {
+    transform: translate(0, 26px) rotate(-5deg);
+  }
+}
+
+@keyframes takeover-base-impact {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  45% {
+    transform: translateY(0.2rem) scaleX(1.035);
+  }
+}
+
+@keyframes takeover-sparks {
+  0% {
+    opacity: 0;
+    transform: scale(0.25);
+  }
+
+  22% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+@keyframes takeover-impact-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.45);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.65);
   }
 }
 
@@ -5705,6 +6199,12 @@
     font-size: 1.7rem;
   }
 
+  .takeover-hammer {
+    width: min(13rem, 70vw);
+    height: 8.2rem;
+    margin-bottom: 0;
+  }
+
   .narrative-dialogue {
     grid-template-columns: 7.8rem minmax(0, 1fr);
     min-height: 16rem;
@@ -5857,6 +6357,44 @@
     padding: 0.45rem 0.55rem;
   }
 
+  .chapter-assessment__assignment-intro {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .chapter-assessment__assignment-group > header {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-assessment__assignment-group > header small {
+    text-align: left;
+  }
+
+  .chapter-assessment__crew-tasks {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-assessment__grades {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chapter-assessment__grades li[data-player] {
+    grid-column: 1 / -1;
+  }
+
+  .chapter-assessment__review-result {
+    min-height: auto;
+    padding: 0.75rem;
+  }
+
+  .chapter-assessment__review-result > div:first-of-type > b {
+    font-size: 4rem;
+  }
+
+  .chapter-assessment__primary {
+    width: 100%;
+  }
+
   .chapter-assessment__briefing,
   .chapter-assessment__ballot,
   .chapter-assessment__player-vote {
@@ -5923,6 +6461,17 @@
     column-gap: 1rem;
     align-items: center;
     padding: 0.8rem 1rem;
+  }
+
+  .progression-milestone--building {
+    grid-template-columns: minmax(8rem, 13rem) minmax(0, 1fr);
+  }
+
+  .takeover-hammer {
+    grid-row: 1 / 6;
+    width: 12rem;
+    height: 7.5rem;
+    margin: 0;
   }
 
   .progression-milestone__icon {
@@ -5993,6 +6542,28 @@
     display: none;
   }
 
+  .chapter-assessment__assignment-intro {
+    display: none;
+  }
+
+  .chapter-assessment__assignment-group {
+    padding: 0.4rem;
+  }
+
+  .chapter-assessment__crew-tasks li {
+    padding-block: 0.35rem;
+  }
+
+  .chapter-assessment__grades li {
+    padding-block: 0.35rem;
+  }
+
+  .chapter-assessment__grade-portrait,
+  .chapter-assessment__grade-initial {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
   .chapter-assessment__tasks li {
     padding-block: 0.35rem;
   }
@@ -6045,6 +6616,10 @@
   .building-takeover-badge,
   .progression-milestone,
   .progression-milestone__rays,
+  .takeover-hammer__tool,
+  .takeover-hammer__base,
+  .takeover-hammer__sparks,
+  .takeover-hammer__impact,
   .narrative-dialogue,
   .narrative-dialogue__content > p,
   .chapter-assessment,
