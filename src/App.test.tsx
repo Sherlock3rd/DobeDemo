@@ -196,7 +196,6 @@ describe('App', () => {
     useChapterStore.getState().reset()
     useChapterStore.setState({
       seenNarrativeIds: ['first-entry', 'chapter-start:1'],
-      completedAssessmentChapterNumbers: [1],
     })
     useChestTick.setState({ now: BASE_TIME, tick: 0 })
     canvasPropsSpy.mockClear()
@@ -209,7 +208,7 @@ describe('App', () => {
     expect(props.orthographic).toBe(true)
   })
 
-  it('plays first-entry and first chapter briefings before offering the initial repair-shop takeover', async () => {
+  it('publishes chapter one after its briefing without opening an initial meeting', async () => {
     const user = userEvent.setup()
     useCityStore.getState().reset(BASE_TIME)
     useChapterStore.setState({
@@ -231,21 +230,8 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
 
     expect(
-      screen.getByRole('dialog', {
-        name: '第一章 · 冷炉初燃评定会议',
-      }),
-    ).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '地图接管修车厂' })).toBeNull()
-    fireEvent.keyDown(window, { key: 'Escape' })
-    expect(
-      screen.getByRole('dialog', {
-        name: '第一章 · 冷炉初燃评定会议',
-      }),
-    ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '听取会议决议' }))
-    await user.click(screen.getByRole('button', { name: '根据决议形成任务' }))
-    await user.click(screen.getByRole('button', { name: '进入成员分配' }))
-    await user.click(screen.getByRole('button', { name: '接取四项章节任务' }))
+      screen.queryByRole('dialog', { name: /评定会议/ }),
+    ).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '地图接管修车厂' }))
     expect(
@@ -259,7 +245,7 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
-  it('opens the current assessment for an older save without replaying earlier meetings', async () => {
+  it('keeps a migrated save on its explicit active chapter without auto-opening a meeting', async () => {
     const user = userEvent.setup()
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
@@ -267,6 +253,8 @@ describe('App', () => {
       lastUpdatedAt: BASE_TIME,
     })
     useChapterStore.setState({
+      activeChapterNumber: 2,
+      selectedTaskPackageIds: { 2: 'chapter-2-package-yard' },
       seenNarrativeIds: [
         'first-entry',
         'chapter-start:1',
@@ -280,19 +268,15 @@ describe('App', () => {
     render(<App />)
 
     expect(
-      await screen.findByRole('dialog', {
-        name: '第二章 · 废铁生意评定会议',
-      }),
-    ).toBeInTheDocument()
+      screen.queryByRole('dialog', { name: /评定会议/ }),
+    ).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '章节' }))
     expect(
-      screen.getByLabelText('第一章 · 冷炉初燃成员完成度'),
+      screen.getByRole('status', { name: '当前第 2 章' }),
     ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '宣读评定结论' }))
-    await user.click(screen.getByRole('button', { name: '进入本章任务评定' }))
-    expect(screen.getByText('正式成员席位 · 有投票权')).toBeInTheDocument()
   })
 
-  it('runs the next chapter assessment after a core-role promotion ceremony and briefing', async () => {
+  it('does not open a meeting from the gang tree after a role promotion', async () => {
     const user = userEvent.setup()
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
@@ -315,7 +299,6 @@ describe('App', () => {
     }))
     useChapterStore.setState({
       claimedChapterNumbers: [1],
-      completedAssessmentChapterNumbers: [1],
     })
 
     render(<App />)
@@ -332,15 +315,11 @@ describe('App', () => {
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
     expect(
-      screen.getByRole('dialog', {
-        name: '剧情对话：第二章 · 废铁生意',
-      }),
-    ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
-
+      screen.queryByRole('dialog', { name: /评定会议/ }),
+    ).not.toBeInTheDocument()
     expect(
-      await screen.findByRole('dialog', {
-        name: '第二章 · 废铁生意评定会议',
+      screen.getByRole('dialog', {
+        name: '帮派权力树',
       }),
     ).toBeInTheDocument()
   })
@@ -513,7 +492,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: '修车厂' })).toBeInTheDocument()
   })
 
-  it('shows chapter completion feedback, plays the closing report, then opens the gang tree', async () => {
+  it('finishes a chapter, holds its meeting, and starts the selected next chapter package', async () => {
     const user = userEvent.setup()
     useAdventureStore.setState((state) => ({
       heroLevels: { ...state.heroLevels, foreman: 3 },
@@ -532,7 +511,11 @@ describe('App', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: '章节' }))
-    await user.click(screen.getByRole('button', { name: '领取章节奖励' }))
+    await user.click(
+      screen.getByRole('button', {
+        name: '完成章节并参加评定会议',
+      }),
+    )
     expect(
       screen.getByRole('status', { name: '第一章 · 冷炉初燃完成' }),
     ).toBeInTheDocument()
@@ -546,8 +529,33 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
 
     expect(
+      screen.getByRole('dialog', {
+        name: '第一章 · 冷炉初燃完成评定会议',
+      }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '进入事件表决' }))
+    await user.click(screen.getByRole('button', { name: /先核清来源/ }))
+    await user.click(screen.getByRole('button', { name: '查看三个任务包' }))
+    await user.click(screen.getByRole('radio', { name: /拆解产线/ }))
+    await user.click(
+      screen.getByRole('button', { name: '确认接取并开始第2章' }),
+    )
+
+    expect(
+      screen.getByRole('dialog', {
+        name: '剧情对话：第二章 · 废铁生意',
+      }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
+    expect(
       screen.getByRole('dialog', { name: '帮派权力树' }),
     ).toBeInTheDocument()
+    expect(useChapterStore.getState()).toMatchObject({
+      activeChapterNumber: 2,
+      selectedTaskPackageIds: { 2: 'chapter-2-package-yard' },
+      meetingVotes: { 1: 'option-a' },
+      completedAssessmentChapterNumbers: [1],
+    })
   })
 
   it('keeps focus inside the adventure, formation, and battle transition chain', async () => {

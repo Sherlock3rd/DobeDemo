@@ -704,6 +704,10 @@ export const useAdventureStore = create<AdventureState>()(
           return {
             carPartInventory,
             spareParts: state.spareParts - cost,
+            carPartUpgradeCount: Math.min(
+              Number.MAX_SAFE_INTEGER,
+              state.carPartUpgradeCount + 1,
+            ),
           }
         })
         return result
@@ -845,7 +849,7 @@ export const useAdventureStore = create<AdventureState>()(
     }),
     {
       name: ADVENTURE_STORAGE_KEY,
-      version: 7,
+      version: 8,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted) => persisted,
       partialize: ({
@@ -860,6 +864,7 @@ export const useAdventureStore = create<AdventureState>()(
         gunLevels,
         carPartInventory,
         carPartSlotsByCar,
+        carPartUpgradeCount,
         partIdleClock,
         nextPartSerial,
         chapterUnlockedCarIds,
@@ -877,6 +882,7 @@ export const useAdventureStore = create<AdventureState>()(
         gunLevels,
         carPartInventory,
         carPartSlotsByCar,
+        carPartUpgradeCount,
         partIdleClock,
         nextPartSerial,
         chapterUnlockedCarIds,

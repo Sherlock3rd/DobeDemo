@@ -4,116 +4,91 @@ import { describe, expect, it, vi } from 'vitest'
 import { ChapterAssessmentMeeting } from './ChapterAssessmentMeeting'
 
 describe('ChapterAssessmentMeeting', () => {
-  it('progresses from the chapter-one decision to task confirmation and assignment', async () => {
+  it('moves from a neutral event vote to one-of-three task package selection', async () => {
     const onComplete = vi.fn()
     render(
-      <ChapterAssessmentMeeting chapterNumber={1} onComplete={onComplete} />,
+      <ChapterAssessmentMeeting
+        completedChapterNumber={1}
+        onComplete={onComplete}
+      />,
     )
 
     expect(
       screen.getByRole('dialog', {
-        name: '第一章 · 冷炉初燃评定会议',
+        name: '第一章 · 冷炉初燃完成评定会议',
       }),
     ).toBeInTheDocument()
-    expect(screen.getByText('旁听席 · 无投票权')).toBeInTheDocument()
-    expect(screen.getByText('此刻只评定行动方向')).toBeInTheDocument()
-    expect(screen.queryByText('你的章节任务')).not.toBeInTheDocument()
-    expect(screen.queryByText('领头人就位')).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: '投赞成票' }),
-    ).not.toBeInTheDocument()
+    expect(screen.getByText('无主废车涌入南区')).toBeInTheDocument()
+    expect(screen.getByText('对当前事件进行中性表决')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: '听取会议决议' }))
+    await userEvent.click(screen.getByRole('button', { name: '进入事件表决' }))
+    await userEvent.click(screen.getByRole('button', { name: /先核清来源/ }))
 
     expect(
-      screen.getByRole('status', { name: '第一章评定结果' }),
-    ).toHaveTextContent('议案通过')
-    expect(screen.getByText('本章只记录委员会决议')).toBeInTheDocument()
-    expect(screen.queryByText('领头人就位')).not.toBeInTheDocument()
-
+      screen.getByRole('status', { name: '事件表决结果' }),
+    ).toHaveTextContent('你的选择：先核清来源')
     await userEvent.click(
-      screen.getByRole('button', { name: '根据决议形成任务' }),
+      screen.getByRole('button', { name: '查看三个任务包' }),
     )
-    expect(screen.getByText('本章行动任务已形成')).toBeInTheDocument()
-    expect(screen.getByLabelText('本章行动任务池').children).toHaveLength(8)
-    expect(screen.getByText('领头人就位')).toBeInTheDocument()
-    expect(screen.getByText('点燃修理厂')).toBeInTheDocument()
-    expect(screen.getByText('清理街口')).toBeInTheDocument()
-    expect(screen.getByText('第一面完整补丁')).toBeInTheDocument()
-    expect(screen.queryByText('你的章节任务')).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: '进入成员分配' }))
-    expect(screen.getByText('你的章节任务')).toBeInTheDocument()
-    expect(screen.getByText('其他成员任务')).toBeInTheDocument()
-    expect(screen.getByLabelText('Thomas的章节任务').children).toHaveLength(4)
-    expect(screen.getByLabelText('其他成员分派任务').children).toHaveLength(4)
+    const packageGroup = screen.getByRole('radiogroup', {
+      name: '第二章 · 废铁生意任务包',
+    })
+    expect(packageGroup.querySelectorAll('[role="radio"]')).toHaveLength(3)
+    expect(screen.getByText('方案 A · 1 项')).toBeInTheDocument()
+    expect(screen.getByText('方案 B · 2 项')).toBeInTheDocument()
+    expect(screen.getByText('方案 C · 3 项')).toBeInTheDocument()
 
+    await userEvent.click(screen.getByRole('radio', { name: /拆解产线/ }))
+    expect(screen.getByLabelText('本章固定额外任务')).toHaveTextContent(
+      '职位声望',
+    )
+    expect(screen.getByLabelText('本章固定额外任务')).toHaveTextContent(
+      '清理街区',
+    )
+    expect(screen.getByLabelText('本章固定额外任务')).toHaveTextContent(
+      '公路行动',
+    )
     await userEvent.click(
-      screen.getByRole('button', { name: '接取四项章节任务' }),
+      screen.getByRole('button', { name: '确认接取并开始第2章' }),
     )
-    expect(onComplete).toHaveBeenCalledWith(1)
+
+    expect(onComplete).toHaveBeenCalledWith({
+      completedChapterNumber: 1,
+      nextChapterNumber: 2,
+      selectedPackageId: 'chapter-2-package-yard',
+      vote: 'option-a',
+    })
   })
 
-  it('keeps committee markers and the passed result identical for either player vote', async () => {
-    const vote = async (
-      buttonName: '投赞成票' | '投反对票',
-    ): Promise<{
-      result: string
-      memberVotes: string[]
-    }> => {
+  it('opens the same three packages after either neutral vote', async () => {
+    const readPackages = async (
+      voteName: '先核清来源' | '先保住产线',
+    ): Promise<string[]> => {
       const view = render(
-        <ChapterAssessmentMeeting chapterNumber={2} onComplete={() => {}} />,
+        <ChapterAssessmentMeeting
+          completedChapterNumber={1}
+          onComplete={() => {}}
+        />,
       )
-      expect(
-        screen.getByLabelText('第一章 · 冷炉初燃成员完成度'),
-      ).toBeInTheDocument()
-      expect(screen.getByLabelText('Thomas Shelby评级 S')).toBeInTheDocument()
-      for (const grade of ['A', 'B', 'C', 'D']) {
-        expect(
-          view.container.querySelector(`[data-grade="${grade}"]`),
-        ).not.toBeNull()
-      }
       await userEvent.click(
-        screen.getByRole('button', { name: '宣读评定结论' }),
+        screen.getByRole('button', { name: '进入事件表决' }),
       )
-      expect(
-        screen.getByRole('status', {
-          name: '第一章 · 冷炉初燃评定完成',
-        }),
-      ).toHaveTextContent('Thomas Shelby · 本章最佳')
       await userEvent.click(
-        screen.getByRole('button', { name: '进入本章任务评定' }),
+        screen.getByRole('button', { name: new RegExp(voteName) }),
       )
-      expect(screen.getByText('此刻只评定行动方向')).toBeInTheDocument()
-      expect(screen.queryByText('你的章节任务')).not.toBeInTheDocument()
-      await userEvent.click(screen.getByRole('button', { name: '进入表决' }))
-      await userEvent.click(screen.getByRole('button', { name: buttonName }))
-      const result =
-        screen.getByRole('status', { name: '第二章评定结果' }).textContent ?? ''
-      const memberVotes = Array.from(
-        view.container.querySelectorAll<HTMLElement>(
-          '.chapter-assessment__member[data-vote]',
-        ),
-      ).map((element) => element.dataset.vote ?? '')
       await userEvent.click(
-        screen.getByRole('button', { name: '根据决议形成任务' }),
+        screen.getByRole('button', { name: '查看三个任务包' }),
       )
-      expect(screen.getByLabelText('本章行动任务池').children).toHaveLength(8)
-      expect(screen.queryByText('你的章节任务')).not.toBeInTheDocument()
-      await userEvent.click(
-        screen.getByRole('button', { name: '进入成员分配' }),
-      )
-      expect(screen.getByText('你的章节任务')).toBeInTheDocument()
-      expect(screen.getByText('其他成员任务')).toBeInTheDocument()
+      const titles = screen
+        .getAllByRole('radio')
+        .map((radio) => radio.textContent ?? '')
       view.unmount()
-      return { result, memberVotes }
+      return titles
     }
 
-    const support = await vote('投赞成票')
-    const oppose = await vote('投反对票')
-
-    expect(support.memberVotes).toEqual(oppose.memberVotes)
-    expect(support.result).toContain('议案通过')
-    expect(oppose.result).toContain('议案通过')
+    expect(await readPackages('先核清来源')).toEqual(
+      await readPackages('先保住产线'),
+    )
   })
 })

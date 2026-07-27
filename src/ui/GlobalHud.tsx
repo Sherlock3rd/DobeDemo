@@ -10,9 +10,10 @@ import {
 } from '../game/gangProgression'
 import {
   CHAPTERS,
+  getChapterByNumber,
   getChapterForGangLevel,
+  getChapterTasks,
   getTaskProgress,
-  isChapterComplete,
 } from '../game/chapterProgression'
 import { BUILDING_IDS } from '../game/cityTypes'
 import { getAccountTotalPower, unitPower } from '../game/combat/power'
@@ -24,7 +25,10 @@ import {
 } from '../store/useAdventureStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
-import { useChapterStore } from '../store/useChapterStore'
+import {
+  getChapterProgressSnapshot,
+  useChapterStore,
+} from '../store/useChapterStore'
 import { hasAdventureRedDot, hasHeroesRedDot } from './redDots'
 import { ResourceAmount } from './ResourceAmount'
 
@@ -48,13 +52,17 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const gunLevels = useAdventureStore((s) => s.gunLevels)
   const carPartInventory = useAdventureStore((s) => s.carPartInventory)
   const carPartSlotsByCar = useAdventureStore((s) => s.carPartSlotsByCar)
+  useAdventureStore((s) => s.carPartUpgradeCount)
+  useAdventureStore((s) => s.spareParts)
   const sharedExp = useAdventureStore((s) => s.sharedExp)
   const highestClearedStage = useAdventureStore((s) => s.highestClearedStage)
-  const highestClearedRacingStage = useAdventureStore(
-    (s) => s.highestClearedRacingStage,
-  )
+  useAdventureStore((s) => s.highestClearedRacingStage)
   const claimedTaskIds = useChapterStore((s) => s.claimedTaskIds)
   const claimedChapterNumbers = useChapterStore((s) => s.claimedChapterNumbers)
+  const activeChapterNumber = useChapterStore((s) => s.activeChapterNumber)
+  const selectedTaskPackageIds = useChapterStore(
+    (s) => s.selectedTaskPackageIds,
+  )
   const idleClock = useAdventureStore((s) => s.idleClock)
   const tick = useChestTick((s) => s.tick)
   const now = useChestTick((s) => s.now)
@@ -102,32 +110,29 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   )
   const adventureDot = hasAdventureRedDot(highestClearedStage, claimable)
   const heroesDot = hasHeroesRedDot(heroLevels, sharedExp, gangLevel)
-  const currentChapter = getChapterForGangLevel(gangLevel)
-  const chapterSnapshot = {
-    heroLevels,
-    gunLevels,
-    carPartInventory,
-    highestClearedStage,
-    highestClearedRacingStage,
-    buildingProgress,
-  }
+  const currentChapter = getChapterByNumber(activeChapterNumber) ?? CHAPTERS[0]
+  const currentChapterTasks = getChapterTasks(
+    currentChapter.number,
+    selectedTaskPackageIds[currentChapter.number],
+  )
+  const chapterSnapshot = getChapterProgressSnapshot()
   const chapterClaimable =
-    currentChapter.tasks.some(
+    currentChapterTasks.some(
       (task) =>
         !claimedTaskIds.includes(task.id) &&
         getTaskProgress(task, chapterSnapshot).complete,
     ) ||
     (!claimedChapterNumbers.includes(currentChapter.number) &&
-      currentChapter.tasks.every(
+      currentChapterTasks.length > 0 &&
+      currentChapterTasks.every(
         (task) => getTaskProgress(task, chapterSnapshot).complete,
       ))
   const nextGangLevel = Math.min(GANG_MAX_LEVEL, gangLevel + 1)
   const crossesRole =
     gangLevel < GANG_MAX_LEVEL &&
     getGangRole(gangLevel).threshold !== getGangRole(nextGangLevel).threshold
-  const chapterComplete =
-    isChapterComplete(currentChapter, chapterSnapshot) &&
-    claimedChapterNumbers.includes(currentChapter.number)
+  const roleChapter = getChapterForGangLevel(gangLevel)
+  const chapterComplete = claimedChapterNumbers.includes(roleChapter.number)
   const gangPromotionReady =
     gangLevel < GANG_MAX_LEVEL &&
     totalReputation >= getTotalReputationForLevel(nextGangLevel) &&

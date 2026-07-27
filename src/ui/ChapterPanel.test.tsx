@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAdventureStore } from '../store/useAdventureStore'
@@ -18,7 +18,7 @@ describe('ChapterPanel', () => {
     useChapterStore.getState().reset()
   })
 
-  it('shows only the current chapter identity, story, and four task states', () => {
+  it('shows only the current chapter identity and its starter plus fixed tasks', () => {
     render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)
 
     expect(
@@ -27,11 +27,11 @@ describe('ChapterPanel', () => {
     expect(
       screen.getByRole('status', { name: '当前第 1 章' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('已完成 1/4')).toBeInTheDocument()
+    expect(screen.getByText('已完成 2/5')).toBeInTheDocument()
     expect(screen.queryByLabelText('七章总览')).not.toBeInTheDocument()
     expect(screen.queryByText('主席之路')).not.toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: '进行中' })).toHaveLength(3)
-    expect(screen.getByRole('button', { name: '领取' })).toBeEnabled()
+    expect(screen.getAllByRole('button', { name: '领取' })).toHaveLength(2)
     expect(
       screen.queryByRole('button', { name: '前往英雄升级' }),
     ).not.toBeInTheDocument()
@@ -41,6 +41,10 @@ describe('ChapterPanel', () => {
 
   it('updates the compact current-chapter identity without previewing neighbors', () => {
     useGangStore.setState({ currentLevel: 24 })
+    useChapterStore.setState({
+      activeChapterNumber: 4,
+      selectedTaskPackageIds: { 4: 'chapter-4-package-fuel' },
+    })
 
     render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)
 
@@ -54,11 +58,17 @@ describe('ChapterPanel', () => {
   it('claims a completed reward and switches the task to its claimed state', async () => {
     render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)
 
-    await userEvent.click(screen.getByRole('button', { name: '领取' }))
+    const heroTask = screen
+      .getByRole('heading', { name: '领头人就位' })
+      .closest('article')
+    expect(heroTask).not.toBeNull()
+    await userEvent.click(
+      within(heroTask as HTMLElement).getByRole('button', { name: '领取' }),
+    )
 
     expect(screen.getByRole('button', { name: '已领取' })).toBeDisabled()
     expect(screen.getByText('领头人就位奖励已领取')).toBeInTheDocument()
-    expect(useGangStore.getState().totalReputation).toBe(20)
+    expect(useGangStore.getState().totalReputation).toBe(10)
   })
 
   it('navigates a task to its relevant development surface', async () => {
@@ -98,11 +108,13 @@ describe('ChapterPanel', () => {
       />,
     )
 
-    await userEvent.click(screen.getByRole('button', { name: '领取章节奖励' }))
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: '完成章节并参加评定会议',
+      }),
+    )
 
-    expect(
-      screen.getByRole('button', { name: '章节奖励已领取' }),
-    ).toBeDisabled()
+    expect(screen.getByRole('button', { name: '章节已完成' })).toBeDisabled()
     expect(useChapterStore.getState().claimedChapterNumbers).toEqual([1])
     expect(useGangStore.getState().totalReputation).toBe(132)
     expect(useAdventureStore.getState()).toMatchObject({

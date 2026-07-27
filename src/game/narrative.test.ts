@@ -49,23 +49,31 @@ describe('progression narrative', () => {
     expect(allCopy).not.toMatch(/第一块地盘|拿下修车厂|换了主人|整座城市服从/)
   })
 
-  it('sends every chapter opening into a task assessment before authority transfer', () => {
-    for (let chapterNumber = 1; chapterNumber <= 7; chapterNumber += 1) {
+  it('publishes chapter one directly and frames later openings as post-meeting task packages', () => {
+    const firstChapterCopy =
+      getNarrativeEvent('chapter-start:1')
+        ?.lines.map((line) => line.text)
+        .join(' ') ?? ''
+    expect(firstChapterCopy).toContain('第一章任务已经写进章节体')
+    expect(firstChapterCopy).not.toMatch(/投票|表决|会议结束/)
+
+    for (let chapterNumber = 2; chapterNumber <= 7; chapterNumber += 1) {
       const event = getNarrativeEvent(`chapter-start:${chapterNumber}`)
       const copy = event?.lines.map((line) => line.text).join(' ') ?? ''
 
-      expect(copy, `chapter ${chapterNumber}`).toMatch(/会议|委员会|议案/)
-      expect(copy, `chapter ${chapterNumber}`).toMatch(/任务|评定|表决|投票/)
+      expect(copy, `chapter ${chapterNumber}`).toMatch(/会议|委员会/)
+      expect(copy, `chapter ${chapterNumber}`).toContain('任务包')
+      expect(copy, `chapter ${chapterNumber}`).toMatch(/先|再/)
     }
-    expect(
-      getNarrativeEvent('chapter-start:1')
-        ?.lines.map((line) => line.text)
-        .join(' '),
-    ).toContain('没有投票权')
-    expect(
-      getNarrativeEvent('chapter-start:2')
-        ?.lines.map((line) => line.text)
-        .join(' '),
-    ).toContain('拥有正式投票权')
+  })
+
+  it('sends every non-final chapter ending to its assessment meeting', () => {
+    for (let chapterNumber = 1; chapterNumber <= 6; chapterNumber += 1) {
+      const copy =
+        getNarrativeEvent(`chapter-end:${chapterNumber}`)
+          ?.lines.map((line) => line.text)
+          .join(' ') ?? ''
+      expect(copy, `chapter ${chapterNumber}`).toContain('评定会议')
+    }
   })
 })

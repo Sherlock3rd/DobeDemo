@@ -4,6 +4,8 @@ import { createInitialBuildingProgress } from '../store/cityProgressMigration'
 import {
   CHAPTERS,
   getChapterForGangLevel,
+  getChapterTaskPackages,
+  getChapterTasks,
   getTaskProgress,
   isChapterComplete,
 } from './chapterProgression'
@@ -19,9 +21,21 @@ function snapshot() {
     heroLevels: adventure.heroLevels,
     gunLevels: adventure.gunLevels,
     carPartInventory: adventure.carPartInventory,
+    carPartUpgradeCount: adventure.carPartUpgradeCount,
     highestClearedStage: adventure.highestClearedStage,
     highestClearedRacingStage: adventure.highestClearedRacingStage,
     buildingProgress: createInitialBuildingProgress(),
+    gangLevel: 1,
+    resources: { money: 10_000, oil: 0, materials: 0 },
+    spareParts: 0,
+    totalPower: 951,
+    carPowerById: {
+      'rust-fox': 851,
+      'iron-fang': 0,
+      'neon-bee': 0,
+      'road-wolf': 0,
+      'black-throne': 0,
+    },
   }
 }
 
@@ -34,6 +48,49 @@ describe('chapter progression', () => {
     expect(getChapterForGangLevel(7).number).toBe(1)
     expect(getChapterForGangLevel(8).number).toBe(2)
     expect(getChapterForGangLevel(50).number).toBe(7)
+  })
+
+  it('combines one selected meeting package with three mandatory tasks', () => {
+    expect(getChapterTasks(1)).toHaveLength(5)
+    for (let chapterNumber = 2; chapterNumber <= 7; chapterNumber += 1) {
+      const packages = getChapterTaskPackages(chapterNumber)
+      expect(packages.map((taskPackage) => taskPackage.tasks.length)).toEqual([
+        1, 2, 3,
+      ])
+      for (const taskPackage of packages) {
+        const tasks = getChapterTasks(chapterNumber, taskPackage.id)
+        expect(tasks).toHaveLength(taskPackage.tasks.length + 3)
+        expect(
+          tasks
+            .filter((task) => task.id.includes('-extra-'))
+            .map((task) => task.requirement.kind),
+        ).toEqual(['gang-level', 'campaign-clears', 'racing-clears'])
+      }
+    }
+  })
+
+  it('covers every requested meeting-task category across the package collection', () => {
+    const kinds = new Set(
+      CHAPTERS.slice(1).flatMap((chapter) =>
+        getChapterTaskPackages(chapter.number).flatMap((taskPackage) =>
+          taskPackage.tasks.map((task) => task.requirement.kind),
+        ),
+      ),
+    )
+    expect(kinds).toEqual(
+      new Set([
+        'resource-money',
+        'resource-oil',
+        'resource-materials',
+        'spare-parts',
+        'building-level',
+        'hero-level',
+        'gun-level',
+        'part-upgrades',
+        'total-power',
+        'car-power',
+      ]),
+    )
   })
 
   it('splits promotion experience between task rewards and chapter completion', () => {

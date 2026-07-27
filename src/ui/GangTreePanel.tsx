@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -28,18 +27,13 @@ import {
   type GangCoreSeat,
   type GangSeatState,
 } from '../game/gangHierarchy'
-import {
-  getChapterForGangLevel,
-  isChapterComplete,
-} from '../game/chapterProgression'
+import { getChapterForGangLevel } from '../game/chapterProgression'
 import {
   PROGRESSION_UNLOCKS,
   type ProgressionUnlock,
 } from '../game/progressionUnlocks'
 import { useGangStore } from '../store/useGangStore'
-import { useAdventureStore } from '../store/useAdventureStore'
 import { useChapterStore } from '../store/useChapterStore'
-import { useCityStore } from '../store/useCityStore'
 import { useInitialFocus } from './useInitialFocus'
 
 export interface GangTreePanelProps {
@@ -251,19 +245,9 @@ export function GangTreePanel({
   const totalReputation = useGangStore((state) => state.totalReputation)
   const currentLevel = useGangStore((state) => state.currentLevel)
   const promoteOneLevel = useGangStore((state) => state.promoteOneLevel)
-  const heroLevels = useAdventureStore((state) => state.heroLevels)
-  const gunLevels = useAdventureStore((state) => state.gunLevels)
-  const carPartInventory = useAdventureStore((state) => state.carPartInventory)
-  const highestClearedStage = useAdventureStore(
-    (state) => state.highestClearedStage,
-  )
-  const highestClearedRacingStage = useAdventureStore(
-    (state) => state.highestClearedRacingStage,
-  )
   const claimedChapterNumbers = useChapterStore(
     (state) => state.claimedChapterNumbers,
   )
-  const buildingProgress = useCityStore((state) => state.buildingProgress)
   const [feedback, setFeedback] = useState('')
   const [ceremony, setCeremony] = useState<PromotionCeremony | null>(null)
   const currentRole = getGangRole(currentLevel)
@@ -273,27 +257,7 @@ export function GangTreePanel({
   const mobileSelectedButtonRef = useRef<HTMLButtonElement | null>(null)
   const titleRef = useInitialFocus<HTMLHeadingElement>(open)
   const currentChapter = getChapterForGangLevel(currentLevel)
-  const chapterComplete = useMemo(
-    () =>
-      isChapterComplete(currentChapter, {
-        heroLevels,
-        gunLevels,
-        carPartInventory,
-        highestClearedStage,
-        highestClearedRacingStage,
-        buildingProgress,
-      }) && claimedChapterNumbers.includes(currentChapter.number),
-    [
-      buildingProgress,
-      carPartInventory,
-      claimedChapterNumbers,
-      currentChapter,
-      gunLevels,
-      heroLevels,
-      highestClearedRacingStage,
-      highestClearedStage,
-    ],
-  )
+  const chapterComplete = claimedChapterNumbers.includes(currentChapter.number)
 
   const finishCeremony = useCallback((): void => {
     if (!ceremony) return

@@ -7,6 +7,22 @@ import { useGangStore } from './useGangStore'
 
 const BASE_TIME = 1_700_000_000_000
 
+function completeChapterOneRequirements(): void {
+  useAdventureStore.setState({
+    highestClearedStage: 2,
+    highestClearedRacingStage: 1,
+  })
+  useCityStore.setState((state) => ({
+    buildingProgress: {
+      ...state.buildingProgress,
+      'repair-shop': {
+        ...state.buildingProgress['repair-shop'],
+        level: 2,
+      },
+    },
+  }))
+}
+
 describe('useChapterStore', () => {
   beforeEach(() => {
     window.localStorage.clear()
@@ -19,35 +35,37 @@ describe('useChapterStore', () => {
     useChapterStore.getState().reset()
   })
 
-  it('claims a completed task exactly once and grants all base currencies', () => {
-    useAdventureStore.setState((state) => ({
-      heroLevels: { ...state.heroLevels, foreman: 3 },
-    }))
-
-    expect(useChapterStore.getState().claimTask('chapter-1-hero')).toBe(true)
-    expect(useChapterStore.getState().claimTask('chapter-1-hero')).toBe(false)
-    expect(useChapterStore.getState().claimedTaskIds).toEqual([
-      'chapter-1-hero',
-    ])
-    expect(useGangStore.getState().totalReputation).toBe(20)
-    expect(useGangStore.getState().currentLevel).toBe(1)
+  it('publishes the starter chapter without requiring a meeting package', () => {
+    expect(useChapterStore.getState()).toMatchObject({
+      activeChapterNumber: 1,
+      selectedTaskPackageIds: {},
+      claimedChapterNumbers: [],
+    })
+    expect(useChapterStore.getState().claimTask('chapter-1-starter-hero')).toBe(
+      true,
+    )
+    expect(useGangStore.getState().totalReputation).toBe(10)
     expect(useAdventureStore.getState()).toMatchObject({
-      sharedExp: 120,
-      spareParts: 12,
+      sharedExp: 200,
+      spareParts: 20,
     })
   })
 
-  it('rejects incomplete and future-rank tasks', () => {
-    expect(useChapterStore.getState().claimTask('chapter-1-building')).toBe(
-      false,
-    )
+  it('rejects incomplete and non-active chapter tasks', () => {
+    expect(
+      useChapterStore.getState().claimTask('chapter-1-starter-building'),
+    ).toBe(false)
     useAdventureStore.setState({ highestClearedStage: 20 })
-    expect(useChapterStore.getState().claimTask('chapter-7-play')).toBe(false)
+    expect(
+      useChapterStore.getState().claimTask('chapter-7-package-supply-1'),
+    ).toBe(false)
   })
 
-  it('delivers the first chapter full epic set with stable slots', () => {
+  it('delivers the first chapter full epic set from the mandatory SUP task', () => {
     useAdventureStore.setState({ highestClearedRacingStage: 1 })
-    expect(useChapterStore.getState().claimTask('chapter-1-racing')).toBe(true)
+    expect(useChapterStore.getState().claimTask('chapter-1-extra-sup')).toBe(
+      true,
+    )
 
     expect(
       useAdventureStore
@@ -61,26 +79,15 @@ describe('useChapterStore', () => {
     ])
   })
 
-  it('claims a completed chapter exactly once and grants its resource and gear unlock reward', () => {
-    useAdventureStore.setState((state) => ({
-      heroLevels: { ...state.heroLevels, foreman: 3 },
-      highestClearedStage: 2,
-      highestClearedRacingStage: 1,
-    }))
-    useCityStore.setState((state) => ({
-      buildingProgress: {
-        ...state.buildingProgress,
-        'repair-shop': {
-          ...state.buildingProgress['repair-shop'],
-          level: 2,
-        },
-      },
-    }))
+  it('claims a completed chapter once but advances only after package selection', () => {
+    completeChapterOneRequirements()
 
     expect(useChapterStore.getState().claimChapterReward(1)).toBe(true)
     expect(useChapterStore.getState().claimChapterReward(1)).toBe(false)
-    expect(useChapterStore.getState().claimedChapterNumbers).toEqual([1])
-    expect(useGangStore.getState().totalReputation).toBe(132)
+    expect(useChapterStore.getState()).toMatchObject({
+      activeChapterNumber: 1,
+      claimedChapterNumbers: [1],
+    })
     expect(useAdventureStore.getState()).toMatchObject({
       sharedExp: 600,
       spareParts: 80,
@@ -91,11 +98,28 @@ describe('useChapterStore', () => {
       oil: 0,
       materials: 0,
     })
+
+    expect(
+      useChapterStore
+        .getState()
+        .completeAssessment(1, 'chapter-2-package-yard', 'option-b'),
+    ).toBe(true)
+    expect(useChapterStore.getState()).toMatchObject({
+      activeChapterNumber: 2,
+      selectedTaskPackageIds: {
+        2: 'chapter-2-package-yard',
+      },
+      meetingVotes: { 1: 'option-b' },
+      completedAssessmentChapterNumbers: [1],
+    })
   })
 
-  it('rejects chapter rewards before all chapter tasks are complete', () => {
-    expect(useChapterStore.getState().claimChapterReward(1)).toBe(false)
-    expect(useChapterStore.getState().claimedChapterNumbers).toEqual([])
+  it('rejects meeting completion before the current chapter is completed', () => {
+    expect(
+      useChapterStore
+        .getState()
+        .completeAssessment(1, 'chapter-2-package-yard', 'option-a'),
+    ).toBe(false)
   })
 
   it('records each known narrative once and clears it on account reset', () => {
@@ -113,23 +137,7 @@ describe('useChapterStore', () => {
     expect(useChapterStore.getState().seenNarrativeIds).toEqual([])
   })
 
-  it('records each completed assessment meeting once and rejects unknown chapters', () => {
-    const store = useChapterStore.getState()
-
-    expect(store.completeAssessment(1)).toBe(true)
-    expect(store.completeAssessment(1)).toBe(false)
-    expect(store.completeAssessment(8)).toBe(false)
-    expect(
-      useChapterStore.getState().completedAssessmentChapterNumbers,
-    ).toEqual([1])
-
-    useChapterStore.getState().reset()
-    expect(
-      useChapterStore.getState().completedAssessmentChapterNumbers,
-    ).toEqual([])
-  })
-
-  it('keeps the current assessment pending when hydrating a version-three save', async () => {
+  it('migrates an older completed save to the next active chapter with a safe default package', async () => {
     window.localStorage.setItem(
       CHAPTER_STORAGE_KEY,
       JSON.stringify({
@@ -142,17 +150,21 @@ describe('useChapterStore', () => {
             'chapter-start:2',
           ],
         },
-        version: 3,
+        version: 4,
       }),
     )
 
     await useChapterStore.persist.rehydrate()
 
     expect(useChapterStore.getState()).toMatchObject({
-      claimedTaskIds: ['chapter-1-hero'],
+      activeChapterNumber: 2,
+      selectedTaskPackageIds: {
+        2: 'chapter-2-package-cashflow',
+      },
+      claimedTaskIds: [],
       claimedChapterNumbers: [1],
       seenNarrativeIds: ['first-entry', 'chapter-start:1', 'chapter-start:2'],
-      completedAssessmentChapterNumbers: [],
+      completedAssessmentChapterNumbers: [1],
     })
   })
 })

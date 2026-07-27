@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useState, type JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
 import { equipmentConfig } from '../config/equipmentConfig'
 import { CAR_PART_QUALITY_INFO } from '../game/equipmentProgression'
 import {
-  getChapterForGangLevel,
+  getChapterByNumber,
+  getChapterTasks,
   getTaskProgress,
   type ChapterPartReward,
   type ChapterTaskRequirement,
 } from '../game/chapterProgression'
 import { useAdventureStore } from '../store/useAdventureStore'
-import { useChapterStore } from '../store/useChapterStore'
+import {
+  getChapterProgressSnapshot,
+  useChapterStore,
+} from '../store/useChapterStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
 import { useInitialFocus } from './useInitialFocus'
@@ -32,11 +36,18 @@ function partRewardLabel(part: ChapterPartReward): string {
   return `${CAR_PART_QUALITY_INFO[part.quality].name}${SLOT_NAMES[part.slot]}`
 }
 
+function requireChapter(chapterNumber: number) {
+  const chapter = getChapterByNumber(chapterNumber)
+  if (!chapter) throw new Error(`Unknown active chapter ${chapterNumber}`)
+  return chapter
+}
+
 function taskDestinationLabel(requirement: ChapterTaskRequirement): string {
   switch (requirement.kind) {
     case 'hero-level':
       return '英雄升级'
     case 'part-level':
+    case 'part-upgrades':
       return '配件强化'
     case 'gun-level':
       return '枪械强化'
@@ -45,7 +56,18 @@ function taskDestinationLabel(requirement: ChapterTaskRequirement): string {
     case 'campaign-clears':
       return '推关'
     case 'racing-clears':
-      return '赛车'
+      return 'SUP'
+    case 'gang-level':
+      return '帮派树'
+    case 'resource-money':
+    case 'resource-oil':
+    case 'resource-materials':
+      return '城市产业'
+    case 'spare-parts':
+      return '零件养成'
+    case 'total-power':
+    case 'car-power':
+      return '英雄装备'
   }
 }
 
@@ -54,17 +76,15 @@ export function ChapterPanel({
   onNavigateTask,
   onChapterCompleted,
 }: ChapterPanelProps): JSX.Element {
-  const currentLevel = useGangStore((state) => state.currentLevel)
-  const heroLevels = useAdventureStore((state) => state.heroLevels)
-  const gunLevels = useAdventureStore((state) => state.gunLevels)
-  const carPartInventory = useAdventureStore((state) => state.carPartInventory)
-  const highestClearedStage = useAdventureStore(
-    (state) => state.highestClearedStage,
+  useAdventureStore()
+  useCityStore()
+  useGangStore()
+  const activeChapterNumber = useChapterStore(
+    (state) => state.activeChapterNumber,
   )
-  const highestClearedRacingStage = useAdventureStore(
-    (state) => state.highestClearedRacingStage,
+  const selectedTaskPackageIds = useChapterStore(
+    (state) => state.selectedTaskPackageIds,
   )
-  const buildingProgress = useCityStore((state) => state.buildingProgress)
   const claimedTaskIds = useChapterStore((state) => state.claimedTaskIds)
   const claimedChapterNumbers = useChapterStore(
     (state) => state.claimedChapterNumbers,
@@ -75,32 +95,17 @@ export function ChapterPanel({
   )
   const [feedback, setFeedback] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>()
-  const chapter = getChapterForGangLevel(currentLevel)
-  const snapshot = useMemo(
-    () => ({
-      heroLevels,
-      gunLevels,
-      carPartInventory,
-      highestClearedStage,
-      highestClearedRacingStage,
-      buildingProgress,
-    }),
-    [
-      buildingProgress,
-      carPartInventory,
-      gunLevels,
-      heroLevels,
-      highestClearedRacingStage,
-      highestClearedStage,
-    ],
+  const chapter = requireChapter(activeChapterNumber)
+  const tasks = getChapterTasks(
+    chapter.number,
+    selectedTaskPackageIds[chapter.number],
   )
-  const taskProgress = chapter.tasks.map((task) =>
-    getTaskProgress(task, snapshot),
-  )
+  const snapshot = getChapterProgressSnapshot()
+  const taskProgress = tasks.map((task) => getTaskProgress(task, snapshot))
   const completedCount = taskProgress.filter(
     (progress) => progress.complete,
   ).length
-  const allTasksComplete = completedCount === chapter.tasks.length
+  const allTasksComplete = tasks.length > 0 && completedCount === tasks.length
   const chapterRewardClaimed = claimedChapterNumbers.includes(chapter.number)
   const completionParts = chapter.completionReward.carParts.map(partRewardLabel)
   const completionUnlocks = [
@@ -157,11 +162,11 @@ export function ChapterPanel({
 
       <div className="chapter-panel__story">
         <p>{chapter.story}</p>
-        <strong>{`已完成 ${completedCount}/${chapter.tasks.length}`}</strong>
+        <strong>{`已完成 ${completedCount}/${tasks.length}`}</strong>
       </div>
 
       <div className="chapter-panel__tasks">
-        {chapter.tasks.map((task, index) => {
+        {tasks.map((task, index) => {
           const progress = taskProgress[index]
           const claimed = claimedTaskIds.includes(task.id)
           const parts = task.reward.carParts.map(partRewardLabel)
@@ -256,10 +261,12 @@ export function ChapterPanel({
           }}
         >
           {chapterRewardClaimed
-            ? '章节奖励已领取'
+            ? '章节已完成'
             : allTasksComplete
-              ? '领取章节奖励'
-              : '完成全部任务后领取'}
+              ? chapter.number < 7
+                ? '完成章节并参加评定会议'
+                : '完成最终章节'
+              : '完成全部任务后继续'}
         </button>
       </section>
 
@@ -268,9 +275,11 @@ export function ChapterPanel({
           (allTasksComplete
             ? chapterRewardClaimed
               ? chapter.nextRoleLevel
-                ? '章节奖励已领取，可前往帮派树晋升职级。'
-                : '全部章节奖励已领取，PRESIDENT 的传奇仍在继续。'
-              : '任务已全部完成，请领取章节完成奖励。'
+                ? '章节已完成，即将进入评定会议。'
+                : '全部章节已经完成，PRESIDENT 的传奇仍在继续。'
+              : chapter.number < 7
+                ? '任务已全部完成，可以参加评定会议。'
+                : '任务已全部完成，可以完成最终章节。'
             : '完成任务后在此领取奖励。')}
       </p>
     </section>

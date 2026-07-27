@@ -45,6 +45,7 @@ export interface AdventureDurableState {
   gunLevels: GunUpgradeLevels
   carPartInventory: CarPartInstance[]
   carPartSlotsByCar: CarPartSlotsByCar
+  carPartUpgradeCount: number
   partIdleClock: number
   nextPartSerial: number
   chapterUnlockedCarIds: CarId[]
@@ -95,6 +96,7 @@ export function createInitialAdventureState(
     gunLevels: createInitialGunLevels(),
     carPartInventory: [],
     carPartSlotsByCar: createInitialCarPartSlots(),
+    carPartUpgradeCount: 0,
     partIdleClock: Number.isFinite(now) ? now : Date.now(),
     nextPartSerial: 1,
     chapterUnlockedCarIds: [],
@@ -384,6 +386,12 @@ export function normalizeAdventureDurableState(
     carPartSlotsByCar: normalizeCarPartSlots(
       src.carPartSlotsByCar,
       cappedEquipment.carPartInventory,
+    ),
+    carPartUpgradeCount: clampInt(
+      src.carPartUpgradeCount,
+      0,
+      Number.MAX_SAFE_INTEGER,
+      0,
     ),
     partIdleClock:
       typeof src.partIdleClock === 'number' &&

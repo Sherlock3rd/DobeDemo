@@ -452,6 +452,7 @@ describe('useAdventureStore', () => {
     expect(useAdventureStore.getState().upgradeCarPart('part-1')).toMatchObject(
       { applied: true, cost: 12 },
     )
+    expect(useAdventureStore.getState().carPartUpgradeCount).toBe(1)
     expect(useAdventureStore.getState().carPartInventory[0].level).toBe(2)
     expect(useAdventureStore.getState().spareParts).toBe(88)
     expect(
@@ -621,7 +622,7 @@ describe('useAdventureStore', () => {
       state: Record<string, unknown>
       version: number
     }
-    expect(parsed.version).toBe(7)
+    expect(parsed.version).toBe(8)
     const persisted = parsed.state
     expect(Object.keys(persisted).sort()).toEqual(
       [
@@ -641,6 +642,7 @@ describe('useAdventureStore', () => {
         'chapterUnlockedCarIds',
         'chapterUnlockedGunIds',
         'chapterEquipmentMigrationVersion',
+        'carPartUpgradeCount',
       ].sort(),
     )
   })

@@ -1,11 +1,24 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { getBuildingPower } from '../config/economyConfig'
+import { heroesConfig } from '../config/heroesConfig'
+import type { ChapterMeetingVote } from '../game/chapterAssessment'
 import {
   CHAPTERS,
+  areChapterTasksComplete,
+  getAllSelectableChapterTasks,
+  getChapterByNumber,
+  getChapterTaskPackages,
+  getChapterTasks,
   getTaskProgress,
-  isChapterComplete,
   type ChapterProgressSnapshot,
 } from '../game/chapterProgression'
+import { BUILDING_IDS } from '../game/cityTypes'
+import { getAccountTotalPower, unitPower } from '../game/combat/power'
+import { CAR_IDS, type CarId } from '../game/equipmentTypes'
+import { getHeroCombatStats } from '../game/heroEquipment'
+import { HERO_IDS, isHeroUnlocked } from '../game/heroes'
+import { isBuildingUnlocked } from '../game/progressionUnlocks'
 import { isNarrativeEventId, type NarrativeEventId } from '../game/narrative'
 import { createSafeStorage } from './safeStorage'
 import { useAdventureStore } from './useAdventureStore'
@@ -15,6 +28,9 @@ import { useGangStore } from './useGangStore'
 export const CHAPTER_STORAGE_KEY = 'dobe-chapter-progression-v1'
 
 interface ChapterState {
+  activeChapterNumber: number
+  selectedTaskPackageIds: Record<number, string>
+  meetingVotes: Record<number, ChapterMeetingVote>
   claimedTaskIds: string[]
   claimedChapterNumbers: number[]
   seenNarrativeIds: NarrativeEventId[]
@@ -22,23 +38,88 @@ interface ChapterState {
   claimTask: (taskId: string) => boolean
   claimChapterReward: (chapterNumber: number) => boolean
   markNarrativeSeen: (eventId: NarrativeEventId) => void
-  completeAssessment: (chapterNumber: number) => boolean
+  completeAssessment: (
+    completedChapterNumber: number,
+    selectedPackageId: string,
+    vote: ChapterMeetingVote,
+  ) => boolean
   reset: () => void
+}
+
+function currentRowForHero(
+  heroId: (typeof HERO_IDS)[number],
+  formation: ReturnType<typeof useAdventureStore.getState>['formation'],
+) {
+  return (
+    formation.find((slot) => slot.heroId === heroId)?.row ??
+    heroesConfig.heroes[heroId].role
+  )
 }
 
 export function getChapterProgressSnapshot(): ChapterProgressSnapshot {
   const adventure = useAdventureStore.getState()
+  const city = useCityStore.getState()
+  const gangLevel = useGangStore.getState().currentLevel
+  const progression = {
+    gunLevels: adventure.gunLevels,
+    carPartInventory: adventure.carPartInventory,
+    carPartSlotsByCar: adventure.carPartSlotsByCar,
+  }
+  const heroPowers = HERO_IDS.filter((heroId) =>
+    isHeroUnlocked(heroId, gangLevel),
+  ).map((heroId) => {
+    const row = currentRowForHero(heroId, adventure.formation)
+    return {
+      heroId,
+      carId: adventure.equipmentByHero[heroId].carId,
+      power: unitPower(
+        row,
+        getHeroCombatStats(
+          heroId,
+          adventure.heroLevels[heroId],
+          adventure.equipmentByHero[heroId],
+          progression,
+        ),
+      ),
+    }
+  })
+  const carPowerById = Object.fromEntries(
+    CAR_IDS.map((carId) => [
+      carId,
+      Math.max(
+        0,
+        ...heroPowers
+          .filter((entry) => entry.carId === carId)
+          .map((entry) => entry.power),
+      ),
+    ]),
+  ) as Record<CarId, number>
+  const completedBuildingPowers = BUILDING_IDS.filter((buildingId) =>
+    isBuildingUnlocked(buildingId, gangLevel),
+  ).map((buildingId) =>
+    getBuildingPower(buildingId, city.buildingProgress[buildingId].level),
+  )
+
   return {
     heroLevels: adventure.heroLevels,
     gunLevels: adventure.gunLevels,
     carPartInventory: adventure.carPartInventory,
+    carPartUpgradeCount: adventure.carPartUpgradeCount,
     highestClearedStage: adventure.highestClearedStage,
     highestClearedRacingStage: adventure.highestClearedRacingStage,
-    buildingProgress: useCityStore.getState().buildingProgress,
+    buildingProgress: city.buildingProgress,
+    gangLevel,
+    resources: city.resources,
+    spareParts: adventure.spareParts,
+    totalPower: getAccountTotalPower({
+      unlockedHeroPowers: heroPowers.map((entry) => entry.power),
+      completedBuildingPowers,
+    }),
+    carPowerById,
   }
 }
 
-const ALL_TASKS = CHAPTERS.flatMap((chapter) => chapter.tasks)
+const ALL_TASKS = getAllSelectableChapterTasks()
 const VALID_TASK_IDS = new Set(ALL_TASKS.map((task) => task.id))
 
 function normalizeClaimedTaskIds(value: unknown): string[] {
@@ -61,10 +142,10 @@ function normalizeClaimedChapterNumbers(value: unknown): number[] {
         (entry): entry is number =>
           typeof entry === 'number' &&
           Number.isInteger(entry) &&
-          CHAPTERS.some((chapter) => chapter.number === entry),
+          getChapterByNumber(entry) !== null,
       ),
     ),
-  ]
+  ].sort((left, right) => left - right)
 }
 
 function normalizeSeenNarrativeIds(value: unknown): NarrativeEventId[] {
@@ -73,33 +154,109 @@ function normalizeSeenNarrativeIds(value: unknown): NarrativeEventId[] {
 }
 
 function normalizeCompletedAssessmentChapterNumbers(value: unknown): number[] {
-  return normalizeClaimedChapterNumbers(value)
+  return normalizeClaimedChapterNumbers(value).filter(
+    (chapterNumber) => chapterNumber < CHAPTERS.length,
+  )
+}
+
+function fallbackActiveChapter(
+  claimedChapterNumbers: readonly number[],
+): number {
+  return (
+    CHAPTERS.find((chapter) => !claimedChapterNumbers.includes(chapter.number))
+      ?.number ?? CHAPTERS.length
+  )
+}
+
+function normalizeActiveChapterNumber(
+  value: unknown,
+  claimedChapterNumbers: readonly number[],
+): number {
+  return typeof value === 'number' &&
+    Number.isInteger(value) &&
+    getChapterByNumber(value) !== null
+    ? value
+    : fallbackActiveChapter(claimedChapterNumbers)
+}
+
+function normalizeSelectedTaskPackageIds(
+  value: unknown,
+): Record<number, string> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return {}
+  }
+  const source = value as Record<string, unknown>
+  const result: Record<number, string> = {}
+  for (const chapter of CHAPTERS.slice(1)) {
+    const candidate = source[String(chapter.number)]
+    if (
+      typeof candidate === 'string' &&
+      getChapterTaskPackages(chapter.number).some(
+        (taskPackage) => taskPackage.id === candidate,
+      )
+    ) {
+      result[chapter.number] = candidate
+    }
+  }
+  return result
+}
+
+function normalizeMeetingVotes(
+  value: unknown,
+): Record<number, ChapterMeetingVote> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return {}
+  }
+  const source = value as Record<string, unknown>
+  const result: Record<number, ChapterMeetingVote> = {}
+  for (const chapter of CHAPTERS.slice(0, -1)) {
+    const candidate = source[String(chapter.number)]
+    if (candidate === 'option-a' || candidate === 'option-b') {
+      result[chapter.number] = candidate
+    }
+  }
+  return result
+}
+
+function defaultSelectedPackagesThrough(
+  chapterNumber: number,
+): Record<number, string> {
+  const result: Record<number, string> = {}
+  for (let number = 2; number <= chapterNumber; number += 1) {
+    const firstPackage = getChapterTaskPackages(number)[0]
+    if (firstPackage) result[number] = firstPackage.id
+  }
+  return result
 }
 
 export const useChapterStore = create<ChapterState>()(
   persist(
     (set, get) => ({
+      activeChapterNumber: 1,
+      selectedTaskPackageIds: {},
+      meetingVotes: {},
       claimedTaskIds: [],
       claimedChapterNumbers: [],
       seenNarrativeIds: [],
       completedAssessmentChapterNumbers: [],
       claimTask: (taskId) => {
-        const task = ALL_TASKS.find((candidate) => candidate.id === taskId)
-        if (!task || get().claimedTaskIds.includes(taskId)) return false
-        const chapter = CHAPTERS.find((candidate) =>
-          candidate.tasks.some((chapterTask) => chapterTask.id === taskId),
+        const state = get()
+        const activeTasks = getChapterTasks(
+          state.activeChapterNumber,
+          state.selectedTaskPackageIds[state.activeChapterNumber],
         )
+        const task = activeTasks.find((candidate) => candidate.id === taskId)
+        if (!task || state.claimedTaskIds.includes(taskId)) return false
+        const chapter = getChapterByNumber(state.activeChapterNumber)
         if (
           !chapter ||
-          useGangStore.getState().currentLevel < chapter.minimumLevel
+          useGangStore.getState().currentLevel < chapter.minimumLevel ||
+          !getTaskProgress(task, getChapterProgressSnapshot()).complete
         ) {
           return false
         }
-        if (!getTaskProgress(task, getChapterProgressSnapshot()).complete) {
-          return false
-        }
-        set((state) => ({
-          claimedTaskIds: [...state.claimedTaskIds, taskId],
+        set((current) => ({
+          claimedTaskIds: [...current.claimedTaskIds, taskId],
         }))
         useGangStore
           .getState()
@@ -108,20 +265,24 @@ export const useChapterStore = create<ChapterState>()(
         return true
       },
       claimChapterReward: (chapterNumber) => {
-        const chapter = CHAPTERS.find(
-          (candidate) => candidate.number === chapterNumber,
+        const state = get()
+        const chapter = getChapterByNumber(chapterNumber)
+        const activeTasks = getChapterTasks(
+          chapterNumber,
+          state.selectedTaskPackageIds[chapterNumber],
         )
         if (
           !chapter ||
-          get().claimedChapterNumbers.includes(chapterNumber) ||
+          state.activeChapterNumber !== chapterNumber ||
+          state.claimedChapterNumbers.includes(chapterNumber) ||
           useGangStore.getState().currentLevel < chapter.minimumLevel ||
-          !isChapterComplete(chapter, getChapterProgressSnapshot())
+          !areChapterTasksComplete(activeTasks, getChapterProgressSnapshot())
         ) {
           return false
         }
-        set((state) => ({
+        set((current) => ({
           claimedChapterNumbers: [
-            ...state.claimedChapterNumbers,
+            ...current.claimedChapterNumbers,
             chapterNumber,
           ],
         }))
@@ -151,23 +312,44 @@ export const useChapterStore = create<ChapterState>()(
               },
         )
       },
-      completeAssessment: (chapterNumber) => {
+      completeAssessment: (completedChapterNumber, selectedPackageId, vote) => {
+        const state = get()
+        const nextChapterNumber = completedChapterNumber + 1
         if (
-          !CHAPTERS.some((chapter) => chapter.number === chapterNumber) ||
-          get().completedAssessmentChapterNumbers.includes(chapterNumber)
+          state.activeChapterNumber !== completedChapterNumber ||
+          !state.claimedChapterNumbers.includes(completedChapterNumber) ||
+          state.completedAssessmentChapterNumbers.includes(
+            completedChapterNumber,
+          ) ||
+          !getChapterTaskPackages(nextChapterNumber).some(
+            (taskPackage) => taskPackage.id === selectedPackageId,
+          ) ||
+          (vote !== 'option-a' && vote !== 'option-b')
         ) {
           return false
         }
-        set((state) => ({
+        set((current) => ({
+          activeChapterNumber: nextChapterNumber,
+          selectedTaskPackageIds: {
+            ...current.selectedTaskPackageIds,
+            [nextChapterNumber]: selectedPackageId,
+          },
+          meetingVotes: {
+            ...current.meetingVotes,
+            [completedChapterNumber]: vote,
+          },
           completedAssessmentChapterNumbers: [
-            ...state.completedAssessmentChapterNumbers,
-            chapterNumber,
+            ...current.completedAssessmentChapterNumbers,
+            completedChapterNumber,
           ],
         }))
         return true
       },
       reset: () =>
         set({
+          activeChapterNumber: 1,
+          selectedTaskPackageIds: {},
+          meetingVotes: {},
           claimedTaskIds: [],
           claimedChapterNumbers: [],
           seenNarrativeIds: [],
@@ -176,25 +358,44 @@ export const useChapterStore = create<ChapterState>()(
     }),
     {
       name: CHAPTER_STORAGE_KEY,
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted, version) => {
         const source =
           typeof persisted === 'object' && persisted !== null
             ? (persisted as Record<string, unknown>)
             : {}
+        if (version >= 5) return source
+        const claimedChapterNumbers = normalizeClaimedChapterNumbers(
+          source.claimedChapterNumbers,
+        )
+        const activeChapterNumber = fallbackActiveChapter(claimedChapterNumbers)
         return {
           ...source,
+          activeChapterNumber,
+          selectedTaskPackageIds:
+            defaultSelectedPackagesThrough(activeChapterNumber),
+          meetingVotes: {},
+          claimedTaskIds: [],
+          completedAssessmentChapterNumbers: claimedChapterNumbers.filter(
+            (chapterNumber) => chapterNumber < activeChapterNumber,
+          ),
           seenNarrativeIds:
             version < 3 ? ['first-entry'] : source.seenNarrativeIds,
         }
       },
       partialize: ({
+        activeChapterNumber,
+        selectedTaskPackageIds,
+        meetingVotes,
         claimedTaskIds,
         claimedChapterNumbers,
         seenNarrativeIds,
         completedAssessmentChapterNumbers,
       }) => ({
+        activeChapterNumber,
+        selectedTaskPackageIds,
+        meetingVotes,
         claimedTaskIds,
         claimedChapterNumbers,
         seenNarrativeIds,
@@ -203,19 +404,34 @@ export const useChapterStore = create<ChapterState>()(
       merge: (persisted, current) => {
         const source =
           typeof persisted === 'object' && persisted !== null
-            ? (persisted as {
-                claimedTaskIds?: unknown
-                claimedChapterNumbers?: unknown
-                seenNarrativeIds?: unknown
-                completedAssessmentChapterNumbers?: unknown
-              })
+            ? (persisted as Record<string, unknown>)
             : {}
+        const claimedChapterNumbers = normalizeClaimedChapterNumbers(
+          source.claimedChapterNumbers,
+        )
+        const activeChapterNumber = normalizeActiveChapterNumber(
+          source.activeChapterNumber,
+          claimedChapterNumbers,
+        )
+        const selectedTaskPackageIds = normalizeSelectedTaskPackageIds(
+          source.selectedTaskPackageIds,
+        )
+        if (
+          activeChapterNumber > 1 &&
+          !selectedTaskPackageIds[activeChapterNumber]
+        ) {
+          const firstPackage = getChapterTaskPackages(activeChapterNumber)[0]
+          if (firstPackage) {
+            selectedTaskPackageIds[activeChapterNumber] = firstPackage.id
+          }
+        }
         return {
           ...current,
+          activeChapterNumber,
+          selectedTaskPackageIds,
+          meetingVotes: normalizeMeetingVotes(source.meetingVotes),
           claimedTaskIds: normalizeClaimedTaskIds(source.claimedTaskIds),
-          claimedChapterNumbers: normalizeClaimedChapterNumbers(
-            source.claimedChapterNumbers,
-          ),
+          claimedChapterNumbers,
           seenNarrativeIds: normalizeSeenNarrativeIds(source.seenNarrativeIds),
           completedAssessmentChapterNumbers:
             normalizeCompletedAssessmentChapterNumbers(
