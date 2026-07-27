@@ -12,7 +12,10 @@ import { AdventureIdleClock } from './game/AdventureIdleClock'
 import { BuildingUpgradeController } from './game/BuildingUpgradeController'
 import { EconomyIdleController } from './game/EconomyIdleController'
 import { PartSalvageController } from './game/PartSalvageController'
-import type { ChapterTaskRequirement } from './game/chapterProgression'
+import {
+  getChapterForGangLevel,
+  type ChapterTaskRequirement,
+} from './game/chapterProgression'
 import type { BuildingId } from './game/cityTypes'
 import {
   getNarrativeEvent,
@@ -38,9 +41,11 @@ import { HeroesPanel, type DevelopmentTab } from './ui/HeroesPanel'
 import { RacingPanel } from './ui/RacingPanel'
 import { RaceScreen } from './ui/RaceScreen'
 import type { HeroId } from './game/heroes'
+import { getRoleHandover } from './game/roleHandover'
 import { SettingsPanel } from './ui/SettingsPanel'
 import { NarrativeDialogueOverlay } from './ui/NarrativeDialogueOverlay'
 import { ProgressionMilestoneOverlay } from './ui/ProgressionMilestoneOverlay'
+import { RoleHandoverOverlay } from './ui/RoleHandoverOverlay'
 import './App.css'
 
 export type ActiveOverlay =
@@ -58,6 +63,9 @@ export type ActiveOverlay =
   | { kind: 'buildingUnlock'; buildingId: BuildingId }
   | { kind: 'chapterComplete'; chapterNumber: number }
   | { kind: 'assessmentMeeting'; completedChapterNumber: number }
+  | { kind: 'roleHandover'; targetLevel: number }
+  | { kind: 'roleHandoverBattle'; targetLevel: number; stage: number }
+  | { kind: 'roleHandoverRace'; targetLevel: number; stage: number }
 
 type PlayOverlay = Exclude<ActiveOverlay, { kind: 'buildingDetail' }>
 
@@ -71,6 +79,9 @@ const FULLSCREEN_KINDS = new Set([
   'chapters',
   'chapterComplete',
   'assessmentMeeting',
+  'roleHandover',
+  'roleHandoverBattle',
+  'roleHandoverRace',
 ])
 const MODAL_KINDS = new Set([
   'gangTree',
@@ -85,6 +96,9 @@ const MODAL_KINDS = new Set([
   'buildingUnlock',
   'chapterComplete',
   'assessmentMeeting',
+  'roleHandover',
+  'roleHandoverBattle',
+  'roleHandoverRace',
 ])
 
 interface QueuedNarrative {
@@ -107,6 +121,9 @@ function resolveActiveOverlay(
 export default function App(): JSX.Element {
   const [playOverlay, setPlayOverlay] = useState<PlayOverlay>({ kind: 'none' })
   const [narrativeQueue, setNarrativeQueue] = useState<QueuedNarrative[]>([])
+  const [promotionCeremonyLevel, setPromotionCeremonyLevel] = useState<
+    number | null
+  >(null)
   const queuedNarrativeIdsRef = useRef(new Set<NarrativeEventId>())
   const returnFocusRef = useRef<HTMLElement | null>(null)
   const pendingFocusRestoreRef = useRef(false)
@@ -220,6 +237,23 @@ export default function App(): JSX.Element {
       pendingFocusRestoreRef.current = true
     }
     setPlayOverlay({ kind: 'none' })
+  }
+
+  const completeRoleHandover = (targetLevel: number): void => {
+    const gang = useGangStore.getState()
+    if (gang.currentLevel + 1 !== targetLevel) {
+      setPlayOverlay({ kind: 'gangTree' })
+      return
+    }
+    const chapter = getChapterForGangLevel(gang.currentLevel)
+    const chapterComplete = useChapterStore
+      .getState()
+      .claimedChapterNumbers.includes(chapter.number)
+    const result = gang.promoteOneLevel(Date.now(), chapterComplete)
+    if (result.applied) {
+      setPromotionCeremonyLevel(targetLevel)
+    }
+    setPlayOverlay({ kind: 'gangTree' })
   }
 
   const navigateFromChapter = (requirement: ChapterTaskRequirement): void => {
@@ -408,10 +442,40 @@ export default function App(): JSX.Element {
         <GangTreePanel
           open={activeOverlay.kind === 'gangTree'}
           onClose={closeOverlay}
+          promotionCeremonyLevel={promotionCeremonyLevel}
+          onPromotionCeremonyComplete={() => setPromotionCeremonyLevel(null)}
+          onStartRoleHandover={(handover) =>
+            setPlayOverlay({
+              kind: 'roleHandover',
+              targetLevel: handover.targetLevel,
+            })
+          }
           onRolePromoted={(level) => {
             enqueueNarrative(`promotion:${level}`)
           }}
         />
+        {activeOverlay.kind === 'roleHandover' &&
+        getRoleHandover(activeOverlay.targetLevel) ? (
+          <RoleHandoverOverlay
+            handover={getRoleHandover(activeOverlay.targetLevel)!}
+            onCancel={() => setPlayOverlay({ kind: 'gangTree' })}
+            onCompleteDialogue={() =>
+              completeRoleHandover(activeOverlay.targetLevel)
+            }
+            onStartChallenge={() => {
+              const handover = getRoleHandover(activeOverlay.targetLevel)
+              if (!handover?.challengeStage) return
+              setPlayOverlay({
+                kind:
+                  handover.mode === 'battle'
+                    ? 'roleHandoverBattle'
+                    : 'roleHandoverRace',
+                targetLevel: handover.targetLevel,
+                stage: handover.challengeStage,
+              })
+            }}
+          />
+        ) : null}
         {activeOverlay.kind === 'chapters' ? (
           <ChapterPanel
             onClose={closeOverlay}
@@ -455,6 +519,19 @@ export default function App(): JSX.Element {
             }
           />
         ) : null}
+        {activeOverlay.kind === 'roleHandoverBattle' ? (
+          <BattleScreen
+            stage={activeOverlay.stage}
+            onExit={() => setPlayOverlay({ kind: 'gangTree' })}
+            onDevelop={() =>
+              setPlayOverlay({ kind: 'heroes', initialTab: 'level' })
+            }
+            roleChallengeTitle={`${getRoleHandover(activeOverlay.targetLevel)?.title ?? '职位'} · 击败对手`}
+            onRoleChallengeVictory={() =>
+              completeRoleHandover(activeOverlay.targetLevel)
+            }
+          />
+        ) : null}
         {activeOverlay.kind === 'racing' ? (
           <RacingPanel
             onClose={closeOverlay}
@@ -470,6 +547,20 @@ export default function App(): JSX.Element {
             onExit={() => setPlayOverlay({ kind: 'racing' })}
             onDevelop={() =>
               setPlayOverlay({ kind: 'heroes', initialTab: 'car' })
+            }
+          />
+        ) : null}
+        {activeOverlay.kind === 'roleHandoverRace' ? (
+          <RaceScreen
+            stage={activeOverlay.stage}
+            heroId="foreman"
+            onExit={() => setPlayOverlay({ kind: 'gangTree' })}
+            onDevelop={() =>
+              setPlayOverlay({ kind: 'heroes', initialTab: 'car' })
+            }
+            roleChallengeTitle={`${getRoleHandover(activeOverlay.targetLevel)?.title ?? '职位'} · 跑进前三`}
+            onRoleChallengeVictory={() =>
+              completeRoleHandover(activeOverlay.targetLevel)
             }
           />
         ) : null}

@@ -7312,3 +7312,550 @@
     transition: none;
   }
 }
+
+/* Centered gang relationship network */
+
+.gang-tree-panel__mobile-rank-nav {
+  display: none !important;
+}
+
+.gang-tree-panel__hierarchy-scroll {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem 0.75rem;
+}
+
+.gang-tree-panel__hierarchy-help {
+  margin-bottom: 0;
+}
+
+.gang-tree-panel__network {
+  position: relative;
+  width: min(54rem, 100%);
+  height: clamp(18rem, 40vh, 24rem);
+  min-height: 18rem;
+  margin: 0 auto;
+}
+
+.gang-tree-panel__network-lines {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.gang-tree-panel__network-lines line {
+  stroke: rgba(226, 232, 240, 0.48);
+  stroke-width: 0.75;
+  vector-effect: non-scaling-stroke;
+}
+
+.gang-tree-panel__hierarchy {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.gang-tree-panel__hierarchy::before {
+  display: none;
+}
+
+.gang-tree-panel__network-node {
+  position: absolute;
+  z-index: 1;
+  top: var(--node-y);
+  left: var(--node-x);
+  width: clamp(6.4rem, 12vw, 8.5rem);
+  transform: translate(-50%, -50%);
+}
+
+.gang-tree-panel__network-node button {
+  display: grid;
+  justify-items: center;
+  gap: 0.18rem;
+  width: 100%;
+  min-height: 6.8rem;
+  padding: 0.3rem;
+  border: 0;
+  color: #cbd5e1;
+  background: transparent;
+  cursor: pointer;
+}
+
+.gang-tree-panel__network-node .gang-tree-panel__portrait,
+.gang-tree-panel__player-node .gang-tree-panel__portrait {
+  grid-row: auto;
+  width: 4.6rem;
+  height: 4.9rem;
+  border: 3px solid rgba(148, 163, 184, 0.62);
+  border-radius: 0;
+  clip-path: polygon(25% 0, 75% 0, 100% 22%, 100% 76%, 50% 100%, 0 76%, 0 22%);
+  background-color: rgba(15, 23, 42, 0.92);
+  filter: grayscale(0.35);
+  transition:
+    filter 160ms ease,
+    transform 160ms ease,
+    border-color 160ms ease;
+}
+
+.gang-tree-panel__network-node button:hover .gang-tree-panel__portrait,
+.gang-tree-panel__network-node button:focus-visible .gang-tree-panel__portrait,
+.gang-tree-panel__network-node[data-selected='true']
+  .gang-tree-panel__portrait {
+  border-color: #fbbf24;
+  filter: none;
+  transform: translateY(-0.2rem);
+}
+
+.gang-tree-panel__network-node button:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+.gang-tree-panel__network-node strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: #f8fafc;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gang-tree-panel__network-node small {
+  color: #94a3b8;
+  font-size: 0.58rem;
+}
+
+.gang-tree-panel__node-state {
+  position: absolute;
+  top: 0.2rem;
+  right: 0;
+  padding: 0.12rem 0.35rem;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  border-radius: 999px;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.92);
+  font-size: 0.5rem;
+  font-weight: 900;
+}
+
+.gang-tree-panel__network-node[data-state='subordinate']
+  .gang-tree-panel__portrait {
+  border-color: rgba(45, 212, 191, 0.72);
+}
+
+.gang-tree-panel__network-node[data-state='subordinate']
+  .gang-tree-panel__node-state {
+  color: #99f6e4;
+  border-color: rgba(45, 212, 191, 0.5);
+}
+
+.gang-tree-panel__network-node[data-state='current']
+  .gang-tree-panel__portrait {
+  border-color: #fbbf24;
+  box-shadow: 0 0 1.4rem rgba(251, 191, 36, 0.24);
+}
+
+.gang-tree-panel__network-node[data-state='current']
+  .gang-tree-panel__node-state {
+  color: #422006;
+  border-color: #fbbf24;
+  background: #fbbf24;
+}
+
+.gang-tree-panel__network-node[data-state='superior'] {
+  opacity: 0.72;
+}
+
+.gang-tree-panel__player-node {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 0.18rem;
+  width: 9rem;
+  padding: 0.5rem;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.gang-tree-panel__player-node .gang-tree-panel__portrait {
+  width: 6rem;
+  height: 6.5rem;
+  border-color: #fbbf24;
+  filter: none;
+  box-shadow:
+    0 0 0 0.35rem rgba(251, 191, 36, 0.12),
+    0 0 2rem rgba(251, 191, 36, 0.3);
+}
+
+.gang-tree-panel__player-node > span {
+  margin-top: -0.15rem;
+  padding: 0.12rem 0.48rem;
+  border-radius: 999px;
+  color: #422006;
+  background: #fbbf24;
+  font-size: 0.58rem;
+  font-weight: 950;
+}
+
+.gang-tree-panel__player-node strong {
+  color: #f8fafc;
+  font-size: 0.78rem;
+}
+
+.gang-tree-panel__player-node small {
+  color: #fde68a;
+  font-size: 0.6rem;
+}
+
+.gang-tree-panel__selected-seat {
+  display: grid;
+  grid-template-columns: auto minmax(10rem, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  width: min(48rem, 100%);
+  margin: 0 auto;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(45, 212, 191, 0.28);
+  border-radius: 0.65rem;
+  background: rgba(8, 47, 46, 0.48);
+}
+
+.gang-tree-panel__selected-seat > div {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.gang-tree-panel__selected-seat > div > span {
+  color: #5eead4;
+  font-size: 0.56rem;
+  font-weight: 950;
+}
+
+.gang-tree-panel__selected-seat strong {
+  color: #f8fafc;
+  font-size: 0.78rem;
+}
+
+.gang-tree-panel__selected-seat b {
+  color: #fbbf24;
+  font-size: 0.62rem;
+}
+
+.gang-tree-panel__selected-seat small,
+.gang-tree-panel__selected-seat p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.58rem;
+  line-height: 1.45;
+}
+
+/* Role handover */
+
+.role-handover__overlay {
+  position: fixed;
+  z-index: 34;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(180, 83, 9, 0.24), transparent 40%),
+    rgba(2, 6, 10, 0.94);
+  backdrop-filter: blur(0.55rem);
+}
+
+.role-handover {
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.9fr) minmax(18rem, 1.1fr);
+  width: min(52rem, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(251, 191, 36, 0.46);
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(135deg, rgba(120, 53, 15, 0.25), transparent 48%), #081315;
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.68);
+}
+
+.role-handover > header {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.22);
+  background: rgba(2, 11, 13, 0.88);
+}
+
+.role-handover > header > span {
+  color: #5eead4;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+
+.role-handover > header > strong {
+  color: #fde68a;
+  font-size: 0.72rem;
+}
+
+.role-handover > header button {
+  min-height: 38px;
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.32);
+  background: rgba(30, 41, 59, 0.66);
+}
+
+.role-handover__portraits {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 0.5rem;
+  min-height: 23rem;
+  padding: 1.4rem 1rem 0;
+  background:
+    linear-gradient(180deg, transparent 35%, rgba(2, 6, 10, 0.86)),
+    repeating-linear-gradient(
+      120deg,
+      transparent 0 42px,
+      rgba(251, 191, 36, 0.035) 43px 45px
+    );
+}
+
+.role-handover__portraits > div {
+  height: 20rem;
+  border: 1px solid rgba(251, 191, 36, 0.36);
+  border-radius: 0.75rem 0.75rem 0 0;
+  background-repeat: no-repeat;
+  background-size: 400% 200%;
+  box-shadow: inset 0 -4rem 4rem rgba(2, 6, 10, 0.8);
+}
+
+.role-handover__portraits > span {
+  align-self: center;
+  color: #fbbf24;
+  font-size: 1.5rem;
+}
+
+.role-handover__content {
+  display: grid;
+  align-content: center;
+  gap: 0.7rem;
+  padding: 1.3rem;
+}
+
+.role-handover__content > span {
+  color: #5eead4;
+  font-size: 0.64rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.role-handover__content h2 {
+  margin: 0;
+  color: #fbbf24;
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+}
+
+.role-handover__content h2:focus {
+  outline: none;
+}
+
+.role-handover__content > p,
+.role-handover__content article p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+
+.role-handover__content article {
+  padding: 0.85rem;
+  border-left: 3px solid #fbbf24;
+  background: rgba(120, 53, 15, 0.2);
+}
+
+.role-handover__content article strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #fde68a;
+}
+
+.role-handover__content footer {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.role-handover__content footer small {
+  color: #94a3b8;
+}
+
+.role-handover__content footer button {
+  min-height: 44px;
+  color: #1c0a02;
+  border-color: #fbbf24;
+  background: #fbbf24;
+  font-weight: 950;
+}
+
+.battle-screen__role-challenge {
+  position: absolute;
+  z-index: 4;
+  top: max(0.75rem, env(safe-area-inset-top));
+  left: 50%;
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.5rem 0.9rem;
+  transform: translateX(-50%);
+  border: 1px solid rgba(251, 191, 36, 0.55);
+  border-radius: 0.65rem;
+  background: rgba(7, 12, 18, 0.88);
+  text-align: center;
+}
+
+.battle-screen__role-challenge span {
+  color: #5eead4;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.battle-screen__role-challenge strong {
+  color: #fde68a;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 620px) {
+  .gang-tree-panel {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  .gang-tree-panel__hierarchy-scroll {
+    grid-template-rows: auto auto auto;
+    gap: 0.25rem;
+    padding: 0.35rem 0.4rem 0.45rem;
+  }
+
+  .gang-tree-panel__hierarchy-help {
+    font-size: 0.52rem;
+  }
+
+  .gang-tree-panel__network {
+    height: 19rem;
+    min-height: 19rem;
+  }
+
+  .gang-tree-panel__network-node {
+    width: 5.5rem;
+  }
+
+  .gang-tree-panel__network-node button {
+    min-height: 5.2rem;
+    padding: 0.15rem;
+  }
+
+  .gang-tree-panel__network-node .gang-tree-panel__portrait {
+    width: 3.35rem;
+    height: 3.55rem;
+    border-width: 2px;
+  }
+
+  .gang-tree-panel__network-node strong {
+    font-size: 0.58rem;
+  }
+
+  .gang-tree-panel__network-node small {
+    font-size: 0.48rem;
+  }
+
+  .gang-tree-panel__node-state {
+    top: 0;
+    right: 0.15rem;
+    font-size: 0.42rem;
+  }
+
+  .gang-tree-panel__player-node {
+    width: 6.2rem;
+    padding: 0.2rem;
+  }
+
+  .gang-tree-panel__player-node .gang-tree-panel__portrait {
+    width: 4.25rem;
+    height: 4.6rem;
+    border-width: 2px;
+  }
+
+  .gang-tree-panel__player-node strong {
+    font-size: 0.62rem;
+  }
+
+  .gang-tree-panel__player-node small {
+    font-size: 0.5rem;
+  }
+
+  .gang-tree-panel__selected-seat {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.45rem;
+    padding: 0.35rem 0.45rem;
+  }
+
+  .gang-tree-panel__selected-seat p {
+    grid-column: 1 / -1;
+  }
+
+  .role-handover__overlay {
+    padding: 0;
+  }
+
+  .role-handover {
+    grid-template-columns: 1fr;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .role-handover > header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .role-handover > header > strong {
+    display: none;
+  }
+
+  .role-handover__portraits {
+    min-height: 13rem;
+    padding-top: 0.75rem;
+  }
+
+  .role-handover__portraits > div {
+    height: 12.25rem;
+  }
+
+  .role-handover__content {
+    align-content: start;
+    padding: 0.85rem;
+  }
+
+  .role-handover__content h2 {
+    font-size: 1.35rem;
+  }
+
+  .role-handover__content > p,
+  .role-handover__content article p {
+    font-size: 0.78rem;
+  }
+
+  .battle-screen__role-challenge {
+    top: 0.45rem;
+    max-width: 48vw;
+    padding: 0.35rem 0.55rem;
+  }
+}

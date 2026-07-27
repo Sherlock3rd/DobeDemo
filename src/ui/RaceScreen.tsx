@@ -35,6 +35,8 @@ export interface RaceScreenProps {
   heroId: HeroId
   onExit: () => void
   onDevelop?: () => void
+  roleChallengeTitle?: string
+  onRoleChallengeVictory?: () => void
 }
 
 interface RaceBoot {
@@ -71,6 +73,8 @@ export function RaceScreen({
   heroId,
   onExit,
   onDevelop = onExit,
+  roleChallengeTitle,
+  onRoleChallengeVictory,
 }: RaceScreenProps): JSX.Element {
   const [bootResult] = useState<
     { ok: true; value: RaceBoot } | { ok: false; message: string }
@@ -102,6 +106,8 @@ export function RaceScreen({
       onExit={onExit}
       onDevelop={onDevelop}
       initial={bootResult.value}
+      roleChallengeTitle={roleChallengeTitle}
+      onRoleChallengeVictory={onRoleChallengeVictory}
     />
   )
 }
@@ -111,12 +117,17 @@ function RaceSession({
   onExit,
   onDevelop,
   initial,
+  roleChallengeTitle,
+  onRoleChallengeVictory,
 }: {
   stage: number
   onExit: () => void
   onDevelop: () => void
   initial: RaceBoot
+  roleChallengeTitle?: string
+  onRoleChallengeVictory?: () => void
 }): JSX.Element {
+  const isRoleChallenge = Boolean(roleChallengeTitle && onRoleChallengeVictory)
   const definition = getRacingStage(stage)
   const recordVictory = useAdventureStore((state) => state.recordRacingVictory)
   const lastVictoryReward = useAdventureStore(
@@ -128,7 +139,9 @@ function RaceSession({
   const inputRef = useRef<RaceInput>({})
   const committedRef = useRef(false)
   const reward =
-    lastVictoryReward?.mode === 'racing' && lastVictoryReward.stage === stage
+    !isRoleChallenge &&
+    lastVictoryReward?.mode === 'racing' &&
+    lastVictoryReward.stage === stage
       ? lastVictoryReward.reward
       : null
 
@@ -207,8 +220,8 @@ function RaceSession({
   useEffect(() => {
     if (state.status !== 'victory' || committedRef.current) return
     committedRef.current = true
-    recordVictory(stage)
-  }, [recordVictory, stage, state.status])
+    if (!isRoleChallenge) recordVictory(stage)
+  }, [isRoleChallenge, recordVictory, stage, state.status])
 
   const triggerBoost = (): void => {
     inputRef.current.boostTaps = Math.min(
@@ -331,6 +344,7 @@ function RaceSession({
       data-boost-remaining={state.player.boostRemainingMs}
       data-super-boost={state.player.superBoosting}
       data-opponents={state.vehicles.length}
+      data-role-challenge={isRoleChallenge || undefined}
     >
       <Canvas
         className="race-screen__canvas"
@@ -347,12 +361,18 @@ function RaceSession({
 
       <header className="race-hud__top">
         <div>
-          <span>{`第 ${stage} 关 · ${definition.title}`}</span>
+          <span>
+            {isRoleChallenge
+              ? '职位交接 · SUP 竞速挑战'
+              : `第 ${stage} 关 · ${definition.title}`}
+          </span>
           <strong>{definition.mode === 'race' ? '竞速' : '追击'}</strong>
           <span>
-            {definition.mode === 'race'
-              ? '七车对抗 · 前三通关 · 落后补氮'
-              : '纯追击枪战 · 空中特技缩短强化冷却 · 摧毁目标车'}
+            {isRoleChallenge
+              ? roleChallengeTitle
+              : definition.mode === 'race'
+                ? '七车对抗 · 前三通关 · 落后补氮'
+                : '纯追击枪战 · 空中特技缩短强化冷却 · 摧毁目标车'}
           </span>
         </div>
         {definition.mode === 'race' ? (
@@ -366,16 +386,18 @@ function RaceSession({
           </div>
         )}
         <div className="race-hud__actions">
-          <button
-            type="button"
-            className="race-hud__skip"
-            onClick={() => {
-              setExitPending(false)
-              setSkipPending(true)
-            }}
-          >
-            跳过本关
-          </button>
+          {!isRoleChallenge ? (
+            <button
+              type="button"
+              className="race-hud__skip"
+              onClick={() => {
+                setExitPending(false)
+                setSkipPending(true)
+              }}
+            >
+              跳过本关
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => {
@@ -551,15 +573,20 @@ function RaceSession({
         <div className="race-screen__result" role="status">
           <strong>
             {state.status === 'victory'
-              ? state.reason === 'skipped'
-                ? '跳过通关'
-                : definition.mode === 'race'
-                  ? '通关'
-                  : '目标击破'
+              ? isRoleChallenge
+                ? '竞速交接胜利'
+                : state.reason === 'skipped'
+                  ? '跳过通关'
+                  : definition.mode === 'race'
+                    ? '通关'
+                    : '目标击破'
               : '失败'}
           </strong>
           {state.status === 'victory' && state.reason === 'skipped' ? (
             <p>当前关卡已直接完成，首通奖励与下一关已经解锁。</p>
+          ) : null}
+          {state.status === 'victory' && isRoleChallenge ? (
+            <p>公路试炼已经完成，返回帮派树正式接掌路线队长席位。</p>
           ) : null}
           {definition.mode === 'race' && state.pendingResult ? (
             <div className="race-screen__result-meta" aria-label="竞速成绩">
@@ -578,7 +605,7 @@ function RaceSession({
               )}`}</p>
             </div>
           ) : null}
-          {state.status === 'victory' ? (
+          {state.status === 'victory' && !isRoleChallenge ? (
             reward ? (
               <div className="race-screen__rewards" aria-label="首通奖励">
                 <ResourceAmount kind="experience" amount={reward.rewardExp} />
@@ -600,7 +627,7 @@ function RaceSession({
             ) : (
               <p>奖励结算中…</p>
             )
-          ) : (
+          ) : state.status === 'defeat' ? (
             <>
               <p>
                 {state.reason === 'escaped'
@@ -613,7 +640,7 @@ function RaceSession({
               </p>
               <p>前往养成提升车辆与配件后再来挑战。</p>
             </>
-          )}
+          ) : null}
           <div>
             {state.status === 'defeat' ? (
               <>
@@ -626,8 +653,13 @@ function RaceSession({
               </>
             ) : null}
             <button type="button" onClick={onExit}>
-              离开
+              {isRoleChallenge ? '退出挑战' : '离开'}
             </button>
+            {state.status === 'victory' && isRoleChallenge ? (
+              <button type="button" onClick={onRoleChallengeVictory}>
+                完成竞速交接
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}

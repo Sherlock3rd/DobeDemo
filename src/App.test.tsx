@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChestTick } from './game/chestTick'
+import { getChapterForGangLevel } from './game/chapterProgression'
 import { getTotalReputationForLevel } from './game/gangProgression'
 import { useAdventureStore } from './store/useAdventureStore'
 import { useChapterStore } from './store/useChapterStore'
@@ -123,20 +124,29 @@ vi.mock('./ui/BattleScreen', () => ({
   BattleScreen: (p: {
     stage: number
     onExit: () => void
-    onNext: (stage: number) => void
+    onNext?: (stage: number) => void
     onDevelop: () => void
+    roleChallengeTitle?: string
+    onRoleChallengeVictory?: () => void
   }) => (
     <div role="dialog" aria-label="战斗" data-stage={p.stage}>
       <p>{`战斗关卡 ${p.stage}`}</p>
       <button type="button" onClick={p.onExit}>
         退出战斗
       </button>
-      <button type="button" onClick={() => p.onNext(p.stage + 1)}>
-        下一关战斗
-      </button>
+      {p.onNext ? (
+        <button type="button" onClick={() => p.onNext?.(p.stage + 1)}>
+          下一关战斗
+        </button>
+      ) : null}
       <button type="button" onClick={p.onDevelop}>
         战斗失败养成
       </button>
+      {p.onRoleChallengeVictory ? (
+        <button type="button" onClick={p.onRoleChallengeVictory}>
+          模拟赢得推关交接
+        </button>
+      ) : null}
     </div>
   ),
 }))
@@ -172,7 +182,12 @@ vi.mock('./ui/RacingPanel', () => ({
 }))
 
 vi.mock('./ui/RaceScreen', () => ({
-  RaceScreen: (p: { onExit: () => void; onDevelop: () => void }) => (
+  RaceScreen: (p: {
+    onExit: () => void
+    onDevelop: () => void
+    roleChallengeTitle?: string
+    onRoleChallengeVictory?: () => void
+  }) => (
     <div role="dialog" aria-label="公路争霸">
       <button type="button" onClick={p.onExit}>
         返回赛车
@@ -180,6 +195,11 @@ vi.mock('./ui/RaceScreen', () => ({
       <button type="button" onClick={p.onDevelop}>
         赛车失败养成
       </button>
+      {p.onRoleChallengeVictory ? (
+        <button type="button" onClick={p.onRoleChallengeVictory}>
+          模拟赢得竞速交接
+        </button>
+      ) : null}
     </div>
   ),
 }))
@@ -303,7 +323,16 @@ describe('App', () => {
 
     render(<App />)
     await user.click(screen.getByRole('button', { name: '帮派树' }))
-    await user.click(screen.getByRole('button', { name: '接掌席位' }))
+    await user.click(screen.getByRole('button', { name: '和平交接' }))
+    expect(
+      screen.getByRole('dialog', {
+        name: '正式成员职位交接：Maeve “Red” Quinn',
+      }),
+    ).toBeInTheDocument()
+    expect(useGangStore.getState().currentLevel).toBe(7)
+    await user.click(screen.getByRole('button', { name: '下一句' }))
+    await user.click(screen.getByRole('button', { name: '确认和平交接' }))
+    expect(useGangStore.getState().currentLevel).toBe(8)
     expect(
       screen.getByRole('status', { name: '职级晋升：正式成员' }),
     ).toBeInTheDocument()
@@ -321,6 +350,71 @@ describe('App', () => {
       screen.getByRole('dialog', {
         name: '帮派权力树',
       }),
+    ).toBeInTheDocument()
+  })
+
+  it('requires a push-stage victory before the technical role changes hands', async () => {
+    const user = userEvent.setup()
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(16),
+      currentLevel: 15,
+      lastUpdatedAt: BASE_TIME,
+    })
+    useChapterStore.setState({
+      claimedChapterNumbers: [getChapterForGangLevel(15).number],
+    })
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: '帮派树' }))
+    await user.click(screen.getByRole('button', { name: '推关挑战' }))
+
+    expect(
+      screen.getByRole('dialog', {
+        name: '技术骨干职位交接：Arthur Shelby',
+      }),
+    ).toBeInTheDocument()
+    expect(useGangStore.getState().currentLevel).toBe(15)
+    await user.click(screen.getByRole('button', { name: '开始推关挑战' }))
+    expect(screen.getByRole('dialog', { name: '战斗' })).toHaveAttribute(
+      'data-stage',
+      '3',
+    )
+
+    await user.click(screen.getByRole('button', { name: '模拟赢得推关交接' }))
+    expect(useGangStore.getState().currentLevel).toBe(16)
+    expect(
+      screen.getByRole('status', { name: '职级晋升：技术骨干' }),
+    ).toBeInTheDocument()
+  })
+
+  it('requires a SUP race victory before the road captain role changes hands', async () => {
+    const user = userEvent.setup()
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(32),
+      currentLevel: 31,
+      lastUpdatedAt: BASE_TIME,
+    })
+    useChapterStore.setState({
+      claimedChapterNumbers: [getChapterForGangLevel(31).number],
+    })
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: '帮派树' }))
+    await user.click(screen.getByRole('button', { name: 'SUP 竞速挑战' }))
+
+    expect(
+      screen.getByRole('dialog', {
+        name: '路线队长职位交接：Charlie Strong',
+      }),
+    ).toBeInTheDocument()
+    expect(useGangStore.getState().currentLevel).toBe(31)
+    await user.click(screen.getByRole('button', { name: '开始 SUP 竞速挑战' }))
+    expect(screen.getByRole('dialog', { name: '公路争霸' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '模拟赢得竞速交接' }))
+    expect(useGangStore.getState().currentLevel).toBe(32)
+    expect(
+      screen.getByRole('status', { name: '职级晋升：路线队长' }),
     ).toBeInTheDocument()
   })
 

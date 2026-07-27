@@ -27,6 +27,8 @@ export interface BattleScreenProps {
   onExit: () => void
   onNext?: (stage: number) => void
   onDevelop?: () => void
+  roleChallengeTitle?: string
+  onRoleChallengeVictory?: () => void
 }
 
 type Phase = 'running' | 'paused' | 'resolved'
@@ -60,6 +62,8 @@ export function BattleScreen({
   onExit,
   onNext,
   onDevelop = onExit,
+  roleChallengeTitle,
+  onRoleChallengeVictory,
 }: BattleScreenProps): JSX.Element {
   return (
     <BattleErrorBoundary key={stage} onExit={onExit}>
@@ -68,6 +72,8 @@ export function BattleScreen({
         onExit={onExit}
         onNext={onNext}
         onDevelop={onDevelop}
+        roleChallengeTitle={roleChallengeTitle}
+        onRoleChallengeVictory={onRoleChallengeVictory}
       />
     </BattleErrorBoundary>
   )
@@ -78,7 +84,10 @@ function BattleScreenSession({
   onExit,
   onNext,
   onDevelop = onExit,
+  roleChallengeTitle,
+  onRoleChallengeVictory,
 }: BattleScreenProps): JSX.Element {
+  const isRoleChallenge = Boolean(roleChallengeTitle && onRoleChallengeVictory)
   const recordVictory = useAdventureStore((s) => s.recordVictory)
   const lastVictoryReward = useAdventureStore((s) => s.lastVictoryReward)
   const highestClearedStage = useAdventureStore((s) => s.highestClearedStage)
@@ -129,10 +138,10 @@ function BattleScreenSession({
     if (exitPending) return
     if (currentTick < result.endedAtTick || committedRef.current) return
     committedRef.current = true
-    if (result.outcome === 'victory') {
+    if (result.outcome === 'victory' && !isRoleChallenge) {
       recordVictory(stage, Date.now())
     }
-  }, [currentTick, exitPending, recordVictory, result, stage])
+  }, [currentTick, exitPending, isRoleChallenge, recordVictory, result, stage])
 
   useEffect(() => {
     if (!result || phase !== 'running') return
@@ -182,16 +191,19 @@ function BattleScreenSession({
   )
 
   const reward =
-    lastVictoryReward?.mode === 'campaign' && lastVictoryReward.stage === stage
+    !isRoleChallenge &&
+    lastVictoryReward?.mode === 'campaign' &&
+    lastVictoryReward.stage === stage
       ? lastVictoryReward.reward
       : null
   const firstClear =
-    reward?.firstClear ??
-    (boot.ok &&
-      boot.result.outcome === 'victory' &&
-      phase === 'resolved' &&
-      highestClearedStage >= stage &&
-      highestBefore < stage)
+    !isRoleChallenge &&
+    (reward?.firstClear ??
+      (boot.ok &&
+        boot.result.outcome === 'victory' &&
+        phase === 'resolved' &&
+        highestClearedStage >= stage &&
+        highestBefore < stage))
   const nextStage = getNextCampaignStage(stage)
 
   if (!boot.ok) {
@@ -224,6 +236,7 @@ function BattleScreenSession({
       data-current-presented-basic={presentedEffects.currentBasic}
       data-current-presented-skill={presentedEffects.currentSkill}
       data-presented-event-key={presentedEffects.eventKey}
+      data-role-challenge={isRoleChallenge || undefined}
     >
       <div className="battle-screen__canvas-wrap">
         <Canvas className="battle-screen__canvas" camera={BATTLE_CAMERA_CONFIG}>
@@ -235,6 +248,13 @@ function BattleScreenSession({
         </Canvas>
       </div>
 
+      {isRoleChallenge ? (
+        <div className="battle-screen__role-challenge">
+          <span>职位交接 · 推关挑战</span>
+          <strong>{roleChallengeTitle}</strong>
+        </div>
+      ) : null}
+
       {showStart && phase !== 'resolved' ? (
         <p className="battle-screen__banner" aria-live="polite">
           START
@@ -245,9 +265,14 @@ function BattleScreenSession({
         <div className="battle-screen__result" role="status">
           <p>
             {boot.result.outcome === 'victory'
-              ? 'VICTORY · 胜利'
+              ? isRoleChallenge
+                ? 'CHALLENGE WON · 交接胜利'
+                : 'VICTORY · 胜利'
               : 'DEFEAT · 失败'}
           </p>
+          {boot.result.outcome === 'victory' && isRoleChallenge ? (
+            <p>挑战已完成，返回帮派树正式接掌席位。</p>
+          ) : null}
           {firstClear && reward ? (
             <div className="battle-screen__rewards" aria-label="首通奖励">
               <ResourceAmount kind="experience" amount={reward.rewardExp} />
@@ -281,9 +306,19 @@ function BattleScreenSession({
               className="battle-screen__result-exit"
               onClick={onExit}
             >
-              退出
+              {isRoleChallenge ? '退出挑战' : '退出'}
             </button>
+            {boot.result.outcome === 'victory' && isRoleChallenge ? (
+              <button
+                type="button"
+                className="battle-screen__result-next"
+                onClick={onRoleChallengeVictory}
+              >
+                完成战斗交接
+              </button>
+            ) : null}
             {boot.result.outcome === 'victory' &&
+            !isRoleChallenge &&
             nextStage !== null &&
             onNext ? (
               <button

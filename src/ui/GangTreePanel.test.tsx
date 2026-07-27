@@ -51,7 +51,7 @@ describe('GangTreePanel', () => {
     expect(screen.getByText('剃刀党')).toBeInTheDocument()
   })
 
-  it('renders seven core seats, named holders, support positions and management links', () => {
+  it('renders Thomas at the center with seven connected core-seat holders around him', () => {
     render(<GangTreePanel open onClose={vi.fn()} />)
 
     const dialog = screen.getByRole('dialog', { name: '帮派权力树' })
@@ -62,62 +62,62 @@ describe('GangTreePanel', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(7)
 
     for (const roleText of ROLE_TEXTS) {
-      expect(screen.getByText(roleText)).toBeInTheDocument()
+      expect(screen.getAllByText(new RegExp(roleText)).length).toBeGreaterThan(
+        0,
+      )
     }
 
     expect(screen.getByText('Winston Cole')).toBeInTheDocument()
-    expect(screen.getByText('Solomon Price')).toBeInTheDocument()
-    expect(screen.getAllByText('管辖')).toHaveLength(7)
     expect(
-      screen.getByRole('navigation', { name: '选择查看职级' }),
+      screen.getByLabelText('自己：Thomas Shelby，见习'),
     ).toBeInTheDocument()
+    expect(
+      document.querySelectorAll('.gang-tree-panel__network-lines line'),
+    ).toHaveLength(7)
   })
 
-  it('grows fixed direct reports by role and gives the current prospect only their predecessor', () => {
-    render(<GangTreePanel open onClose={vi.fn()} />)
-
-    const currentSeat = document.querySelector(
-      '.gang-tree-panel__tier[data-state="current"]',
-    )
-    expect(currentSeat).toHaveAttribute('data-threshold', '1')
-    expect(currentSeat).toHaveTextContent('Thomas Shelby')
-    expect(currentSeat).toHaveTextContent('Eddie “Pins” Doyle')
-    expect(currentSeat).toHaveTextContent('前任 见习 · 现直属下属')
-    expect(currentSeat).toHaveTextContent('你在这里')
-    expect(currentSeat).toHaveTextContent('1 名直属成员')
-
-    for (const [threshold, count] of [
-      [8, 1],
-      [16, 2],
-      [24, 3],
-      [32, 4],
-      [40, 5],
-      [50, 6],
-    ] as const) {
-      expect(
-        document.querySelector(
-          `.gang-tree-panel__tier[data-threshold="${threshold}"]`,
-        ),
-      ).toHaveTextContent(`${count} 名直属成员`)
-    }
-  })
-
-  it('lets portrait layouts select one role for the mobile detail view', async () => {
+  it('selects a surrounding holder to reveal their role and direct reports', async () => {
     const user = userEvent.setup()
     render(<GangTreePanel open onClose={vi.fn()} />)
 
-    const nav = screen.getByRole('navigation', { name: '选择查看职级' })
-    const prospect = within(nav).getByRole('button', { name: '见习 Lv.1' })
-    const president = within(nav).getByRole('button', { name: '主席 Lv.50' })
+    const currentSeat = document.querySelector(
+      '.gang-tree-panel__network-node[data-state="current"]',
+    )
+    expect(currentSeat).toHaveAttribute('data-threshold', '1')
+    expect(currentSeat).toHaveTextContent('Eddie “Pins” Doyle')
+    expect(currentSeat).toHaveTextContent('前任 · 直属')
+    expect(
+      screen.getByLabelText('Eddie “Pins” Doyle的职位详情'),
+    ).toHaveTextContent('完成席位交接后转入 Thomas 的直属管辖')
+
+    await user.click(
+      screen.getByRole('button', {
+        name: '查看Winston Cole · 主席 Lv.50',
+      }),
+    )
+    expect(screen.getByLabelText('Winston Cole的职位详情')).toHaveTextContent(
+      'Solomon Price（会所总管）',
+    )
+  })
+
+  it('lets portrait nodes select one role detail', async () => {
+    const user = userEvent.setup()
+    render(<GangTreePanel open onClose={vi.fn()} />)
+
+    const list = screen.getByRole('list', { name: '剃刀党管辖关系' })
+    const prospect = within(list).getByRole('button', {
+      name: '查看Eddie “Pins” Doyle · 见习 Lv.1',
+    })
+    const president = within(list).getByRole('button', {
+      name: '查看Winston Cole · 主席 Lv.50',
+    })
     expect(prospect).toHaveAttribute('aria-pressed', 'true')
 
     await user.click(president)
 
     expect(president).toHaveAttribute('aria-pressed', 'true')
     expect(prospect).toHaveAttribute('aria-pressed', 'false')
-    expect(
-      document.querySelector('.gang-tree-panel__tier[data-threshold="50"]'),
-    ).toHaveAttribute('data-mobile-selected', 'true')
+    expect(screen.getByLabelText('Winston Cole的职位详情')).toBeInTheDocument()
   })
 
   it('shows higher seats as superiors and completed core seats as subordinates', () => {
@@ -129,22 +129,22 @@ describe('GangTreePanel', () => {
     render(<GangTreePanel open onClose={vi.fn()} />)
 
     const prospect = document.querySelector(
-      '.gang-tree-panel__tier[data-threshold="1"]',
+      '.gang-tree-panel__network-node[data-threshold="1"]',
     )
     const fullPatch = document.querySelector(
-      '.gang-tree-panel__tier[data-threshold="8"]',
+      '.gang-tree-panel__network-node[data-threshold="8"]',
     )
     const wrench = document.querySelector(
-      '.gang-tree-panel__tier[data-threshold="16"]',
+      '.gang-tree-panel__network-node[data-threshold="16"]',
     )
     const liaison = document.querySelector(
-      '.gang-tree-panel__tier[data-threshold="24"]',
+      '.gang-tree-panel__network-node[data-threshold="24"]',
     )
 
     expect(prospect).toHaveAttribute('data-state', 'subordinate')
     expect(fullPatch).toHaveAttribute('data-state', 'subordinate')
     expect(wrench).toHaveAttribute('data-state', 'current')
-    expect(wrench).toHaveTextContent('Thomas Shelby')
+    expect(wrench).toHaveTextContent('Arthur Shelby')
     expect(liaison).toHaveAttribute('data-state', 'superior')
     expect(screen.getByText('管辖 3 个核心席位')).toBeInTheDocument()
   })
@@ -186,7 +186,7 @@ describe('GangTreePanel', () => {
       currentLevel: 7,
     })
     rerender(<GangTreePanel open onClose={() => {}} />)
-    expect(screen.getByRole('button', { name: '接掌席位' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '和平交接' })).toBeDisabled()
     expect(
       screen.getByText('需完成并领取第一章 · 冷炉初燃奖励'),
     ).toBeInTheDocument()
@@ -195,6 +195,8 @@ describe('GangTreePanel', () => {
   it('plays a special ceremony when a core role promotion succeeds', async () => {
     const user = userEvent.setup()
     const onRolePromoted = vi.fn()
+    const onStartRoleHandover = vi.fn()
+    const onPromotionCeremonyComplete = vi.fn()
     const adventure = useAdventureStore.getState()
     const city = useCityStore.getState()
     useAdventureStore.setState({
@@ -217,22 +219,62 @@ describe('GangTreePanel', () => {
       currentLevel: 7,
     })
 
-    render(
-      <GangTreePanel open onClose={() => {}} onRolePromoted={onRolePromoted} />,
+    const { rerender } = render(
+      <GangTreePanel
+        open
+        onClose={() => {}}
+        onRolePromoted={onRolePromoted}
+        onStartRoleHandover={onStartRoleHandover}
+        onPromotionCeremonyComplete={onPromotionCeremonyComplete}
+      />,
     )
-    await user.click(screen.getByRole('button', { name: '接掌席位' }))
+    await user.click(screen.getByRole('button', { name: '和平交接' }))
 
-    expect(useGangStore.getState().currentLevel).toBe(8)
+    expect(useGangStore.getState().currentLevel).toBe(7)
+    expect(onStartRoleHandover).toHaveBeenCalledWith(
+      expect.objectContaining({
+        targetLevel: 8,
+        mode: 'dialogue',
+      }),
+    )
+
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 8,
+    })
+    rerender(
+      <GangTreePanel
+        open
+        onClose={() => {}}
+        onRolePromoted={onRolePromoted}
+        onStartRoleHandover={onStartRoleHandover}
+        promotionCeremonyLevel={8}
+        onPromotionCeremonyComplete={onPromotionCeremonyComplete}
+      />,
+    )
     expect(
       screen.getByRole('status', { name: '职级晋升：正式成员' }),
     ).toBeInTheDocument()
-    expect(screen.getAllByText('Full Patch · 正式成员')).toHaveLength(2)
-    expect(screen.getAllByText(/Maeve “Red” Quinn 已交出席位/)).toHaveLength(2)
+    expect(screen.getAllByText(/Full Patch · 正式成员/).length).toBeGreaterThan(
+      0,
+    )
+    expect(screen.getByText(/Maeve “Red” Quinn 已交出席位/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '跳过晋升演出' }))
+    rerender(
+      <GangTreePanel
+        open
+        onClose={() => {}}
+        onRolePromoted={onRolePromoted}
+        onStartRoleHandover={onStartRoleHandover}
+        promotionCeremonyLevel={null}
+        onPromotionCeremonyComplete={onPromotionCeremonyComplete}
+      />,
+    )
     expect(
       screen.queryByRole('status', { name: '职级晋升：正式成员' }),
     ).toBeNull()
+    expect(onPromotionCeremonyComplete).toHaveBeenCalledTimes(1)
     expect(onRolePromoted).toHaveBeenCalledWith(8)
   })
 
@@ -290,10 +332,12 @@ describe('GangTreePanel', () => {
     expect(screen.getByText('管辖 7 个核心席位')).toBeInTheDocument()
 
     const president = document.querySelector(
-      '.gang-tree-panel__tier[data-threshold="50"]',
+      '.gang-tree-panel__network-node[data-threshold="50"]',
     )
     expect(president).toHaveAttribute('data-state', 'current')
-    expect(president).toHaveAttribute('aria-current', 'step')
+    expect(
+      within(president as HTMLElement).getByRole('button'),
+    ).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('keeps the configured maximum level stable', () => {

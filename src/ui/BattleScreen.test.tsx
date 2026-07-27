@@ -174,6 +174,30 @@ describe('BattleScreen', () => {
     expect(onExit).toHaveBeenCalledTimes(1)
   })
 
+  it('uses a victory as a role challenge without changing campaign progress', () => {
+    const onRoleChallengeVictory = vi.fn()
+    motionState.reduced = true
+
+    render(
+      <BattleScreen
+        stage={1}
+        onExit={() => {}}
+        roleChallengeTitle="技术骨干席位挑战"
+        onRoleChallengeVictory={onRoleChallengeVictory}
+      />,
+    )
+    act(() => {
+      vi.runAllTimers()
+    })
+
+    expect(screen.getByText('CHALLENGE WON · 交接胜利')).toBeInTheDocument()
+    expect(screen.getByText('技术骨干席位挑战')).toBeInTheDocument()
+    expect(useAdventureStore.getState().highestClearedStage).toBe(0)
+    expect(screen.queryByLabelText('首通奖励')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '完成战斗交接' }))
+    expect(onRoleChallengeVictory).toHaveBeenCalledTimes(1)
+  })
+
   it('guides a defeated player directly to development', () => {
     const onDevelop = vi.fn()
     motionState.reduced = true

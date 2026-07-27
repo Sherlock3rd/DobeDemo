@@ -1,7 +1,7 @@
 import {
   useCallback,
   useEffect,
-  useRef,
+  useMemo,
   useState,
   type CSSProperties,
   type JSX,
@@ -32,6 +32,10 @@ import {
   PROGRESSION_UNLOCKS,
   type ProgressionUnlock,
 } from '../game/progressionUnlocks'
+import {
+  getRoleHandover,
+  type RoleHandoverDefinition,
+} from '../game/roleHandover'
 import { useGangStore } from '../store/useGangStore'
 import { useChapterStore } from '../store/useChapterStore'
 import { useInitialFocus } from './useInitialFocus'
@@ -40,6 +44,9 @@ export interface GangTreePanelProps {
   open: boolean
   onClose: () => void
   onRolePromoted?: (level: number) => void
+  onStartRoleHandover?: (handover: RoleHandoverDefinition) => void
+  promotionCeremonyLevel?: number | null
+  onPromotionCeremonyComplete?: () => void
 }
 
 interface PromotionCeremony {
@@ -63,6 +70,22 @@ const FEATURE_LABELS = {
   adventure: '战役',
   heroes: '英雄',
   racing: '公路争霸',
+}
+
+function buildPromotionCeremony(
+  level: number | null,
+): PromotionCeremony | null {
+  if (level === null) return null
+  const role = getGangRole(level)
+  if (role.threshold !== level) return null
+  const seat = getGangCoreSeat(level)
+  return {
+    level,
+    roleTitle: role.title,
+    chineseTitle: role.chineseTitle,
+    formerHolder: seat.holder,
+    managedSeats: getManagedCoreSeatCount(level),
+  }
 }
 
 function unlockLabel(unlock: ProgressionUnlock): string {
@@ -92,9 +115,9 @@ function portraitStyle(index: number): CSSProperties {
 }
 
 function seatStateLabel(state: GangSeatState): string {
-  if (state === 'current') return '你在这里'
-  if (state === 'subordinate') return '直属辖下'
-  return '上级席位'
+  if (state === 'current') return '前任 · 直属'
+  if (state === 'subordinate') return '辖下'
+  return '上级'
 }
 
 function buildRewardPreview(
@@ -156,83 +179,59 @@ function SeatPortrait({
   )
 }
 
-function HierarchySeat({
+const NETWORK_POSITIONS = [
+  ['top-left', 17, 17],
+  ['top-center', 50, 11],
+  ['top-right', 83, 17],
+  ['middle-right', 88, 50],
+  ['bottom-right', 83, 83],
+  ['bottom-center', 50, 89],
+  ['bottom-left', 17, 83],
+] as const
+
+function HierarchyNode({
   seat,
   currentLevel,
-  mobileSelected,
+  selected,
+  onSelect,
+  position,
 }: {
   seat: GangCoreSeat
   currentLevel: number
-  mobileSelected: boolean
+  selected: boolean
+  onSelect: () => void
+  position: (typeof NETWORK_POSITIONS)[number]
 }): JSX.Element {
   const role = roleForCoreSeat(seat)
   const state = getGangSeatState(seat.threshold, currentLevel)
-  const isCurrent = state === 'current'
-  const displayedName = isCurrent ? PLAYER_GANG_LEADER : seat.holder
-  const portraitIndex = isCurrent ? 0 : seat.portraitIndex
-  const support = isCurrent
-    ? [
-        {
-          name: seat.holder,
-          position: `前任 ${role.chineseTitle} · 现直属下属`,
-          portraitIndex: seat.portraitIndex,
-        },
-        ...seat.support.map((member) => ({ ...member, portraitIndex: null })),
-      ]
-    : seat.support.map((member) => ({ ...member, portraitIndex: null }))
+  const [, x, y] = position
 
   return (
     <li
-      className="gang-tree-panel__tier"
+      className="gang-tree-panel__network-node"
       data-state={state}
       data-threshold={seat.threshold}
-      data-mobile-selected={mobileSelected}
-      aria-current={isCurrent ? 'step' : undefined}
+      data-selected={selected}
+      style={
+        {
+          '--node-x': `${x}%`,
+          '--node-y': `${y}%`,
+        } as CSSProperties
+      }
     >
-      <span className="gang-tree-panel__relation" aria-hidden="true">
-        管辖
-      </span>
-      <article className="gang-tree-panel__core-card">
-        <SeatPortrait index={portraitIndex} />
-        <span className="gang-tree-panel__seat-state">
+      <button
+        type="button"
+        aria-label={`查看${seat.holder} · ${role.chineseTitle} Lv.${seat.threshold}`}
+        aria-pressed={selected}
+        onClick={onSelect}
+      >
+        <SeatPortrait index={seat.portraitIndex} />
+        <span className="gang-tree-panel__node-state">
           {seatStateLabel(state)}
         </span>
-        <strong>{displayedName}</strong>
-        <b>{`${role.title} · ${role.chineseTitle}`}</b>
-        <small>{`核心等级 Lv.${role.threshold} · ${seat.seatDescription}`}</small>
-        <span className="gang-tree-panel__direct-report-count">
-          {`${support.length} 名直属成员`}
-        </span>
-        {isCurrent ? (
-          <em>{`${seat.holder} 已交出席位，转入你的管辖`}</em>
-        ) : null}
-      </article>
-      <div
-        className="gang-tree-panel__support"
-        aria-label={`${displayedName} 的下属`}
-      >
-        {support.map((member) => (
-          <article
-            key={`${seat.threshold}-${member.name}`}
-            className="gang-tree-panel__support-card"
-          >
-            {member.portraitIndex === null ? (
-              <span
-                className="gang-tree-panel__support-initial"
-                aria-hidden="true"
-              >
-                {member.name.slice(0, 1)}
-              </span>
-            ) : (
-              <SeatPortrait index={member.portraitIndex} compact />
-            )}
-            <span>
-              <strong>{member.name}</strong>
-              <small>{member.position}</small>
-            </span>
-          </article>
-        ))}
-      </div>
+        <strong>{seat.holder}</strong>
+        <small>{`${role.title} · ${role.chineseTitle} · Lv.${role.threshold}`}</small>
+      </button>
     </li>
   )
 }
@@ -241,6 +240,9 @@ export function GangTreePanel({
   open,
   onClose,
   onRolePromoted,
+  onStartRoleHandover,
+  promotionCeremonyLevel = null,
+  onPromotionCeremonyComplete,
 }: GangTreePanelProps): JSX.Element | null {
   const totalReputation = useGangStore((state) => state.totalReputation)
   const currentLevel = useGangStore((state) => state.currentLevel)
@@ -249,44 +251,31 @@ export function GangTreePanel({
     (state) => state.claimedChapterNumbers,
   )
   const [feedback, setFeedback] = useState('')
-  const [ceremony, setCeremony] = useState<PromotionCeremony | null>(null)
   const currentRole = getGangRole(currentLevel)
-  const [mobileSelectedThreshold, setMobileSelectedThreshold] = useState(
+  const [selectedThreshold, setSelectedThreshold] = useState(
     currentRole.threshold,
   )
-  const mobileSelectedButtonRef = useRef<HTMLButtonElement | null>(null)
   const titleRef = useInitialFocus<HTMLHeadingElement>(open)
   const currentChapter = getChapterForGangLevel(currentLevel)
   const chapterComplete = claimedChapterNumbers.includes(currentChapter.number)
+  const ceremony = useMemo(
+    () => buildPromotionCeremony(promotionCeremonyLevel),
+    [promotionCeremonyLevel],
+  )
 
   const finishCeremony = useCallback((): void => {
     if (!ceremony) return
     const completedLevel = ceremony.level
-    setCeremony(null)
+    setSelectedThreshold(ceremony.level)
+    onPromotionCeremonyComplete?.()
     onRolePromoted?.(completedLevel)
-  }, [ceremony, onRolePromoted])
+  }, [ceremony, onPromotionCeremonyComplete, onRolePromoted])
 
   useEffect(() => {
     if (!ceremony) return
     const timeout = window.setTimeout(finishCeremony, CEREMONY_DURATION_MS)
     return () => window.clearTimeout(timeout)
   }, [ceremony, finishCeremony])
-
-  useEffect(() => {
-    const selectedButton = mobileSelectedButtonRef.current
-    if (
-      !open ||
-      !window.matchMedia?.('(max-width: 45rem)').matches ||
-      typeof selectedButton?.scrollIntoView !== 'function'
-    ) {
-      return
-    }
-    selectedButton.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    })
-  }, [mobileSelectedThreshold, open])
 
   useEffect(() => {
     if (!open) return
@@ -335,6 +324,10 @@ export function GangTreePanel({
     currentLevel >= GANG_MAX_LEVEL
       ? []
       : buildRewardPreview(nextLevel, crossesRole)
+  const selectedSeat = getGangCoreSeat(selectedThreshold)
+  const selectedRole = roleForCoreSeat(selectedSeat)
+  const selectedState = getGangSeatState(selectedThreshold, currentLevel)
+  const handover = crossesRole ? getRoleHandover(nextLevel) : null
   const stopPropagation = (event: { stopPropagation: () => void }): void => {
     event.stopPropagation()
   }
@@ -390,55 +383,70 @@ export function GangTreePanel({
           </div>
         </div>
 
-        <nav
-          className="gang-tree-panel__mobile-rank-nav"
-          aria-label="选择查看职级"
-        >
-          {GANG_CORE_SEATS.map((seat) => {
-            const role = roleForCoreSeat(seat)
-            const seatState = getGangSeatState(seat.threshold, currentLevel)
-            const portraitIndex =
-              seatState === 'current' ? 0 : seat.portraitIndex
-            return (
-              <button
-                type="button"
-                key={seat.threshold}
-                ref={
-                  mobileSelectedThreshold === seat.threshold
-                    ? mobileSelectedButtonRef
-                    : null
-                }
-                aria-label={`${role.chineseTitle} Lv.${seat.threshold}`}
-                aria-pressed={mobileSelectedThreshold === seat.threshold}
-                onClick={() => setMobileSelectedThreshold(seat.threshold)}
-              >
-                <SeatPortrait index={portraitIndex} compact />
-                <span>
-                  <strong>{role.chineseTitle}</strong>
-                  <small>{`Lv.${seat.threshold}`}</small>
-                </span>
-              </button>
-            )
-          })}
-        </nav>
-
         <div className="gang-tree-panel__hierarchy-scroll">
           <p className="gang-tree-panel__hierarchy-help">
-            高位者管理下方席位；你晋升后会替换该职级负责人，原负责人转为直属下属。
+            Thomas
+            位于关系网中央；金色为当前席位前任，绿色为辖下，灰色为尚未接掌的上级。
           </p>
-          <ol
-            className="gang-tree-panel__hierarchy"
-            aria-label="剃刀党管辖关系"
+          <div className="gang-tree-panel__network">
+            <svg
+              className="gang-tree-panel__network-lines"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              {NETWORK_POSITIONS.map(([name, x, y]) => (
+                <line key={name} x1="50" y1="50" x2={x} y2={y} />
+              ))}
+            </svg>
+            <ol
+              className="gang-tree-panel__hierarchy"
+              aria-label="剃刀党管辖关系"
+            >
+              {GANG_CORE_SEATS.map((seat, index) => (
+                <HierarchyNode
+                  key={seat.threshold}
+                  seat={seat}
+                  currentLevel={currentLevel}
+                  selected={selectedThreshold === seat.threshold}
+                  onSelect={() => setSelectedThreshold(seat.threshold)}
+                  position={NETWORK_POSITIONS[index]}
+                />
+              ))}
+            </ol>
+            <article
+              className="gang-tree-panel__player-node"
+              aria-label={`自己：${PLAYER_GANG_LEADER}，${currentRole.chineseTitle}`}
+            >
+              <SeatPortrait index={0} />
+              <span>自己</span>
+              <strong>{PLAYER_GANG_LEADER}</strong>
+              <small>{`${currentRole.chineseTitle} · Lv.${currentLevel}`}</small>
+            </article>
+          </div>
+
+          <article
+            className="gang-tree-panel__selected-seat"
+            data-state={selectedState}
+            aria-label={`${selectedSeat.holder}的职位详情`}
           >
-            {[...GANG_CORE_SEATS].reverse().map((seat) => (
-              <HierarchySeat
-                key={seat.threshold}
-                seat={seat}
-                currentLevel={currentLevel}
-                mobileSelected={mobileSelectedThreshold === seat.threshold}
-              />
-            ))}
-          </ol>
+            <SeatPortrait index={selectedSeat.portraitIndex} compact />
+            <div>
+              <span>{seatStateLabel(selectedState)}</span>
+              <strong>{selectedSeat.holder}</strong>
+              <b>{`${selectedRole.title} · ${selectedRole.chineseTitle}`}</b>
+              <small>{selectedSeat.seatDescription}</small>
+            </div>
+            <p>
+              {selectedSeat.support.length > 0
+                ? `直属成员：${selectedSeat.support
+                    .map((member) => `${member.name}（${member.position}）`)
+                    .join('、')}`
+                : selectedState === 'current'
+                  ? '完成席位交接后转入 Thomas 的直属管辖。'
+                  : '当前没有额外直属成员。'}
+            </p>
+          </article>
         </div>
 
         <footer className="gang-tree-panel__promotion-dock">
@@ -516,7 +524,9 @@ export function GangTreePanel({
                     ? `还需 ${requiredReputation - totalReputation} 声望`
                     : crossesRole && !chapterComplete
                       ? `需完成并领取${currentChapter.title}奖励`
-                      : '晋升条件已满足'}
+                      : handover
+                        ? `交接方式：${handover.modeLabel}`
+                        : '晋升条件已满足'}
               </span>
             </div>
             <button
@@ -524,18 +534,15 @@ export function GangTreePanel({
               disabled={!canPromote}
               onClick={() => {
                 const promotedRole = crossesRole ? getGangRole(nextLevel) : null
-                const result = promoteOneLevel(Date.now(), chapterComplete)
-                if (result.applied && promotedRole) {
-                  const seat = getGangCoreSeat(promotedRole.threshold)
-                  setMobileSelectedThreshold(promotedRole.threshold)
-                  setCeremony({
-                    level: nextLevel,
-                    roleTitle: promotedRole.title,
-                    chineseTitle: promotedRole.chineseTitle,
-                    formerHolder: seat.holder,
-                    managedSeats: getManagedCoreSeatCount(nextLevel),
-                  })
+                if (promotedRole) {
+                  const roleHandover = getRoleHandover(nextLevel)
+                  if (roleHandover && onStartRoleHandover) {
+                    onStartRoleHandover(roleHandover)
+                    setFeedback(`等待完成${roleHandover.modeLabel}`)
+                    return
+                  }
                 }
+                const result = promoteOneLevel(Date.now(), chapterComplete)
                 setFeedback(
                   result.applied
                     ? `已晋升至 Lv.${nextLevel}`
@@ -548,7 +555,11 @@ export function GangTreePanel({
               {currentLevel >= GANG_MAX_LEVEL
                 ? '已满级'
                 : crossesRole
-                  ? '接掌席位'
+                  ? handover?.mode === 'dialogue'
+                    ? '和平交接'
+                    : handover?.mode === 'battle'
+                      ? '推关挑战'
+                      : 'SUP 竞速挑战'
                   : '晋升一级'}
             </button>
           </div>

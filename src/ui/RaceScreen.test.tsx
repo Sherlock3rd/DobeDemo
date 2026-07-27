@@ -121,6 +121,28 @@ describe('RaceScreen V2', () => {
     })
   })
 
+  it('hides regular stage skipping and rewards during a SUP role challenge', () => {
+    render(
+      <RaceScreen
+        stage={1}
+        heroId="foreman"
+        onExit={() => {}}
+        roleChallengeTitle="路线队长席位挑战"
+        onRoleChallengeVictory={() => {}}
+      />,
+    )
+
+    expect(screen.getByText('职位交接 · SUP 竞速挑战')).toBeInTheDocument()
+    expect(screen.getByText('路线队长席位挑战')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: '跳过本关' }),
+    ).not.toBeInTheDocument()
+
+    act(() => vi.advanceTimersByTime(1_000))
+    expect(useAdventureStore.getState().highestClearedRacingStage).toBe(0)
+    expect(screen.queryByLabelText('首通奖励')).not.toBeInTheDocument()
+  })
+
   it('auto-fires and turns F or the button into a cooldown fire boost', () => {
     render(<RaceScreen stage={2} heroId="foreman" onExit={() => {}} />)
     const screenRoot = screen.getByRole('dialog', { name: '公路争霸' })
