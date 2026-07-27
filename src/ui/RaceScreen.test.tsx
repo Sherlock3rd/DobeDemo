@@ -80,6 +80,47 @@ describe('RaceScreen V2', () => {
     expect(screenRoot).toHaveAttribute('data-player-lane', '1')
   })
 
+  it('confirms a skip before granting the normal first-clear and unlocking the next stage', () => {
+    render(<RaceScreen stage={1} heroId="foreman" onExit={() => {}} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '跳过本关' }))
+
+    expect(
+      screen.getByRole('alertdialog', {
+        name: '确认跳过当前 SUP 关卡',
+      }),
+    ).toHaveTextContent('发放正常首通奖励并解锁下一关')
+    expect(useAdventureStore.getState().highestClearedRacingStage).toBe(0)
+
+    act(() => vi.advanceTimersByTime(5_000))
+    expect(screen.getByText('终点 0%')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '继续挑战' }))
+    expect(
+      screen.queryByRole('alertdialog', {
+        name: '确认跳过当前 SUP 关卡',
+      }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '跳过本关' }))
+    fireEvent.click(screen.getByRole('button', { name: '确认跳过' }))
+
+    expect(screen.getByText('跳过通关')).toBeInTheDocument()
+    expect(
+      screen.getByText('当前关卡已直接完成，首通奖励与下一关已经解锁。'),
+    ).toBeInTheDocument()
+    expect(useAdventureStore.getState().highestClearedRacingStage).toBe(1)
+    expect(useAdventureStore.getState().lastVictoryReward).toMatchObject({
+      mode: 'racing',
+      stage: 1,
+      reward: {
+        firstClear: true,
+        rewardExp: 160,
+        rewardMoney: 150,
+      },
+    })
+  })
+
   it('auto-fires and turns F or the button into a cooldown fire boost', () => {
     render(<RaceScreen stage={2} heroId="foreman" onExit={() => {}} />)
     const screenRoot = screen.getByRole('dialog', { name: '公路争霸' })

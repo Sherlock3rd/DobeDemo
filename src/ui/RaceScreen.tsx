@@ -124,6 +124,7 @@ function RaceSession({
   )
   const [state, setState] = useState(initial.state)
   const [exitPending, setExitPending] = useState(false)
+  const [skipPending, setSkipPending] = useState(false)
   const inputRef = useRef<RaceInput>({})
   const committedRef = useRef(false)
   const reward =
@@ -132,7 +133,7 @@ function RaceSession({
       : null
 
   useEffect(() => {
-    if (state.status !== 'running' || exitPending) return
+    if (state.status !== 'running' || exitPending || skipPending) return
     const timer = window.setInterval(() => {
       const input = inputRef.current
       setState((current) =>
@@ -147,7 +148,7 @@ function RaceSession({
       }
     }, RACE_TICK_MS)
     return () => window.clearInterval(timer)
-  }, [exitPending, initial.loadout, state.status])
+  }, [exitPending, initial.loadout, skipPending, state.status])
 
   useEffect(() => {
     const down = (event: KeyboardEvent): void => {
@@ -248,8 +249,28 @@ function RaceSession({
   const retry = (): void => {
     committedRef.current = false
     setExitPending(false)
+    setSkipPending(false)
     inputRef.current = {}
     setState(createRaceState(stage, initial.loadout))
+  }
+
+  const skipStage = (): void => {
+    setSkipPending(false)
+    inputRef.current = {}
+    setState((current) => {
+      if (current.status !== 'running') return current
+      return {
+        ...current,
+        status: 'victory',
+        reason: 'skipped',
+        pendingResult: null,
+        event: {
+          id: current.nextEntityId,
+          type: 'finish',
+        },
+        nextEntityId: current.nextEntityId + 1,
+      }
+    })
   }
 
   const remainingSeconds = Math.max(
@@ -344,9 +365,27 @@ function RaceSession({
             {remainingSeconds}
           </div>
         )}
-        <button type="button" onClick={() => setExitPending(true)}>
-          退出
-        </button>
+        <div className="race-hud__actions">
+          <button
+            type="button"
+            className="race-hud__skip"
+            onClick={() => {
+              setExitPending(false)
+              setSkipPending(true)
+            }}
+          >
+            跳过本关
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSkipPending(false)
+              setExitPending(true)
+            }}
+          >
+            退出
+          </button>
+        </div>
       </header>
 
       <aside className="race-hud__status">
@@ -489,15 +528,39 @@ function RaceSession({
         </div>
       ) : null}
 
+      {skipPending ? (
+        <div
+          className="race-screen__modal race-screen__modal--skip"
+          role="alertdialog"
+          aria-label="确认跳过当前 SUP 关卡"
+        >
+          <strong>直接完成当前关卡？</strong>
+          <p>确认后将按通关结算，发放正常首通奖励并解锁下一关。</p>
+          <div>
+            <button type="button" onClick={() => setSkipPending(false)}>
+              继续挑战
+            </button>
+            <button type="button" onClick={skipStage}>
+              确认跳过
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {state.status !== 'running' ? (
         <div className="race-screen__result" role="status">
           <strong>
             {state.status === 'victory'
-              ? definition.mode === 'race'
-                ? '通关'
-                : '目标击破'
+              ? state.reason === 'skipped'
+                ? '跳过通关'
+                : definition.mode === 'race'
+                  ? '通关'
+                  : '目标击破'
               : '失败'}
           </strong>
+          {state.status === 'victory' && state.reason === 'skipped' ? (
+            <p>当前关卡已直接完成，首通奖励与下一关已经解锁。</p>
+          ) : null}
           {definition.mode === 'race' && state.pendingResult ? (
             <div className="race-screen__result-meta" aria-label="竞速成绩">
               <p>{`冲线时长 ${formatResultTime(

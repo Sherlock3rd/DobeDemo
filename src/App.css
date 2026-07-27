@@ -6457,6 +6457,23 @@
   color: #f59e0b;
 }
 
+.race-hud__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.race-hud__actions button {
+  min-width: 3.8rem;
+  padding-inline: 0.7rem;
+  white-space: nowrap;
+}
+
+.race-hud__actions .race-hud__skip {
+  border-color: rgba(56, 189, 248, 0.75);
+  color: #bae6fd;
+  background: rgba(8, 47, 73, 0.65);
+}
+
 .race-hud__timer {
   min-width: 3.2rem;
   color: #f8fafc;
@@ -6617,6 +6634,10 @@
   color: #cbd5e1;
 }
 
+.race-screen__modal--skip {
+  border-color: rgba(56, 189, 248, 0.7);
+}
+
 .race-screen__modal > div,
 .race-screen__result > div {
   display: flex;
@@ -6710,6 +6731,22 @@
 
   .racing-panel__heroes {
     grid-template-columns: 1fr;
+  }
+
+  .race-hud__top {
+    gap: 0.45rem;
+    padding-inline: 0.55rem;
+  }
+
+  .race-hud__actions {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .race-hud__actions button {
+    min-width: 3.6rem;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.68rem;
   }
 
   .global-hud__bottom {

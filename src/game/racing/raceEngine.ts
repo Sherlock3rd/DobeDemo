@@ -134,7 +134,8 @@ export interface RaceState {
   stage: number
   mode: RacingStageConfig['mode']
   status: RaceStatus
-  reason: 'running' | 'finished' | 'escaped' | 'destroyed' | 'timeout'
+  reason:
+    'running' | 'finished' | 'skipped' | 'escaped' | 'destroyed' | 'timeout'
   elapsedMs: number
   player: VehicleState
   vehicles: VehicleState[]
