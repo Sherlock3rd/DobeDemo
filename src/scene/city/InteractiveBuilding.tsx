@@ -8,24 +8,32 @@ import {
 import type { BuildingId } from '../../game/cityTypes'
 import { useCityStore } from '../../store/useCityStore'
 import { BuildingUpgradeBadge } from './BuildingUpgradeBadge'
+import { BuildingTakeoverBadge } from './BuildingTakeoverBadge'
 import { BuildingVisual } from './BuildingVisual'
+import { getBuildingAccessState } from './buildingAccess'
 import { cityCursorController } from './cityCursorController'
 import { consumePointerDrag, markPointerEventHandled } from './pointerDragClick'
+import { useGangStore } from '../../store/useGangStore'
 
 interface InteractiveBuildingProps {
   id: BuildingId
   position: readonly [number, number, number]
   rotation?: number
+  onClaimed?: (buildingId: BuildingId) => void
 }
 
 export function InteractiveBuilding({
   id,
   position,
   rotation = 0,
+  onClaimed,
 }: InteractiveBuildingProps): JSX.Element {
   const definition = buildingCatalogById[id]
   const selected = useCityStore((state) => state.selectedBuildingId === id)
   const selectBuilding = useCityStore((state) => state.selectBuilding)
+  const claimedBuildingIds = useCityStore((state) => state.claimedBuildingIds)
+  const gangLevel = useGangStore((state) => state.currentLevel)
+  const accessState = getBuildingAccessState(id, gangLevel, claimedBuildingIds)
   const [hovered, setHovered] = useState(false)
   const highlighted = hovered || selected
   const renderedFootprint = [
@@ -50,7 +58,9 @@ export function InteractiveBuilding({
       return
     }
 
-    selectBuilding(id)
+    if (accessState === 'claimed') {
+      selectBuilding(id)
+    }
   }
 
   const handlePointerOver = (event: ThreeEvent<PointerEvent>) => {
@@ -68,7 +78,10 @@ export function InteractiveBuilding({
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       <BuildingVisual id={id} highlighted={highlighted} />
-      <BuildingUpgradeBadge buildingId={id} />
+      <BuildingTakeoverBadge buildingId={id} onClaimed={onClaimed} />
+      {accessState === 'claimed' ? (
+        <BuildingUpgradeBadge buildingId={id} />
+      ) : null}
 
       {highlighted && (
         <mesh position={[0, 0.07, 0]} receiveShadow>

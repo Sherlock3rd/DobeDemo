@@ -54,10 +54,20 @@ describe('BuildingVisual', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useCityStore.getState().reset()
+    useCityStore.getState().claimBuilding('repair-shop', 1, Date.now())
     useGangStore.getState().reset(1_700_000_000_000)
   })
 
-  it('renders the repair shop model at zero reputation', () => {
+  it('keeps the first repair shop as a claimable locked plot before takeover', () => {
+    useCityStore.getState().reset()
+
+    render(<BuildingVisual id="repair-shop" highlighted={false} />)
+
+    expect(screen.getByTestId('locked-building-plot')).toBeInTheDocument()
+    expect(screen.queryByTestId('building-model')).not.toBeInTheDocument()
+  })
+
+  it('renders the repair shop model after takeover', () => {
     render(<BuildingVisual id="repair-shop" highlighted={false} />)
 
     expect(screen.getByTestId('building-model')).toHaveTextContent(
@@ -78,6 +88,7 @@ describe('BuildingVisual', () => {
       totalReputation: getTotalReputationForLevel(8),
       currentLevel: 8,
     })
+    useCityStore.getState().claimBuilding('recycling-yard', 8, Date.now())
 
     render(<BuildingVisual id="recycling-yard" highlighted={false} />)
 
@@ -344,6 +355,7 @@ describe('BuildingVisual', () => {
         totalReputation: getTotalReputationForLevel(16),
         currentLevel: 16,
       })
+      useCityStore.getState().claimBuilding('commercial-street', 16, Date.now())
       useCityStore.setState((state) => ({
         buildingProgress: {
           ...state.buildingProgress,
@@ -449,6 +461,7 @@ describe('BuildingVisual', () => {
 
       act(() => {
         useCityStore.getState().reset()
+        useCityStore.getState().claimBuilding('repair-shop', 1, Date.now())
       })
 
       expect(screen.getByTestId('building-model')).toHaveAttribute(

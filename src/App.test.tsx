@@ -25,7 +25,19 @@ vi.mock('@react-three/drei', () => ({
 }))
 
 vi.mock('./scene/city/CityScene', () => ({
-  CityScene: () => <div data-testid="city-scene-mock" />,
+  CityScene: (p: { onBuildingClaimed?: (id: 'repair-shop') => void }) => (
+    <div data-testid="city-scene-mock">
+      <button
+        type="button"
+        onClick={() => {
+          useCityStore.getState().claimBuilding('repair-shop', 1, BASE_TIME)
+          p.onBuildingClaimed?.('repair-shop')
+        }}
+      >
+        地图接管修车厂
+      </button>
+    </div>
+  ),
 }))
 
 vi.mock('./game/EconomyIdleController', () => ({
@@ -169,9 +181,13 @@ describe('App', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useCityStore.getState().reset(BASE_TIME)
+    useCityStore.getState().claimBuilding('repair-shop', 1, BASE_TIME)
     useGangStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
     useChapterStore.getState().reset()
+    useChapterStore.setState({
+      seenNarrativeIds: ['first-entry', 'chapter-start:1'],
+    })
     useChestTick.setState({ now: BASE_TIME, tick: 0 })
     canvasPropsSpy.mockClear()
   })
@@ -181,6 +197,34 @@ describe('App', () => {
     expect(canvasPropsSpy).toHaveBeenCalled()
     const props = canvasPropsSpy.mock.calls[0][0] as { orthographic?: boolean }
     expect(props.orthographic).toBe(true)
+  })
+
+  it('plays first-entry and first chapter briefings before offering the initial repair-shop takeover', async () => {
+    const user = userEvent.setup()
+    useCityStore.getState().reset(BASE_TIME)
+    useChapterStore.setState({ seenNarrativeIds: [] })
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('dialog', { name: '剧情对话：第一把钥匙' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
+    expect(
+      screen.getByRole('dialog', {
+        name: '剧情对话：第一章 · 冷炉初燃',
+      }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
+
+    await user.click(screen.getByRole('button', { name: '地图接管修车厂' }))
+    expect(
+      screen.getByRole('status', { name: '修车厂接管成功' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '听取接管汇报' }))
+    expect(
+      screen.getByRole('dialog', { name: '剧情对话：修车厂已接管' }),
+    ).toBeInTheDocument()
   })
 
   it('hides the global HUD for building detail and restores it after closing', async () => {
@@ -345,6 +389,43 @@ describe('App', () => {
 
     expect(useCityStore.getState().selectedBuildingId).toBe('repair-shop')
     expect(screen.getByRole('heading', { name: '修车厂' })).toBeInTheDocument()
+  })
+
+  it('shows chapter completion feedback, plays the closing report, then opens the gang tree', async () => {
+    const user = userEvent.setup()
+    useAdventureStore.setState((state) => ({
+      heroLevels: { ...state.heroLevels, foreman: 3 },
+      highestClearedStage: 2,
+      highestClearedRacingStage: 1,
+    }))
+    useCityStore.setState((state) => ({
+      buildingProgress: {
+        ...state.buildingProgress,
+        'repair-shop': {
+          ...state.buildingProgress['repair-shop'],
+          level: 2,
+        },
+      },
+    }))
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: '章节' }))
+    await user.click(screen.getByRole('button', { name: '领取章节奖励' }))
+    expect(
+      screen.getByRole('status', { name: '第一章 · 冷炉初燃完成' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '继续' }))
+    expect(
+      screen.getByRole('dialog', {
+        name: '剧情对话：第一章 · 冷炉初燃 · 收尾',
+      }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
+
+    expect(
+      screen.getByRole('dialog', { name: '帮派权力树' }),
+    ).toBeInTheDocument()
   })
 
   it('keeps focus inside the adventure, formation, and battle transition chain', async () => {

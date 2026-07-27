@@ -6,6 +6,7 @@ import {
   isChapterComplete,
   type ChapterProgressSnapshot,
 } from '../game/chapterProgression'
+import { isNarrativeEventId, type NarrativeEventId } from '../game/narrative'
 import { createSafeStorage } from './safeStorage'
 import { useAdventureStore } from './useAdventureStore'
 import { useCityStore } from './useCityStore'
@@ -16,8 +17,10 @@ export const CHAPTER_STORAGE_KEY = 'dobe-chapter-progression-v1'
 interface ChapterState {
   claimedTaskIds: string[]
   claimedChapterNumbers: number[]
+  seenNarrativeIds: NarrativeEventId[]
   claimTask: (taskId: string) => boolean
   claimChapterReward: (chapterNumber: number) => boolean
+  markNarrativeSeen: (eventId: NarrativeEventId) => void
   reset: () => void
 }
 
@@ -62,11 +65,17 @@ function normalizeClaimedChapterNumbers(value: unknown): number[] {
   ]
 }
 
+function normalizeSeenNarrativeIds(value: unknown): NarrativeEventId[] {
+  if (!Array.isArray(value)) return []
+  return [...new Set(value.filter(isNarrativeEventId))].slice(-64)
+}
+
 export const useChapterStore = create<ChapterState>()(
   persist(
     (set, get) => ({
       claimedTaskIds: [],
       claimedChapterNumbers: [],
+      seenNarrativeIds: [],
       claimTask: (taskId) => {
         const task = ALL_TASKS.find((candidate) => candidate.id === taskId)
         if (!task || get().claimedTaskIds.includes(taskId)) return false
@@ -123,19 +132,48 @@ export const useChapterStore = create<ChapterState>()(
           )
         return true
       },
+      markNarrativeSeen: (eventId) => {
+        if (!isNarrativeEventId(eventId)) return
+        set((state) =>
+          state.seenNarrativeIds.includes(eventId)
+            ? state
+            : {
+                seenNarrativeIds: [...state.seenNarrativeIds, eventId].slice(
+                  -64,
+                ),
+              },
+        )
+      },
       reset: () =>
         set({
           claimedTaskIds: [],
           claimedChapterNumbers: [],
+          seenNarrativeIds: [],
         }),
     }),
     {
       name: CHAPTER_STORAGE_KEY,
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => createSafeStorage()),
-      partialize: ({ claimedTaskIds, claimedChapterNumbers }) => ({
+      migrate: (persisted, version) => {
+        const source =
+          typeof persisted === 'object' && persisted !== null
+            ? (persisted as Record<string, unknown>)
+            : {}
+        return {
+          ...source,
+          seenNarrativeIds:
+            version < 3 ? ['first-entry'] : source.seenNarrativeIds,
+        }
+      },
+      partialize: ({
         claimedTaskIds,
         claimedChapterNumbers,
+        seenNarrativeIds,
+      }) => ({
+        claimedTaskIds,
+        claimedChapterNumbers,
+        seenNarrativeIds,
       }),
       merge: (persisted, current) => {
         const source =
@@ -143,6 +181,7 @@ export const useChapterStore = create<ChapterState>()(
             ? (persisted as {
                 claimedTaskIds?: unknown
                 claimedChapterNumbers?: unknown
+                seenNarrativeIds?: unknown
               })
             : {}
         return {
@@ -151,6 +190,7 @@ export const useChapterStore = create<ChapterState>()(
           claimedChapterNumbers: normalizeClaimedChapterNumbers(
             source.claimedChapterNumbers,
           ),
+          seenNarrativeIds: normalizeSeenNarrativeIds(source.seenNarrativeIds),
         }
       },
     },

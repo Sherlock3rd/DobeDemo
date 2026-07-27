@@ -58,6 +58,7 @@ interface CityState extends CityDurableState {
   selectedBuildingId: BuildingId | null
   selectBuilding: (id: BuildingId) => void
   clearSelection: () => void
+  claimBuilding: (id: string, gangLevel: number, now: number) => boolean
   syncResourceProduction: (now: number, gangLevel: number) => void
   syncMainUpgrades: (now: number) => void
   upgradeChildBuilding: (
@@ -79,11 +80,15 @@ interface CityState extends CityDurableState {
 
 const initialResources = (): ResourceWallet => ({ ...INITIAL_RESOURCES })
 
-function getUnlockedProducerIds(gangLevel: number): BuildingId[] {
+function getUnlockedProducerIds(
+  gangLevel: number,
+  claimedBuildingIds: readonly BuildingId[],
+): BuildingId[] {
   return BUILDING_IDS.filter(
     (id) =>
       economyConfig.production[id] !== undefined &&
-      isBuildingUnlocked(id, gangLevel),
+      isBuildingUnlocked(id, gangLevel) &&
+      claimedBuildingIds.includes(id),
   )
 }
 
@@ -101,11 +106,44 @@ export const useCityStore = create<CityState>()(
       buildingProgress: createInitialBuildingProgress(),
       resources: initialResources(),
       lastResourceUpdatedAt: Date.now(),
-      activeProducerIds: ['repair-shop'],
+      activeProducerIds: [],
+      claimedBuildingIds: [],
       pendingMainUpgrades: [],
       appliedStageRewardIds: [],
       selectBuilding: (id) => set({ selectedBuildingId: id }),
       clearSelection: () => set({ selectedBuildingId: null }),
+      claimBuilding: (id, gangLevel, now) => {
+        if (
+          !isBuildingId(id) ||
+          !Number.isFinite(now) ||
+          !isBuildingUnlocked(id, gangLevel)
+        ) {
+          return false
+        }
+        let applied = false
+        set((state) => {
+          if (state.claimedBuildingIds.includes(id)) return state
+          const settlement = settleResourceProduction({
+            wallet: state.resources,
+            buildingProgress: state.buildingProgress,
+            activeProducerIds: state.activeProducerIds,
+            lastUpdatedAt: state.lastResourceUpdatedAt,
+            now,
+          })
+          const claimedBuildingIds = [...state.claimedBuildingIds, id]
+          applied = true
+          return {
+            resources: settlement.wallet,
+            lastResourceUpdatedAt: Math.max(now, settlement.nextUpdatedAt),
+            claimedBuildingIds,
+            activeProducerIds: getUnlockedProducerIds(
+              gangLevel,
+              claimedBuildingIds,
+            ),
+          }
+        })
+        return applied
+      },
       syncResourceProduction: (now, gangLevel) => {
         if (!Number.isFinite(now)) {
           return
@@ -118,7 +156,10 @@ export const useCityStore = create<CityState>()(
             lastUpdatedAt: state.lastResourceUpdatedAt,
             now,
           })
-          const activeProducerIds = getUnlockedProducerIds(gangLevel)
+          const activeProducerIds = getUnlockedProducerIds(
+            gangLevel,
+            state.claimedBuildingIds,
+          )
           const producersChanged = !sameIds(
             state.activeProducerIds,
             activeProducerIds,
@@ -375,14 +416,15 @@ export const useCityStore = create<CityState>()(
           buildingProgress: createInitialBuildingProgress(),
           resources: initialResources(),
           lastResourceUpdatedAt: Number.isFinite(now) ? now : Date.now(),
-          activeProducerIds: ['repair-shop'],
+          activeProducerIds: [],
+          claimedBuildingIds: [],
           pendingMainUpgrades: [],
           appliedStageRewardIds: [],
         }),
     }),
     {
       name: CITY_STORAGE_KEY,
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted, version) =>
         migrateCityState(persisted, version, Date.now()),
@@ -391,6 +433,7 @@ export const useCityStore = create<CityState>()(
         resources,
         lastResourceUpdatedAt,
         activeProducerIds,
+        claimedBuildingIds,
         pendingMainUpgrades,
         appliedStageRewardIds,
       }) => ({
@@ -398,6 +441,7 @@ export const useCityStore = create<CityState>()(
         resources,
         lastResourceUpdatedAt,
         activeProducerIds,
+        claimedBuildingIds,
         pendingMainUpgrades,
         appliedStageRewardIds,
       }),

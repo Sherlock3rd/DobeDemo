@@ -10,9 +10,11 @@ describe('useCityStore atomic economy', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useCityStore.getState().reset(START)
+    useCityStore.getState().claimBuilding('repair-shop', 1, START)
   })
 
-  it('starts with canonical progress, 10000 money, and repair active', () => {
+  it('starts with canonical progress, 10000 money, and no claimed building', () => {
+    useCityStore.getState().reset(START)
     const state = useCityStore.getState()
     expect(state.selectedBuildingId).toBeNull()
     expect(state.buildingProgress['repair-shop']).toEqual({
@@ -24,7 +26,21 @@ describe('useCityStore atomic economy', () => {
     )
     expect(state.resources).toEqual({ money: 10_000, oil: 0, materials: 0 })
     expect(state.lastResourceUpdatedAt).toBe(START)
-    expect(state.activeProducerIds).toEqual(['repair-shop'])
+    expect(state.activeProducerIds).toEqual([])
+    expect(state.claimedBuildingIds).toEqual([])
+  })
+
+  it('claims the repair shop once and activates its production from claim time', () => {
+    useCityStore.getState().reset(START)
+
+    expect(useCityStore.getState().claimBuilding('repair-shop', 1, START)).toBe(
+      true,
+    )
+    expect(useCityStore.getState().claimBuilding('repair-shop', 1, START)).toBe(
+      false,
+    )
+    expect(useCityStore.getState().claimedBuildingIds).toEqual(['repair-shop'])
+    expect(useCityStore.getState().activeProducerIds).toEqual(['repair-shop'])
   })
 
   it('grants stage reward money through the city wallet', () => {
@@ -49,6 +65,9 @@ describe('useCityStore atomic economy', () => {
   it('settles old producers before activating newly unlocked producers', () => {
     useCityStore
       .getState()
+      .claimBuilding('commercial-street', 16, START + 8 * 60 * 60 * 1000)
+    useCityStore
+      .getState()
       .syncResourceProduction(START + 8 * 60 * 60 * 1000, 16)
 
     const state = useCityStore.getState()
@@ -61,6 +80,7 @@ describe('useCityStore atomic economy', () => {
 
   it('does not backdate production for a newly activated commercial street', () => {
     const unlockTime = START + 8 * 60 * 60 * 1000
+    useCityStore.getState().claimBuilding('commercial-street', 16, unlockTime)
     useCityStore.getState().syncResourceProduction(unlockTime, 16)
     useCityStore.getState().syncResourceProduction(unlockTime + 10_000, 16)
 
@@ -68,6 +88,9 @@ describe('useCityStore atomic economy', () => {
   })
 
   it('does not move the resource clock backward when producers change', () => {
+    useCityStore
+      .getState()
+      .claimBuilding('commercial-street', 16, START - 5_000)
     useCityStore.getState().syncResourceProduction(START - 5_000, 16)
 
     const state = useCityStore.getState()
@@ -453,9 +476,10 @@ describe('useCityStore atomic economy', () => {
       childLevels: [0, 0, 0, 0, 0],
     })
     expect(state.activeProducerIds).toEqual(['repair-shop'])
+    expect(state.claimedBuildingIds).toEqual(['repair-shop'])
   })
 
-  it('migrates a v3 clubhouse refund once and rehydrates v5 without repeating it', async () => {
+  it('migrates a v3 clubhouse refund once and rehydrates v6 without repeating it', async () => {
     window.localStorage.setItem(
       CITY_STORAGE_KEY,
       JSON.stringify({
@@ -487,7 +511,7 @@ describe('useCityStore atomic economy', () => {
 
     useCityStore.getState().selectBuilding('clubhouse')
     const raw = window.localStorage.getItem(CITY_STORAGE_KEY)
-    expect(JSON.parse(raw as string).version).toBe(5)
+    expect(JSON.parse(raw as string).version).toBe(6)
 
     await useCityStore.persist.rehydrate()
     expect(useCityStore.getState().resources).toEqual({
@@ -528,7 +552,7 @@ describe('useCityStore atomic economy', () => {
     })
   })
 
-  it('persists only the six durable v5 fields', () => {
+  it('persists only the seven durable v6 fields', () => {
     useCityStore.getState().selectBuilding('repair-shop')
     useCityStore.getState().syncResourceProduction(START + 10_000, 1)
 
@@ -537,12 +561,13 @@ describe('useCityStore atomic economy', () => {
       version: number
       state: Record<string, unknown>
     }
-    expect(persisted.version).toBe(5)
+    expect(persisted.version).toBe(6)
     expect(Object.keys(persisted.state)).toEqual([
       'buildingProgress',
       'resources',
       'lastResourceUpdatedAt',
       'activeProducerIds',
+      'claimedBuildingIds',
       'pendingMainUpgrades',
       'appliedStageRewardIds',
     ])

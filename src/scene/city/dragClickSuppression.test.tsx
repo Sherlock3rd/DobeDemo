@@ -1,8 +1,14 @@
 import { render } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useCityStore } from '../../store/useCityStore'
+import { useGangStore } from '../../store/useGangStore'
 import { cityCursorController } from './cityCursorController'
 import { cityPointerDragTracker } from './pointerDragTracker'
+
+vi.mock('@react-three/drei', () => ({
+  Html: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}))
 
 vi.mock('./BuildingVisual', () => ({
   BuildingVisual: ({ id }: { id: string }) => (
@@ -51,6 +57,8 @@ function getFirstBuildingHitbox(container: HTMLElement): Element {
 describe('drag/click suppression across building and background', () => {
   beforeEach(() => {
     useCityStore.getState().reset()
+    useGangStore.getState().unlockForDebug(Date.now())
+    useCityStore.getState().claimBuilding('recycling-yard', 50, Date.now())
     cityPointerDragTracker.reset()
     cityCursorController.reset()
   })

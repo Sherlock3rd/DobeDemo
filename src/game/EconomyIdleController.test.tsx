@@ -25,6 +25,7 @@ describe('EconomyIdleController', () => {
     window.localStorage.clear()
     useGangStore.getState().reset(BASE_TIME)
     useCityStore.getState().reset(BASE_TIME)
+    useCityStore.getState().claimBuilding('repair-shop', 1, BASE_TIME)
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
       get: () => 'visible',

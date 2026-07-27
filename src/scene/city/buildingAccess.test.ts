@@ -4,6 +4,7 @@ import {
   getTotalReputationForLevel,
 } from '../../game/gangProgression'
 import { getBuildingRenderMode } from './buildingAccess'
+import { getBuildingAccessState } from './buildingAccess'
 
 describe('getBuildingRenderMode', () => {
   it('at zero reputation, only repair-shop is unlocked and the rest are locked', () => {
@@ -48,5 +49,16 @@ describe('getBuildingRenderMode', () => {
   it('treats an unknown building id as locked regardless of reputation', () => {
     expect(getBuildingRenderMode('unknown-building', 0)).toBe('locked')
     expect(getBuildingRenderMode('unknown-building', 10_000)).toBe('locked')
+  })
+})
+
+describe('getBuildingAccessState', () => {
+  it('separates level eligibility from the explicit takeover state', () => {
+    expect(getBuildingAccessState('repair-shop', 1, [])).toBe('claimable')
+    expect(getBuildingAccessState('repair-shop', 1, ['repair-shop'])).toBe(
+      'claimed',
+    )
+    expect(getBuildingAccessState('recycling-yard', 7, [])).toBe('locked')
+    expect(getBuildingAccessState('recycling-yard', 8, [])).toBe('claimable')
   })
 })

@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChestTick } from '../../game/chestTick'
 import { useCityStore } from '../../store/useCityStore'
@@ -39,6 +39,7 @@ function getHitbox(container: HTMLElement): Element {
 describe('InteractiveBuilding', () => {
   beforeEach(() => {
     useCityStore.getState().reset(BASE_TIME)
+    useCityStore.getState().claimBuilding('repair-shop', 1, BASE_TIME)
     useChestTick.setState({ now: BASE_TIME, tick: 0 })
     cityPointerDragTracker.reset()
     cityCursorController.reset()
@@ -51,6 +52,18 @@ describe('InteractiveBuilding', () => {
     fireEvent.click(getHitbox(container))
 
     expect(useCityStore.getState().selectedBuildingId).toBe('repair-shop')
+  })
+
+  it('shows a takeover action for the initial repair shop before it can be selected', () => {
+    useCityStore.getState().reset(BASE_TIME)
+    const { container } = renderBuilding()
+
+    fireEvent.click(getHitbox(container))
+    expect(useCityStore.getState().selectedBuildingId).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '接管修车厂' }))
+    expect(useCityStore.getState().claimedBuildingIds).toEqual(['repair-shop'])
+    expect(useCityStore.getState().selectedBuildingId).toBeNull()
   })
 
   it('suppresses selection when the click follows a drag for that pointer', () => {

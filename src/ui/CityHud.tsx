@@ -90,7 +90,7 @@ export function CityHud({
           设置
         </button>
       </div>
-      <p className="city-hud__hint">拖拽平移 · 滚轮缩放 · 点击建筑升级</p>
+      <p className="city-hud__hint">拖拽平移 · 滚轮缩放 · 接管或点击建筑升级</p>
     </section>
   )
 }

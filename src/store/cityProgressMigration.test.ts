@@ -376,3 +376,40 @@ describe('normalize v4 durable state', () => {
     ).toEqual(ZERO_CLUBHOUSE_CHILDREN)
   })
 })
+
+describe('building takeover migration', () => {
+  it('preserves access for pre-v6 saves by marking every legacy building claimed', () => {
+    const migrated = migrateCityState(
+      {
+        buildingProgress: createInitialBuildingProgress(),
+        resources: { money: 100, oil: 0, materials: 0 },
+        lastResourceUpdatedAt: MIGRATION_TIME,
+        activeProducerIds: ['repair-shop'],
+      },
+      5,
+      MIGRATION_TIME,
+    )
+
+    expect(migrated.claimedBuildingIds).toEqual(BUILDING_IDS)
+  })
+
+  it('sanitizes explicit v6 building claims without inventing fresh access', () => {
+    const normalized = migrateCityState(
+      {
+        claimedBuildingIds: [
+          'repair-shop',
+          'unknown',
+          'repair-shop',
+          'recycling-yard',
+        ],
+      },
+      6,
+      MIGRATION_TIME,
+    )
+
+    expect(normalized.claimedBuildingIds).toEqual([
+      'repair-shop',
+      'recycling-yard',
+    ])
+  })
+})

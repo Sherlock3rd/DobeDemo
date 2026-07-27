@@ -194,6 +194,7 @@ describe('GangTreePanel', () => {
 
   it('plays a special ceremony when a core role promotion succeeds', async () => {
     const user = userEvent.setup()
+    const onRolePromoted = vi.fn()
     const adventure = useAdventureStore.getState()
     const city = useCityStore.getState()
     useAdventureStore.setState({
@@ -216,7 +217,9 @@ describe('GangTreePanel', () => {
       currentLevel: 7,
     })
 
-    render(<GangTreePanel open onClose={() => {}} />)
+    render(
+      <GangTreePanel open onClose={() => {}} onRolePromoted={onRolePromoted} />,
+    )
     await user.click(screen.getByRole('button', { name: '接掌席位' }))
 
     expect(useGangStore.getState().currentLevel).toBe(8)
@@ -230,6 +233,7 @@ describe('GangTreePanel', () => {
     expect(
       screen.queryByRole('status', { name: '职级晋升：正式成员' }),
     ).toBeNull()
+    expect(onRolePromoted).toHaveBeenCalledWith(8)
   })
 
   it('closes when the close button is clicked', async () => {

@@ -3,6 +3,7 @@ import type { JSX } from 'react'
 interface LockedBuildingPlotProps {
   footprint: readonly [number, number]
   highlighted: boolean
+  claimable?: boolean
 }
 
 const FOUNDATION_HEIGHT = 0.32
@@ -26,6 +27,7 @@ const HIGHLIGHT_EMISSIVE = '#ffb703'
 export function LockedBuildingPlot({
   footprint,
   highlighted,
+  claimable = false,
 }: LockedBuildingPlotProps): JSX.Element {
   const [width, depth] = footprint
   const halfWidth = width / 2
@@ -38,8 +40,9 @@ export function LockedBuildingPlot({
     [-(halfWidth - cornerInset), -(halfDepth - cornerInset)],
   ]
   const diagonalLength = Math.sqrt(width * width + depth * depth) * 0.94
-  const lockEmissive = highlighted ? HIGHLIGHT_EMISSIVE : IDLE_EMISSIVE
-  const lockEmissiveIntensity = highlighted ? 0.65 : 0
+  const lockEmissive =
+    highlighted || claimable ? HIGHLIGHT_EMISSIVE : IDLE_EMISSIVE
+  const lockEmissiveIntensity = highlighted ? 0.65 : claimable ? 0.38 : 0
 
   return (
     <group>

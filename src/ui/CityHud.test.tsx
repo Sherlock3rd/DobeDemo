@@ -20,7 +20,7 @@ describe('CityHud', () => {
     const title = screen.getByRole('heading', { name: '工业城改造计划' })
     expect(title.closest('section')).toHaveClass('city-hud')
     expect(
-      screen.getByText('拖拽平移 · 滚轮缩放 · 点击建筑升级'),
+      screen.getByText('拖拽平移 · 滚轮缩放 · 接管或点击建筑升级'),
     ).toBeInTheDocument()
   })
 
@@ -34,7 +34,7 @@ describe('CityHud', () => {
     expect(screen.getByText('钱 10000')).toBeInTheDocument()
     expect(screen.getByText('油 0')).toBeInTheDocument()
     expect(screen.getByText('物资 0')).toBeInTheDocument()
-    expect(screen.getByText('钱 +1/10秒')).toBeInTheDocument()
+    expect(screen.getByText('钱 +0/10秒')).toBeInTheDocument()
     expect(screen.getByText('油 +0/10秒')).toBeInTheDocument()
     expect(screen.getByText('物资 +0/10秒')).toBeInTheDocument()
 

@@ -14,11 +14,12 @@ describe('debug action coordinators', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useCityStore.getState().reset(START)
+    useCityStore.getState().claimBuilding('repair-shop', 1, START)
     useGangStore.getState().reset(START)
     useAdventureStore.getState().reset(START)
   })
 
-  it('settles only old producers before unlocking the gang tree at the same now', () => {
+  it('settles claimed producers without auto-taking over new buildings', () => {
     expect(unlockGangTreeForDebug(UNLOCK_TIME)).toBe(true)
 
     expect(useGangStore.getState()).toMatchObject({
@@ -28,12 +29,8 @@ describe('debug action coordinators', () => {
     expect(useCityStore.getState()).toMatchObject({
       resources: { money: 12_880, oil: 0, materials: 0 },
       lastResourceUpdatedAt: UNLOCK_TIME,
-      activeProducerIds: [
-        'repair-shop',
-        'commercial-street',
-        'metalworking-plant',
-        'gas-station',
-      ],
+      activeProducerIds: ['repair-shop'],
+      claimedBuildingIds: ['repair-shop'],
     })
     expect(useAdventureStore.getState()).toMatchObject({
       chapterUnlockedCarIds: ['iron-fang', 'black-throne'],

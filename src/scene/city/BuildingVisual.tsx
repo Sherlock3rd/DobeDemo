@@ -7,7 +7,7 @@ import { useCityStore } from '../../store/useCityStore'
 import { useGangStore } from '../../store/useGangStore'
 import { BUILDING_FRAGMENT_ANIMATION_MS } from './buildingFragmentAnimation'
 import { BuildingModel } from './BuildingModel'
-import { getBuildingRenderModeForLevel } from './buildingAccess'
+import { getBuildingAccessState } from './buildingAccess'
 import { getBuildingFragments } from './buildingFragmentCatalog'
 import { LockedBuildingPlot } from './LockedBuildingPlot'
 
@@ -71,8 +71,9 @@ export function BuildingVisual({
 }: BuildingVisualProps): JSX.Element {
   const definition = buildingCatalogById[id]
   const progress = useCityStore((state) => state.buildingProgress[id])
+  const claimedBuildingIds = useCityStore((state) => state.claimedBuildingIds)
   const gangLevel = useGangStore((state) => state.currentLevel)
-  const renderMode = getBuildingRenderModeForLevel(id, gangLevel)
+  const accessState = getBuildingAccessState(id, gangLevel, claimedBuildingIds)
 
   // "Store info from previous renders" pattern: comparing progress during render
   // is StrictMode-safe (idempotent) and, unlike an effect-diff, never drops the
@@ -138,11 +139,12 @@ export function BuildingVisual({
     definition.footprint[1] * BUILDING_RENDER_SCALE,
   ] as const
 
-  if (renderMode === 'locked') {
+  if (accessState !== 'claimed') {
     return (
       <LockedBuildingPlot
         footprint={renderedFootprint}
         highlighted={highlighted}
+        claimable={accessState === 'claimable'}
       />
     )
   }

@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useAdventureStore } from '../store/useAdventureStore'
-import { useGangStore } from '../store/useGangStore'
-import { isBuildingUnlocked } from './gangProgression'
+import { useCityStore } from '../store/useCityStore'
 
 export function PartSalvageController(): null {
   const resetPartIdleClock = useAdventureStore(
@@ -10,27 +9,26 @@ export function PartSalvageController(): null {
 
   useEffect(() => {
     let hydrating = false
-    let wasUnlocked = isBuildingUnlocked(
-      'recycling-yard',
-      useGangStore.getState().currentLevel,
-    )
+    let wasClaimed = useCityStore
+      .getState()
+      .claimedBuildingIds.includes('recycling-yard')
 
-    const unsubscribeHydrate = useGangStore.persist.onHydrate(() => {
+    const unsubscribeHydrate = useCityStore.persist.onHydrate(() => {
       hydrating = true
     })
-    const unsubscribeFinishHydration = useGangStore.persist.onFinishHydration(
+    const unsubscribeFinishHydration = useCityStore.persist.onFinishHydration(
       (state) => {
-        wasUnlocked = isBuildingUnlocked('recycling-yard', state.currentLevel)
+        wasClaimed = state.claimedBuildingIds.includes('recycling-yard')
         hydrating = false
       },
     )
-    const unsubscribeStore = useGangStore.subscribe((state) => {
+    const unsubscribeStore = useCityStore.subscribe((state) => {
       if (hydrating) return
-      const unlocked = isBuildingUnlocked('recycling-yard', state.currentLevel)
-      if (!wasUnlocked && unlocked) {
+      const claimed = state.claimedBuildingIds.includes('recycling-yard')
+      if (!wasClaimed && claimed) {
         resetPartIdleClock(Date.now())
       }
-      wasUnlocked = unlocked
+      wasClaimed = claimed
     })
 
     return () => {

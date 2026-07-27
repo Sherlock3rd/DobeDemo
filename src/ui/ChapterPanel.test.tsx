@@ -59,6 +59,7 @@ describe('ChapterPanel', () => {
   })
 
   it('claims the separate chapter reward once after every task is complete', async () => {
+    const onChapterCompleted = vi.fn()
     useAdventureStore.setState((state) => ({
       heroLevels: { ...state.heroLevels, foreman: 3 },
       highestClearedStage: 2,
@@ -73,7 +74,13 @@ describe('ChapterPanel', () => {
         },
       },
     }))
-    render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)
+    render(
+      <ChapterPanel
+        onClose={() => {}}
+        onNavigateTask={() => {}}
+        onChapterCompleted={onChapterCompleted}
+      />,
+    )
 
     await userEvent.click(screen.getByRole('button', { name: '领取章节奖励' }))
 
@@ -88,5 +95,6 @@ describe('ChapterPanel', () => {
       chapterUnlockedCarIds: ['iron-fang'],
     })
     expect(useCityStore.getState().resources.money).toBe(10_500)
+    expect(onChapterCompleted).toHaveBeenCalledWith(1)
   })
 })

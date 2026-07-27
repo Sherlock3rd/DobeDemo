@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -44,9 +45,11 @@ import { useInitialFocus } from './useInitialFocus'
 export interface GangTreePanelProps {
   open: boolean
   onClose: () => void
+  onRolePromoted?: (level: number) => void
 }
 
 interface PromotionCeremony {
+  level: number
   roleTitle: string
   chineseTitle: string
   formerHolder: string
@@ -243,6 +246,7 @@ function HierarchySeat({
 export function GangTreePanel({
   open,
   onClose,
+  onRolePromoted,
 }: GangTreePanelProps): JSX.Element | null {
   const totalReputation = useGangStore((state) => state.totalReputation)
   const currentLevel = useGangStore((state) => state.currentLevel)
@@ -291,14 +295,18 @@ export function GangTreePanel({
     ],
   )
 
+  const finishCeremony = useCallback((): void => {
+    if (!ceremony) return
+    const completedLevel = ceremony.level
+    setCeremony(null)
+    onRolePromoted?.(completedLevel)
+  }, [ceremony, onRolePromoted])
+
   useEffect(() => {
     if (!ceremony) return
-    const timeout = window.setTimeout(
-      () => setCeremony(null),
-      CEREMONY_DURATION_MS,
-    )
+    const timeout = window.setTimeout(finishCeremony, CEREMONY_DURATION_MS)
     return () => window.clearTimeout(timeout)
-  }, [ceremony])
+  }, [ceremony, finishCeremony])
 
   useEffect(() => {
     const selectedButton = mobileSelectedButtonRef.current
@@ -321,7 +329,7 @@ export function GangTreePanel({
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         if (ceremony) {
-          setCeremony(null)
+          finishCeremony()
         } else {
           onClose()
         }
@@ -329,7 +337,7 @@ export function GangTreePanel({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [ceremony, open, onClose])
+  }, [ceremony, finishCeremony, open, onClose])
 
   if (!open) return null
 
@@ -557,6 +565,7 @@ export function GangTreePanel({
                   const seat = getGangCoreSeat(promotedRole.threshold)
                   setMobileSelectedThreshold(promotedRole.threshold)
                   setCeremony({
+                    level: nextLevel,
                     roleTitle: promotedRole.title,
                     chineseTitle: promotedRole.chineseTitle,
                     formerHolder: seat.holder,
@@ -600,7 +609,7 @@ export function GangTreePanel({
             <button
               type="button"
               aria-label="跳过晋升演出"
-              onClick={() => setCeremony(null)}
+              onClick={finishCeremony}
             >
               继续
             </button>

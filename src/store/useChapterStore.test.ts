@@ -97,4 +97,19 @@ describe('useChapterStore', () => {
     expect(useChapterStore.getState().claimChapterReward(1)).toBe(false)
     expect(useChapterStore.getState().claimedChapterNumbers).toEqual([])
   })
+
+  it('records each known narrative once and clears it on account reset', () => {
+    const store = useChapterStore.getState()
+    store.markNarrativeSeen('first-entry')
+    store.markNarrativeSeen('first-entry')
+    store.markNarrativeSeen('chapter-start:1')
+
+    expect(useChapterStore.getState().seenNarrativeIds).toEqual([
+      'first-entry',
+      'chapter-start:1',
+    ])
+
+    useChapterStore.getState().reset()
+    expect(useChapterStore.getState().seenNarrativeIds).toEqual([])
+  })
 })

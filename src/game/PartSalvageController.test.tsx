@@ -1,8 +1,8 @@
 import { act, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAdventureStore } from '../store/useAdventureStore'
-import { useCityStore } from '../store/useCityStore'
-import { GANG_STORAGE_KEY, useGangStore } from '../store/useGangStore'
+import { CITY_STORAGE_KEY, useCityStore } from '../store/useCityStore'
+import { useGangStore } from '../store/useGangStore'
 import { getPartDropIntervalMs } from './equipmentProgression'
 import { getTotalReputationForLevel } from './gangProgression'
 import { PartSalvageController } from './PartSalvageController'
@@ -31,6 +31,7 @@ describe('PartSalvageController', () => {
       currentLevel: 8,
       lastUpdatedAt: NOW,
     })
+    useCityStore.setState({ claimedBuildingIds: ['recycling-yard'] })
     useAdventureStore.setState({
       partIdleClock: NOW - getPartDropIntervalMs(1),
     })
@@ -47,7 +48,7 @@ describe('PartSalvageController', () => {
     expect(random).not.toHaveBeenCalled()
   })
 
-  it('resets the salvage clock only on a locked-to-unlocked edge', () => {
+  it('resets the salvage clock only on a not-claimed-to-claimed edge', () => {
     useAdventureStore.setState({
       partIdleClock: NOW - getPartDropIntervalMs(1),
     })
@@ -55,34 +56,36 @@ describe('PartSalvageController', () => {
 
     act(() => {
       vi.setSystemTime(NOW + 5_000)
-      useGangStore.setState({
-        totalReputation: getTotalReputationForLevel(8),
-        currentLevel: 8,
-        lastUpdatedAt: Date.now(),
-      })
+      useCityStore.setState({ claimedBuildingIds: ['recycling-yard'] })
     })
 
     expect(useAdventureStore.getState().carPartInventory).toEqual([])
     expect(useAdventureStore.getState().partIdleClock).toBe(Date.now())
   })
 
-  it('treats an unlocked rehydrate as initial state instead of an unlock edge', async () => {
+  it('treats a claimed rehydrate as initial state instead of a claim edge', async () => {
     const accumulatedClock = NOW - getPartDropIntervalMs(1) * 2
     useAdventureStore.setState({ partIdleClock: accumulatedClock })
     render(<PartSalvageController />)
+    const city = useCityStore.getState()
     window.localStorage.setItem(
-      GANG_STORAGE_KEY,
+      CITY_STORAGE_KEY,
       JSON.stringify({
         state: {
-          totalReputation: getTotalReputationForLevel(8),
-          lastUpdatedAt: NOW,
+          buildingProgress: city.buildingProgress,
+          resources: city.resources,
+          lastResourceUpdatedAt: NOW,
+          activeProducerIds: [],
+          claimedBuildingIds: ['recycling-yard'],
+          pendingMainUpgrades: [],
+          appliedStageRewardIds: [],
         },
-        version: 0,
+        version: 6,
       }),
     )
 
     await act(async () => {
-      await useGangStore.persist.rehydrate()
+      await useCityStore.persist.rehydrate()
     })
 
     expect(useAdventureStore.getState().carPartInventory).toEqual([])

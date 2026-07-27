@@ -1,6 +1,7 @@
 import type { ThreeEvent } from '@react-three/fiber'
 import type { JSX } from 'react'
 import { interactiveBuildingPlacements } from '../../game/cityLayout'
+import type { BuildingId } from '../../game/cityTypes'
 import { useCityStore } from '../../store/useCityStore'
 import { CityCameraControls } from './CityCameraControls'
 import { CityEnvironment } from './CityEnvironment'
@@ -9,7 +10,11 @@ import { CityPointerGestures } from './CityPointerGestures'
 import { InteractiveBuilding } from './InteractiveBuilding'
 import { consumePointerDrag, isPointerEventHandled } from './pointerDragClick'
 
-export function CityScene(): JSX.Element {
+interface CitySceneProps {
+  onBuildingClaimed?: (buildingId: BuildingId) => void
+}
+
+export function CityScene({ onBuildingClaimed }: CitySceneProps): JSX.Element {
   const clearSelection = useCityStore((state) => state.clearSelection)
 
   const handleBackgroundClick = (event: ThreeEvent<MouseEvent>) => {
@@ -50,7 +55,11 @@ export function CityScene(): JSX.Element {
         <CityGround />
         <CityEnvironment />
         {interactiveBuildingPlacements.map((placement) => (
-          <InteractiveBuilding key={placement.id} {...placement} />
+          <InteractiveBuilding
+            key={placement.id}
+            {...placement}
+            onClaimed={onBuildingClaimed}
+          />
         ))}
         <CityCameraControls />
       </group>

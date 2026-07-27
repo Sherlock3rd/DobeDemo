@@ -17,6 +17,7 @@ import { useInitialFocus } from './useInitialFocus'
 export interface ChapterPanelProps {
   onClose: () => void
   onNavigateTask: (requirement: ChapterTaskRequirement) => void
+  onChapterCompleted?: (chapterNumber: number) => void
 }
 
 const TITLE_ID = 'chapter-panel-title'
@@ -52,6 +53,7 @@ function taskDestinationLabel(requirement: ChapterTaskRequirement): string {
 export function ChapterPanel({
   onClose,
   onNavigateTask,
+  onChapterCompleted,
 }: ChapterPanelProps): JSX.Element {
   const currentLevel = useGangStore((state) => state.currentLevel)
   const heroLevels = useAdventureStore((state) => state.heroLevels)
@@ -262,6 +264,7 @@ export function ChapterPanel({
           onClick={() => {
             if (claimChapterReward(chapter.number)) {
               setFeedback(`${chapter.title}完成奖励已领取`)
+              onChapterCompleted?.(chapter.number)
             }
           }}
         >

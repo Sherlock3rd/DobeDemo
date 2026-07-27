@@ -23,6 +23,7 @@ export interface CityDurableState {
   resources: ResourceWallet
   lastResourceUpdatedAt: number
   activeProducerIds: BuildingId[]
+  claimedBuildingIds: BuildingId[]
   pendingMainUpgrades: PendingMainUpgrade[]
   appliedStageRewardIds: string[]
 }
@@ -141,6 +142,20 @@ function normalizeActiveProducerIds(value: unknown): BuildingId[] {
   }, [])
 }
 
+function normalizeClaimedBuildingIds(value: unknown): BuildingId[] {
+  if (!Array.isArray(value)) return []
+  return value.reduce<BuildingId[]>((result, item) => {
+    if (
+      typeof item === 'string' &&
+      isBuildingId(item) &&
+      !result.includes(item)
+    ) {
+      result.push(item)
+    }
+    return result
+  }, [])
+}
+
 function normalizePendingMainUpgrades(
   value: unknown,
   progress: BuildingProgressById,
@@ -210,6 +225,7 @@ function normalizeLegacyCityDurableState(
         ? source.lastResourceUpdatedAt
         : fallbackNow,
     activeProducerIds: normalizeActiveProducerIds(source.activeProducerIds),
+    claimedBuildingIds: normalizeClaimedBuildingIds(source.claimedBuildingIds),
     pendingMainUpgrades: normalizePendingMainUpgrades(
       source.pendingMainUpgrades,
       buildingProgress,
@@ -386,14 +402,16 @@ export function migrateCityState(
 ): CityDurableState {
   const source = isRecord(persistedState) ? persistedState : {}
   const migrationTime = validNow(now)
+  let migrated: CityDurableState
   if (persistedVersion < 2) {
-    return upgradeV3ShapeToV4(
+    migrated = upgradeV3ShapeToV4(
       upgradeV2ShapeToV3(
         {
           buildingProgress: migrateV1BuildingProgress(source.buildingProgress),
           resources: { ...EMPTY_RESOURCES },
           lastResourceUpdatedAt: migrationTime,
           activeProducerIds: [...INITIAL_PRODUCERS],
+          claimedBuildingIds: [],
           pendingMainUpgrades: [],
           appliedStageRewardIds: [],
         },
@@ -402,19 +420,26 @@ export function migrateCityState(
       ),
       false,
     )
-  }
-  if (persistedVersion < 3) {
-    return upgradeV3ShapeToV4(
+  } else if (persistedVersion < 3) {
+    migrated = upgradeV3ShapeToV4(
       upgradeV2ShapeToV3(source, true, migrationTime),
       true,
     )
-  }
-  if (persistedVersion < 4) {
-    return upgradeV3ShapeToV4(
+  } else if (persistedVersion < 4) {
+    migrated = upgradeV3ShapeToV4(
       upgradeV2ShapeToV3(source, false, migrationTime),
       true,
     )
+  } else {
+    migrated = normalizeCityDurableState(source, migrationTime)
   }
 
-  return normalizeCityDurableState(source, migrationTime)
+  if (persistedVersion < 6) {
+    return {
+      ...migrated,
+      claimedBuildingIds: [...BUILDING_IDS],
+    }
+  }
+
+  return migrated
 }

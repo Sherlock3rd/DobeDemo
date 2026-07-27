@@ -73,7 +73,8 @@ describe('resetAccount', () => {
       materials: 0,
     })
     expect(useCityStore.getState().lastResourceUpdatedAt).toBe(RESET_TIME)
-    expect(useCityStore.getState().activeProducerIds).toEqual(['repair-shop'])
+    expect(useCityStore.getState().activeProducerIds).toEqual([])
+    expect(useCityStore.getState().claimedBuildingIds).toEqual([])
   })
 
   it('persists reset state to storage and survives rehydrate', async () => {
@@ -107,7 +108,8 @@ describe('resetAccount', () => {
       materials: 0,
     })
     expect(cityPersisted?.lastResourceUpdatedAt).toBe(RESET_TIME)
-    expect(cityPersisted?.activeProducerIds).toEqual(['repair-shop'])
+    expect(cityPersisted?.activeProducerIds).toEqual([])
+    expect(cityPersisted?.claimedBuildingIds).toEqual([])
 
     const gangPersisted = readGangPersistedState()
     expect(gangPersisted).not.toBeNull()
