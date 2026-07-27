@@ -118,7 +118,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: 8,
     title: '第一章 · 冷炉初燃',
     story:
-      '修理厂一直是剃刀党的闲置产业。Thomas 以见习身份接过管理权，要先证明自己能让这里重新运转。',
+      '修理厂一直是剃刀党的闲置产业。Thomas 将以见习身份接过管理权，要先证明自己能让这里重新运转。',
     completionReward: completionReward(
       132,
       600,
@@ -169,7 +169,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: 16,
     title: '第二章 · 废铁生意',
     story:
-      '晋升正式成员后，Thomas 获准管理废车回收厂。每一块废铁都要重新进入帮派的生产体系。',
+      '晋升正式成员后，Thomas 将获准管理废车回收厂。每一块废铁都要重新进入帮派的生产体系。',
     completionReward: completionReward(
       160,
       900,

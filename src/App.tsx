@@ -33,6 +33,7 @@ import { BuildingPanel } from './ui/BuildingPanel'
 import { FormationPanel } from './ui/FormationPanel'
 import { GangTreePanel } from './ui/GangTreePanel'
 import { ChapterPanel } from './ui/ChapterPanel'
+import { ChapterAssessmentMeeting } from './ui/ChapterAssessmentMeeting'
 import { GlobalHud } from './ui/GlobalHud'
 import { HeroesPanel, type DevelopmentTab } from './ui/HeroesPanel'
 import { RacingPanel } from './ui/RacingPanel'
@@ -57,6 +58,7 @@ export type ActiveOverlay =
   | { kind: 'race'; stage: number; heroId: HeroId }
   | { kind: 'buildingUnlock'; buildingId: BuildingId }
   | { kind: 'chapterComplete'; chapterNumber: number }
+  | { kind: 'assessmentMeeting'; chapterNumber: number }
 
 type PlayOverlay = Exclude<ActiveOverlay, { kind: 'buildingDetail' }>
 
@@ -69,6 +71,7 @@ const FULLSCREEN_KINDS = new Set([
   'race',
   'chapters',
   'chapterComplete',
+  'assessmentMeeting',
 ])
 const MODAL_KINDS = new Set([
   'gangTree',
@@ -82,6 +85,7 @@ const MODAL_KINDS = new Set([
   'chapters',
   'buildingUnlock',
   'chapterComplete',
+  'assessmentMeeting',
 ])
 
 interface QueuedNarrative {
@@ -113,6 +117,10 @@ export default function App(): JSX.Element {
   const claimedBuildingIds = useCityStore((s) => s.claimedBuildingIds)
   const seenNarrativeIds = useChapterStore((s) => s.seenNarrativeIds)
   const markNarrativeSeen = useChapterStore((s) => s.markNarrativeSeen)
+  const completedAssessmentChapterNumbers = useChapterStore(
+    (s) => s.completedAssessmentChapterNumbers,
+  )
+  const completeAssessment = useChapterStore((s) => s.completeAssessment)
   const reconcileWithGang = useAdventureStore((s) => s.reconcileWithGang)
   const activeOverlay = resolveActiveOverlay(playOverlay, selectedBuildingId)
   const activeNarrative = narrativeQueue[0] ?? null
@@ -195,6 +203,37 @@ export default function App(): JSX.Element {
       cancelled = true
     }
   }, [enqueueNarrative, gangLevel, playOverlay.kind])
+
+  useEffect(() => {
+    if (
+      activeNarrative ||
+      (playOverlay.kind !== 'none' && playOverlay.kind !== 'gangTree')
+    ) {
+      return
+    }
+    const chapterNumber = getChapterForGangLevel(gangLevel).number
+    if (
+      completedAssessmentChapterNumbers.includes(chapterNumber) ||
+      !seenNarrativeIds.includes(`chapter-start:${chapterNumber}`)
+    ) {
+      return
+    }
+    let cancelled = false
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setPlayOverlay({ kind: 'assessmentMeeting', chapterNumber })
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [
+    activeNarrative,
+    completedAssessmentChapterNumbers,
+    gangLevel,
+    playOverlay.kind,
+    seenNarrativeIds,
+  ])
 
   const openOverlay = (overlay: PlayOverlay): void => {
     if (document.activeElement instanceof HTMLElement) {
@@ -282,7 +321,8 @@ export default function App(): JSX.Element {
         activeOverlay.kind === 'battle' ||
         activeOverlay.kind === 'race' ||
         activeOverlay.kind === 'buildingUnlock' ||
-        activeOverlay.kind === 'chapterComplete'
+        activeOverlay.kind === 'chapterComplete' ||
+        activeOverlay.kind === 'assessmentMeeting'
       ) {
         return
       }
@@ -472,6 +512,15 @@ export default function App(): JSX.Element {
               const chapterNumber = activeOverlay.chapterNumber
               setPlayOverlay({ kind: 'none' })
               enqueueNarrative(`chapter-end:${chapterNumber}`, 'gangTree')
+            }}
+          />
+        ) : null}
+        {activeOverlay.kind === 'assessmentMeeting' ? (
+          <ChapterAssessmentMeeting
+            chapterNumber={activeOverlay.chapterNumber}
+            onComplete={(chapterNumber) => {
+              completeAssessment(chapterNumber)
+              setPlayOverlay({ kind: 'none' })
             }}
           />
         ) : null}

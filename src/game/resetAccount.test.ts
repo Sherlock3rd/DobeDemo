@@ -162,10 +162,16 @@ describe('resetAccount', () => {
   })
 
   it('clears claimed chapter rewards alongside the other progression stores', () => {
-    useChapterStore.setState({ claimedTaskIds: ['chapter-1-hero'] })
+    useChapterStore.setState({
+      claimedTaskIds: ['chapter-1-hero'],
+      completedAssessmentChapterNumbers: [1],
+    })
 
     resetAccount(RESET_TIME)
 
     expect(useChapterStore.getState().claimedTaskIds).toEqual([])
+    expect(
+      useChapterStore.getState().completedAssessmentChapterNumbers,
+    ).toEqual([])
   })
 })

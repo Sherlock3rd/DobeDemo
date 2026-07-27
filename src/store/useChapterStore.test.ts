@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialAdventureState } from './adventureMigration'
 import { useAdventureStore } from './useAdventureStore'
-import { useChapterStore } from './useChapterStore'
+import { CHAPTER_STORAGE_KEY, useChapterStore } from './useChapterStore'
 import { useCityStore } from './useCityStore'
 import { useGangStore } from './useGangStore'
 
@@ -111,5 +111,48 @@ describe('useChapterStore', () => {
 
     useChapterStore.getState().reset()
     expect(useChapterStore.getState().seenNarrativeIds).toEqual([])
+  })
+
+  it('records each completed assessment meeting once and rejects unknown chapters', () => {
+    const store = useChapterStore.getState()
+
+    expect(store.completeAssessment(1)).toBe(true)
+    expect(store.completeAssessment(1)).toBe(false)
+    expect(store.completeAssessment(8)).toBe(false)
+    expect(
+      useChapterStore.getState().completedAssessmentChapterNumbers,
+    ).toEqual([1])
+
+    useChapterStore.getState().reset()
+    expect(
+      useChapterStore.getState().completedAssessmentChapterNumbers,
+    ).toEqual([])
+  })
+
+  it('keeps the current assessment pending when hydrating a version-three save', async () => {
+    window.localStorage.setItem(
+      CHAPTER_STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          claimedTaskIds: ['chapter-1-hero'],
+          claimedChapterNumbers: [1],
+          seenNarrativeIds: [
+            'first-entry',
+            'chapter-start:1',
+            'chapter-start:2',
+          ],
+        },
+        version: 3,
+      }),
+    )
+
+    await useChapterStore.persist.rehydrate()
+
+    expect(useChapterStore.getState()).toMatchObject({
+      claimedTaskIds: ['chapter-1-hero'],
+      claimedChapterNumbers: [1],
+      seenNarrativeIds: ['first-entry', 'chapter-start:1', 'chapter-start:2'],
+      completedAssessmentChapterNumbers: [],
+    })
   })
 })

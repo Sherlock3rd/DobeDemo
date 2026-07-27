@@ -48,4 +48,24 @@ describe('progression narrative', () => {
     expect(repairShop?.title).toBe('修车厂管理权交接')
     expect(allCopy).not.toMatch(/第一块地盘|拿下修车厂|换了主人|整座城市服从/)
   })
+
+  it('sends every chapter opening into a task assessment before authority transfer', () => {
+    for (let chapterNumber = 1; chapterNumber <= 7; chapterNumber += 1) {
+      const event = getNarrativeEvent(`chapter-start:${chapterNumber}`)
+      const copy = event?.lines.map((line) => line.text).join(' ') ?? ''
+
+      expect(copy, `chapter ${chapterNumber}`).toMatch(/会议|委员会|议案/)
+      expect(copy, `chapter ${chapterNumber}`).toMatch(/任务|评定|表决|投票/)
+    }
+    expect(
+      getNarrativeEvent('chapter-start:1')
+        ?.lines.map((line) => line.text)
+        .join(' '),
+    ).toContain('没有投票权')
+    expect(
+      getNarrativeEvent('chapter-start:2')
+        ?.lines.map((line) => line.text)
+        .join(' '),
+    ).toContain('拥有正式投票权')
+  })
 })

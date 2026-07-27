@@ -37,4 +37,16 @@ describe('NarrativeDialogueOverlay', () => {
     await userEvent.click(screen.getByRole('button', { name: '跳过剧情对话' }))
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
+
+  it('leads a chapter opening directly into its assessment meeting', async () => {
+    const event = getNarrativeEvent('chapter-start:2')
+    if (!event) throw new Error('Missing chapter narrative')
+    const onComplete = vi.fn()
+    render(<NarrativeDialogueOverlay event={event} onComplete={onComplete} />)
+
+    await userEvent.click(screen.getByRole('button', { name: '下一句' }))
+    await userEvent.click(screen.getByRole('button', { name: '参加评定会议' }))
+
+    expect(onComplete).toHaveBeenCalledTimes(1)
+  })
 })

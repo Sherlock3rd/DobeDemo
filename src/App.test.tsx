@@ -187,6 +187,7 @@ describe('App', () => {
     useChapterStore.getState().reset()
     useChapterStore.setState({
       seenNarrativeIds: ['first-entry', 'chapter-start:1'],
+      completedAssessmentChapterNumbers: [1],
     })
     useChestTick.setState({ now: BASE_TIME, tick: 0 })
     canvasPropsSpy.mockClear()
@@ -202,7 +203,10 @@ describe('App', () => {
   it('plays first-entry and first chapter briefings before offering the initial repair-shop takeover', async () => {
     const user = userEvent.setup()
     useCityStore.getState().reset(BASE_TIME)
-    useChapterStore.setState({ seenNarrativeIds: [] })
+    useChapterStore.setState({
+      seenNarrativeIds: [],
+      completedAssessmentChapterNumbers: [],
+    })
 
     render(<App />)
 
@@ -217,6 +221,21 @@ describe('App', () => {
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
 
+    expect(
+      screen.getByRole('dialog', {
+        name: '第一章 · 冷炉初燃评定会议',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '地图接管修车厂' })).toBeNull()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(
+      screen.getByRole('dialog', {
+        name: '第一章 · 冷炉初燃评定会议',
+      }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '听取会议决议' }))
+    await user.click(screen.getByRole('button', { name: '接受本章任务' }))
+
     await user.click(screen.getByRole('button', { name: '地图接管修车厂' }))
     expect(
       screen.getByRole('status', { name: '修车厂管理权已交接' }),
@@ -225,6 +244,86 @@ describe('App', () => {
     expect(
       screen.getByRole('dialog', {
         name: '剧情对话：修车厂管理权交接',
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('opens the current assessment for an older save without replaying earlier meetings', async () => {
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 8,
+      lastUpdatedAt: BASE_TIME,
+    })
+    useChapterStore.setState({
+      seenNarrativeIds: [
+        'first-entry',
+        'chapter-start:1',
+        'chapter-end:1',
+        'promotion:8',
+        'chapter-start:2',
+      ],
+      completedAssessmentChapterNumbers: [1],
+    })
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('dialog', {
+        name: '第二章 · 废铁生意评定会议',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('正式成员席位 · 有投票权')).toBeInTheDocument()
+  })
+
+  it('runs the next chapter assessment after a core-role promotion ceremony and briefing', async () => {
+    const user = userEvent.setup()
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 7,
+      lastUpdatedAt: BASE_TIME,
+    })
+    useAdventureStore.setState((state) => ({
+      heroLevels: { ...state.heroLevels, foreman: 3 },
+      highestClearedStage: 2,
+      highestClearedRacingStage: 1,
+    }))
+    useCityStore.setState((state) => ({
+      buildingProgress: {
+        ...state.buildingProgress,
+        'repair-shop': {
+          ...state.buildingProgress['repair-shop'],
+          level: 2,
+        },
+      },
+    }))
+    useChapterStore.setState({
+      claimedChapterNumbers: [1],
+      completedAssessmentChapterNumbers: [1],
+    })
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: '帮派树' }))
+    await user.click(screen.getByRole('button', { name: '接掌席位' }))
+    expect(
+      screen.getByRole('status', { name: '职级晋升：正式成员' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '跳过晋升演出' }))
+    expect(
+      screen.getByRole('dialog', {
+        name: '剧情对话：正式成员席位交接',
+      }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
+    expect(
+      screen.getByRole('dialog', {
+        name: '剧情对话：第二章 · 废铁生意',
+      }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
+
+    expect(
+      await screen.findByRole('dialog', {
+        name: '第二章 · 废铁生意评定会议',
       }),
     ).toBeInTheDocument()
   })

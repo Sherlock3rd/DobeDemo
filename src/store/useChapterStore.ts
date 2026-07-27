@@ -18,9 +18,11 @@ interface ChapterState {
   claimedTaskIds: string[]
   claimedChapterNumbers: number[]
   seenNarrativeIds: NarrativeEventId[]
+  completedAssessmentChapterNumbers: number[]
   claimTask: (taskId: string) => boolean
   claimChapterReward: (chapterNumber: number) => boolean
   markNarrativeSeen: (eventId: NarrativeEventId) => void
+  completeAssessment: (chapterNumber: number) => boolean
   reset: () => void
 }
 
@@ -70,12 +72,17 @@ function normalizeSeenNarrativeIds(value: unknown): NarrativeEventId[] {
   return [...new Set(value.filter(isNarrativeEventId))].slice(-64)
 }
 
+function normalizeCompletedAssessmentChapterNumbers(value: unknown): number[] {
+  return normalizeClaimedChapterNumbers(value)
+}
+
 export const useChapterStore = create<ChapterState>()(
   persist(
     (set, get) => ({
       claimedTaskIds: [],
       claimedChapterNumbers: [],
       seenNarrativeIds: [],
+      completedAssessmentChapterNumbers: [],
       claimTask: (taskId) => {
         const task = ALL_TASKS.find((candidate) => candidate.id === taskId)
         if (!task || get().claimedTaskIds.includes(taskId)) return false
@@ -144,16 +151,32 @@ export const useChapterStore = create<ChapterState>()(
               },
         )
       },
+      completeAssessment: (chapterNumber) => {
+        if (
+          !CHAPTERS.some((chapter) => chapter.number === chapterNumber) ||
+          get().completedAssessmentChapterNumbers.includes(chapterNumber)
+        ) {
+          return false
+        }
+        set((state) => ({
+          completedAssessmentChapterNumbers: [
+            ...state.completedAssessmentChapterNumbers,
+            chapterNumber,
+          ],
+        }))
+        return true
+      },
       reset: () =>
         set({
           claimedTaskIds: [],
           claimedChapterNumbers: [],
           seenNarrativeIds: [],
+          completedAssessmentChapterNumbers: [],
         }),
     }),
     {
       name: CHAPTER_STORAGE_KEY,
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted, version) => {
         const source =
@@ -170,10 +193,12 @@ export const useChapterStore = create<ChapterState>()(
         claimedTaskIds,
         claimedChapterNumbers,
         seenNarrativeIds,
+        completedAssessmentChapterNumbers,
       }) => ({
         claimedTaskIds,
         claimedChapterNumbers,
         seenNarrativeIds,
+        completedAssessmentChapterNumbers,
       }),
       merge: (persisted, current) => {
         const source =
@@ -182,6 +207,7 @@ export const useChapterStore = create<ChapterState>()(
                 claimedTaskIds?: unknown
                 claimedChapterNumbers?: unknown
                 seenNarrativeIds?: unknown
+                completedAssessmentChapterNumbers?: unknown
               })
             : {}
         return {
@@ -191,6 +217,10 @@ export const useChapterStore = create<ChapterState>()(
             source.claimedChapterNumbers,
           ),
           seenNarrativeIds: normalizeSeenNarrativeIds(source.seenNarrativeIds),
+          completedAssessmentChapterNumbers:
+            normalizeCompletedAssessmentChapterNumbers(
+              source.completedAssessmentChapterNumbers,
+            ),
         }
       },
     },
