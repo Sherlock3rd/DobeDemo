@@ -21,6 +21,7 @@ export interface ChapterPanelProps {
 }
 
 const TITLE_ID = 'chapter-panel-title'
+const OVERVIEW_TITLE_ID = 'chapter-panel-overview-title'
 
 const SLOT_NAMES = {
   tires: '轮胎',
@@ -48,6 +49,10 @@ function taskDestinationLabel(requirement: ChapterTaskRequirement): string {
     case 'racing-clears':
       return '赛车'
   }
+}
+
+function chapterShortTitle(title: string): string {
+  return title.split(' · ').slice(1).join(' · ') || title
 }
 
 export function ChapterPanel({
@@ -147,26 +152,50 @@ export function ChapterPanel({
         </button>
       </header>
 
-      <nav className="chapter-panel__rail" aria-label="章节进度">
-        {CHAPTERS.map((candidate) => {
-          const state =
-            candidate.number < chapter.number
-              ? 'completed'
-              : candidate.number === chapter.number
-                ? 'current'
-                : 'locked'
-          return (
-            <span
-              key={candidate.number}
-              className="chapter-panel__rail-item"
-              data-state={state}
-              aria-current={state === 'current' ? 'step' : undefined}
-            >
-              {candidate.number}
-            </span>
-          )
-        })}
-      </nav>
+      <section
+        className="chapter-panel__overview"
+        aria-labelledby={OVERVIEW_TITLE_ID}
+      >
+        <header className="chapter-panel__overview-header">
+          <div>
+            <span>完整章节路线</span>
+            <h3 id={OVERVIEW_TITLE_ID}>
+              {`当前第 ${chapter.number} 章 / 共 ${CHAPTERS.length} 章`}
+            </h3>
+          </div>
+          <p>完成当前章节并晋升职位，下一章才会开放</p>
+        </header>
+        <ol className="chapter-panel__rail" aria-label="七章总览">
+          {CHAPTERS.map((candidate) => {
+            const state =
+              candidate.number < chapter.number
+                ? 'completed'
+                : candidate.number === chapter.number
+                  ? 'current'
+                  : 'locked'
+            const stateLabel =
+              state === 'completed'
+                ? '已完成'
+                : state === 'current'
+                  ? '当前'
+                  : '未解锁'
+            return (
+              <li
+                key={candidate.number}
+                className="chapter-panel__rail-item"
+                data-state={state}
+                aria-current={state === 'current' ? 'step' : undefined}
+                aria-label={`${candidate.title}，${candidate.role.chineseTitle}，${stateLabel}`}
+              >
+                <span>{`CH.${candidate.number}`}</span>
+                <strong>{chapterShortTitle(candidate.title)}</strong>
+                <small>{candidate.role.chineseTitle}</small>
+                <em>{stateLabel}</em>
+              </li>
+            )
+          })}
+        </ol>
+      </section>
 
       <div className="chapter-panel__story">
         <p>{chapter.story}</p>

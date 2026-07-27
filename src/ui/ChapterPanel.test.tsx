@@ -18,14 +18,24 @@ describe('ChapterPanel', () => {
     useChapterStore.getState().reset()
   })
 
-  it('shows the current chapter story, seven-step rail, and four task states', () => {
+  it('shows the current chapter story, seven-chapter overview, and four task states', () => {
     render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)
 
     expect(
       screen.getByRole('heading', { name: '第一章 · 冷炉初燃' }),
     ).toHaveFocus()
+    expect(
+      screen.getByRole('heading', { name: '当前第 1 章 / 共 7 章' }),
+    ).toBeInTheDocument()
     expect(screen.getByText('已完成 1/4')).toBeInTheDocument()
-    expect(screen.getByLabelText('章节进度').children).toHaveLength(7)
+    expect(screen.getByLabelText('七章总览').children).toHaveLength(7)
+    expect(
+      screen.getByLabelText('第一章 · 冷炉初燃，见习，当前'),
+    ).toHaveAttribute('aria-current', 'step')
+    expect(
+      screen.getByLabelText('第七章 · 主席之路，主席，未解锁'),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText('未解锁')).toHaveLength(6)
     expect(screen.getAllByRole('button', { name: '进行中' })).toHaveLength(3)
     expect(screen.getByRole('button', { name: '领取' })).toBeEnabled()
     expect(
@@ -33,6 +43,25 @@ describe('ChapterPanel', () => {
     ).not.toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /^前往/ })).toHaveLength(3)
     expect(screen.getByText(/史诗轮胎/)).toBeInTheDocument()
+  })
+
+  it('marks earlier chapters as completed and previews the current role chapter', () => {
+    useGangStore.setState({ currentLevel: 24 })
+
+    render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)
+
+    expect(
+      screen.getByRole('heading', { name: '当前第 4 章 / 共 7 章' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByLabelText('第三章 · 扳手与账本，技术骨干，已完成'),
+    ).toHaveAttribute('data-state', 'completed')
+    expect(
+      screen.getByLabelText('第四章 · 烈焰联络线，酒吧联络人，当前'),
+    ).toHaveAttribute('data-state', 'current')
+    expect(
+      screen.getByLabelText('第五章 · 公路号令，路线队长，未解锁'),
+    ).toHaveAttribute('data-state', 'locked')
   })
 
   it('claims a completed reward and switches the task to its claimed state', async () => {

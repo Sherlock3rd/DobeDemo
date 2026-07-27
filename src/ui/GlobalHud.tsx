@@ -9,6 +9,7 @@ import {
   isBuildingUnlocked,
 } from '../game/gangProgression'
 import {
+  CHAPTERS,
   getChapterForGangLevel,
   getTaskProgress,
   isChapterComplete,
@@ -183,7 +184,7 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
         className="global-hud__chapter"
         onClick={props.onOpenChapters}
       >
-        <span>{`章节 ${currentChapter.number}`}</span>
+        <span>{`章节 ${currentChapter.number} / ${CHAPTERS.length}`}</span>
         <small>{currentChapter.title.replace(/^第.+? · /, '')}</small>
         {chapterClaimable ? (
           <span className="global-hud__dot" aria-label="有章节奖励可领取" />

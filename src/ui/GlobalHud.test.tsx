@@ -40,6 +40,7 @@ describe('GlobalHud', () => {
     expect(screen.queryByText(/10秒/)).toBeNull()
     expect(screen.queryByText(/英雄经验/)).toBeNull()
     expect(screen.getByText('Thomas Shelby')).toBeInTheDocument()
+    expect(screen.getByText('章节 1 / 7')).toBeInTheDocument()
     const top = screen
       .getByLabelText('主界面 HUD')
       .querySelector('.global-hud__top')
