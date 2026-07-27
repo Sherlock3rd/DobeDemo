@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ProgressionMilestoneOverlay } from './ProgressionMilestoneOverlay'
 
 describe('ProgressionMilestoneOverlay', () => {
-  it('announces a building takeover before its report', async () => {
+  it('announces an internal management handover before its briefing', async () => {
     const onContinue = vi.fn()
     render(
       <ProgressionMilestoneOverlay
@@ -14,9 +14,10 @@ describe('ProgressionMilestoneOverlay', () => {
     )
 
     expect(
-      screen.getByRole('status', { name: '修车厂接管成功' }),
+      screen.getByRole('status', { name: '修车厂管理权已交接' }),
     ).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: '听取接管汇报' }))
+    expect(screen.getByText('管理权已交接')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '听取管理简报' }))
     expect(onContinue).toHaveBeenCalledTimes(1)
   })
 

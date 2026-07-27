@@ -139,7 +139,7 @@ describe('BuildingVisual', () => {
       window.localStorage.setItem(
         CITY_STORAGE_KEY,
         JSON.stringify({
-          version: 2,
+          version: 7,
           state: {
             buildingProgress: {
               ...durable.buildingProgress,
@@ -151,6 +151,9 @@ describe('BuildingVisual', () => {
             resources: durable.resources,
             lastResourceUpdatedAt: durable.lastResourceUpdatedAt,
             activeProducerIds: durable.activeProducerIds,
+            claimedBuildingIds: durable.claimedBuildingIds,
+            pendingMainUpgrades: durable.pendingMainUpgrades,
+            appliedStageRewardIds: durable.appliedStageRewardIds,
           },
         }),
       )

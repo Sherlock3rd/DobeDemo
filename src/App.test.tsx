@@ -219,11 +219,13 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: '地图接管修车厂' }))
     expect(
-      screen.getByRole('status', { name: '修车厂接管成功' }),
+      screen.getByRole('status', { name: '修车厂管理权已交接' }),
     ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '听取接管汇报' }))
+    await user.click(screen.getByRole('button', { name: '听取管理简报' }))
     expect(
-      screen.getByRole('dialog', { name: '剧情对话：修车厂已接管' }),
+      screen.getByRole('dialog', {
+        name: '剧情对话：修车厂管理权交接',
+      }),
     ).toBeInTheDocument()
   })
 

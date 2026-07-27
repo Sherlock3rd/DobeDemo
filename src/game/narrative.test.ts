@@ -36,4 +36,16 @@ describe('progression narrative', () => {
     expect(getNarrativeEvent('promotion:2')).toBeNull()
     expect(isNarrativeEventId('anything')).toBe(false)
   })
+
+  it('frames progression as internal gang authority rather than conquering the city', () => {
+    const intro = getNarrativeEvent('first-entry')
+    const repairShop = getNarrativeEvent('building-claimed:repair-shop')
+    const allCopy = [...(intro?.lines ?? []), ...(repairShop?.lines ?? [])]
+      .map((line) => line.text)
+      .join(' ')
+
+    expect(allCopy).toContain('城市一直是剃刀党的')
+    expect(repairShop?.title).toBe('修车厂管理权交接')
+    expect(allCopy).not.toMatch(/第一块地盘|拿下修车厂|换了主人|整座城市服从/)
+  })
 })

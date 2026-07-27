@@ -547,7 +547,7 @@ export function GangTreePanel({
               </strong>
               <span>
                 {currentLevel >= GANG_MAX_LEVEL
-                  ? '剃刀党所有席位均已接管'
+                  ? '剃刀党所有席位均已归你管辖'
                   : totalReputation < requiredReputation
                     ? `还需 ${requiredReputation - totalReputation} 声望`
                     : crossesRole && !chapterComplete

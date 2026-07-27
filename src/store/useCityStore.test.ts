@@ -479,7 +479,7 @@ describe('useCityStore atomic economy', () => {
     expect(state.claimedBuildingIds).toEqual(['repair-shop'])
   })
 
-  it('migrates a v3 clubhouse refund once and rehydrates v6 without repeating it', async () => {
+  it('migrates a v3 clubhouse refund once and rehydrates v7 without repeating it', async () => {
     window.localStorage.setItem(
       CITY_STORAGE_KEY,
       JSON.stringify({
@@ -511,7 +511,7 @@ describe('useCityStore atomic economy', () => {
 
     useCityStore.getState().selectBuilding('clubhouse')
     const raw = window.localStorage.getItem(CITY_STORAGE_KEY)
-    expect(JSON.parse(raw as string).version).toBe(6)
+    expect(JSON.parse(raw as string).version).toBe(7)
 
     await useCityStore.persist.rehydrate()
     expect(useCityStore.getState().resources).toEqual({
@@ -552,7 +552,7 @@ describe('useCityStore atomic economy', () => {
     })
   })
 
-  it('persists only the seven durable v6 fields', () => {
+  it('persists only the seven durable v7 fields', () => {
     useCityStore.getState().selectBuilding('repair-shop')
     useCityStore.getState().syncResourceProduction(START + 10_000, 1)
 
@@ -561,7 +561,7 @@ describe('useCityStore atomic economy', () => {
       version: number
       state: Record<string, unknown>
     }
-    expect(persisted.version).toBe(6)
+    expect(persisted.version).toBe(7)
     expect(Object.keys(persisted.state)).toEqual([
       'buildingProgress',
       'resources',

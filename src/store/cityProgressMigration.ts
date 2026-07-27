@@ -434,10 +434,11 @@ export function migrateCityState(
     migrated = normalizeCityDurableState(source, migrationTime)
   }
 
-  if (persistedVersion < 6) {
+  if (persistedVersion < 7) {
     return {
       ...migrated,
-      claimedBuildingIds: [...BUILDING_IDS],
+      activeProducerIds: [],
+      claimedBuildingIds: [],
     }
   }
 

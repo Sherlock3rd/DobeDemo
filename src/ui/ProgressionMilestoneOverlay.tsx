@@ -27,18 +27,18 @@ export function ProgressionMilestoneOverlay({
         <section
           className="progression-milestone"
           role="status"
-          aria-label={`${building.name}接管成功`}
+          aria-label={`${building.name}管理权已交接`}
         >
           <div className="progression-milestone__rays" aria-hidden="true" />
           <span className="progression-milestone__icon" aria-hidden="true">
             ◆
           </span>
-          <p>TERRITORY SECURED</p>
+          <p>AUTHORITY TRANSFERRED</p>
           <h2>{building.name}</h2>
-          <strong>建筑已接管</strong>
-          <small>新的生产、建设与帮派任务权限已经开放</small>
+          <strong>管理权已交接</strong>
+          <small>剃刀党已授权你调度这处产业的生产、建设与任务</small>
           <button ref={actionRef} type="button" onClick={onContinue}>
-            听取接管汇报
+            听取管理简报
           </button>
         </section>
       </div>

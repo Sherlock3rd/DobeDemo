@@ -118,7 +118,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: 8,
     title: '第一章 · 冷炉初燃',
     story:
-      'Thomas 接下废弃修理厂。想让所有人承认这面新旗帜，先要证明这里既能造车，也敢上路。',
+      '修理厂一直是剃刀党的闲置产业。Thomas 以见习身份接过管理权，要先证明自己能让这里重新运转。',
     completionReward: completionReward(
       132,
       600,
@@ -169,7 +169,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: 16,
     title: '第二章 · 废铁生意',
     story:
-      '正式成员不再只修自己的车。回收厂里每一块废铁，都是帮派在城里扎根的筹码。',
+      '晋升正式成员后，Thomas 获准管理废车回收厂。每一块废铁都要重新进入帮派的生产体系。',
     completionReward: completionReward(
       160,
       900,
@@ -202,7 +202,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
       },
       {
         id: 'chapter-2-part',
-        name: '扩张运输线',
+        name: '调度运输线',
         description: '赛车任务完成 2 关',
         requirement: { kind: 'racing-clears', target: 2 },
         reward: reward(20, 300, 32),
@@ -223,7 +223,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: 24,
     title: '第三章 · 扳手与账本',
     story:
-      '技术骨干要让机器和生意同时运转。商业街的灯亮起来，帮派才有持续扩张的底气。',
+      '商业街本就是剃刀党的产业。技术骨干要接过调度权，让机器、生意和账本同时运转。',
     completionReward: completionReward(
       160,
       1_400,
@@ -243,7 +243,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
       },
       {
         id: 'chapter-3-building',
-        name: '接管商业街',
+        name: '管理商业街',
         description: '商业街达到 Lv.2',
         requirement: {
           kind: 'building-level',
@@ -275,7 +275,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: 32,
     title: '第四章 · 烈焰联络线',
     story:
-      '酒吧里的承诺要靠工厂兑现。金工厂的炉火，将把一次次握手变成真正的地盘。',
+      '酒吧里的承诺要靠工厂兑现。晋升酒吧联络人后，Thomas 将获得金属加工厂的管理权限。',
     completionReward: completionReward(
       160,
       2_000,
@@ -324,7 +324,8 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     minimumLevel: 32,
     nextRoleLevel: 40,
     title: '第五章 · 公路号令',
-    story: '路线队长掌握油料与道路。车队能跑多远，决定帮派的旗帜能插到哪里。',
+    story:
+      '路线队长负责帮派的油料与道路。职位越高，能调度的补给节点和车队就越多。',
     completionReward: completionReward(
       160,
       2_800,
@@ -376,7 +377,8 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     minimumLevel: 40,
     nextRoleLevel: 50,
     title: '第六章 · 黑色议席',
-    story: '副主席必须建起真正的会所，让所有产业、枪火与车队都服从同一个命令。',
+    story:
+      '副主席有权统筹会所、产业、枪火与车队，让帮派原有的各条线在同一套命令下运转。',
     completionReward: completionReward(
       200,
       3_800,
@@ -433,7 +435,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: null,
     title: '第七章 · 主席之路',
     story:
-      '王座不是终点。把城市、车队与每一名成员都推向巅峰，才配让 PRESIDENT 的名字留下。',
+      '主席不是城市的征服者，而是剃刀党最高管理者。让所有产业、车队与成员发挥最大价值，才配留下 PRESIDENT 的名字。',
     completionReward: completionReward(
       200,
       5_000,

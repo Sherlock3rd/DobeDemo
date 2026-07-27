@@ -20,7 +20,7 @@ describe('CityHud', () => {
     const title = screen.getByRole('heading', { name: '工业城改造计划' })
     expect(title.closest('section')).toHaveClass('city-hud')
     expect(
-      screen.getByText('拖拽平移 · 滚轮缩放 · 接管或点击建筑升级'),
+      screen.getByText('拖拽平移 · 滚轮缩放 · 接掌管理权或点击建筑升级'),
     ).toBeInTheDocument()
   })
 

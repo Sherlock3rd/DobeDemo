@@ -38,7 +38,7 @@ export function BuildingTakeoverBadge({
       <button
         type="button"
         className="building-takeover-badge"
-        aria-label={`接管${buildingName}`}
+        aria-label={`接管${buildingName}管理权`}
         onPointerDown={stopPropagation}
         onClick={(event) => {
           stopPropagation(event)
@@ -52,7 +52,7 @@ export function BuildingTakeoverBadge({
         </span>
         <span>
           <strong>可接管</strong>
-          <small>{buildingName}</small>
+          <small>{buildingName}管理权</small>
         </span>
       </button>
     </Html>

@@ -80,7 +80,7 @@ describe('PartSalvageController', () => {
           pendingMainUpgrades: [],
           appliedStageRewardIds: [],
         },
-        version: 6,
+        version: 7,
       }),
     )
 

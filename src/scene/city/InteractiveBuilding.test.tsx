@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChestTick } from '../../game/chestTick'
-import { useCityStore } from '../../store/useCityStore'
+import { BUILDING_IDS } from '../../game/cityTypes'
+import { CITY_STORAGE_KEY, useCityStore } from '../../store/useCityStore'
 import { cityCursorController } from './cityCursorController'
 import { isPointerEventHandled } from './pointerDragClick'
 import { cityPointerDragTracker } from './pointerDragTracker'
@@ -61,9 +62,38 @@ describe('InteractiveBuilding', () => {
     fireEvent.click(getHitbox(container))
     expect(useCityStore.getState().selectedBuildingId).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: '接管修车厂' }))
+    fireEvent.click(screen.getByRole('button', { name: '接管修车厂管理权' }))
     expect(useCityStore.getState().claimedBuildingIds).toEqual(['repair-shop'])
     expect(useCityStore.getState().selectedBuildingId).toBeNull()
+  })
+
+  it('shows the repair-shop handover after rehydrating a v6 legacy save', async () => {
+    const city = useCityStore.getState()
+    window.localStorage.setItem(
+      CITY_STORAGE_KEY,
+      JSON.stringify({
+        version: 6,
+        state: {
+          buildingProgress: city.buildingProgress,
+          resources: city.resources,
+          lastResourceUpdatedAt: BASE_TIME,
+          activeProducerIds: ['repair-shop'],
+          claimedBuildingIds: BUILDING_IDS,
+          pendingMainUpgrades: [],
+          appliedStageRewardIds: [],
+        },
+      }),
+    )
+
+    await act(async () => {
+      await useCityStore.persist.rehydrate()
+    })
+
+    expect(useCityStore.getState().claimedBuildingIds).toEqual([])
+    renderBuilding()
+    expect(
+      screen.getByRole('button', { name: '接管修车厂管理权' }),
+    ).toBeInTheDocument()
   })
 
   it('suppresses selection when the click follows a drag for that pointer', () => {

@@ -127,7 +127,7 @@ describe('migrateCityState to v3', () => {
       childLevels: [2, 2, 0, 0, 0],
     })
     expect(migrated.resources).toEqual({ money: 0, oil: 0, materials: 0 })
-    expect(migrated.activeProducerIds).toEqual(['repair-shop'])
+    expect(migrated.activeProducerIds).toEqual([])
     expect(migrated.lastResourceUpdatedAt).toBe(MIGRATION_TIME)
   })
 
@@ -378,7 +378,7 @@ describe('normalize v4 durable state', () => {
 })
 
 describe('building takeover migration', () => {
-  it('preserves access for pre-v6 saves by marking every legacy building claimed', () => {
+  it('reopens management handover for pre-v6 saves instead of hiding every badge', () => {
     const migrated = migrateCityState(
       {
         buildingProgress: createInitialBuildingProgress(),
@@ -390,10 +390,25 @@ describe('building takeover migration', () => {
       MIGRATION_TIME,
     )
 
-    expect(migrated.claimedBuildingIds).toEqual(BUILDING_IDS)
+    expect(migrated.claimedBuildingIds).toEqual([])
+    expect(migrated.activeProducerIds).toEqual([])
   })
 
-  it('sanitizes explicit v6 building claims without inventing fresh access', () => {
+  it('reopens management handover for v6 saves created by the faulty migration', () => {
+    const migrated = migrateCityState(
+      {
+        claimedBuildingIds: BUILDING_IDS,
+        activeProducerIds: ['repair-shop', 'commercial-street'],
+      },
+      6,
+      MIGRATION_TIME,
+    )
+
+    expect(migrated.claimedBuildingIds).toEqual([])
+    expect(migrated.activeProducerIds).toEqual([])
+  })
+
+  it('sanitizes explicit v7 building claims without inventing fresh access', () => {
     const normalized = migrateCityState(
       {
         claimedBuildingIds: [
@@ -403,7 +418,7 @@ describe('building takeover migration', () => {
           'recycling-yard',
         ],
       },
-      6,
+      7,
       MIGRATION_TIME,
     )
 

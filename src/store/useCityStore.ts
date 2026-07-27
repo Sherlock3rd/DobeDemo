@@ -424,7 +424,7 @@ export const useCityStore = create<CityState>()(
     }),
     {
       name: CITY_STORAGE_KEY,
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted, version) =>
         migrateCityState(persisted, version, Date.now()),
