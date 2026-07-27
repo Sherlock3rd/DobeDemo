@@ -50,14 +50,16 @@ describe('NarrativeDialogueOverlay', () => {
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
 
-  it('returns post-eligibility dialogue to the assessment meeting', async () => {
+  it('sends the formal-member verdict directly to task packages', async () => {
     const event = getNarrativeEvent('special-vote:formal-member')
     if (!event) throw new Error('Missing eligibility narrative')
     const onComplete = vi.fn()
     render(<NarrativeDialogueOverlay event={event} onComplete={onComplete} />)
 
     await userEvent.click(screen.getByRole('button', { name: '下一句' }))
-    await userEvent.click(screen.getByRole('button', { name: '继续评定会议' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: '查看下一章任务包' }),
+    )
 
     expect(onComplete).toHaveBeenCalledTimes(1)
   })

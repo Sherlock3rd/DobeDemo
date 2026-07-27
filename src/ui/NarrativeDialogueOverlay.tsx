@@ -26,6 +26,7 @@ export function NarrativeDialogueOverlay({
   const line = event.lines[lineIndex]
   const isLastLine = lineIndex === event.lines.length - 1
   const startsChapter = event.id.startsWith('chapter-start:')
+  const opensTaskPackages = event.id === 'special-vote:formal-member'
   const returnsToAssessment = event.id.startsWith('special-vote:')
 
   useEffect(() => {
@@ -74,11 +75,13 @@ export function NarrativeDialogueOverlay({
               }}
             >
               {isLastLine
-                ? returnsToAssessment
-                  ? '继续评定会议'
-                  : startsChapter
-                    ? '开始章节行动'
-                    : '开始行动'
+                ? opensTaskPackages
+                  ? '查看下一章任务包'
+                  : returnsToAssessment
+                    ? '继续评定会议'
+                    : startsChapter
+                      ? '开始章节行动'
+                      : '开始行动'
                 : '下一句'}
             </button>
           </div>

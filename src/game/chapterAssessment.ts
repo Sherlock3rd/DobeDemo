@@ -11,6 +11,8 @@ import {
 } from './gangHierarchy'
 
 export type ChapterMeetingVote = 'option-a' | 'option-b'
+export type ChapterMeetingDecision =
+  ChapterMeetingVote | 'formal-member-approved'
 
 export interface NeutralEventOption {
   id: ChapterMeetingVote
@@ -52,6 +54,7 @@ export interface ChapterAssessment {
   nextChapter: ChapterDefinition
   chair: GangCoreSeat
   specialVote: SpecialEligibilityVote | null
+  eventVoteRequired: boolean
   eventTitle: string
   eventDescription: string
   options: readonly [NeutralEventOption, NeutralEventOption]
@@ -251,6 +254,7 @@ export function getChapterAssessment(
         Math.min(completedChapterNumber - 1, VOTING_SEATS.length - 1)
       ],
     specialVote: getSpecialEligibilityVote(completedChapterNumber),
+    eventVoteRequired: completedChapterNumber !== 1,
     eventTitle: event.title,
     eventDescription: event.description,
     options: [

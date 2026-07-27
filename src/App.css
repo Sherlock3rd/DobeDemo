@@ -7333,9 +7333,15 @@
 .gang-tree-panel__network {
   position: relative;
   width: min(54rem, 100%);
-  height: clamp(18rem, 40vh, 24rem);
-  min-height: 18rem;
+  height: clamp(28rem, 60vh, 34rem);
+  min-height: 28rem;
   margin: 0 auto;
+  background: linear-gradient(
+    90deg,
+    transparent 49.7%,
+    rgba(45, 212, 191, 0.06) 49.7% 50.3%,
+    transparent 50.3%
+  );
 }
 
 .gang-tree-panel__network-lines {
@@ -7349,8 +7355,13 @@
 
 .gang-tree-panel__network-lines line {
   stroke: rgba(226, 232, 240, 0.48);
-  stroke-width: 0.75;
+  stroke-width: 1.4;
   vector-effect: non-scaling-stroke;
+}
+
+.gang-tree-panel__network-lines .gang-tree-panel__network-spine {
+  stroke: rgba(45, 212, 191, 0.68);
+  stroke-width: 4;
 }
 
 .gang-tree-panel__hierarchy {
@@ -7368,7 +7379,7 @@
   z-index: 1;
   top: var(--node-y);
   left: var(--node-x);
-  width: clamp(6.4rem, 12vw, 8.5rem);
+  width: clamp(7.2rem, 13vw, 9.5rem);
   transform: translate(-50%, -50%);
 }
 
@@ -7377,7 +7388,7 @@
   justify-items: center;
   gap: 0.18rem;
   width: 100%;
-  min-height: 6.8rem;
+  min-height: 6.2rem;
   padding: 0.3rem;
   border: 0;
   color: #cbd5e1;
@@ -7473,20 +7484,20 @@
 .gang-tree-panel__player-node {
   position: absolute;
   z-index: 2;
-  top: 50%;
+  top: var(--player-y);
   left: 50%;
   display: grid;
   justify-items: center;
   gap: 0.18rem;
-  width: 9rem;
-  padding: 0.5rem;
+  width: 8rem;
+  padding: 0.3rem;
   transform: translate(-50%, -50%);
   text-align: center;
 }
 
 .gang-tree-panel__player-node .gang-tree-panel__portrait {
-  width: 6rem;
-  height: 6.5rem;
+  width: 4.9rem;
+  height: 5.3rem;
   border-color: #fbbf24;
   filter: none;
   box-shadow:
@@ -7748,8 +7759,8 @@
   }
 
   .gang-tree-panel__network {
-    height: 19rem;
-    min-height: 19rem;
+    height: 27rem;
+    min-height: 27rem;
   }
 
   .gang-tree-panel__network-node {

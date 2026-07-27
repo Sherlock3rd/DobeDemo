@@ -605,7 +605,7 @@ export default function App(): JSX.Element {
               const applied = completeAssessment(
                 selection.completedChapterNumber,
                 selection.selectedPackageId,
-                selection.vote,
+                selection.decision,
               )
               if (!applied) return
               setPlayOverlay({ kind: 'none' })

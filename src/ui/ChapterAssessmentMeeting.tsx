@@ -8,6 +8,7 @@ import {
 import gangPortraitAtlas from '../assets/peaky-blinders-hierarchy-atlas.png'
 import {
   getChapterAssessment,
+  type ChapterMeetingDecision,
   type ChapterMeetingVote,
 } from '../game/chapterAssessment'
 import { getChapterTasks } from '../game/chapterProgression'
@@ -18,7 +19,7 @@ export interface ChapterMeetingSelection {
   completedChapterNumber: number
   nextChapterNumber: number
   selectedPackageId: string
-  vote: ChapterMeetingVote
+  decision: ChapterMeetingDecision
 }
 
 interface ChapterAssessmentMeetingProps {
@@ -52,7 +53,8 @@ export function ChapterAssessmentMeeting({
   const [phase, setPhase] = useState<MeetingPhase>(() =>
     assessment?.specialVote ? 'special' : 'event',
   )
-  const [playerVote, setPlayerVote] = useState<ChapterMeetingVote | null>(null)
+  const [meetingDecision, setMeetingDecision] =
+    useState<ChapterMeetingDecision | null>(null)
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null,
   )
@@ -71,6 +73,7 @@ export function ChapterAssessmentMeeting({
     nextChapter,
     chair,
     specialVote,
+    eventVoteRequired,
     options,
     taskPackages,
   } = assessment
@@ -88,42 +91,58 @@ export function ChapterAssessmentMeeting({
   const optionLabel = (vote: ChapterMeetingVote): string =>
     options.find((option) => option.id === vote)?.label ?? ''
   const castVote = (vote: ChapterMeetingVote): void => {
-    setPlayerVote(vote)
+    setMeetingDecision(vote)
     setPhase('result')
   }
-  const flowSteps = specialVote
+  const flowSteps = !eventVoteRequired
     ? [
         ['01', '资格表决'],
-        ['02', '事件说明'],
-        ['03', '中性表决'],
-        ['04', '任务包接取'],
+        ['02', '任务包接取'],
       ]
-    : [
-        ['01', '事件说明'],
-        ['02', '中性表决'],
-        ['03', '任务包接取'],
-      ]
-  const currentFlowStep = specialVote
-    ? phase === 'special' ||
-      phase === 'specialResult' ||
-      phase === 'specialDialogue'
-      ? 1
+    : specialVote
+      ? [
+          ['01', '资格表决'],
+          ['02', '事件说明'],
+          ['03', '中性表决'],
+          ['04', '任务包接取'],
+        ]
+      : [
+          ['01', '事件说明'],
+          ['02', '中性表决'],
+          ['03', '任务包接取'],
+        ]
+  const currentFlowStep = !eventVoteRequired
+    ? phase === 'packages'
+      ? 2
+      : 1
+    : specialVote
+      ? phase === 'special' ||
+        phase === 'specialResult' ||
+        phase === 'specialDialogue'
+        ? 1
+        : phase === 'event'
+          ? 2
+          : phase === 'vote' || phase === 'result'
+            ? 3
+            : 4
       : phase === 'event'
-        ? 2
+        ? 1
         : phase === 'vote' || phase === 'result'
-          ? 3
-          : 4
-    : phase === 'event'
-      ? 1
-      : phase === 'vote' || phase === 'result'
-        ? 2
-        : 3
+          ? 2
+          : 3
 
   if (phase === 'specialDialogue' && specialDialogue) {
     return (
       <NarrativeDialogueOverlay
         event={specialDialogue}
-        onComplete={() => setPhase('event')}
+        onComplete={() => {
+          if (!eventVoteRequired && specialVote?.id === 'formal-member') {
+            setMeetingDecision('formal-member-approved')
+            setPhase('packages')
+          } else {
+            setPhase('event')
+          }
+        }}
       />
     )
   }
@@ -323,7 +342,9 @@ export function ChapterAssessmentMeeting({
               </section>
             ) : null}
 
-            {phase === 'result' && playerVote ? (
+            {phase === 'result' &&
+            (meetingDecision === 'option-a' ||
+              meetingDecision === 'option-b') ? (
               <section
                 className="chapter-assessment__result"
                 role="status"
@@ -332,7 +353,7 @@ export function ChapterAssessmentMeeting({
                 <div className="chapter-assessment__result-heading">
                   <span>POSITION RECORDED</span>
                   <strong>事件意见已归档</strong>
-                  <p>{`你的选择：${optionLabel(playerVote)}。委员会将把两种立场都转化为可执行任务。`}</p>
+                  <p>{`你的选择：${optionLabel(meetingDecision)}。委员会将把两种立场都转化为可执行任务。`}</p>
                 </div>
                 <ul
                   className="chapter-assessment__members"
@@ -371,14 +392,15 @@ export function ChapterAssessmentMeeting({
               </section>
             ) : null}
 
-            {phase === 'packages' && playerVote ? (
+            {phase === 'packages' && meetingDecision ? (
               <section className="chapter-assessment__package-selection">
                 <div className="chapter-assessment__proposal">
                   <span>NEXT CHAPTER ORDERS</span>
                   <h2>{`${nextChapter.title} · 选择任务包`}</h2>
                   <p>
-                    三个任务包均由刚才的事件延伸而来。只能接取一个；每包包含 1–3
-                    项会议任务，并自动附加本章固定任务。
+                    {eventVoteRequired
+                      ? '三个任务包均由刚才的事件延伸而来。只能接取一个；每包包含 1–3 项会议任务，并自动附加本章固定任务。'
+                      : '转正表决已经通过。委员会现在给出下一阶段的三个任务包；只能接取一个，并自动附加本章固定任务。'}
                   </p>
                 </div>
 
@@ -449,7 +471,7 @@ export function ChapterAssessmentMeeting({
                         completedChapterNumber,
                         nextChapterNumber: nextChapter.number,
                         selectedPackageId: selectedPackage.id,
-                        vote: playerVote,
+                        decision: meetingDecision,
                       })
                     }}
                   >

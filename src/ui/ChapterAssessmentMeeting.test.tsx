@@ -22,10 +22,12 @@ describe('ChapterAssessmentMeeting', () => {
       }),
     ).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '下一句' }))
-    await userEvent.click(screen.getByRole('button', { name: '继续评定会议' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: '查看下一章任务包' }),
+    )
   }
 
-  it('adds the formal-member vote and dialogue before the neutral event and task packages', async () => {
+  it('uses the formal-member decision as chapter ones only vote before task packages', async () => {
     const onComplete = vi.fn()
     render(
       <ChapterAssessmentMeeting
@@ -40,21 +42,20 @@ describe('ChapterAssessmentMeeting', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('章节会议流程')).toHaveTextContent('资格表决')
+    expect(screen.getByLabelText('章节会议流程')).toHaveTextContent(
+      '任务包接取',
+    )
+    expect(screen.getByLabelText('章节会议流程')).not.toHaveTextContent(
+      '中性表决',
+    )
 
     await finishFormalMemberEligibility()
 
-    expect(screen.getByText('无主废车涌入南区')).toBeInTheDocument()
-    expect(screen.getByText('对当前事件进行中性表决')).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: '进入事件表决' }))
-    await userEvent.click(screen.getByRole('button', { name: /先核清来源/ }))
-
+    expect(screen.queryByText('无主废车涌入南区')).not.toBeInTheDocument()
     expect(
-      screen.getByRole('status', { name: '事件表决结果' }),
-    ).toHaveTextContent('你的选择：先核清来源')
-    await userEvent.click(
-      screen.getByRole('button', { name: '查看三个任务包' }),
-    )
+      screen.queryByRole('button', { name: '进入事件表决' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText(/转正表决已经通过/)).toBeInTheDocument()
 
     const packageGroup = screen.getByRole('radiogroup', {
       name: '第二章 · 废铁生意任务包',
@@ -82,21 +83,20 @@ describe('ChapterAssessmentMeeting', () => {
       completedChapterNumber: 1,
       nextChapterNumber: 2,
       selectedPackageId: 'chapter-2-package-yard',
-      vote: 'option-a',
+      decision: 'formal-member-approved',
     })
   })
 
-  it('opens the same three packages after either neutral vote', async () => {
+  it('opens the same three packages after either neutral vote in ordinary meetings', async () => {
     const readPackages = async (
-      voteName: '先核清来源' | '先保住产线',
+      voteName: '先疏通仓储' | '先强化押运',
     ): Promise<string[]> => {
       const view = render(
         <ChapterAssessmentMeeting
-          completedChapterNumber={1}
+          completedChapterNumber={2}
           onComplete={() => {}}
         />,
       )
-      await finishFormalMemberEligibility()
       await userEvent.click(
         screen.getByRole('button', { name: '进入事件表决' }),
       )
@@ -113,8 +113,8 @@ describe('ChapterAssessmentMeeting', () => {
       return titles
     }
 
-    expect(await readPackages('先核清来源')).toEqual(
-      await readPackages('先保住产线'),
+    expect(await readPackages('先疏通仓储')).toEqual(
+      await readPackages('先强化押运'),
     )
   })
 

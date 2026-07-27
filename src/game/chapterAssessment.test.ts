@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getChapterAssessment } from './chapterAssessment'
 
 describe('chapter assessment meeting', () => {
-  it('defines one deterministic neutral event for every chapter transition', () => {
+  it('uses the formal-member vote as the only first transition vote and keeps later neutral events deterministic', () => {
     for (
       let completedChapterNumber = 1;
       completedChapterNumber < 7;
@@ -16,6 +16,7 @@ describe('chapter assessment meeting', () => {
       expect(second).toEqual(first)
       expect(first.completedChapter.number).toBe(completedChapterNumber)
       expect(first.nextChapter.number).toBe(completedChapterNumber + 1)
+      expect(first.eventVoteRequired).toBe(completedChapterNumber !== 1)
       expect(first.options.map((option) => option.id)).toEqual([
         'option-a',
         'option-b',

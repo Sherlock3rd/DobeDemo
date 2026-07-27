@@ -102,14 +102,18 @@ describe('useChapterStore', () => {
     expect(
       useChapterStore
         .getState()
-        .completeAssessment(1, 'chapter-2-package-yard', 'option-b'),
+        .completeAssessment(
+          1,
+          'chapter-2-package-yard',
+          'formal-member-approved',
+        ),
     ).toBe(true)
     expect(useChapterStore.getState()).toMatchObject({
       activeChapterNumber: 2,
       selectedTaskPackageIds: {
         2: 'chapter-2-package-yard',
       },
-      meetingVotes: { 1: 'option-b' },
+      meetingVotes: { 1: 'formal-member-approved' },
       completedAssessmentChapterNumbers: [1],
     })
   })
@@ -118,7 +122,11 @@ describe('useChapterStore', () => {
     expect(
       useChapterStore
         .getState()
-        .completeAssessment(1, 'chapter-2-package-yard', 'option-a'),
+        .completeAssessment(
+          1,
+          'chapter-2-package-yard',
+          'formal-member-approved',
+        ),
     ).toBe(false)
   })
 
@@ -165,6 +173,30 @@ describe('useChapterStore', () => {
       claimedChapterNumbers: [1],
       seenNarrativeIds: ['first-entry', 'chapter-start:1', 'chapter-start:2'],
       completedAssessmentChapterNumbers: [1],
+    })
+  })
+
+  it('normalizes an old first-chapter neutral vote into the formal-member verdict', async () => {
+    window.localStorage.setItem(
+      CHAPTER_STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          activeChapterNumber: 2,
+          selectedTaskPackageIds: {
+            2: 'chapter-2-package-yard',
+          },
+          meetingVotes: { 1: 'option-b' },
+          claimedChapterNumbers: [1],
+          completedAssessmentChapterNumbers: [1],
+        },
+        version: 5,
+      }),
+    )
+
+    await useChapterStore.persist.rehydrate()
+
+    expect(useChapterStore.getState().meetingVotes).toEqual({
+      1: 'formal-member-approved',
     })
   })
 })

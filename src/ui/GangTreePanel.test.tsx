@@ -51,13 +51,13 @@ describe('GangTreePanel', () => {
     expect(screen.getByText('剃刀党')).toBeInTheDocument()
   })
 
-  it('renders Thomas at the center with seven connected core-seat holders around him', () => {
+  it('renders seven seats on a top-to-bottom power line with Thomas at his current rank', () => {
     render(<GangTreePanel open onClose={vi.fn()} />)
 
     const dialog = screen.getByRole('dialog', { name: '帮派权力树' })
     expect(dialog).not.toHaveAttribute('aria-modal')
     expect(
-      screen.getByRole('list', { name: '剃刀党管辖关系' }),
+      screen.getByRole('list', { name: '剃刀党上下职级关系' }),
     ).toBeInTheDocument()
     expect(screen.getAllByRole('listitem')).toHaveLength(7)
 
@@ -73,10 +73,32 @@ describe('GangTreePanel', () => {
     ).toBeInTheDocument()
     expect(
       document.querySelectorAll('.gang-tree-panel__network-lines line'),
-    ).toHaveLength(7)
+    ).toHaveLength(8)
+    expect(
+      document.querySelector('.gang-tree-panel__network-spine'),
+    ).toBeInTheDocument()
+    expect(
+      (
+        document.querySelector(
+          '.gang-tree-panel__network-node[data-threshold="50"]',
+        ) as HTMLElement
+      ).style.getPropertyValue('--node-y'),
+    ).toBe('10%')
+    expect(
+      (
+        document.querySelector(
+          '.gang-tree-panel__network-node[data-threshold="1"]',
+        ) as HTMLElement
+      ).style.getPropertyValue('--node-y'),
+    ).toBe('88%')
+    expect(
+      screen
+        .getByLabelText('自己：Thomas Shelby，见习')
+        .style.getPropertyValue('--player-y'),
+    ).toBe('88%')
   })
 
-  it('selects a surrounding holder to reveal their role and direct reports', async () => {
+  it('selects a holder on the vertical line to reveal their role and direct reports', async () => {
     const user = userEvent.setup()
     render(<GangTreePanel open onClose={vi.fn()} />)
 
@@ -104,7 +126,7 @@ describe('GangTreePanel', () => {
     const user = userEvent.setup()
     render(<GangTreePanel open onClose={vi.fn()} />)
 
-    const list = screen.getByRole('list', { name: '剃刀党管辖关系' })
+    const list = screen.getByRole('list', { name: '剃刀党上下职级关系' })
     const prospect = within(list).getByRole('button', {
       name: '查看Eddie “Pins” Doyle · 见习 Lv.1',
     })
@@ -118,6 +140,30 @@ describe('GangTreePanel', () => {
     expect(president).toHaveAttribute('aria-pressed', 'true')
     expect(prospect).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByLabelText('Winston Cole的职位详情')).toBeInTheDocument()
+  })
+
+  it('returns selection to the current role when account progress changes', async () => {
+    const user = userEvent.setup()
+    useGangStore.setState({
+      totalReputation: MAX_REPUTATION,
+      currentLevel: 50,
+    })
+    const { rerender } = render(<GangTreePanel open onClose={vi.fn()} />)
+    await user.click(
+      screen.getByRole('button', {
+        name: '查看Maeve “Red” Quinn · 正式成员 Lv.8',
+      }),
+    )
+    expect(
+      screen.getByLabelText('Maeve “Red” Quinn的职位详情'),
+    ).toBeInTheDocument()
+
+    useGangStore.getState().reset(BASE_TIME)
+    rerender(<GangTreePanel open onClose={vi.fn()} />)
+
+    expect(
+      screen.getByLabelText('Eddie “Pins” Doyle的职位详情'),
+    ).toBeInTheDocument()
   })
 
   it('shows higher seats as superiors and completed core seats as subordinates', () => {

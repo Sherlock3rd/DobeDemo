@@ -633,10 +633,10 @@ describe('App', () => {
     ).toHaveTextContent('赞成 5 席 · 保留 1 席 · 资格通过')
     await user.click(screen.getByRole('button', { name: '听取表决后的对话' }))
     await user.click(screen.getByRole('button', { name: '下一句' }))
-    await user.click(screen.getByRole('button', { name: '继续评定会议' }))
-    await user.click(screen.getByRole('button', { name: '进入事件表决' }))
-    await user.click(screen.getByRole('button', { name: /先核清来源/ }))
-    await user.click(screen.getByRole('button', { name: '查看三个任务包' }))
+    await user.click(screen.getByRole('button', { name: '查看下一章任务包' }))
+    expect(
+      screen.queryByRole('button', { name: '进入事件表决' }),
+    ).not.toBeInTheDocument()
     await user.click(screen.getByRole('radio', { name: /拆解产线/ }))
     await user.click(
       screen.getByRole('button', { name: '确认接取并开始第2章' }),
@@ -654,7 +654,7 @@ describe('App', () => {
     expect(useChapterStore.getState()).toMatchObject({
       activeChapterNumber: 2,
       selectedTaskPackageIds: { 2: 'chapter-2-package-yard' },
-      meetingVotes: { 1: 'option-a' },
+      meetingVotes: { 1: 'formal-member-approved' },
       completedAssessmentChapterNumbers: [1],
     })
   })

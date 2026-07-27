@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type JSX,
@@ -179,15 +180,19 @@ function SeatPortrait({
   )
 }
 
-const NETWORK_POSITIONS = [
-  ['top-left', 17, 17],
-  ['top-center', 50, 11],
-  ['top-right', 83, 17],
-  ['middle-right', 88, 50],
-  ['bottom-right', 83, 83],
-  ['bottom-center', 50, 89],
-  ['bottom-left', 17, 83],
+const LINEAR_POSITIONS = [
+  ['prospect', 22, 88],
+  ['full-patch', 78, 75],
+  ['wrench', 22, 62],
+  ['bar-liaison', 78, 49],
+  ['road-captain', 22, 36],
+  ['vice-president', 78, 23],
+  ['president', 22, 10],
 ] as const
+const LINEAR_HIERARCHY = GANG_CORE_SEATS.map((seat, index) => ({
+  seat,
+  position: LINEAR_POSITIONS[index],
+})).reverse()
 
 function HierarchyNode({
   seat,
@@ -200,7 +205,7 @@ function HierarchyNode({
   currentLevel: number
   selected: boolean
   onSelect: () => void
-  position: (typeof NETWORK_POSITIONS)[number]
+  position: (typeof LINEAR_POSITIONS)[number]
 }): JSX.Element {
   const role = roleForCoreSeat(seat)
   const state = getGangSeatState(seat.threshold, currentLevel)
@@ -252,9 +257,16 @@ export function GangTreePanel({
   )
   const [feedback, setFeedback] = useState('')
   const currentRole = getGangRole(currentLevel)
-  const [selectedThreshold, setSelectedThreshold] = useState(
-    currentRole.threshold,
-  )
+  const [selection, setSelection] = useState({
+    roleThreshold: currentRole.threshold,
+    selectedThreshold: currentRole.threshold,
+  })
+  const selectedThreshold =
+    selection.roleThreshold === currentRole.threshold
+      ? selection.selectedThreshold
+      : currentRole.threshold
+  const hierarchyScrollRef = useRef<HTMLDivElement | null>(null)
+  const playerNodeRef = useRef<HTMLElement | null>(null)
   const titleRef = useInitialFocus<HTMLHeadingElement>(open)
   const currentChapter = getChapterForGangLevel(currentLevel)
   const chapterComplete = claimedChapterNumbers.includes(currentChapter.number)
@@ -266,7 +278,10 @@ export function GangTreePanel({
   const finishCeremony = useCallback((): void => {
     if (!ceremony) return
     const completedLevel = ceremony.level
-    setSelectedThreshold(ceremony.level)
+    setSelection({
+      roleThreshold: ceremony.level,
+      selectedThreshold: ceremony.level,
+    })
     onPromotionCeremonyComplete?.()
     onRolePromoted?.(completedLevel)
   }, [ceremony, onPromotionCeremonyComplete, onRolePromoted])
@@ -291,6 +306,20 @@ export function GangTreePanel({
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [ceremony, finishCeremony, open, onClose])
+
+  useEffect(() => {
+    if (!open || !hierarchyScrollRef.current || !playerNodeRef.current) return
+    const container = hierarchyScrollRef.current
+    const playerNode = playerNodeRef.current
+    const containerRect = container.getBoundingClientRect()
+    const playerRect = playerNode.getBoundingClientRect()
+    const targetScrollTop =
+      container.scrollTop +
+      playerRect.top -
+      containerRect.top -
+      (container.clientHeight - playerRect.height) / 2
+    container.scrollTop = Math.max(0, targetScrollTop)
+  }, [currentRole.threshold, open])
 
   if (!open) return null
 
@@ -327,6 +356,11 @@ export function GangTreePanel({
   const selectedSeat = getGangCoreSeat(selectedThreshold)
   const selectedRole = roleForCoreSeat(selectedSeat)
   const selectedState = getGangSeatState(selectedThreshold, currentLevel)
+  const currentRoleIndex = GANG_CORE_SEATS.findIndex(
+    (seat) => seat.threshold === currentRole.threshold,
+  )
+  const [, , currentRoleY] =
+    LINEAR_POSITIONS[Math.max(0, currentRoleIndex)] ?? LINEAR_POSITIONS[0]
   const handover = crossesRole ? getRoleHandover(nextLevel) : null
   const stopPropagation = (event: { stopPropagation: () => void }): void => {
     event.stopPropagation()
@@ -383,10 +417,13 @@ export function GangTreePanel({
           </div>
         </div>
 
-        <div className="gang-tree-panel__hierarchy-scroll">
+        <div
+          ref={hierarchyScrollRef}
+          className="gang-tree-panel__hierarchy-scroll"
+        >
           <p className="gang-tree-panel__hierarchy-help">
-            Thomas
-            位于关系网中央；金色为当前席位前任，绿色为辖下，灰色为尚未接掌的上级。
+            职级由上至下排列：主席在最上，见习在最下；Thomas
+            位于当前职级的中央权力线上。金色为当前席位前任，绿色为辖下，灰色为上级。
           </p>
           <div className="gang-tree-panel__network">
             <svg
@@ -395,28 +432,46 @@ export function GangTreePanel({
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              {NETWORK_POSITIONS.map(([name, x, y]) => (
-                <line key={name} x1="50" y1="50" x2={x} y2={y} />
+              <line
+                className="gang-tree-panel__network-spine"
+                x1="50"
+                y1="8"
+                x2="50"
+                y2="95"
+              />
+              {LINEAR_POSITIONS.map(([name, x, y]) => (
+                <line key={name} x1="50" y1={y} x2={x} y2={y} />
               ))}
             </svg>
             <ol
               className="gang-tree-panel__hierarchy"
-              aria-label="剃刀党管辖关系"
+              aria-label="剃刀党上下职级关系"
             >
-              {GANG_CORE_SEATS.map((seat, index) => (
+              {LINEAR_HIERARCHY.map(({ seat, position }) => (
                 <HierarchyNode
                   key={seat.threshold}
                   seat={seat}
                   currentLevel={currentLevel}
                   selected={selectedThreshold === seat.threshold}
-                  onSelect={() => setSelectedThreshold(seat.threshold)}
-                  position={NETWORK_POSITIONS[index]}
+                  onSelect={() =>
+                    setSelection({
+                      roleThreshold: currentRole.threshold,
+                      selectedThreshold: seat.threshold,
+                    })
+                  }
+                  position={position}
                 />
               ))}
             </ol>
             <article
+              ref={playerNodeRef}
               className="gang-tree-panel__player-node"
               aria-label={`自己：${PLAYER_GANG_LEADER}，${currentRole.chineseTitle}`}
+              style={
+                {
+                  '--player-y': `${currentRoleY}%`,
+                } as CSSProperties
+              }
             >
               <SeatPortrait index={0} />
               <span>自己</span>

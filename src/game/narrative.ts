@@ -186,7 +186,7 @@ export function getNarrativeEvent(id: string): NarrativeEvent | null {
           speaker: 'Thomas Shelby',
           speakerRole: '见习 · 待完成席位交接',
           portraitIndex: 0,
-          text: '补丁不是奖赏，是新的责任。继续开会，把废铁生意和下一章要做的事摆到桌上。',
+          text: '补丁不是奖赏，是新的责任。转正已经通过，现在把下一章可接的任务包摆到桌上，由我挑一份。',
         },
       ],
     }

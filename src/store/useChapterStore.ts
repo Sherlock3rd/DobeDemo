@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { getBuildingPower } from '../config/economyConfig'
 import { heroesConfig } from '../config/heroesConfig'
-import type { ChapterMeetingVote } from '../game/chapterAssessment'
+import type { ChapterMeetingDecision } from '../game/chapterAssessment'
 import {
   CHAPTERS,
   areChapterTasksComplete,
@@ -30,7 +30,7 @@ export const CHAPTER_STORAGE_KEY = 'dobe-chapter-progression-v1'
 interface ChapterState {
   activeChapterNumber: number
   selectedTaskPackageIds: Record<number, string>
-  meetingVotes: Record<number, ChapterMeetingVote>
+  meetingVotes: Record<number, ChapterMeetingDecision>
   claimedTaskIds: string[]
   claimedChapterNumbers: number[]
   seenNarrativeIds: NarrativeEventId[]
@@ -41,7 +41,7 @@ interface ChapterState {
   completeAssessment: (
     completedChapterNumber: number,
     selectedPackageId: string,
-    vote: ChapterMeetingVote,
+    decision: ChapterMeetingDecision,
   ) => boolean
   reset: () => void
 }
@@ -203,15 +203,22 @@ function normalizeSelectedTaskPackageIds(
 
 function normalizeMeetingVotes(
   value: unknown,
-): Record<number, ChapterMeetingVote> {
+): Record<number, ChapterMeetingDecision> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return {}
   }
   const source = value as Record<string, unknown>
-  const result: Record<number, ChapterMeetingVote> = {}
+  const result: Record<number, ChapterMeetingDecision> = {}
   for (const chapter of CHAPTERS.slice(0, -1)) {
     const candidate = source[String(chapter.number)]
-    if (candidate === 'option-a' || candidate === 'option-b') {
+    if (
+      chapter.number === 1 &&
+      (candidate === 'formal-member-approved' ||
+        candidate === 'option-a' ||
+        candidate === 'option-b')
+    ) {
+      result[chapter.number] = 'formal-member-approved'
+    } else if (candidate === 'option-a' || candidate === 'option-b') {
       result[chapter.number] = candidate
     }
   }
@@ -312,9 +319,17 @@ export const useChapterStore = create<ChapterState>()(
               },
         )
       },
-      completeAssessment: (completedChapterNumber, selectedPackageId, vote) => {
+      completeAssessment: (
+        completedChapterNumber,
+        selectedPackageId,
+        decision,
+      ) => {
         const state = get()
         const nextChapterNumber = completedChapterNumber + 1
+        const hasValidDecision =
+          completedChapterNumber === 1
+            ? decision === 'formal-member-approved'
+            : decision === 'option-a' || decision === 'option-b'
         if (
           state.activeChapterNumber !== completedChapterNumber ||
           !state.claimedChapterNumbers.includes(completedChapterNumber) ||
@@ -324,7 +339,7 @@ export const useChapterStore = create<ChapterState>()(
           !getChapterTaskPackages(nextChapterNumber).some(
             (taskPackage) => taskPackage.id === selectedPackageId,
           ) ||
-          (vote !== 'option-a' && vote !== 'option-b')
+          !hasValidDecision
         ) {
           return false
         }
@@ -336,7 +351,7 @@ export const useChapterStore = create<ChapterState>()(
           },
           meetingVotes: {
             ...current.meetingVotes,
-            [completedChapterNumber]: vote,
+            [completedChapterNumber]: decision,
           },
           completedAssessmentChapterNumbers: [
             ...current.completedAssessmentChapterNumbers,
@@ -358,7 +373,7 @@ export const useChapterStore = create<ChapterState>()(
     }),
     {
       name: CHAPTER_STORAGE_KEY,
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted, version) => {
         const source =
