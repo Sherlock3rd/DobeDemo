@@ -17,6 +17,7 @@ import { getTotalReputationForLevel } from '../game/gangProgression'
 import { useAdventureStore } from '../store/useAdventureStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
+import { useChapterStore } from '../store/useChapterStore'
 import { HeroesPanel } from './HeroesPanel'
 
 const BASE_TIME = 1_700_000_000_000
@@ -38,6 +39,9 @@ describe('HeroesPanel', () => {
     useGangStore.getState().reset(BASE_TIME)
     useCityStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
+    useAdventureStore.getState().grantPrologueGun()
+    useChapterStore.getState().reset()
+    useChapterStore.setState({ prologueStep: 'complete' })
     useChestTick.setState({ now: BASE_TIME, tick: 0 })
   })
 
@@ -174,11 +178,11 @@ describe('HeroesPanel', () => {
     expect(screen.queryByText('废车回收厂')).not.toBeInTheDocument()
     expect(screen.queryByText(/下批约/)).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /^车辆/ }))
-    expect(screen.getByText('配件仓库 0/40')).toBeInTheDocument()
+    expect(screen.getByText('配件仓库 1/40')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /^一键回收/ })).toHaveLength(5)
-    await userEvent.click(screen.getByRole('button', { name: '选择引擎' }))
+    await userEvent.click(screen.getByRole('button', { name: '选择轮胎' }))
     expect(
-      screen.getByText('仓库暂无引擎配件，请前往废车回收厂生产页领取。'),
+      screen.getByText('仓库暂无轮胎配件，请前往废车回收厂生产页领取。'),
     ).toBeInTheDocument()
   })
 

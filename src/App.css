@@ -2436,6 +2436,330 @@
   font-size: 0.72rem;
 }
 
+.narrative-dialogue--cinematic {
+  grid-template-columns: minmax(0, 1fr);
+  width: min(76rem, 100%);
+  min-height: min(72vh, 42rem);
+  background: #03090b;
+}
+
+.narrative-dialogue--cinematic .narrative-dialogue__artwork {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.narrative-dialogue--cinematic .narrative-dialogue__portrait {
+  display: none;
+}
+
+.narrative-dialogue--cinematic .narrative-dialogue__content {
+  position: relative;
+  z-index: 1;
+  align-self: end;
+  width: min(48rem, 100%);
+  margin-left: auto;
+  padding: clamp(1.2rem, 4vw, 2.5rem);
+  background: linear-gradient(
+    90deg,
+    rgba(1, 7, 9, 0.96),
+    rgba(1, 7, 9, 0.82) 72%,
+    transparent
+  );
+  text-shadow: 0 2px 0.8rem #000;
+}
+
+.narrative-dialogue--cinematic .narrative-dialogue__content > p {
+  min-height: 0;
+}
+
+.prologue-shoot {
+  position: fixed;
+  z-index: 92;
+  inset: 0;
+  overflow: hidden;
+  color: #f8fafc;
+  background:
+    radial-gradient(
+      circle at 70% 42%,
+      rgba(239, 68, 68, 0.18),
+      transparent 18%
+    ),
+    linear-gradient(rgba(2, 8, 12, 0.08), rgba(2, 8, 12, 0.78)),
+    repeating-linear-gradient(
+      100deg,
+      #101820 0 12%,
+      #1f2937 12% 15%,
+      #080e13 15% 28%
+    );
+}
+
+.prologue-shoot::after {
+  position: absolute;
+  right: -5%;
+  bottom: -24%;
+  left: -5%;
+  height: 60%;
+  content: '';
+  background:
+    linear-gradient(90deg, transparent 48%, #d6b65d 48% 52%, transparent 52%),
+    #111827;
+  transform: perspective(26rem) rotateX(62deg);
+  transform-origin: bottom;
+}
+
+.prologue-shoot header {
+  position: absolute;
+  z-index: 3;
+  top: clamp(1rem, 4vw, 2.5rem);
+  left: clamp(1rem, 5vw, 4rem);
+  width: min(34rem, calc(100% - 2rem));
+  padding: 1rem 1.2rem;
+  border-left: 4px solid #fbbf24;
+  background: rgba(2, 8, 12, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.prologue-shoot header span {
+  color: #5eead4;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.2em;
+}
+
+.prologue-shoot header h2 {
+  margin: 0.2rem 0;
+  color: #fbbf24;
+  font-size: clamp(1.3rem, 4vw, 2.3rem);
+}
+
+.prologue-shoot header p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+
+.prologue-shoot__road i {
+  position: absolute;
+  z-index: 1;
+  bottom: 20%;
+  width: 0.5rem;
+  height: 28%;
+  background: linear-gradient(transparent, rgba(251, 191, 36, 0.85));
+  transform: rotate(12deg);
+  animation: prologue-road-streak 0.8s linear infinite;
+}
+
+.prologue-shoot__road i:nth-child(1) {
+  left: 12%;
+}
+
+.prologue-shoot__road i:nth-child(2) {
+  left: 43%;
+  animation-delay: -0.3s;
+}
+
+.prologue-shoot__road i:nth-child(3) {
+  right: 8%;
+  animation-delay: -0.55s;
+}
+
+.prologue-shoot__target {
+  position: absolute;
+  z-index: 4;
+  top: 44%;
+  left: 62%;
+  display: grid;
+  place-items: center;
+  width: clamp(8rem, 20vw, 13rem);
+  min-height: clamp(7rem, 18vw, 11rem);
+  padding: 0.6rem;
+  border: 2px solid #f43f5e;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(127, 29, 29, 0.32);
+  box-shadow:
+    0 0 0 0.5rem rgba(244, 63, 94, 0.12),
+    0 0 3rem rgba(244, 63, 94, 0.48);
+  transform: translate(-50%, -50%);
+  cursor: crosshair;
+  animation: prologue-target-drift 2.4s ease-in-out infinite alternate;
+}
+
+.prologue-shoot__target:focus-visible {
+  outline: 4px solid #fef08a;
+  outline-offset: 0.45rem;
+}
+
+.prologue-shoot__target::before,
+.prologue-shoot__target::after {
+  position: absolute;
+  content: '';
+  background: #f43f5e;
+}
+
+.prologue-shoot__target::before {
+  width: 130%;
+  height: 1px;
+}
+
+.prologue-shoot__target::after {
+  width: 1px;
+  height: 130%;
+}
+
+.prologue-shoot__rider {
+  position: relative;
+  display: block;
+  width: 4.8rem;
+  height: 3.3rem;
+}
+
+.prologue-shoot__rider i,
+.prologue-shoot__rider b,
+.prologue-shoot__rider em {
+  position: absolute;
+  display: block;
+  background: #020617;
+}
+
+.prologue-shoot__rider i {
+  right: 0.2rem;
+  bottom: 0;
+  left: 0.2rem;
+  height: 1.1rem;
+  border-radius: 50% 40% 32% 44%;
+}
+
+.prologue-shoot__rider b {
+  top: 0.3rem;
+  left: 2rem;
+  width: 1.5rem;
+  height: 2.1rem;
+  border-radius: 50% 50% 30% 30%;
+  transform: rotate(-16deg);
+}
+
+.prologue-shoot__rider em {
+  right: 0;
+  bottom: -0.35rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 0.25rem solid #020617;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.prologue-shoot__target strong,
+.prologue-shoot__target small {
+  position: relative;
+  z-index: 2;
+  padding: 0.12rem 0.35rem;
+  border-radius: 0.25rem;
+  background: rgba(2, 6, 23, 0.86);
+}
+
+.prologue-shoot__target strong {
+  color: #fef08a;
+}
+
+.prologue-shoot__weapon {
+  position: absolute;
+  z-index: 5;
+  bottom: -2rem;
+  left: 50%;
+  width: min(28rem, 72vw);
+  height: 14rem;
+  transform: translateX(-50%);
+}
+
+.prologue-shoot__weapon span {
+  position: absolute;
+  right: 8%;
+  bottom: 3rem;
+  width: 70%;
+  height: 3.4rem;
+  border-radius: 0.6rem 1.4rem 0.5rem 0.5rem;
+  background: linear-gradient(#475569, #111827 48%, #020617);
+  box-shadow: inset 0 0 0 2px #64748b;
+}
+
+.prologue-shoot__weapon b {
+  position: absolute;
+  right: 18%;
+  bottom: 0;
+  width: 4rem;
+  height: 6rem;
+  background: linear-gradient(100deg, #3f2b1f, #160e09);
+  transform: skew(-12deg);
+}
+
+.prologue-shoot__status {
+  position: absolute;
+  z-index: 6;
+  right: 1rem;
+  bottom: 1rem;
+  margin: 0;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid rgba(94, 234, 212, 0.55);
+  color: #99f6e4;
+  background: rgba(2, 8, 12, 0.84);
+  font-weight: 850;
+}
+
+.prologue-guide {
+  position: absolute;
+  z-index: 24;
+  right: clamp(0.75rem, 2.5vw, 1.25rem);
+  bottom: 4.8rem;
+  width: min(21rem, calc(100vw - 1.5rem));
+  padding: 0.85rem;
+  border: 1px solid rgba(251, 191, 36, 0.72);
+  border-left: 4px solid #fbbf24;
+  border-radius: 0.75rem;
+  color: #f8fafc;
+  background: rgba(3, 14, 16, 0.94);
+  box-shadow: 0 1rem 2.2rem rgba(0, 0, 0, 0.46);
+  pointer-events: auto;
+}
+
+.prologue-guide span {
+  color: #5eead4;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+
+.prologue-guide strong,
+.prologue-guide p {
+  display: block;
+}
+
+.prologue-guide strong {
+  margin-top: 0.2rem;
+  color: #fbbf24;
+}
+
+.prologue-guide p {
+  margin: 0.35rem 0 0.65rem;
+  color: #cbd5e1;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.prologue-guide button {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #fbbf24;
+  border-radius: 0.5rem;
+  color: #1c1302;
+  background: #fbbf24;
+  font-weight: 950;
+  cursor: pointer;
+}
+
 .chapter-assessment__overlay {
   position: fixed;
   z-index: 85;
@@ -4110,7 +4434,7 @@
 
 .global-hud__resources {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
   gap: 0.35rem;
   width: 100%;
   padding: 0.65rem 0.75rem;
@@ -4131,7 +4455,7 @@
 
 .global-hud__bottom {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
   gap: 0.5rem;
   width: 100%;
 }
@@ -5148,6 +5472,33 @@
     linear-gradient(135deg, rgba(146, 64, 14, 0.42), rgba(5, 10, 17, 0.86)),
     rgba(2, 6, 23, 0.72);
   box-shadow: inset 3px 0 #f59e0b;
+}
+
+.heroes-panel__picker-card[data-tutorial-part='true'] {
+  border-color: #5eead4;
+  box-shadow:
+    inset 3px 0 #5eead4,
+    0 0 1.4rem rgba(45, 212, 191, 0.28);
+}
+
+@keyframes prologue-road-streak {
+  from {
+    transform: translateY(-80%) rotate(12deg);
+  }
+
+  to {
+    transform: translateY(150%) rotate(12deg);
+  }
+}
+
+@keyframes prologue-target-drift {
+  from {
+    translate: -1.2rem -0.5rem;
+  }
+
+  to {
+    translate: 1.2rem 0.5rem;
+  }
 }
 
 .heroes-panel__picker-copy {
@@ -6785,6 +7136,26 @@
     min-height: 16rem;
   }
 
+  .narrative-dialogue--cinematic {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: min(78vh, 38rem);
+  }
+
+  .narrative-dialogue--cinematic .narrative-dialogue__artwork {
+    object-position: center;
+  }
+
+  .narrative-dialogue--cinematic .narrative-dialogue__content {
+    align-self: end;
+    padding: 3rem 0.9rem 0.9rem;
+    background: linear-gradient(
+      to top,
+      rgba(1, 7, 9, 0.98),
+      rgba(1, 7, 9, 0.86) 76%,
+      transparent
+    );
+  }
+
   .narrative-dialogue__portrait {
     min-height: 16rem;
     background-position-y: top !important;
@@ -6831,6 +7202,36 @@
   .narrative-dialogue__footer button {
     min-width: 5.5rem;
     padding-inline: 0.55rem;
+  }
+
+  .prologue-guide {
+    right: 0.75rem;
+    bottom: 4.4rem;
+    left: 0.75rem;
+    width: auto;
+  }
+
+  .prologue-shoot header {
+    top: 0.7rem;
+    left: 0.7rem;
+    width: calc(100% - 1.4rem);
+    padding: 0.7rem;
+  }
+
+  .prologue-shoot header p {
+    font-size: 0.78rem;
+  }
+
+  .prologue-shoot__target {
+    top: 49%;
+    left: 62%;
+    width: 8.5rem;
+    min-height: 8.5rem;
+  }
+
+  .prologue-shoot__weapon {
+    width: 88vw;
+    height: 11rem;
   }
 
   .chapter-assessment__overlay {
@@ -7264,6 +7665,11 @@
   }
 
   .global-hud__promotion-ready {
+    animation: none;
+  }
+
+  .prologue-shoot__target,
+  .prologue-shoot__road i {
     animation: none;
   }
 

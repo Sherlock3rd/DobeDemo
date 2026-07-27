@@ -37,6 +37,7 @@ export interface RaceScreenProps {
   onDevelop?: () => void
   roleChallengeTitle?: string
   onRoleChallengeVictory?: () => void
+  prologueTitle?: string
 }
 
 interface RaceBoot {
@@ -75,6 +76,7 @@ export function RaceScreen({
   onDevelop = onExit,
   roleChallengeTitle,
   onRoleChallengeVictory,
+  prologueTitle,
 }: RaceScreenProps): JSX.Element {
   const [bootResult] = useState<
     { ok: true; value: RaceBoot } | { ok: false; message: string }
@@ -108,6 +110,7 @@ export function RaceScreen({
       initial={bootResult.value}
       roleChallengeTitle={roleChallengeTitle}
       onRoleChallengeVictory={onRoleChallengeVictory}
+      prologueTitle={prologueTitle}
     />
   )
 }
@@ -119,6 +122,7 @@ function RaceSession({
   initial,
   roleChallengeTitle,
   onRoleChallengeVictory,
+  prologueTitle,
 }: {
   stage: number
   onExit: () => void
@@ -126,8 +130,10 @@ function RaceSession({
   initial: RaceBoot
   roleChallengeTitle?: string
   onRoleChallengeVictory?: () => void
+  prologueTitle?: string
 }): JSX.Element {
   const isRoleChallenge = Boolean(roleChallengeTitle && onRoleChallengeVictory)
+  const isPrologue = Boolean(prologueTitle)
   const definition = getRacingStage(stage)
   const recordVictory = useAdventureStore((state) => state.recordRacingVictory)
   const lastVictoryReward = useAdventureStore(
@@ -364,7 +370,9 @@ function RaceSession({
           <span>
             {isRoleChallenge
               ? '职位交接 · SUP 竞速挑战'
-              : `第 ${stage} 关 · ${definition.title}`}
+              : isPrologue
+                ? `序章 · ${prologueTitle}`
+                : `第 ${stage} 关 · ${definition.title}`}
           </span>
           <strong>{definition.mode === 'race' ? '竞速' : '追击'}</strong>
           <span>
@@ -398,15 +406,17 @@ function RaceSession({
               跳过本关
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={() => {
-              setSkipPending(false)
-              setExitPending(true)
-            }}
-          >
-            退出
-          </button>
+          {!isPrologue ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSkipPending(false)
+                setExitPending(true)
+              }}
+            >
+              退出
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -644,16 +654,18 @@ function RaceSession({
           <div>
             {state.status === 'defeat' ? (
               <>
-                <button type="button" onClick={onDevelop}>
-                  前往养成
-                </button>
+                {!isPrologue ? (
+                  <button type="button" onClick={onDevelop}>
+                    前往养成
+                  </button>
+                ) : null}
                 <button type="button" onClick={retry}>
                   重新挑战
                 </button>
               </>
             ) : null}
             <button type="button" onClick={onExit}>
-              {isRoleChallenge ? '退出挑战' : '离开'}
+              {isRoleChallenge ? '退出挑战' : isPrologue ? '继续剧情' : '离开'}
             </button>
             {state.status === 'victory' && isRoleChallenge ? (
               <button type="button" onClick={onRoleChallengeVictory}>

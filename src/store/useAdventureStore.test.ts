@@ -10,6 +10,7 @@ import {
   getPartDropIntervalMs,
 } from '../game/equipmentProgression'
 import type { CarPartInstance, CarPartQuality } from '../game/equipmentTypes'
+import { PROLOGUE_BROKEN_PART } from '../game/prologue'
 import { useCityStore } from './useCityStore'
 
 const NOW = 1_700_000_000_000
@@ -61,7 +62,8 @@ describe('useAdventureStore', () => {
     expect(s.highestClearedStage).toBe(0)
     expect(s.formation).toEqual([{ heroId: 'foreman', row: 'back', index: 1 }])
     expect(s.spareParts).toBe(0)
-    expect(s.carPartInventory).toEqual([])
+    expect(s.carPartInventory).toEqual([PROLOGUE_BROKEN_PART])
+    expect(s.equipmentByHero.foreman.gunId).toBeNull()
     expect(Object.values(s.gunLevels)).toEqual([0, 0, 0, 0, 0])
   })
 
@@ -178,6 +180,7 @@ describe('useAdventureStore', () => {
       level: 1,
     })
     expect(useAdventureStore.getState().carPartInventory).toEqual([
+      PROLOGUE_BROKEN_PART,
       reward.rewardPart,
     ])
     expect(useAdventureStore.getState().nextPartSerial).toBe(2)
@@ -240,6 +243,25 @@ describe('useAdventureStore', () => {
       carId: 'rust-fox',
       gunId: 'rivet-smg',
     })
+  })
+
+  it('grants the prologue part and permanent gun idempotently', () => {
+    expect(useAdventureStore.getState().grantProloguePart()).toBe(true)
+    expect(useAdventureStore.getState().grantProloguePart()).toBe(true)
+    expect(
+      useAdventureStore
+        .getState()
+        .carPartInventory.filter((part) => part.id === 'prologue-tuned-engine'),
+    ).toHaveLength(1)
+
+    expect(
+      useAdventureStore.getState().equipmentByHero.foreman.gunId,
+    ).toBeNull()
+    expect(useAdventureStore.getState().grantPrologueGun()).toBe(true)
+    expect(useAdventureStore.getState().grantPrologueGun()).toBe(true)
+    expect(useAdventureStore.getState().equipmentByHero.foreman.gunId).toBe(
+      'rivet-smg',
+    )
   })
 
   it('does not expose the legacy automatic salvage settlement entry point', () => {
@@ -376,9 +398,10 @@ describe('useAdventureStore', () => {
       sparePartsGained: 0,
       batchCount: 1,
     })
-    expect(useAdventureStore.getState().carPartInventory).toEqual(
-      result.receivedParts,
-    )
+    expect(useAdventureStore.getState().carPartInventory).toEqual([
+      PROLOGUE_BROKEN_PART,
+      ...result.receivedParts,
+    ])
     expect(useAdventureStore.getState().nextPartSerial).toBe(5)
     expect(useAdventureStore.getState().partIdleClock).toBe(NOW + interval)
   })
@@ -393,9 +416,9 @@ describe('useAdventureStore', () => {
 
     expect(result.applied).toBe(true)
     expect(result.batchCount).toBe(960)
-    expect(result.receivedParts).toHaveLength(CAR_PART_INVENTORY_LIMIT)
-    expect(result.autoRecycled).toBe(920)
-    expect(result.sparePartsGained).toBe(7_360)
+    expect(result.receivedParts).toHaveLength(CAR_PART_INVENTORY_LIMIT - 1)
+    expect(result.autoRecycled).toBe(921)
+    expect(result.sparePartsGained).toBe(7_368)
     expect(useAdventureStore.getState().partIdleClock).toBe(now)
     expect(useAdventureStore.getState().nextPartSerial).toBe(961)
   })
@@ -453,7 +476,11 @@ describe('useAdventureStore', () => {
       { applied: true, cost: 12 },
     )
     expect(useAdventureStore.getState().carPartUpgradeCount).toBe(1)
-    expect(useAdventureStore.getState().carPartInventory[0].level).toBe(2)
+    expect(
+      useAdventureStore
+        .getState()
+        .carPartInventory.find((part) => part.id === 'part-1')?.level,
+    ).toBe(2)
     expect(useAdventureStore.getState().spareParts).toBe(88)
     expect(
       useAdventureStore.getState().unequipCarPart('rust-fox', 'tires', 1),
@@ -461,7 +488,9 @@ describe('useAdventureStore', () => {
     expect(useAdventureStore.getState().recycleCarPart('part-1')).toMatchObject(
       { applied: true },
     )
-    expect(useAdventureStore.getState().carPartInventory).toEqual([])
+    expect(useAdventureStore.getState().carPartInventory).toEqual([
+      PROLOGUE_BROKEN_PART,
+    ])
     expect(useAdventureStore.getState().spareParts).toBeGreaterThan(88)
   })
 
@@ -610,6 +639,29 @@ describe('useAdventureStore', () => {
     expect(useAdventureStore.getState().sharedExp).toBe(160)
   })
 
+  it('keeps the starter gun for accounts migrated from before the prologue', async () => {
+    window.localStorage.setItem(
+      ADVENTURE_STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          equipmentByHero: {
+            foreman: { carId: 'rust-fox', gunId: null },
+            anvil: { carId: null, gunId: null },
+            skyline: { carId: null, gunId: null },
+          },
+        },
+        version: 8,
+      }),
+    )
+
+    await useAdventureStore.persist.rehydrate()
+
+    expect(useAdventureStore.getState().equipmentByHero.foreman).toEqual({
+      carId: 'rust-fox',
+      gunId: 'rivet-smg',
+    })
+  })
+
   it('persists only durable adventure fields', () => {
     useAdventureStore.setState({
       sharedExp: 42,
@@ -622,7 +674,7 @@ describe('useAdventureStore', () => {
       state: Record<string, unknown>
       version: number
     }
-    expect(parsed.version).toBe(8)
+    expect(parsed.version).toBe(9)
     const persisted = parsed.state
     expect(Object.keys(persisted).sort()).toEqual(
       [

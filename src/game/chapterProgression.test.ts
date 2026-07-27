@@ -24,6 +24,10 @@ function snapshot() {
     carPartUpgradeCount: adventure.carPartUpgradeCount,
     highestClearedStage: adventure.highestClearedStage,
     highestClearedRacingStage: adventure.highestClearedRacingStage,
+    claimedBuildingIds: [],
+    installedPartIds: Object.values(adventure.carPartSlotsByCar).flatMap(
+      (slots) => Object.values(slots).filter((partId) => partId !== null),
+    ),
     buildingProgress: createInitialBuildingProgress(),
     gangLevel: 1,
     resources: { money: 10_000, oil: 0, materials: 0 },
@@ -51,7 +55,7 @@ describe('chapter progression', () => {
   })
 
   it('combines one selected meeting package with three mandatory tasks', () => {
-    expect(getChapterTasks(1)).toHaveLength(5)
+    expect(getChapterTasks(1)).toHaveLength(3)
     for (let chapterNumber = 2; chapterNumber <= 7; chapterNumber += 1) {
       const packages = getChapterTaskPackages(chapterNumber)
       expect(packages.map((taskPackage) => taskPackage.tasks.length)).toEqual([
@@ -101,7 +105,7 @@ describe('chapter progression', () => {
           0,
         ),
       ),
-    ).toEqual([80, 80, 80, 80, 80, 100])
+    ).toEqual([90, 80, 80, 80, 80, 100])
     expect(
       CHAPTERS.slice(0, 6).map(
         (chapter) =>
@@ -110,7 +114,7 @@ describe('chapter progression', () => {
             0,
           ) + chapter.completionReward.gangReputation,
       ),
-    ).toEqual([212, 240, 240, 240, 240, 300])
+    ).toEqual([210, 240, 240, 240, 240, 300])
   })
 
   it('never references a building unlocked after the chapter begins', () => {
@@ -124,16 +128,12 @@ describe('chapter progression', () => {
     }
   })
 
-  it('grants a complete epic four-slot set in the first chapter', () => {
-    const parts = CHAPTERS[0].tasks.flatMap((task) => task.reward.carParts)
-    expect(parts).toEqual(
-      expect.arrayContaining([
-        { slot: 'tires', quality: 'epic' },
-        { slot: 'engine', quality: 'epic' },
-        { slot: 'bumper', quality: 'epic' },
-        { slot: 'suspension', quality: 'epic' },
-      ]),
-    )
+  it('uses the three explicit prologue duties without campaign gates', () => {
+    expect(CHAPTERS[0].tasks.map((task) => task.requirement.kind)).toEqual([
+      'building-claimed',
+      'building-level',
+      'part-installed',
+    ])
   })
 
   it('delays deliberate hero growth until chapter three and equipment growth until chapter four', () => {
@@ -187,7 +187,7 @@ describe('chapter progression', () => {
       0,
     )
 
-    expect(sparePartsBeforeChapterFour).toBe(350)
+    expect(sparePartsBeforeChapterFour).toBe(330)
     expect(partCost + gunCost).toBe(324)
     expect(sparePartsBeforeChapterFour).toBeGreaterThanOrEqual(
       partCost + gunCost,
@@ -200,9 +200,8 @@ describe('chapter progression', () => {
 
     const complete = {
       ...state,
-      heroLevels: { ...state.heroLevels, foreman: 3 },
-      highestClearedStage: 2,
-      highestClearedRacingStage: 1,
+      claimedBuildingIds: ['repair-shop' as const],
+      installedPartIds: [...state.installedPartIds, 'prologue-tuned-engine'],
       buildingProgress: {
         ...state.buildingProgress,
         'repair-shop': {

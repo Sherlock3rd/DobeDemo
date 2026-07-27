@@ -6,15 +6,15 @@ import {
 } from './racingConfig'
 
 describe('racingConfig', () => {
-  it('defines ten ordered alternating stages with shorter competitive race routes', () => {
+  it('defines two opening races, then the configured race and pursuit stages', () => {
     expect(racingConfig.stages).toHaveLength(10)
     expect(racingConfig.stages.map((stage) => stage.order)).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
     ])
     expect(racingConfig.stages.map((stage) => stage.mode)).toEqual([
       'race',
-      'pursuit',
       'race',
+      'pursuit',
       'pursuit',
       'race',
       'pursuit',
@@ -27,14 +27,14 @@ describe('racingConfig', () => {
       racingConfig.stages
         .filter((stage) => stage.mode === 'race')
         .map((stage) => stage.distance),
-    ).toEqual([3_500, 3_825, 4_175, 4_450, 4_725])
+    ).toEqual([3_500, 3_650, 4_175, 4_450, 4_725])
     expect(
       racingConfig.stages
         .filter((stage) => stage.mode === 'race')
         .map((stage) => stage.opponentSpeeds),
     ).toEqual([
       [30, 32, 34],
-      [38, 40, 42],
+      [34, 36, 38],
       [39, 41, 43],
       [46, 48, 50],
       [44, 46, 48],
@@ -92,7 +92,7 @@ describe('racingConfig', () => {
 
   it('configures pursuit escort counts as 0, 1, 1, 2, 2', () => {
     expect(
-      [2, 4, 6, 8, 10].map(
+      [3, 4, 6, 8, 10].map(
         (stage) =>
           (
             getRacingStage(stage) as unknown as {

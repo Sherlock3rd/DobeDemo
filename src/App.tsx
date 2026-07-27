@@ -17,6 +17,7 @@ import {
   type ChapterTaskRequirement,
 } from './game/chapterProgression'
 import type { BuildingId } from './game/cityTypes'
+import { PROLOGUE_TASK_IDS, isTutorialPartInstalled } from './game/prologue'
 import {
   getNarrativeEvent,
   type NarrativeEvent,
@@ -46,6 +47,8 @@ import { SettingsPanel } from './ui/SettingsPanel'
 import { NarrativeDialogueOverlay } from './ui/NarrativeDialogueOverlay'
 import { ProgressionMilestoneOverlay } from './ui/ProgressionMilestoneOverlay'
 import { RoleHandoverOverlay } from './ui/RoleHandoverOverlay'
+import { PrologueGuide } from './ui/PrologueGuide'
+import { PrologueShootOverlay } from './ui/PrologueShootOverlay'
 import './App.css'
 
 export type ActiveOverlay =
@@ -66,6 +69,7 @@ export type ActiveOverlay =
   | { kind: 'roleHandover'; targetLevel: number }
   | { kind: 'roleHandoverBattle'; targetLevel: number; stage: number }
   | { kind: 'roleHandoverRace'; targetLevel: number; stage: number }
+  | { kind: 'prologueShoot' }
 
 type PlayOverlay = Exclude<ActiveOverlay, { kind: 'buildingDetail' }>
 
@@ -82,6 +86,7 @@ const FULLSCREEN_KINDS = new Set([
   'roleHandover',
   'roleHandoverBattle',
   'roleHandoverRace',
+  'prologueShoot',
 ])
 const MODAL_KINDS = new Set([
   'gangTree',
@@ -99,6 +104,7 @@ const MODAL_KINDS = new Set([
   'roleHandover',
   'roleHandoverBattle',
   'roleHandoverRace',
+  'prologueShoot',
 ])
 
 interface QueuedNarrative {
@@ -135,7 +141,16 @@ export default function App(): JSX.Element {
   const seenNarrativeIds = useChapterStore((s) => s.seenNarrativeIds)
   const markNarrativeSeen = useChapterStore((s) => s.markNarrativeSeen)
   const activeChapterNumber = useChapterStore((s) => s.activeChapterNumber)
+  const prologueStep = useChapterStore((s) => s.prologueStep)
+  const advancePrologue = useChapterStore((s) => s.advancePrologue)
+  const claimedTaskIds = useChapterStore((s) => s.claimedTaskIds)
+  const claimChapterReward = useChapterStore((s) => s.claimChapterReward)
   const completeAssessment = useChapterStore((s) => s.completeAssessment)
+  const grantProloguePart = useAdventureStore((s) => s.grantProloguePart)
+  const grantPrologueGun = useAdventureStore((s) => s.grantPrologueGun)
+  const tutorialEnginePartId = useAdventureStore(
+    (s) => s.carPartSlotsByCar['rust-fox'].engine,
+  )
   const reconcileWithGang = useAdventureStore((s) => s.reconcileWithGang)
   const activeOverlay = resolveActiveOverlay(playOverlay, selectedBuildingId)
   const activeNarrative = narrativeQueue[0] ?? null
@@ -214,13 +229,91 @@ export default function App(): JSX.Element {
     let cancelled = false
     queueMicrotask(() => {
       if (cancelled) return
-      enqueueNarrative('first-entry')
-      enqueueNarrative(`chapter-start:${activeChapterNumber}`)
+      switch (prologueStep) {
+        case 'opening-dialogue':
+          enqueueNarrative('prologue:police-chase')
+          return
+        case 'bo-invitation':
+          enqueueNarrative('prologue:bo-invitation')
+          return
+        case 'garage-dialogue':
+          enqueueNarrative('prologue:garage')
+          return
+        case 'ambush-dialogue':
+          enqueueNarrative('prologue:ambush')
+          return
+        case 'prospect-invitation':
+          enqueueNarrative('prologue:prospect')
+          return
+        case 'tasks-dialogue':
+          enqueueNarrative('prologue:tasks')
+          return
+        case 'gun-gift':
+          enqueueNarrative('prologue:gun-gift')
+          return
+        case 'gang-dialogue':
+          enqueueNarrative('prologue:gang-training')
+          return
+        case 'police-race':
+          setPlayOverlay({ kind: 'race', stage: 1, heroId: 'foreman' })
+          return
+        case 'part-tutorial':
+          setPlayOverlay({ kind: 'heroes', initialTab: 'car' })
+          return
+        case 'escape-race':
+          setPlayOverlay({ kind: 'race', stage: 2, heroId: 'foreman' })
+          return
+        case 'borrowed-shooting':
+          setPlayOverlay({ kind: 'prologueShoot' })
+          return
+        case 'gun-race':
+          setPlayOverlay({ kind: 'race', stage: 3, heroId: 'foreman' })
+          return
+        case 'meeting':
+          setPlayOverlay({
+            kind: 'assessmentMeeting',
+            completedChapterNumber: 1,
+          })
+          return
+        case 'complete':
+          enqueueNarrative(`chapter-start:${activeChapterNumber}`)
+          return
+        case 'prospect-tasks':
+        case 'gang-training':
+          return
+      }
     })
     return () => {
       cancelled = true
     }
-  }, [activeChapterNumber, enqueueNarrative, playOverlay.kind])
+  }, [activeChapterNumber, enqueueNarrative, playOverlay.kind, prologueStep])
+
+  useEffect(() => {
+    if (
+      prologueStep !== 'part-tutorial' ||
+      !isTutorialPartInstalled(tutorialEnginePartId)
+    ) {
+      return
+    }
+    if (advancePrologue('part-tutorial', 'ambush-dialogue')) {
+      queueMicrotask(() => setPlayOverlay({ kind: 'none' }))
+    }
+  }, [advancePrologue, prologueStep, tutorialEnginePartId])
+
+  useEffect(() => {
+    if (
+      prologueStep !== 'prospect-tasks' ||
+      !PROLOGUE_TASK_IDS.every((taskId) => claimedTaskIds.includes(taskId))
+    ) {
+      return
+    }
+    if (
+      claimChapterReward(1) &&
+      advancePrologue('prospect-tasks', 'gun-gift')
+    ) {
+      queueMicrotask(() => setPlayOverlay({ kind: 'none' }))
+    }
+  }, [advancePrologue, claimChapterReward, claimedTaskIds, prologueStep])
 
   const openOverlay = (overlay: PlayOverlay): void => {
     if (document.activeElement instanceof HTMLElement) {
@@ -258,6 +351,7 @@ export default function App(): JSX.Element {
 
   const navigateFromChapter = (requirement: ChapterTaskRequirement): void => {
     switch (requirement.kind) {
+      case 'building-claimed':
       case 'building-level':
         setPlayOverlay({ kind: 'none' })
         if (claimedBuildingIds.includes(requirement.buildingId)) {
@@ -269,6 +363,7 @@ export default function App(): JSX.Element {
         return
       case 'part-level':
       case 'part-upgrades':
+      case 'part-installed':
         setPlayOverlay({ kind: 'heroes', initialTab: 'car' })
         return
       case 'gun-level':
@@ -366,15 +461,87 @@ export default function App(): JSX.Element {
 
   const finishActiveNarrative = (): void => {
     if (!activeNarrative) return
+    const completedEventId = activeNarrative.event.id
     markNarrativeSeen(activeNarrative.event.id)
     queuedNarrativeIdsRef.current.delete(activeNarrative.event.id)
     setNarrativeQueue((current) => current.slice(1))
+    switch (completedEventId) {
+      case 'prologue:police-chase':
+        if (advancePrologue('opening-dialogue', 'police-race')) {
+          setPlayOverlay({ kind: 'race', stage: 1, heroId: 'foreman' })
+        }
+        return
+      case 'prologue:bo-invitation':
+        if (advancePrologue('bo-invitation', 'garage-dialogue')) {
+          setPlayOverlay({ kind: 'none' })
+          enqueueNarrative('prologue:garage')
+        }
+        return
+      case 'prologue:garage':
+        if (
+          grantProloguePart() &&
+          advancePrologue('garage-dialogue', 'part-tutorial')
+        ) {
+          setPlayOverlay({ kind: 'heroes', initialTab: 'car' })
+        }
+        return
+      case 'prologue:ambush':
+        if (advancePrologue('ambush-dialogue', 'escape-race')) {
+          setPlayOverlay({ kind: 'race', stage: 2, heroId: 'foreman' })
+        }
+        return
+      case 'prologue:prospect':
+        if (advancePrologue('prospect-invitation', 'borrowed-shooting')) {
+          setPlayOverlay({ kind: 'prologueShoot' })
+        }
+        return
+      case 'prologue:tasks':
+        if (advancePrologue('tasks-dialogue', 'prospect-tasks')) {
+          setPlayOverlay({ kind: 'none' })
+        }
+        return
+      case 'prologue:gun-gift':
+        if (grantPrologueGun() && advancePrologue('gun-gift', 'gun-race')) {
+          setPlayOverlay({ kind: 'race', stage: 3, heroId: 'foreman' })
+        }
+        return
+      case 'prologue:gang-training':
+        if (advancePrologue('gang-dialogue', 'gang-training')) {
+          setPlayOverlay({ kind: 'gangTree' })
+        }
+        return
+    }
     if (activeNarrative.after === 'gangTree') {
       setPlayOverlay({ kind: 'gangTree' })
     } else if (activeNarrative.after?.kind === 'assessmentMeeting') {
       setPlayOverlay(activeNarrative.after)
     }
   }
+
+  const finishPrologueRace = (
+    stage: 1 | 2 | 3,
+    expected: 'police-race' | 'escape-race' | 'gun-race',
+    next: 'bo-invitation' | 'prospect-invitation' | 'gang-dialogue',
+  ): void => {
+    if (useAdventureStore.getState().highestClearedRacingStage < stage) return
+    if (advancePrologue(expected, next)) {
+      setPlayOverlay({ kind: 'none' })
+    }
+  }
+
+  const prologueRaceTitle =
+    activeOverlay.kind !== 'race'
+      ? null
+      : prologueStep === 'police-race' && activeOverlay.stage === 1
+        ? '甩开警察'
+        : prologueStep === 'escape-race' && activeOverlay.stage === 2
+          ? '冲出镇外追杀'
+          : prologueStep === 'gun-race' && activeOverlay.stage === 3
+            ? '追杀敌方头车'
+            : null
+  const claimedPrologueTaskCount = PROLOGUE_TASK_IDS.filter((taskId) =>
+    claimedTaskIds.includes(taskId),
+  ).length
 
   return (
     <AppErrorBoundary>
@@ -434,8 +601,16 @@ export default function App(): JSX.Element {
             onOpenGangTree={() => openOverlay({ kind: 'gangTree' })}
             onOpenChapters={() => openOverlay({ kind: 'chapters' })}
             onOpenAdventure={() => openOverlay({ kind: 'adventure' })}
-            onOpenRacing={() => openOverlay({ kind: 'racing' })}
             onOpenSettings={() => openOverlay({ kind: 'settings' })}
+          />
+          <PrologueGuide
+            step={prologueStep}
+            claimedTasks={claimedPrologueTaskCount}
+            onOpenHeroes={() =>
+              openOverlay({ kind: 'heroes', initialTab: 'car' })
+            }
+            onOpenTasks={() => openOverlay({ kind: 'chapters' })}
+            onOpenGangTree={() => openOverlay({ kind: 'gangTree' })}
           />
         </div>
         {activeOverlay.kind === 'buildingDetail' ? <BuildingPanel /> : null}
@@ -452,6 +627,15 @@ export default function App(): JSX.Element {
           }
           onRolePromoted={(level) => {
             enqueueNarrative(`promotion:${level}`)
+          }}
+          prologueMeetingReady={prologueStep === 'gang-training'}
+          onStartPrologueMeeting={() => {
+            if (advancePrologue('gang-training', 'meeting')) {
+              setPlayOverlay({
+                kind: 'assessmentMeeting',
+                completedChapterNumber: 1,
+              })
+            }
           }}
         />
         {activeOverlay.kind === 'roleHandover' &&
@@ -486,7 +670,11 @@ export default function App(): JSX.Element {
           />
         ) : null}
         {activeOverlay.kind === 'settings' ? (
-          <SettingsPanel onClose={closeOverlay} />
+          <SettingsPanel
+            onClose={closeOverlay}
+            onOpenAdventure={() => setPlayOverlay({ kind: 'adventure' })}
+            onOpenRacing={() => setPlayOverlay({ kind: 'racing' })}
+          />
         ) : null}
         {activeOverlay.kind === 'adventure' ? (
           <AdventurePanel
@@ -544,10 +732,30 @@ export default function App(): JSX.Element {
           <RaceScreen
             stage={activeOverlay.stage}
             heroId={activeOverlay.heroId}
-            onExit={() => setPlayOverlay({ kind: 'racing' })}
+            prologueTitle={prologueRaceTitle ?? undefined}
+            onExit={() => {
+              if (prologueRaceTitle && activeOverlay.stage === 1) {
+                finishPrologueRace(1, 'police-race', 'bo-invitation')
+              } else if (prologueRaceTitle && activeOverlay.stage === 2) {
+                finishPrologueRace(2, 'escape-race', 'prospect-invitation')
+              } else if (prologueRaceTitle && activeOverlay.stage === 3) {
+                finishPrologueRace(3, 'gun-race', 'gang-dialogue')
+              } else {
+                setPlayOverlay({ kind: 'racing' })
+              }
+            }}
             onDevelop={() =>
               setPlayOverlay({ kind: 'heroes', initialTab: 'car' })
             }
+          />
+        ) : null}
+        {activeOverlay.kind === 'prologueShoot' ? (
+          <PrologueShootOverlay
+            onComplete={() => {
+              if (advancePrologue('borrowed-shooting', 'tasks-dialogue')) {
+                setPlayOverlay({ kind: 'none' })
+              }
+            }}
           />
         ) : null}
         {activeOverlay.kind === 'roleHandoverRace' ? (
@@ -608,6 +816,17 @@ export default function App(): JSX.Element {
                 selection.decision,
               )
               if (!applied) return
+              if (
+                selection.completedChapterNumber === 1 &&
+                prologueStep === 'meeting'
+              ) {
+                const promotion = useGangStore
+                  .getState()
+                  .promoteOneLevel(Date.now(), true)
+                if (!promotion.applied) return
+                if (!advancePrologue('meeting', 'complete')) return
+                setPromotionCeremonyLevel(8)
+              }
               setPlayOverlay({ kind: 'none' })
               enqueueNarrative(
                 `chapter-start:${selection.nextChapterNumber}`,

@@ -8,6 +8,7 @@ import type {
   GunId,
 } from './equipmentTypes'
 import { GANG_ROLES, type GangRole } from './gangProgression'
+import { PROLOGUE_TUNED_PART_ID } from './prologue'
 import type { AdventureDurableState } from '../store/adventureMigration'
 import type { BuildingProgressById } from '../store/cityProgressMigration'
 
@@ -16,7 +17,13 @@ export type ChapterTaskRequirement =
   | { kind: 'part-level'; target: number }
   | { kind: 'part-upgrades'; target: number }
   | { kind: 'gun-level'; target: number }
+  | {
+      kind: 'building-claimed'
+      buildingId: BuildingId
+      target: 1
+    }
   | { kind: 'building-level'; buildingId: BuildingId; target: number }
+  | { kind: 'part-installed'; partId: string; target: 1 }
   | { kind: 'resource-money'; target: number }
   | { kind: 'resource-oil'; target: number }
   | { kind: 'resource-materials'; target: number }
@@ -73,6 +80,8 @@ export interface ChapterProgressSnapshot {
   carPartUpgradeCount: number
   highestClearedStage: number
   highestClearedRacingStage: number
+  claimedBuildingIds: readonly BuildingId[]
+  installedPartIds: readonly string[]
   buildingProgress: BuildingProgressById
   gangLevel: number
   resources: ResourceWallet
@@ -137,49 +146,50 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     role: GANG_ROLES[0],
     minimumLevel: 1,
     nextRoleLevel: 8,
-    title: '第一章 · 冷炉初燃',
+    title: '序章 · 逃亡者的补丁',
     story:
-      '修理厂一直是剃刀党的闲置产业。Thomas 将以见习身份接过管理权，要先证明自己能让这里重新运转。',
+      'Thomas 在追捕中被博带进小镇。要留下来，他必须接过修车厂管理权、修好工位，并用博给的新引擎换掉车上的坏件。',
     completionReward: completionReward(
-      132,
+      120,
       600,
       80,
       { money: 500, oil: 0, materials: 0 },
-      [{ slot: 'engine', quality: 'epic' }],
+      [],
       ['iron-fang'],
     ),
     tasks: [
       {
-        id: 'chapter-1-hero',
-        name: '领头人就位',
-        description: '拥有任意 Lv.1 英雄',
-        requirement: { kind: 'hero-level', target: 1 },
-        reward: reward(20, 120, 12),
+        id: 'chapter-1-prologue-claim',
+        name: '接过修车厂',
+        description: '完成一次修车厂管理权交接',
+        requirement: {
+          kind: 'building-claimed',
+          buildingId: 'repair-shop',
+          target: 1,
+        },
+        reward: reward(30, 120, 12),
       },
       {
-        id: 'chapter-1-building',
-        name: '点燃修理厂',
+        id: 'chapter-1-prologue-upgrade',
+        name: '重新点炉',
         description: '修理厂主建筑达到 Lv.2',
         requirement: {
           kind: 'building-level',
           buildingId: 'repair-shop',
           target: 2,
         },
-        reward: reward(20, 140, 14, [{ slot: 'tires', quality: 'rare' }]),
+        reward: reward(30, 140, 14),
       },
       {
-        id: 'chapter-1-campaign',
-        name: '清理街口',
-        description: '推关完成 2 关',
-        requirement: { kind: 'campaign-clears', target: 2 },
-        reward: reward(20, 160, 16),
-      },
-      {
-        id: 'chapter-1-racing',
-        name: '第一面完整补丁',
-        description: '赛车任务完成 1 关，领取一整套紫色配件',
-        requirement: { kind: 'racing-clears', target: 1 },
-        reward: reward(20, 200, 20, epicSet),
+        id: 'chapter-1-prologue-part',
+        name: '换下坏引擎',
+        description: '将博赠送的调校引擎安装到锈狐',
+        requirement: {
+          kind: 'part-installed',
+          partId: PROLOGUE_TUNED_PART_ID,
+          target: 1,
+        },
+        reward: reward(30, 160, 16),
       },
     ],
   },
@@ -556,22 +566,37 @@ function defineTaskPackage(
 
 const CHAPTER_ONE_STARTER_TASKS: readonly ChapterTaskDefinition[] = [
   {
-    id: 'chapter-1-starter-hero',
-    name: '领头人就位',
-    description: '拥有任意 Lv.1 英雄',
-    requirement: { kind: 'hero-level', target: 1 },
-    reward: chapterTaskReward(1, 10),
+    id: 'chapter-1-prologue-claim',
+    name: '接过修车厂',
+    description: '完成一次修车厂管理权交接',
+    requirement: {
+      kind: 'building-claimed',
+      buildingId: 'repair-shop',
+      target: 1,
+    },
+    reward: reward(30, 120, 12),
   },
   {
-    id: 'chapter-1-starter-building',
-    name: '点燃修理厂',
+    id: 'chapter-1-prologue-upgrade',
+    name: '重新点炉',
     description: '修理厂主建筑达到 Lv.2',
     requirement: {
       kind: 'building-level',
       buildingId: 'repair-shop',
       target: 2,
     },
-    reward: chapterTaskReward(1, 10),
+    reward: reward(30, 140, 14),
+  },
+  {
+    id: 'chapter-1-prologue-part',
+    name: '换下坏引擎',
+    description: '将博赠送的调校引擎安装到锈狐',
+    requirement: {
+      kind: 'part-installed',
+      partId: PROLOGUE_TUNED_PART_ID,
+      target: 1,
+    },
+    reward: reward(30, 160, 16),
   },
 ]
 
@@ -933,6 +958,7 @@ function getChapterExtraTasks(
 ): readonly ChapterTaskDefinition[] {
   const chapter = CHAPTERS[chapterNumber - 1]
   if (!chapter) return []
+  if (chapterNumber === 1) return []
   const reputationPerTask = chapterNumber <= 5 ? 20 : 25
   return [
     {
@@ -1038,8 +1064,16 @@ export function getTaskProgress(
     case 'gun-level':
       current = Math.max(...Object.values(snapshot.gunLevels))
       break
+    case 'building-claimed':
+      current = snapshot.claimedBuildingIds.includes(requirement.buildingId)
+        ? 1
+        : 0
+      break
     case 'building-level':
       current = snapshot.buildingProgress[requirement.buildingId].level
+      break
+    case 'part-installed':
+      current = snapshot.installedPartIds.includes(requirement.partId) ? 1 : 0
       break
     case 'resource-money':
       current = snapshot.resources.money

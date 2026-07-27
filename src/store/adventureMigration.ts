@@ -30,6 +30,7 @@ import {
   isCarUnlocked,
   isGunUnlocked,
 } from '../game/progressionUnlocks'
+import { PROLOGUE_BROKEN_PART, PROLOGUE_BROKEN_PART_ID } from '../game/prologue'
 
 export const ADVENTURE_STORAGE_KEY = 'dobe-adventure-progression-v1'
 
@@ -61,7 +62,7 @@ const MAX_INDEX_BY_ROW = { front: 1, back: 2 } as const
 
 function createInitialEquipment(): EquipmentByHero {
   return {
-    foreman: { carId: 'rust-fox', gunId: 'rivet-smg' },
+    foreman: { carId: 'rust-fox', gunId: null },
     anvil: { carId: null, gunId: null },
     skyline: { carId: null, gunId: null },
   }
@@ -84,6 +85,8 @@ function clampInt(
 export function createInitialAdventureState(
   now: number,
 ): AdventureDurableState {
+  const initialCarPartSlots = createInitialCarPartSlots()
+  initialCarPartSlots['rust-fox'].engine = PROLOGUE_BROKEN_PART_ID
   return {
     heroLevels: { foreman: 1, anvil: 1, skyline: 1 },
     sharedExp: 0,
@@ -94,8 +97,8 @@ export function createInitialAdventureState(
     idleClock: Number.isFinite(now) ? now : Date.now(),
     spareParts: 0,
     gunLevels: createInitialGunLevels(),
-    carPartInventory: [],
-    carPartSlotsByCar: createInitialCarPartSlots(),
+    carPartInventory: [{ ...PROLOGUE_BROKEN_PART }],
+    carPartSlotsByCar: initialCarPartSlots,
     carPartUpgradeCount: 0,
     partIdleClock: Number.isFinite(now) ? now : Date.now(),
     nextPartSerial: 1,

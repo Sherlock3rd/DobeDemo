@@ -219,7 +219,7 @@ describe('BuildingPanel', () => {
         within(production).getByText('当前批进度 5秒 / 30秒'),
       ).toBeInTheDocument()
       expect(within(production).getByText('下一批 25秒')).toBeInTheDocument()
-      expect(within(production).getByText('仓库 0/40')).toBeInTheDocument()
+      expect(within(production).getByText('仓库 1/40')).toBeInTheDocument()
       expect(within(production).getByText('挂机上限 8小时')).toBeInTheDocument()
       expect(
         within(production).getByRole('button', { name: '领取 1 批' }),

@@ -38,7 +38,7 @@ describe('ChapterAssessmentMeeting', () => {
 
     expect(
       screen.getByRole('dialog', {
-        name: '第一章 · 冷炉初燃完成评定会议',
+        name: '序章 · 逃亡者的补丁完成评定会议',
       }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('章节会议流程')).toHaveTextContent('资格表决')

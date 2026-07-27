@@ -55,7 +55,6 @@ vi.mock('./ui/GlobalHud', () => ({
     onOpenGangTree: () => void
     onOpenChapters: () => void
     onOpenAdventure: () => void
-    onOpenRacing: () => void
     onOpenSettings: () => void
   }) => (
     <nav aria-label="主导航">
@@ -70,9 +69,6 @@ vi.mock('./ui/GlobalHud', () => ({
       </button>
       <button type="button" onClick={p.onOpenAdventure}>
         推关
-      </button>
-      <button type="button" onClick={p.onOpenRacing}>
-        赛车
       </button>
       <button type="button" onClick={p.onOpenSettings}>
         设置
@@ -215,6 +211,7 @@ describe('App', () => {
     useAdventureStore.getState().reset(BASE_TIME)
     useChapterStore.getState().reset()
     useChapterStore.setState({
+      prologueStep: 'complete',
       seenNarrativeIds: ['first-entry', 'chapter-start:1'],
     })
     useChestTick.setState({ now: BASE_TIME, tick: 0 })
@@ -228,10 +225,11 @@ describe('App', () => {
     expect(props.orthographic).toBe(true)
   })
 
-  it('publishes chapter one after its briefing without opening an initial meeting', async () => {
+  it('opens with the illustrated police chase and launches the first SUP race', async () => {
     const user = userEvent.setup()
     useCityStore.getState().reset(BASE_TIME)
     useChapterStore.setState({
+      prologueStep: 'opening-dialogue',
       seenNarrativeIds: [],
       completedAssessmentChapterNumbers: [],
     })
@@ -239,30 +237,14 @@ describe('App', () => {
     render(<App />)
 
     expect(
-      await screen.findByRole('dialog', { name: '剧情对话：第一把钥匙' }),
+      await screen.findByRole('dialog', { name: '剧情对话：警灯咬住后轮' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('img', { name: 'Thomas 骑摩托逃离警察追击' }),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
-    expect(
-      screen.getByRole('dialog', {
-        name: '剧情对话：第一章 · 冷炉初燃',
-      }),
-    ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
-
-    expect(
-      screen.queryByRole('dialog', { name: /评定会议/ }),
-    ).not.toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: '地图接管修车厂' }))
-    expect(
-      screen.getByRole('status', { name: '修车厂管理权已交接' }),
-    ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '听取管理简报' }))
-    expect(
-      screen.getByRole('dialog', {
-        name: '剧情对话：修车厂管理权交接',
-      }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: '公路争霸' })).toBeInTheDocument()
+    expect(useChapterStore.getState().prologueStep).toBe('police-race')
   })
 
   it('keeps a migrated save on its explicit active chapter without auto-opening a meeting', async () => {
@@ -526,9 +508,12 @@ describe('App', () => {
     expect(screen.getByRole('dialog', { name: '推关地图' })).toBeInTheDocument()
   })
 
-  it('opens racing from the HUD and returns to its lobby after a race', async () => {
+  it('opens SUP from settings debug and returns to its lobby after a race', async () => {
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '赛车' }))
+    await userEvent.click(screen.getByRole('button', { name: '设置' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: '打开 SUP 调试入口' }),
+    )
     expect(
       screen.getByRole('dialog', { name: '公路争霸大厅' }),
     ).toBeInTheDocument()
@@ -555,7 +540,10 @@ describe('App', () => {
 
     campaignApp.unmount()
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '赛车' }))
+    await userEvent.click(screen.getByRole('button', { name: '设置' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: '打开 SUP 调试入口' }),
+    )
     await userEvent.click(screen.getByRole('button', { name: '发车' }))
     await userEvent.click(screen.getByRole('button', { name: '赛车失败养成' }))
     expect(screen.getByRole('dialog', { name: '英雄培养' })).toHaveAttribute(
@@ -564,16 +552,16 @@ describe('App', () => {
     )
   })
 
-  it('opens the relevant gameplay surface from an unfinished chapter task guide', async () => {
+  it('opens vehicle development from the prologue part task guide', async () => {
     render(<App />)
 
     await userEvent.click(screen.getByRole('button', { name: '章节' }))
-    expect(
-      screen.queryByRole('button', { name: '前往英雄升级' }),
-    ).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: '前往推关' }))
+    await userEvent.click(screen.getByRole('button', { name: '前往车辆配件' }))
 
-    expect(screen.getByRole('dialog', { name: '推关地图' })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: '英雄培养' })).toHaveAttribute(
+      'data-initial-tab',
+      'car',
+    )
   })
 
   it('selects the relevant city building from a chapter task guide', async () => {
@@ -586,45 +574,24 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: '修车厂' })).toBeInTheDocument()
   })
 
-  it('finishes a chapter, holds its meeting, and starts the selected next chapter package', async () => {
+  it('holds the prologue promotion meeting and starts the selected second chapter package', async () => {
     const user = userEvent.setup()
-    useAdventureStore.setState((state) => ({
-      heroLevels: { ...state.heroLevels, foreman: 3 },
-      highestClearedStage: 2,
-      highestClearedRacingStage: 1,
-    }))
-    useCityStore.setState((state) => ({
-      buildingProgress: {
-        ...state.buildingProgress,
-        'repair-shop': {
-          ...state.buildingProgress['repair-shop'],
-          level: 2,
-        },
-      },
-    }))
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 7,
+    })
+    useChapterStore.setState({
+      prologueStep: 'gang-training',
+      claimedChapterNumbers: [1],
+      seenNarrativeIds: ['prologue:gang-training'],
+    })
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: '章节' }))
-    await user.click(
-      screen.getByRole('button', {
-        name: '完成章节并参加评定会议',
-      }),
-    )
-    expect(
-      screen.getByRole('status', { name: '第一章 · 冷炉初燃完成' }),
-    ).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: '继续' }))
+    await user.click(screen.getByRole('button', { name: '帮派树' }))
+    await user.click(screen.getByRole('button', { name: '参加转正会议' }))
     expect(
       screen.getByRole('dialog', {
-        name: '剧情对话：第一章 · 冷炉初燃 · 收尾',
-      }),
-    ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
-
-    expect(
-      screen.getByRole('dialog', {
-        name: '第一章 · 冷炉初燃完成评定会议',
+        name: '序章 · 逃亡者的补丁完成评定会议',
       }),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '开始资格表决' }))
@@ -656,7 +623,9 @@ describe('App', () => {
       selectedTaskPackageIds: { 2: 'chapter-2-package-yard' },
       meetingVotes: { 1: 'formal-member-approved' },
       completedAssessmentChapterNumbers: [1],
+      prologueStep: 'complete',
     })
+    expect(useGangStore.getState().currentLevel).toBe(8)
   })
 
   it('keeps focus inside the adventure, formation, and battle transition chain', async () => {

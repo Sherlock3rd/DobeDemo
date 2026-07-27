@@ -34,10 +34,10 @@ describe('RacingPanel', () => {
     render(<RacingPanel onClose={() => {}} onStart={() => {}} />)
     expect(screen.getByText('第 2 关')).toBeInTheDocument()
     expect(screen.queryByText('第 1 关')).toBeNull()
-    expect(screen.getByText('追击枪战')).toBeInTheDocument()
-    expect(screen.getByText('限时')).toBeInTheDocument()
-    expect(screen.getByText(/纯追击枪战不使用氮气加速/)).toBeInTheDocument()
-    expect(screen.queryByText(/空格释放氮气/)).toBeNull()
+    expect(screen.getByText('竞速关卡')).toBeInTheDocument()
+    expect(screen.queryByText('限时')).not.toBeInTheDocument()
+    expect(screen.getByText(/冲进前三名即可通关/)).toBeInTheDocument()
+    expect(screen.getByText(/空格释放氮气/)).toBeInTheDocument()
   })
 
   it('shows completion without replay buttons after stage ten', () => {
@@ -48,6 +48,7 @@ describe('RacingPanel', () => {
   })
 
   it('requires upgraded installed vehicle parts from stage six onward', () => {
+    useAdventureStore.getState().grantPrologueGun()
     const current = useAdventureStore.getState()
     useAdventureStore.setState({
       highestClearedRacingStage: 5,

@@ -6,6 +6,14 @@ describe('progression narrative', () => {
   it('provides one to three in-world lines for every required trigger', () => {
     const ids = [
       'first-entry',
+      'prologue:police-chase',
+      'prologue:bo-invitation',
+      'prologue:garage',
+      'prologue:ambush',
+      'prologue:prospect',
+      'prologue:tasks',
+      'prologue:gun-gift',
+      'prologue:gang-training',
       'special-vote:formal-member',
       'special-vote:president',
       ...Array.from({ length: 7 }, (_, index) => `chapter-start:${index + 1}`),
@@ -68,12 +76,13 @@ describe('progression narrative', () => {
     })
   })
 
-  it('publishes chapter one directly and frames later openings as post-meeting task packages', () => {
+  it('frames chapter one as the prologue and later openings as post-meeting task packages', () => {
     const firstChapterCopy =
       getNarrativeEvent('chapter-start:1')
         ?.lines.map((line) => line.text)
         .join(' ') ?? ''
-    expect(firstChapterCopy).toContain('第一章任务已经写进章节体')
+    expect(firstChapterCopy).toContain('三项转正任务')
+    expect(firstChapterCopy).toContain('权力树参加转正会议')
     expect(firstChapterCopy).not.toMatch(/投票|表决|会议结束/)
 
     for (let chapterNumber = 2; chapterNumber <= 7; chapterNumber += 1) {

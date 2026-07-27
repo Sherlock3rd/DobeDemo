@@ -11,6 +11,14 @@ import { getBuildingUnlock } from './progressionUnlocks'
 
 export type NarrativeEventId =
   | 'first-entry'
+  | 'prologue:police-chase'
+  | 'prologue:bo-invitation'
+  | 'prologue:garage'
+  | 'prologue:ambush'
+  | 'prologue:prospect'
+  | 'prologue:tasks'
+  | 'prologue:gun-gift'
+  | 'prologue:gang-training'
   | 'special-vote:formal-member'
   | 'special-vote:president'
   | `chapter-start:${number}`
@@ -29,17 +37,18 @@ export interface NarrativeEvent {
   id: NarrativeEventId
   kicker: string
   title: string
+  artwork?: 'police-chase' | 'bo-invitation'
   lines: readonly NarrativeLine[]
 }
 
 const CHAPTER_OPENING_LINES: Readonly<Record<number, readonly string[]>> = {
   1: [
-    'Thomas，见习席位空出了第一份产业职责：让剃刀党的闲置修车厂重新运转。',
-    '第一章任务已经写进章节体。先接过修车厂管理权，再完成推关与公路行动，证明你能把这把钥匙握稳。',
+    'Thomas，博已经替你争取到见习资格。先让修车厂重新运转，再证明你能守住这把钥匙。',
+    '完成三项转正任务后，博会把真正的武器交给你；活着回来，再去权力树参加转正会议。',
   ],
   2: [
-    '刚才的评定会议已经把废铁生意交给你，你选择的任务包也已写入第二章。',
-    '先去帮派权力树完成正式成员席位交接，再按章节体整顿废车回收厂与本章行动。',
+    '转正会议已经把完整补丁交给你，你选择的任务包也已写入第二章。',
+    '正式成员席位会在权力树上完成登记；从现在起，推关战役开放，再按章节体整顿废车回收厂与本章行动。',
   ],
   3: [
     '委员会已经就商业街现金流与机械线做出安排，你选择的任务包构成第三章的重点职责。',
@@ -142,6 +151,178 @@ function readNumberSuffix(id: string, prefix: string): number | null {
 }
 
 export function getNarrativeEvent(id: string): NarrativeEvent | null {
+  if (id === 'prologue:police-chase') {
+    return {
+      id,
+      kicker: 'PROLOGUE · ON THE RUN',
+      title: '警灯咬住后轮',
+      artwork: 'police-chase',
+      lines: [
+        {
+          speaker: 'Thomas Shelby',
+          speakerRole: '逃亡中的骑手',
+          portraitIndex: 0,
+          text: '警察咬住我了。先甩掉他们，再想办法找个地方藏身。',
+        },
+      ],
+    }
+  }
+
+  if (id === 'prologue:bo-invitation') {
+    return {
+      id,
+      kicker: 'PROLOGUE · A ROAD OFFER',
+      title: '金发骑手',
+      artwork: 'bo-invitation',
+      lines: [
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '你把警察甩得够远，但这台车撑不到天亮。跟我们去前面的小镇，那里有剃刀党的修车厂。',
+        },
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '把摩托整修好，先避过这阵风头。至于能不能留下，看你接下来怎么做。',
+        },
+      ],
+    }
+  }
+
+  if (id === 'prologue:garage') {
+    return {
+      id,
+      kicker: 'PROLOGUE · THE COLD GARAGE',
+      title: '坏掉的引擎',
+      lines: [
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '到了。你车上的引擎支架已经裂了，再跑一次就会把你扔在路中央。',
+        },
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '这块调校引擎是好货。打开车辆养成，把锈狐上那块坏件换下来。',
+        },
+      ],
+    }
+  }
+
+  if (id === 'prologue:ambush') {
+    return {
+      id,
+      kicker: 'PROLOGUE · NO SAFE EXIT',
+      title: '追兵又来了',
+      lines: [
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '听见外面的引擎声了吗？不是警察，是一路追着你的仇家。新引擎正好该试一试。',
+        },
+        {
+          speaker: 'Thomas Shelby',
+          speakerRole: '锈狐骑手',
+          portraitIndex: 0,
+          text: '那就让他们在镇外吃灰。',
+        },
+      ],
+    }
+  }
+
+  if (id === 'prologue:prospect') {
+    return {
+      id,
+      kicker: 'PROLOGUE · PROSPECT',
+      title: '一块见习补丁',
+      lines: [
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '两次都能活着回来，说明你不是只会逃。先以见习身份留下，替帮派把修车厂重新点起来。',
+        },
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '后面那辆敌车还没死心。借我的枪，点准他的摩托，把他从这条路上赶下去。',
+        },
+      ],
+    }
+  }
+
+  if (id === 'prologue:tasks') {
+    return {
+      id,
+      kicker: 'PROLOGUE · EARN THE PATCH',
+      title: '转正之前',
+      lines: [
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '这座城本来就是剃刀党的。见习能碰多少产业、调多少人，只看职位和功劳。',
+        },
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '接过修车厂管理权，把主建筑升到二级，再确认新引擎已经装好。三项任务的奖励都领完，我再给你真正的武器。',
+        },
+      ],
+    }
+  }
+
+  if (id === 'prologue:gun-gift') {
+    return {
+      id,
+      kicker: 'PROLOGUE · LIVE AMMUNITION',
+      title: '铆钉冲锋枪',
+      lines: [
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '修车厂已经重新冒烟，你也把每项差事都做完了。这把铆钉冲锋枪归你。',
+        },
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '它已经装到你的装备里。追上敌人的头车，把整辆摩托打烂，活着回来证明你配得上完整补丁。',
+        },
+      ],
+    }
+  }
+
+  if (id === 'prologue:gang-training') {
+    return {
+      id,
+      kicker: 'PROLOGUE · THE TABLE WAITS',
+      title: '去争取一张票',
+      lines: [
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '目标车已经变成废铁。现在去帮派权力树，把见习声望逐级升到 Lv.7。',
+        },
+        {
+          speaker: '博',
+          speakerRole: '剃刀党骑手领队',
+          portraitIndex: 6,
+          text: '声望到顶后再点一次晋升，委员会就会开会表决你能不能成为正式成员。',
+        },
+      ],
+    }
+  }
+
   if (id === 'first-entry') {
     return {
       id,

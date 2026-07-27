@@ -51,8 +51,12 @@ function taskDestinationLabel(requirement: ChapterTaskRequirement): string {
       return '配件强化'
     case 'gun-level':
       return '枪械强化'
+    case 'building-claimed':
+      return '对应建筑'
     case 'building-level':
       return '对应建筑'
+    case 'part-installed':
+      return '车辆配件'
     case 'campaign-clears':
       return '推关'
     case 'racing-clears':
@@ -82,6 +86,7 @@ export function ChapterPanel({
   const activeChapterNumber = useChapterStore(
     (state) => state.activeChapterNumber,
   )
+  const prologueStep = useChapterStore((state) => state.prologueStep)
   const selectedTaskPackageIds = useChapterStore(
     (state) => state.selectedTaskPackageIds,
   )
@@ -116,6 +121,10 @@ export function ChapterPanel({
       (gunId) => `枪械·${equipmentConfig.guns[gunId].name}`,
     ),
   ]
+  const isPrologue = chapter.number === 1 && prologueStep !== 'complete'
+  const claimedTaskCount = tasks.filter((task) =>
+    claimedTaskIds.includes(task.id),
+  ).length
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -130,7 +139,9 @@ export function ChapterPanel({
       <header className="chapter-panel__header">
         <div>
           <p className="chapter-panel__eyebrow">
-            {`${chapter.role.title} · ${chapter.role.chineseTitle}`}
+            {isPrologue
+              ? 'PROLOGUE · PROSPECT'
+              : `${chapter.role.title} · ${chapter.role.chineseTitle}`}
           </p>
           <h2
             ref={titleRef}
@@ -156,8 +167,10 @@ export function ChapterPanel({
         role="status"
         aria-label={`当前第 ${chapter.number} 章`}
       >
-        <span>CURRENT CHAPTER</span>
-        <strong>{`当前第 ${chapter.number} 章`}</strong>
+        <span>{isPrologue ? 'PROLOGUE DUTIES' : 'CURRENT CHAPTER'}</span>
+        <strong>
+          {isPrologue ? '当前序章 · 转正任务' : `当前第 ${chapter.number} 章`}
+        </strong>
       </div>
 
       <div className="chapter-panel__story">
@@ -236,8 +249,8 @@ export function ChapterPanel({
         aria-label="章节完成奖励"
       >
         <div>
-          <span>CHAPTER CLEAR</span>
-          <h3>章节完成奖励</h3>
+          <span>{isPrologue ? 'PROSPECT CHECKLIST' : 'CHAPTER CLEAR'}</span>
+          <h3>{isPrologue ? '转正任务提交' : '章节完成奖励'}</h3>
           <p>
             {`帮派经验 +${chapter.completionReward.gangReputation} · 英雄经验 +${chapter.completionReward.heroExperience} · 零件 +${chapter.completionReward.spareParts}`}
           </p>
@@ -252,35 +265,42 @@ export function ChapterPanel({
         </div>
         <button
           type="button"
-          disabled={!allTasksComplete || chapterRewardClaimed}
+          disabled={isPrologue || !allTasksComplete || chapterRewardClaimed}
           onClick={() => {
+            if (isPrologue) return
             if (claimChapterReward(chapter.number)) {
               setFeedback(`${chapter.title}完成奖励已领取`)
               onChapterCompleted?.(chapter.number)
             }
           }}
         >
-          {chapterRewardClaimed
-            ? '章节已完成'
-            : allTasksComplete
-              ? chapter.number < 7
-                ? '完成章节并参加评定会议'
-                : '完成最终章节'
-              : '完成全部任务后继续'}
+          {isPrologue
+            ? `已领取 ${claimedTaskCount}/${tasks.length} · 全部领取后自动推进`
+            : chapterRewardClaimed
+              ? '章节已完成'
+              : allTasksComplete
+                ? chapter.number < 7
+                  ? '完成章节并参加评定会议'
+                  : '完成最终章节'
+                : '完成全部任务后继续'}
         </button>
       </section>
 
       <p className="chapter-panel__feedback" aria-live="polite">
         {feedback ||
-          (allTasksComplete
-            ? chapterRewardClaimed
-              ? chapter.nextRoleLevel
-                ? '章节已完成，即将进入评定会议。'
-                : '全部章节已经完成，PRESIDENT 的传奇仍在继续。'
-              : chapter.number < 7
-                ? '任务已全部完成，可以参加评定会议。'
-                : '任务已全部完成，可以完成最终章节。'
-            : '完成任务后在此领取奖励。')}
+          (isPrologue
+            ? claimedTaskCount === tasks.length
+              ? '博正在准备你的正式武器。'
+              : '完成并领取三项任务奖励；序章不会从这里进入评定会议。'
+            : allTasksComplete
+              ? chapterRewardClaimed
+                ? chapter.nextRoleLevel
+                  ? '章节已完成，即将进入评定会议。'
+                  : '全部章节已经完成，PRESIDENT 的传奇仍在继续。'
+                : chapter.number < 7
+                  ? '任务已全部完成，可以参加评定会议。'
+                  : '任务已全部完成，可以完成最终章节。'
+              : '完成任务后在此领取奖励。')}
       </p>
     </section>
   )

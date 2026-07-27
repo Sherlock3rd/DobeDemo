@@ -4,15 +4,29 @@ import { useAdventureStore } from './useAdventureStore'
 import { CHAPTER_STORAGE_KEY, useChapterStore } from './useChapterStore'
 import { useCityStore } from './useCityStore'
 import { useGangStore } from './useGangStore'
+import { PROLOGUE_TUNED_PART } from '../game/prologue'
 
 const BASE_TIME = 1_700_000_000_000
 
 function completeChapterOneRequirements(): void {
+  const adventure = useAdventureStore.getState()
   useAdventureStore.setState({
-    highestClearedStage: 2,
-    highestClearedRacingStage: 1,
+    carPartInventory: [
+      ...adventure.carPartInventory.filter(
+        (part) => part.id !== PROLOGUE_TUNED_PART.id,
+      ),
+      PROLOGUE_TUNED_PART,
+    ],
+    carPartSlotsByCar: {
+      ...adventure.carPartSlotsByCar,
+      'rust-fox': {
+        ...adventure.carPartSlotsByCar['rust-fox'],
+        engine: PROLOGUE_TUNED_PART.id,
+      },
+    },
   })
   useCityStore.setState((state) => ({
+    claimedBuildingIds: ['repair-shop'],
     buildingProgress: {
       ...state.buildingProgress,
       'repair-shop': {
@@ -41,19 +55,20 @@ describe('useChapterStore', () => {
       selectedTaskPackageIds: {},
       claimedChapterNumbers: [],
     })
-    expect(useChapterStore.getState().claimTask('chapter-1-starter-hero')).toBe(
-      true,
-    )
-    expect(useGangStore.getState().totalReputation).toBe(10)
+    useCityStore.setState({ claimedBuildingIds: ['repair-shop'] })
+    expect(
+      useChapterStore.getState().claimTask('chapter-1-prologue-claim'),
+    ).toBe(true)
+    expect(useGangStore.getState().totalReputation).toBe(30)
     expect(useAdventureStore.getState()).toMatchObject({
-      sharedExp: 200,
-      spareParts: 20,
+      sharedExp: 120,
+      spareParts: 12,
     })
   })
 
   it('rejects incomplete and non-active chapter tasks', () => {
     expect(
-      useChapterStore.getState().claimTask('chapter-1-starter-building'),
+      useChapterStore.getState().claimTask('chapter-1-prologue-upgrade'),
     ).toBe(false)
     useAdventureStore.setState({ highestClearedStage: 20 })
     expect(
@@ -61,22 +76,18 @@ describe('useChapterStore', () => {
     ).toBe(false)
   })
 
-  it('delivers the first chapter full epic set from the mandatory SUP task', () => {
-    useAdventureStore.setState({ highestClearedRacingStage: 1 })
-    expect(useChapterStore.getState().claimTask('chapter-1-extra-sup')).toBe(
-      true,
-    )
-
+  it('advances the prologue only from the expected current step', () => {
     expect(
-      useAdventureStore
+      useChapterStore
         .getState()
-        .carPartInventory.map(({ slot, quality }) => ({ slot, quality })),
-    ).toEqual([
-      { slot: 'tires', quality: 'epic' },
-      { slot: 'engine', quality: 'epic' },
-      { slot: 'bumper', quality: 'epic' },
-      { slot: 'suspension', quality: 'epic' },
-    ])
+        .advancePrologue('opening-dialogue', 'police-race'),
+    ).toBe(true)
+    expect(
+      useChapterStore
+        .getState()
+        .advancePrologue('opening-dialogue', 'bo-invitation'),
+    ).toBe(false)
+    expect(useChapterStore.getState().prologueStep).toBe('police-race')
   })
 
   it('claims a completed chapter once but advances only after package selection', () => {

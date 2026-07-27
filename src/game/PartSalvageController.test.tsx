@@ -25,6 +25,7 @@ describe('PartSalvageController', () => {
   })
 
   it('preserves accumulated time without automatically adding parts', () => {
+    const initialParts = useAdventureStore.getState().carPartInventory
     const random = vi.spyOn(Math, 'random')
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
@@ -41,7 +42,7 @@ describe('PartSalvageController', () => {
       vi.advanceTimersByTime(getPartDropIntervalMs(1) * 2)
     })
 
-    expect(useAdventureStore.getState().carPartInventory).toEqual([])
+    expect(useAdventureStore.getState().carPartInventory).toEqual(initialParts)
     expect(useAdventureStore.getState().partIdleClock).toBe(
       NOW - getPartDropIntervalMs(1),
     )
@@ -49,6 +50,7 @@ describe('PartSalvageController', () => {
   })
 
   it('resets the salvage clock only on a not-claimed-to-claimed edge', () => {
+    const initialParts = useAdventureStore.getState().carPartInventory
     useAdventureStore.setState({
       partIdleClock: NOW - getPartDropIntervalMs(1),
     })
@@ -59,11 +61,12 @@ describe('PartSalvageController', () => {
       useCityStore.setState({ claimedBuildingIds: ['recycling-yard'] })
     })
 
-    expect(useAdventureStore.getState().carPartInventory).toEqual([])
+    expect(useAdventureStore.getState().carPartInventory).toEqual(initialParts)
     expect(useAdventureStore.getState().partIdleClock).toBe(Date.now())
   })
 
   it('treats a claimed rehydrate as initial state instead of a claim edge', async () => {
+    const initialParts = useAdventureStore.getState().carPartInventory
     const accumulatedClock = NOW - getPartDropIntervalMs(1) * 2
     useAdventureStore.setState({ partIdleClock: accumulatedClock })
     render(<PartSalvageController />)
@@ -88,7 +91,7 @@ describe('PartSalvageController', () => {
       await useCityStore.persist.rehydrate()
     })
 
-    expect(useAdventureStore.getState().carPartInventory).toEqual([])
+    expect(useAdventureStore.getState().carPartInventory).toEqual(initialParts)
     expect(useAdventureStore.getState().partIdleClock).toBe(accumulatedClock)
   })
 })

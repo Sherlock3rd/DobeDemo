@@ -1,5 +1,7 @@
 import { useEffect, useState, type CSSProperties, type JSX } from 'react'
 import gangPortraitAtlas from '../assets/peaky-blinders-hierarchy-atlas.png'
+import boInvitationArtwork from '../assets/prologue-bo-invitation.png'
+import policeChaseArtwork from '../assets/prologue-police-chase.png'
 import type { NarrativeEvent } from '../game/narrative'
 import { useInitialFocus } from './useInitialFocus'
 
@@ -7,6 +9,11 @@ interface NarrativeDialogueOverlayProps {
   event: NarrativeEvent
   onComplete: () => void
 }
+
+const ARTWORK_BY_ID = {
+  'police-chase': policeChaseArtwork,
+  'bo-invitation': boInvitationArtwork,
+} as const
 
 function portraitStyle(index: number): CSSProperties {
   const column = index % 4
@@ -28,6 +35,7 @@ export function NarrativeDialogueOverlay({
   const startsChapter = event.id.startsWith('chapter-start:')
   const opensTaskPackages = event.id === 'special-vote:formal-member'
   const returnsToAssessment = event.id.startsWith('special-vote:')
+  const startsPoliceRace = event.id === 'prologue:police-chase'
 
   useEffect(() => {
     const onKeyDown = (keyboardEvent: KeyboardEvent): void => {
@@ -42,11 +50,26 @@ export function NarrativeDialogueOverlay({
   return (
     <div className="narrative-dialogue__overlay">
       <section
-        className="narrative-dialogue"
+        className={
+          event.artwork
+            ? 'narrative-dialogue narrative-dialogue--cinematic'
+            : 'narrative-dialogue'
+        }
         role="dialog"
         aria-modal="true"
         aria-label={`剧情对话：${event.title}`}
       >
+        {event.artwork ? (
+          <img
+            className="narrative-dialogue__artwork"
+            src={ARTWORK_BY_ID[event.artwork]}
+            alt={
+              event.artwork === 'police-chase'
+                ? 'Thomas 骑摩托逃离警察追击'
+                : '金发骑手博指向小镇修车厂'
+            }
+          />
+        ) : null}
         <div
           className="narrative-dialogue__portrait"
           style={portraitStyle(line.portraitIndex)}
@@ -79,9 +102,11 @@ export function NarrativeDialogueOverlay({
                   ? '查看下一章任务包'
                   : returnsToAssessment
                     ? '继续评定会议'
-                    : startsChapter
-                      ? '开始章节行动'
-                      : '开始行动'
+                    : startsPoliceRace
+                      ? '冲出包围'
+                      : startsChapter
+                        ? '开始章节行动'
+                        : '开始行动'
                 : '下一句'}
             </button>
           </div>

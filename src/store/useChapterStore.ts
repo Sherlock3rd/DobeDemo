@@ -20,6 +20,7 @@ import { getHeroCombatStats } from '../game/heroEquipment'
 import { HERO_IDS, isHeroUnlocked } from '../game/heroes'
 import { isBuildingUnlocked } from '../game/progressionUnlocks'
 import { isNarrativeEventId, type NarrativeEventId } from '../game/narrative'
+import { isPrologueStep, type PrologueStep } from '../game/prologue'
 import { createSafeStorage } from './safeStorage'
 import { useAdventureStore } from './useAdventureStore'
 import { useCityStore } from './useCityStore'
@@ -28,6 +29,7 @@ import { useGangStore } from './useGangStore'
 export const CHAPTER_STORAGE_KEY = 'dobe-chapter-progression-v1'
 
 interface ChapterState {
+  prologueStep: PrologueStep
   activeChapterNumber: number
   selectedTaskPackageIds: Record<number, string>
   meetingVotes: Record<number, ChapterMeetingDecision>
@@ -35,6 +37,7 @@ interface ChapterState {
   claimedChapterNumbers: number[]
   seenNarrativeIds: NarrativeEventId[]
   completedAssessmentChapterNumbers: number[]
+  advancePrologue: (expected: PrologueStep, next: PrologueStep) => boolean
   claimTask: (taskId: string) => boolean
   claimChapterReward: (chapterNumber: number) => boolean
   markNarrativeSeen: (eventId: NarrativeEventId) => void
@@ -107,6 +110,10 @@ export function getChapterProgressSnapshot(): ChapterProgressSnapshot {
     carPartUpgradeCount: adventure.carPartUpgradeCount,
     highestClearedStage: adventure.highestClearedStage,
     highestClearedRacingStage: adventure.highestClearedRacingStage,
+    claimedBuildingIds: city.claimedBuildingIds,
+    installedPartIds: Object.values(adventure.carPartSlotsByCar).flatMap(
+      (slots) => Object.values(slots).filter((partId) => partId !== null),
+    ),
     buildingProgress: city.buildingProgress,
     gangLevel,
     resources: city.resources,
@@ -239,6 +246,7 @@ function defaultSelectedPackagesThrough(
 export const useChapterStore = create<ChapterState>()(
   persist(
     (set, get) => ({
+      prologueStep: 'opening-dialogue',
       activeChapterNumber: 1,
       selectedTaskPackageIds: {},
       meetingVotes: {},
@@ -246,6 +254,12 @@ export const useChapterStore = create<ChapterState>()(
       claimedChapterNumbers: [],
       seenNarrativeIds: [],
       completedAssessmentChapterNumbers: [],
+      advancePrologue: (expected, next) => {
+        if (!isPrologueStep(expected) || !isPrologueStep(next)) return false
+        if (get().prologueStep !== expected) return false
+        set({ prologueStep: next })
+        return true
+      },
       claimTask: (taskId) => {
         const state = get()
         const activeTasks = getChapterTasks(
@@ -362,6 +376,7 @@ export const useChapterStore = create<ChapterState>()(
       },
       reset: () =>
         set({
+          prologueStep: 'opening-dialogue',
           activeChapterNumber: 1,
           selectedTaskPackageIds: {},
           meetingVotes: {},
@@ -373,20 +388,27 @@ export const useChapterStore = create<ChapterState>()(
     }),
     {
       name: CHAPTER_STORAGE_KEY,
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted, version) => {
         const source =
           typeof persisted === 'object' && persisted !== null
             ? (persisted as Record<string, unknown>)
             : {}
-        if (version >= 5) return source
+        if (version >= 7) return source
+        if (version >= 5) {
+          return {
+            ...source,
+            prologueStep: 'complete',
+          }
+        }
         const claimedChapterNumbers = normalizeClaimedChapterNumbers(
           source.claimedChapterNumbers,
         )
         const activeChapterNumber = fallbackActiveChapter(claimedChapterNumbers)
         return {
           ...source,
+          prologueStep: 'complete',
           activeChapterNumber,
           selectedTaskPackageIds:
             defaultSelectedPackagesThrough(activeChapterNumber),
@@ -400,6 +422,7 @@ export const useChapterStore = create<ChapterState>()(
         }
       },
       partialize: ({
+        prologueStep,
         activeChapterNumber,
         selectedTaskPackageIds,
         meetingVotes,
@@ -408,6 +431,7 @@ export const useChapterStore = create<ChapterState>()(
         seenNarrativeIds,
         completedAssessmentChapterNumbers,
       }) => ({
+        prologueStep,
         activeChapterNumber,
         selectedTaskPackageIds,
         meetingVotes,
@@ -442,6 +466,9 @@ export const useChapterStore = create<ChapterState>()(
         }
         return {
           ...current,
+          prologueStep: isPrologueStep(source.prologueStep)
+            ? source.prologueStep
+            : current.prologueStep,
           activeChapterNumber,
           selectedTaskPackageIds,
           meetingVotes: normalizeMeetingVotes(source.meetingVotes),

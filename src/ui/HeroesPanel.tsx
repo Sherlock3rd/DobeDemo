@@ -47,7 +47,13 @@ import {
   type HeroId,
 } from '../game/heroes'
 import { isCarUnlocked, isGunUnlocked } from '../game/progressionUnlocks'
+import {
+  PROLOGUE_BROKEN_PART_ID,
+  PROLOGUE_TUNED_PART_ID,
+  getPrologueVisibility,
+} from '../game/prologue'
 import { useAdventureStore } from '../store/useAdventureStore'
+import { useChapterStore } from '../store/useChapterStore'
 import { useGangStore } from '../store/useGangStore'
 import { useInitialFocus } from './useInitialFocus'
 import { ResourceAmount } from './ResourceAmount'
@@ -113,6 +119,12 @@ function HeroPortrait({
   )
 }
 
+function getTutorialPartName(part: CarPartInstance): string | null {
+  if (part.id === PROLOGUE_BROKEN_PART_ID) return '损坏引擎'
+  if (part.id === PROLOGUE_TUNED_PART_ID) return '博赠送的调校引擎'
+  return null
+}
+
 function PartCard({
   part,
   compact = false,
@@ -121,6 +133,7 @@ function PartCard({
   compact?: boolean
 }): JSX.Element {
   const quality = CAR_PART_QUALITY_INFO[part.quality]
+  const tutorialPartName = getTutorialPartName(part)
   return (
     <span
       className={`heroes-panel__part-card${
@@ -132,10 +145,14 @@ function PartCard({
         {CAR_PART_SLOT_INFO[part.slot].shortName.slice(0, 1)}
       </span>
       <span>
-        <strong>{CAR_PART_SLOT_INFO[part.slot].name}</strong>
+        <strong>
+          {tutorialPartName ?? CAR_PART_SLOT_INFO[part.slot].name}
+        </strong>
         <span className="heroes-panel__part-tags">
           <em>{CAR_PART_SLOT_INFO[part.slot].shortName}</em>
           <em>{quality.name}</em>
+          {part.id === PROLOGUE_BROKEN_PART_ID ? <em>损坏</em> : null}
+          {part.id === PROLOGUE_TUNED_PART_ID ? <em>博赠送</em> : null}
           <em>{`Lv.${part.level}`}</em>
         </span>
       </span>
@@ -148,6 +165,8 @@ export function HeroesPanel({
   initialTab = 'level',
 }: HeroesPanelProps): JSX.Element {
   const gangLevel = useGangStore((state) => state.currentLevel)
+  const prologueStep = useChapterStore((state) => state.prologueStep)
+  const prologueVisibility = getPrologueVisibility(prologueStep)
   const heroLevels = useAdventureStore((state) => state.heroLevels)
   const sharedExp = useAdventureStore((state) => state.sharedExp)
   const equipmentByHero = useAdventureStore((state) => state.equipmentByHero)
@@ -175,10 +194,16 @@ export function HeroesPanel({
   const upgradeCarPart = useAdventureStore((state) => state.upgradeCarPart)
   const upgradeGun = useAdventureStore((state) => state.upgradeGun)
   const [selectedHero, setSelectedHero] = useState<HeroId>('foreman')
-  const [activeTab, setActiveTab] = useState<DevelopmentTab>(initialTab)
+  const [activeTab, setActiveTab] = useState<DevelopmentTab>(() =>
+    prologueVisibility[initialTab === 'level' ? 'heroLevel' : initialTab]
+      ? initialTab
+      : 'car',
+  )
   const [equipmentPicker, setEquipmentPicker] =
     useState<EquipmentPicker | null>(null)
-  const [partPickerSlot, setPartPickerSlot] = useState<CarPartSlot | null>(null)
+  const [partPickerSlot, setPartPickerSlot] = useState<CarPartSlot | null>(
+    prologueStep === 'part-tutorial' ? 'engine' : null,
+  )
   const [status, setStatus] = useState('')
   const titleRef = useInitialFocus<HTMLHeadingElement>()
   const cap = getHeroLevelCap(gangLevel)
@@ -495,23 +520,29 @@ export function HeroesPanel({
                   ['car', '车辆', selectedCarName],
                   ['gun', '枪械', selectedGunName],
                 ] as const
-              ).map(([tab, label, equipmentName]) => (
-                <button
-                  type="button"
-                  key={tab}
-                  aria-pressed={activeTab === tab}
-                  aria-label={`${label} · ${equipmentName}`}
-                  onClick={() => {
-                    setActiveTab(tab)
-                    setEquipmentPicker(null)
-                    setPartPickerSlot(null)
-                    setStatus('')
-                  }}
-                >
-                  <strong>{label}</strong>
-                  <small>{equipmentName}</small>
-                </button>
-              ))}
+              )
+                .filter(([tab]) =>
+                  tab === 'level'
+                    ? prologueVisibility.heroLevel
+                    : prologueVisibility[tab],
+                )
+                .map(([tab, label, equipmentName]) => (
+                  <button
+                    type="button"
+                    key={tab}
+                    aria-pressed={activeTab === tab}
+                    aria-label={`${label} · ${equipmentName}`}
+                    onClick={() => {
+                      setActiveTab(tab)
+                      setEquipmentPicker(null)
+                      setPartPickerSlot(null)
+                      setStatus('')
+                    }}
+                  >
+                    <strong>{label}</strong>
+                    <small>{equipmentName}</small>
+                  </button>
+                ))}
             </nav>
 
             {activeTab === 'level' ? (
@@ -747,6 +778,9 @@ export function HeroesPanel({
                             key={part.id}
                             className="heroes-panel__picker-card heroes-panel__picker-card--part"
                             aria-current={equipped ? 'true' : undefined}
+                            data-tutorial-part={
+                              part.id === PROLOGUE_TUNED_PART_ID || undefined
+                            }
                             style={
                               {
                                 '--part-quality': quality.color,
@@ -766,19 +800,30 @@ export function HeroesPanel({
                               <span>
                                 {equipped
                                   ? '当前安装'
-                                  : installedCarId
-                                    ? `${
-                                        equipmentConfig.cars[installedCarId]
-                                          .name
-                                      } 使用中`
-                                    : '仓库待命'}
+                                  : part.id === PROLOGUE_TUNED_PART_ID
+                                    ? '博赠送 · 推荐替换'
+                                    : installedCarId
+                                      ? `${
+                                          equipmentConfig.cars[installedCarId]
+                                            .name
+                                        } 使用中`
+                                      : '仓库待命'}
                               </span>
-                              <h5>{CAR_PART_SLOT_INFO[part.slot].name}</h5>
+                              <h5>
+                                {getTutorialPartName(part) ??
+                                  CAR_PART_SLOT_INFO[part.slot].name}
+                              </h5>
                               <span className="heroes-panel__part-tags">
                                 <em>
                                   {CAR_PART_SLOT_INFO[part.slot].shortName}
                                 </em>
                                 <em>{quality.name}</em>
+                                {part.id === PROLOGUE_BROKEN_PART_ID ? (
+                                  <em>损坏</em>
+                                ) : null}
+                                {part.id === PROLOGUE_TUNED_PART_ID ? (
+                                  <em>博赠送</em>
+                                ) : null}
                                 <em>{`Lv.${part.level}`}</em>
                               </span>
                               <p>{CAR_PART_SLOT_INFO[part.slot].description}</p>
@@ -815,12 +860,17 @@ export function HeroesPanel({
                               </button>
                               <button
                                 type="button"
-                                disabled={installedCarId !== null}
+                                disabled={
+                                  installedCarId !== null ||
+                                  part.id === PROLOGUE_TUNED_PART_ID
+                                }
                                 onClick={() => handleRecyclePart(part)}
                               >
                                 {installedCarId
                                   ? '使用中不可回收'
-                                  : `回收 +${getCarPartRecycleValue(part)}`}
+                                  : part.id === PROLOGUE_TUNED_PART_ID
+                                    ? '剧情配件不可回收'
+                                    : `回收 +${getCarPartRecycleValue(part)}`}
                               </button>
                             </div>
                           </article>

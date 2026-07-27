@@ -21,6 +21,8 @@ import { useInitialFocus } from './useInitialFocus'
 
 export interface SettingsPanelProps {
   onClose: () => void
+  onOpenAdventure?: () => void
+  onOpenRacing?: () => void
 }
 
 const TITLE_ID = 'settings-panel-title'
@@ -34,7 +36,11 @@ function formatQualityWeights(weights: PartQualityWeights): string {
   ).join(' · ')
 }
 
-export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
+export function SettingsPanel({
+  onClose,
+  onOpenAdventure,
+  onOpenRacing,
+}: SettingsPanelProps): JSX.Element {
   const [confirming, setConfirming] = useState(false)
   const [showProbabilities, setShowProbabilities] = useState(false)
   const [feedback, setFeedback] = useState('')
@@ -121,6 +127,20 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
             调整当前进度，操作会立即生效并保留此面板。
           </p>
           <div className="settings-panel__debug-actions">
+            <button
+              type="button"
+              className="settings-panel__debug-action"
+              onClick={onOpenRacing}
+            >
+              打开 SUP 调试入口
+            </button>
+            <button
+              type="button"
+              className="settings-panel__debug-action"
+              onClick={onOpenAdventure}
+            >
+              打开推关调试入口
+            </button>
             <button
               type="button"
               className="settings-panel__debug-action"

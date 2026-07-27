@@ -19,6 +19,7 @@ import { BUILDING_IDS } from '../game/cityTypes'
 import { getAccountTotalPower, unitPower } from '../game/combat/power'
 import { getHeroCombatStats } from '../game/heroEquipment'
 import { HERO_IDS, isHeroUnlocked } from '../game/heroes'
+import { getPrologueVisibility } from '../game/prologue'
 import {
   getClaimableIdleExp,
   useAdventureStore,
@@ -37,13 +38,14 @@ export interface GlobalHudProps {
   onOpenGangTree: () => void
   onOpenChapters?: () => void
   onOpenAdventure: () => void
-  onOpenRacing: () => void
+  onOpenRacing?: () => void
   onOpenSettings: () => void
 }
 
 export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const resources = useCityStore((s) => s.resources)
   const buildingProgress = useCityStore((s) => s.buildingProgress)
+  const claimedBuildingIds = useCityStore((s) => s.claimedBuildingIds)
   const gangLevel = useGangStore((s) => s.currentLevel)
   const totalReputation = useGangStore((s) => s.totalReputation)
   const heroLevels = useAdventureStore((s) => s.heroLevels)
@@ -60,6 +62,7 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const claimedTaskIds = useChapterStore((s) => s.claimedTaskIds)
   const claimedChapterNumbers = useChapterStore((s) => s.claimedChapterNumbers)
   const activeChapterNumber = useChapterStore((s) => s.activeChapterNumber)
+  const prologueStep = useChapterStore((s) => s.prologueStep)
   const selectedTaskPackageIds = useChapterStore(
     (s) => s.selectedTaskPackageIds,
   )
@@ -137,95 +140,129 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
     gangLevel < GANG_MAX_LEVEL &&
     totalReputation >= getTotalReputationForLevel(nextGangLevel) &&
     (!crossesRole || chapterComplete)
+  const visibility = getPrologueVisibility(prologueStep)
+  const visibleResources = [
+    claimedBuildingIds.includes('repair-shop') ||
+    claimedBuildingIds.includes('commercial-street')
+      ? ('money' as const)
+      : null,
+    claimedBuildingIds.includes('gas-station') ? ('oil' as const) : null,
+    claimedBuildingIds.includes('metalworking-plant')
+      ? ('materials' as const)
+      : null,
+  ].filter((resource) => resource !== null)
 
   return (
     <section className="global-hud" aria-label="主界面 HUD">
-      <div className="global-hud__top">
-        <button
-          type="button"
-          className="global-hud__avatar"
-          aria-label="打开英雄培养"
-          onClick={props.onOpenHeroes}
-        >
-          Thomas Shelby
-        </button>
-        <button
-          type="button"
-          className="global-hud__gang"
-          data-promotion-ready={gangPromotionReady}
-          onClick={props.onOpenGangTree}
-        >
-          <span>{`Lv.${gangLevel} ${role.title}（${role.chineseTitle}）`}</span>
-          <ResourceAmount kind="power" amount={totalPower} />
-          {gangPromotionReady ? (
-            <span
-              className="global-hud__promotion-ready"
-              aria-label="帮派等级可晋升"
+      {visibility.heroes ||
+      visibility.gangTree ||
+      visibleResources.length > 0 ? (
+        <div className="global-hud__top">
+          {visibility.heroes ? (
+            <button
+              type="button"
+              className="global-hud__avatar"
+              aria-label="打开英雄培养"
+              onClick={props.onOpenHeroes}
             >
-              可晋升
-            </span>
+              Thomas Shelby
+            </button>
           ) : null}
-        </button>
-        <div className="global-hud__resources" aria-label="资源">
-          <ResourceAmount
-            kind="money"
-            amount={Math.trunc(resources.money)}
-            showLabel={false}
-          />
-          <ResourceAmount
-            kind="oil"
-            amount={Math.trunc(resources.oil)}
-            showLabel={false}
-          />
-          <ResourceAmount
-            kind="materials"
-            amount={Math.trunc(resources.materials)}
-            showLabel={false}
-          />
+          {visibility.gangTree ? (
+            <button
+              type="button"
+              className="global-hud__gang"
+              data-promotion-ready={gangPromotionReady}
+              onClick={props.onOpenGangTree}
+            >
+              <span>{`Lv.${gangLevel} ${role.title}（${role.chineseTitle}）`}</span>
+              <ResourceAmount kind="power" amount={totalPower} />
+              {gangPromotionReady ? (
+                <span
+                  className="global-hud__promotion-ready"
+                  aria-label="帮派等级可晋升"
+                >
+                  可晋升
+                </span>
+              ) : null}
+            </button>
+          ) : null}
+          {visibleResources.length > 0 ? (
+            <div className="global-hud__resources" aria-label="资源">
+              {visibleResources.includes('money') ? (
+                <ResourceAmount
+                  kind="money"
+                  amount={Math.trunc(resources.money)}
+                  showLabel={false}
+                />
+              ) : null}
+              {visibleResources.includes('oil') ? (
+                <ResourceAmount
+                  kind="oil"
+                  amount={Math.trunc(resources.oil)}
+                  showLabel={false}
+                />
+              ) : null}
+              {visibleResources.includes('materials') ? (
+                <ResourceAmount
+                  kind="materials"
+                  amount={Math.trunc(resources.materials)}
+                  showLabel={false}
+                />
+              ) : null}
+            </div>
+          ) : null}
         </div>
-      </div>
-      <button
-        type="button"
-        className="global-hud__chapter"
-        onClick={props.onOpenChapters}
-      >
-        <span>{`章节 ${currentChapter.number} / ${CHAPTERS.length}`}</span>
-        <small>{currentChapter.title.replace(/^第.+? · /, '')}</small>
-        {chapterClaimable ? (
-          <span className="global-hud__dot" aria-label="有章节奖励可领取" />
-        ) : null}
-      </button>
+      ) : null}
+      {visibility.chapters ? (
+        <button
+          type="button"
+          className="global-hud__chapter"
+          onClick={props.onOpenChapters}
+        >
+          <span>
+            {prologueStep === 'complete'
+              ? `章节 ${currentChapter.number} / ${CHAPTERS.length}`
+              : '序章 · 转正任务'}
+          </span>
+          <small>
+            {prologueStep === 'complete'
+              ? currentChapter.title.replace(/^第.+? · /, '')
+              : '完成三项见习职责'}
+          </small>
+          {chapterClaimable ? (
+            <span className="global-hud__dot" aria-label="有章节奖励可领取" />
+          ) : null}
+        </button>
+      ) : null}
       <nav className="global-hud__bottom" aria-label="主导航">
-        <button
-          type="button"
-          className="global-hud__nav"
-          onClick={props.onOpenRacing}
-        >
-          赛车
-        </button>
-        <button
-          type="button"
-          className="global-hud__nav"
-          onClick={props.onOpenAdventure}
-        >
-          推关
-          {adventureDot ? (
-            <span
-              className="global-hud__dot"
-              aria-label="有可挑战关卡或可领取宝箱"
-            />
-          ) : null}
-        </button>
-        <button
-          type="button"
-          className="global-hud__nav"
-          onClick={props.onOpenHeroes}
-        >
-          英雄
-          {heroesDot ? (
-            <span className="global-hud__dot" aria-label="有可升级英雄" />
-          ) : null}
-        </button>
+        {visibility.campaign ? (
+          <button
+            type="button"
+            className="global-hud__nav"
+            onClick={props.onOpenAdventure}
+          >
+            推关
+            {adventureDot ? (
+              <span
+                className="global-hud__dot"
+                aria-label="有可挑战关卡或可领取宝箱"
+              />
+            ) : null}
+          </button>
+        ) : null}
+        {visibility.heroes ? (
+          <button
+            type="button"
+            className="global-hud__nav"
+            onClick={props.onOpenHeroes}
+          >
+            英雄
+            {heroesDot ? (
+              <span className="global-hud__dot" aria-label="有可升级英雄" />
+            ) : null}
+          </button>
+        ) : null}
         <button
           type="button"
           className="global-hud__nav"

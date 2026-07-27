@@ -19,10 +19,14 @@ describe('GlobalHud', () => {
     useGangStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
     useChapterStore.getState().reset()
+    useChapterStore.setState({ prologueStep: 'complete' })
     useChestTick.setState({ tick: 0, now: 0 })
   })
 
   it('renders only money, oil, and materials in the main resource HUD', () => {
+    useCityStore.setState({
+      claimedBuildingIds: ['repair-shop', 'gas-station', 'metalworking-plant'],
+    })
     render(
       <GlobalHud
         onOpenHeroes={() => {}}
@@ -143,7 +147,6 @@ describe('GlobalHud', () => {
 
   it('routes bottom nav callbacks', async () => {
     const onOpenAdventure = vi.fn()
-    const onOpenRacing = vi.fn()
     const onOpenChapters = vi.fn()
     render(
       <GlobalHud
@@ -151,16 +154,33 @@ describe('GlobalHud', () => {
         onOpenGangTree={() => {}}
         onOpenChapters={onOpenChapters}
         onOpenAdventure={onOpenAdventure}
-        onOpenRacing={onOpenRacing}
         onOpenSettings={() => {}}
       />,
     )
     await userEvent.click(screen.getByRole('button', { name: /推关/ }))
     expect(onOpenAdventure).toHaveBeenCalled()
-    await userEvent.click(screen.getByRole('button', { name: '赛车' }))
-    expect(onOpenRacing).toHaveBeenCalled()
     await userEvent.click(screen.getByRole('button', { name: /章节 1/ }))
     expect(onOpenChapters).toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: '赛车' })).toBeNull()
+  })
+
+  it('shows only settings before the prologue unlocks HUD systems', () => {
+    useChapterStore.setState({ prologueStep: 'opening-dialogue' })
+    render(
+      <GlobalHud
+        onOpenHeroes={() => {}}
+        onOpenGangTree={() => {}}
+        onOpenAdventure={() => {}}
+        onOpenSettings={() => {}}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: '设置' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /英雄/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /帮派树/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /章节/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /推关/ })).toBeNull()
+    expect(screen.queryByLabelText('资源')).toBeNull()
   })
 
   it('shows the adventure red dot for a fresh account', () => {

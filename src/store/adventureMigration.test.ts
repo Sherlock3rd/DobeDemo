@@ -5,6 +5,7 @@ import {
   normalizeLegacyPartQuality,
   reconcileAdventureWithGang,
 } from './adventureMigration'
+import { PROLOGUE_BROKEN_PART, PROLOGUE_BROKEN_PART_ID } from '../game/prologue'
 
 const NOW = 1_700_000_000_000
 
@@ -26,7 +27,7 @@ describe('adventureMigration', () => {
       highestClearedStage: 0,
       highestClearedRacingStage: 0,
       equipmentByHero: {
-        foreman: { carId: 'rust-fox', gunId: 'rivet-smg' },
+        foreman: { carId: 'rust-fox', gunId: null },
         anvil: { carId: null, gunId: null },
         skyline: { carId: null, gunId: null },
       },
@@ -39,12 +40,10 @@ describe('adventureMigration', () => {
       chapterEquipmentMigrationVersion: 1,
     })
     expect(Object.values(initial.gunLevels)).toEqual([0, 0, 0, 0, 0])
-    expect(initial.carPartInventory).toEqual([])
-    expect(
-      Object.values(initial.carPartSlotsByCar).every((slots) =>
-        Object.values(slots).every((partId) => partId === null),
-      ),
-    ).toBe(true)
+    expect(initial.carPartInventory).toEqual([PROLOGUE_BROKEN_PART])
+    expect(initial.carPartSlotsByCar['rust-fox'].engine).toBe(
+      PROLOGUE_BROKEN_PART_ID,
+    )
   })
 
   it('clamps hero levels, drops unknown heroes, backfills missing', () => {
@@ -102,7 +101,7 @@ describe('adventureMigration', () => {
     expect(migrated.highestClearedRacingStage).toBe(0)
     expect(migrated.equipmentByHero.foreman).toEqual({
       carId: 'rust-fox',
-      gunId: 'rivet-smg',
+      gunId: null,
     })
   })
 

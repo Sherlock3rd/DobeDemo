@@ -5,6 +5,7 @@ import { useAdventureStore } from '../store/useAdventureStore'
 import { useChapterStore } from '../store/useChapterStore'
 import { useCityStore } from '../store/useCityStore'
 import { useGangStore } from '../store/useGangStore'
+import { PROLOGUE_TUNED_PART } from '../game/prologue'
 import { ChapterPanel } from './ChapterPanel'
 
 const BASE_TIME = 1_700_000_000_000
@@ -18,25 +19,33 @@ describe('ChapterPanel', () => {
     useChapterStore.getState().reset()
   })
 
-  it('shows only the current chapter identity and its starter plus fixed tasks', () => {
+  it('shows the three prologue duties without a chapter-meeting action', () => {
     render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)
 
     expect(
-      screen.getByRole('heading', { name: '第一章 · 冷炉初燃' }),
+      screen.getByRole('heading', { name: '序章 · 逃亡者的补丁' }),
     ).toHaveFocus()
     expect(
       screen.getByRole('status', { name: '当前第 1 章' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('已完成 2/5')).toBeInTheDocument()
+    expect(screen.getByText('已完成 0/3')).toBeInTheDocument()
     expect(screen.queryByLabelText('七章总览')).not.toBeInTheDocument()
     expect(screen.queryByText('主席之路')).not.toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: '进行中' })).toHaveLength(3)
-    expect(screen.getAllByRole('button', { name: '领取' })).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: '领取' })).toBeNull()
     expect(
       screen.queryByRole('button', { name: '前往英雄升级' }),
     ).not.toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /^前往/ })).toHaveLength(3)
-    expect(screen.getByText(/史诗轮胎/)).toBeInTheDocument()
+    expect(screen.getByText('转正任务提交')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: '已领取 0/3 · 全部领取后自动推进',
+      }),
+    ).toBeDisabled()
+    expect(
+      screen.queryByRole('button', { name: /评定会议/ }),
+    ).not.toBeInTheDocument()
   })
 
   it('updates the compact current-chapter identity without previewing neighbors', () => {
@@ -56,10 +65,11 @@ describe('ChapterPanel', () => {
   })
 
   it('claims a completed reward and switches the task to its claimed state', async () => {
+    useCityStore.setState({ claimedBuildingIds: ['repair-shop'] })
     render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)
 
     const heroTask = screen
-      .getByRole('heading', { name: '领头人就位' })
+      .getByRole('heading', { name: '接过修车厂' })
       .closest('article')
     expect(heroTask).not.toBeNull()
     await userEvent.click(
@@ -67,15 +77,22 @@ describe('ChapterPanel', () => {
     )
 
     expect(screen.getByRole('button', { name: '已领取' })).toBeDisabled()
-    expect(screen.getByText('领头人就位奖励已领取')).toBeInTheDocument()
-    expect(useGangStore.getState().totalReputation).toBe(10)
+    expect(screen.getByText('接过修车厂奖励已领取')).toBeInTheDocument()
+    expect(useGangStore.getState().totalReputation).toBe(30)
   })
 
   it('navigates a task to its relevant development surface', async () => {
     const onNavigateTask = vi.fn()
     render(<ChapterPanel onClose={() => {}} onNavigateTask={onNavigateTask} />)
 
-    await userEvent.click(screen.getByRole('button', { name: '前往对应建筑' }))
+    const upgradeTask = screen
+      .getByRole('heading', { name: '重新点炉' })
+      .closest('article')
+    await userEvent.click(
+      within(upgradeTask as HTMLElement).getByRole('button', {
+        name: '前往对应建筑',
+      }),
+    )
 
     expect(onNavigateTask).toHaveBeenCalledWith({
       kind: 'building-level',
@@ -84,14 +101,20 @@ describe('ChapterPanel', () => {
     })
   })
 
-  it('claims the separate chapter reward once after every task is complete', async () => {
-    const onChapterCompleted = vi.fn()
-    useAdventureStore.setState((state) => ({
-      heroLevels: { ...state.heroLevels, foreman: 3 },
-      highestClearedStage: 2,
-      highestClearedRacingStage: 1,
-    }))
+  it('requires all three prologue task rewards and never opens a meeting here', async () => {
+    const adventure = useAdventureStore.getState()
+    useAdventureStore.setState({
+      carPartInventory: [...adventure.carPartInventory, PROLOGUE_TUNED_PART],
+      carPartSlotsByCar: {
+        ...adventure.carPartSlotsByCar,
+        'rust-fox': {
+          ...adventure.carPartSlotsByCar['rust-fox'],
+          engine: PROLOGUE_TUNED_PART.id,
+        },
+      },
+    })
     useCityStore.setState((state) => ({
+      claimedBuildingIds: ['repair-shop'],
       buildingProgress: {
         ...state.buildingProgress,
         'repair-shop': {
@@ -100,29 +123,23 @@ describe('ChapterPanel', () => {
         },
       },
     }))
-    render(
-      <ChapterPanel
-        onClose={() => {}}
-        onNavigateTask={() => {}}
-        onChapterCompleted={onChapterCompleted}
-      />,
-    )
+    render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)
 
-    await userEvent.click(
+    for (const button of screen.getAllByRole('button', { name: '领取' })) {
+      await userEvent.click(button)
+    }
+
+    expect(
       screen.getByRole('button', {
-        name: '完成章节并参加评定会议',
+        name: '已领取 3/3 · 全部领取后自动推进',
       }),
-    )
-
-    expect(screen.getByRole('button', { name: '章节已完成' })).toBeDisabled()
-    expect(useChapterStore.getState().claimedChapterNumbers).toEqual([1])
-    expect(useGangStore.getState().totalReputation).toBe(132)
+    ).toBeDisabled()
+    expect(useChapterStore.getState().claimedChapterNumbers).toEqual([])
+    expect(useGangStore.getState().totalReputation).toBe(90)
     expect(useAdventureStore.getState()).toMatchObject({
-      sharedExp: 600,
-      spareParts: 80,
-      chapterUnlockedCarIds: ['iron-fang'],
+      sharedExp: 420,
+      spareParts: 42,
     })
-    expect(useCityStore.getState().resources.money).toBe(10_500)
-    expect(onChapterCompleted).toHaveBeenCalledWith(1)
+    expect(screen.queryByRole('button', { name: /评定会议/ })).toBeNull()
   })
 })

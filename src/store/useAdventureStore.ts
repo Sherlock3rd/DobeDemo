@@ -53,6 +53,7 @@ import {
 } from '../game/stageRewards'
 import type { FormationAssignment } from '../game/combat/power'
 import type { ChapterAdventureReward } from '../game/chapterProgression'
+import { PROLOGUE_TUNED_PART } from '../game/prologue'
 import { createSafeStorage } from './safeStorage'
 import { useCityStore } from './useCityStore'
 import {
@@ -147,6 +148,8 @@ export interface AdventureState extends AdventureDurableState {
   recycleCarPartsByQuality: (quality: CarPartQuality) => EquipmentActionResult
   upgradeCarPart: (partId: string) => EquipmentActionResult
   upgradeGun: (gunId: string, gangLevel: number) => EquipmentActionResult
+  grantProloguePart: () => boolean
+  grantPrologueGun: () => boolean
   grantChapterReward: (reward: ChapterAdventureReward) => void
   unlockAllChapterEquipmentForDebug: () => void
   setFormation: (formation: FormationAssignment, gangLevel: number) => boolean
@@ -753,6 +756,40 @@ export const useAdventureStore = create<AdventureState>()(
         })
         return result
       },
+      grantProloguePart: () => {
+        let applied = false
+        set((state) => {
+          if (
+            state.carPartInventory.some(
+              (part) => part.id === PROLOGUE_TUNED_PART.id,
+            )
+          ) {
+            applied = true
+            return state
+          }
+          if (state.carPartInventory.length >= CAR_PART_INVENTORY_LIMIT) {
+            return state
+          }
+          applied = true
+          return {
+            carPartInventory: [
+              ...state.carPartInventory,
+              { ...PROLOGUE_TUNED_PART },
+            ],
+          }
+        })
+        return applied
+      },
+      grantPrologueGun: () => {
+        set((state) => {
+          if (state.equipmentByHero.foreman.gunId === 'rivet-smg') return state
+          const equipmentByHero = cloneEquipment(state.equipmentByHero)
+          unequipGun(equipmentByHero, 'rivet-smg')
+          equipmentByHero.foreman.gunId = 'rivet-smg'
+          return { equipmentByHero }
+        })
+        return true
+      },
       grantChapterReward: (reward) => {
         set((state) => {
           const carPartInventory = [...state.carPartInventory]
@@ -849,9 +886,45 @@ export const useAdventureStore = create<AdventureState>()(
     }),
     {
       name: ADVENTURE_STORAGE_KEY,
-      version: 8,
+      version: 9,
       storage: createJSONStorage(() => createSafeStorage()),
-      migrate: (persisted) => persisted,
+      migrate: (persisted, version) => {
+        if (
+          version >= 9 ||
+          typeof persisted !== 'object' ||
+          persisted === null ||
+          Array.isArray(persisted)
+        ) {
+          return persisted
+        }
+        const source = persisted as Record<string, unknown>
+        const rawEquipment =
+          typeof source.equipmentByHero === 'object' &&
+          source.equipmentByHero !== null &&
+          !Array.isArray(source.equipmentByHero)
+            ? (source.equipmentByHero as Record<string, unknown>)
+            : {}
+        const rawForeman =
+          typeof rawEquipment.foreman === 'object' &&
+          rawEquipment.foreman !== null &&
+          !Array.isArray(rawEquipment.foreman)
+            ? (rawEquipment.foreman as Record<string, unknown>)
+            : {}
+        return {
+          ...source,
+          equipmentByHero: {
+            ...rawEquipment,
+            foreman: {
+              ...rawForeman,
+              carId:
+                typeof rawForeman.carId === 'string'
+                  ? rawForeman.carId
+                  : 'rust-fox',
+              gunId: 'rivet-smg',
+            },
+          },
+        }
+      },
       partialize: ({
         heroLevels,
         sharedExp,

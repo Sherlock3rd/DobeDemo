@@ -35,7 +35,7 @@ describe('ProgressionMilestoneOverlay', () => {
     )
 
     expect(
-      screen.getByRole('status', { name: '第一章 · 冷炉初燃完成' }),
+      screen.getByRole('status', { name: '序章 · 逃亡者的补丁完成' }),
     ).toHaveTextContent('Full Patch · 正式成员')
   })
 })

@@ -37,6 +37,11 @@ describe('FormationPanel', () => {
       [{ heroId: 'foreman', row: 'back', index: 1 }],
       { foreman: 1, anvil: 1, skyline: 1 },
       useAdventureStore.getState().equipmentByHero,
+      {
+        gunLevels: useAdventureStore.getState().gunLevels,
+        carPartInventory: useAdventureStore.getState().carPartInventory,
+        carPartSlotsByCar: useAdventureStore.getState().carPartSlotsByCar,
+      },
     )
     expect(
       screen.getByLabelText(new RegExp(`我方战力 ${ourPower}`)),

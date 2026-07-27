@@ -30,6 +30,7 @@ describe('GangTreePanel', () => {
     useGangStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
     useChapterStore.getState().reset()
+    useChapterStore.setState({ prologueStep: 'complete' })
     useCityStore.getState().reset(BASE_TIME)
   })
 
@@ -234,7 +235,7 @@ describe('GangTreePanel', () => {
     rerender(<GangTreePanel open onClose={() => {}} />)
     expect(screen.getByRole('button', { name: '和平交接' })).toBeDisabled()
     expect(
-      screen.getByText('需完成并领取第一章 · 冷炉初燃奖励'),
+      screen.getByText('需完成并领取序章 · 逃亡者的补丁奖励'),
     ).toBeInTheDocument()
   })
 
