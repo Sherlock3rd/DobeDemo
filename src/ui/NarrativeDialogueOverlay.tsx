@@ -25,7 +25,8 @@ export function NarrativeDialogueOverlay({
   const actionRef = useInitialFocus<HTMLButtonElement>()
   const line = event.lines[lineIndex]
   const isLastLine = lineIndex === event.lines.length - 1
-  const opensAssessment = event.id.startsWith('chapter-start:')
+  const startsChapter = event.id.startsWith('chapter-start:')
+  const returnsToAssessment = event.id.startsWith('special-vote:')
 
   useEffect(() => {
     const onKeyDown = (keyboardEvent: KeyboardEvent): void => {
@@ -73,9 +74,11 @@ export function NarrativeDialogueOverlay({
               }}
             >
               {isLastLine
-                ? opensAssessment
-                  ? '参加评定会议'
-                  : '开始行动'
+                ? returnsToAssessment
+                  ? '继续评定会议'
+                  : startsChapter
+                    ? '开始章节行动'
+                    : '开始行动'
                 : '下一句'}
             </button>
           </div>

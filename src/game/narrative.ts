@@ -11,6 +11,8 @@ import { getBuildingUnlock } from './progressionUnlocks'
 
 export type NarrativeEventId =
   | 'first-entry'
+  | 'special-vote:formal-member'
+  | 'special-vote:president'
   | `chapter-start:${number}`
   | `chapter-end:${number}`
   | `building-claimed:${BuildingId}`
@@ -162,7 +164,51 @@ export function getNarrativeEvent(id: string): NarrativeEvent | null {
           speaker: 'Eddie “Pins” Doyle',
           speakerRole: '前任见习 · 货场领路人',
           portraitIndex: 1,
-          text: 'Maeve 让你先去会议室。委员会会宣讲见习成员的第一章任务，形成决议后，你才有资格接过修车厂的管理钥匙。',
+          text: 'Maeve 已把第一章任务写进章节体。先接过修车厂钥匙并证明自己，章节完成后委员会才会表决你能否成为正式成员。',
+        },
+      ],
+    }
+  }
+
+  if (id === 'special-vote:formal-member') {
+    return {
+      id,
+      kicker: 'COUNCIL VERDICT · FULL PATCH',
+      title: '正式成员资格通过',
+      lines: [
+        {
+          speaker: 'Maeve “Red” Quinn',
+          speakerRole: '正式成员 · 正式成员头目',
+          portraitIndex: 2,
+          text: '五票赞成，一票保留。按剃刀党的规矩，你已经有资格佩戴完整补丁；正式成员席位会在权力树上完成交接。',
+        },
+        {
+          speaker: 'Thomas Shelby',
+          speakerRole: '见习 · 待完成席位交接',
+          portraitIndex: 0,
+          text: '补丁不是奖赏，是新的责任。继续开会，把废铁生意和下一章要做的事摆到桌上。',
+        },
+      ],
+    }
+  }
+
+  if (id === 'special-vote:president') {
+    return {
+      id,
+      kicker: 'COUNCIL VERDICT · PRESIDENT',
+      title: '主席继任资格通过',
+      lines: [
+        {
+          speaker: 'Winston Cole',
+          speakerRole: '主席 · 剃刀党最高席位',
+          portraitIndex: 7,
+          text: '六席一致赞成。主席的钥匙不属于个人，它代表整条指挥链；完成最后交接后，这份责任由你承担。',
+        },
+        {
+          speaker: 'Thomas Shelby',
+          speakerRole: '副主席 · 主席候任人',
+          portraitIndex: 0,
+          text: '城市仍属于剃刀党。我接下的是让每一本账、每一辆车和每一条命令都对得上的责任。继续最后的评定。',
         },
       ],
     }

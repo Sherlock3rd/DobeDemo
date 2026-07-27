@@ -2595,6 +2595,10 @@
   list-style: none;
 }
 
+.chapter-assessment__flow[data-special] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .chapter-assessment__flow li {
   position: relative;
   display: flex;
@@ -3390,10 +3394,45 @@
 }
 
 .chapter-assessment__event,
+.chapter-assessment__eligibility,
 .chapter-assessment__package-selection,
 .chapter-assessment__neutral-ballot {
   display: grid;
   gap: 0.75rem;
+}
+
+.chapter-assessment__eligibility-question {
+  display: grid;
+  gap: 0.45rem;
+  padding: clamp(0.9rem, 2vw, 1.3rem);
+  border: 1px solid rgba(251, 191, 36, 0.46);
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(circle at 50% 0, rgba(251, 191, 36, 0.14), transparent 68%),
+    rgba(120, 53, 15, 0.16);
+}
+
+.chapter-assessment__eligibility-question > span {
+  color: #5eead4;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+
+.chapter-assessment__eligibility-question > strong {
+  color: #fff7ed;
+  font-size: clamp(1.1rem, 2.5vw, 1.55rem);
+  line-height: 1.35;
+}
+
+.chapter-assessment__eligibility-question > small {
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.chapter-assessment__eligibility-result {
+  align-content: start;
 }
 
 .chapter-assessment__neutral-ballot {
@@ -3615,6 +3654,15 @@
 .chapter-assessment__member[data-vote='option-b'] {
   border-color: rgba(251, 191, 36, 0.32);
   background: rgba(120, 53, 15, 0.15);
+}
+
+.chapter-assessment__member[data-vote='abstain'] {
+  border-color: rgba(148, 163, 184, 0.34);
+  background: rgba(51, 65, 85, 0.28);
+}
+
+.chapter-assessment__member[data-vote='abstain'] em {
+  color: #cbd5e1;
 }
 
 .chapter-assessment__member[data-vote='option-b'] em {
@@ -6831,6 +6879,10 @@
     padding-inline: 0;
   }
 
+  .chapter-assessment__flow[data-special] {
+    gap: 0.25rem;
+  }
+
   .chapter-assessment__flow li {
     gap: 0.3rem;
   }
@@ -6846,6 +6898,10 @@
 
   .chapter-assessment__flow li > strong {
     font-size: 0.6rem;
+  }
+
+  .chapter-assessment__flow[data-special] li > strong {
+    font-size: 0.54rem;
   }
 
   .chapter-assessment__proposal {
@@ -6934,6 +6990,14 @@
 
   .chapter-assessment__primary {
     width: 100%;
+  }
+
+  .chapter-assessment__eligibility-question {
+    padding: 0.75rem;
+  }
+
+  .chapter-assessment__eligibility-question > strong {
+    font-size: 1rem;
   }
 
   .chapter-assessment__briefing,

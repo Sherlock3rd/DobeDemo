@@ -11,6 +11,8 @@ import {
   type ChapterMeetingVote,
 } from '../game/chapterAssessment'
 import { getChapterTasks } from '../game/chapterProgression'
+import { getNarrativeEvent } from '../game/narrative'
+import { NarrativeDialogueOverlay } from './NarrativeDialogueOverlay'
 
 export interface ChapterMeetingSelection {
   completedChapterNumber: number
@@ -24,7 +26,14 @@ interface ChapterAssessmentMeetingProps {
   onComplete: (selection: ChapterMeetingSelection) => void
 }
 
-type MeetingPhase = 'event' | 'vote' | 'result' | 'packages'
+type MeetingPhase =
+  | 'special'
+  | 'specialResult'
+  | 'specialDialogue'
+  | 'event'
+  | 'vote'
+  | 'result'
+  | 'packages'
 
 function portraitStyle(index: number): CSSProperties {
   const column = index % 4
@@ -40,7 +49,9 @@ export function ChapterAssessmentMeeting({
   onComplete,
 }: ChapterAssessmentMeetingProps): JSX.Element | null {
   const assessment = getChapterAssessment(completedChapterNumber)
-  const [phase, setPhase] = useState<MeetingPhase>('event')
+  const [phase, setPhase] = useState<MeetingPhase>(() =>
+    assessment?.specialVote ? 'special' : 'event',
+  )
   const [playerVote, setPlayerVote] = useState<ChapterMeetingVote | null>(null)
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null,
@@ -55,8 +66,17 @@ export function ChapterAssessmentMeeting({
 
   if (!assessment) return null
 
-  const { completedChapter, nextChapter, chair, options, taskPackages } =
-    assessment
+  const {
+    completedChapter,
+    nextChapter,
+    chair,
+    specialVote,
+    options,
+    taskPackages,
+  } = assessment
+  const specialDialogue = specialVote
+    ? getNarrativeEvent(specialVote.dialogueEventId)
+    : null
   const selectedPackage =
     taskPackages.find((taskPackage) => taskPackage.id === selectedPackageId) ??
     null
@@ -71,6 +91,42 @@ export function ChapterAssessmentMeeting({
     setPlayerVote(vote)
     setPhase('result')
   }
+  const flowSteps = specialVote
+    ? [
+        ['01', '资格表决'],
+        ['02', '事件说明'],
+        ['03', '中性表决'],
+        ['04', '任务包接取'],
+      ]
+    : [
+        ['01', '事件说明'],
+        ['02', '中性表决'],
+        ['03', '任务包接取'],
+      ]
+  const currentFlowStep = specialVote
+    ? phase === 'special' ||
+      phase === 'specialResult' ||
+      phase === 'specialDialogue'
+      ? 1
+      : phase === 'event'
+        ? 2
+        : phase === 'vote' || phase === 'result'
+          ? 3
+          : 4
+    : phase === 'event'
+      ? 1
+      : phase === 'vote' || phase === 'result'
+        ? 2
+        : 3
+
+  if (phase === 'specialDialogue' && specialDialogue) {
+    return (
+      <NarrativeDialogueOverlay
+        event={specialDialogue}
+        onComplete={() => setPhase('event')}
+      />
+    )
+  }
 
   return (
     <div className="chapter-assessment__overlay">
@@ -84,7 +140,13 @@ export function ChapterAssessmentMeeting({
         <header className="chapter-assessment__header">
           <div>
             <span>THE RAZORS · ASSESSMENT COUNCIL</span>
-            <h1>{phase === 'packages' ? '下一章任务接取' : '帮派评定会议'}</h1>
+            <h1>
+              {phase === 'packages'
+                ? '下一章任务接取'
+                : phase === 'special' || phase === 'specialResult'
+                  ? '关键席位资格表决'
+                  : '帮派评定会议'}
+            </h1>
           </div>
           <div className="chapter-assessment__chapter">
             <small>{`CHAPTER ${completedChapter.number} → ${nextChapter.number}`}</small>
@@ -106,40 +168,109 @@ export function ChapterAssessmentMeeting({
             <p>
               {phase === 'packages'
                 ? `为${nextChapter.title}确定职责`
-                : '对当前事件进行中性表决'}
+                : phase === 'special' || phase === 'specialResult'
+                  ? '对关键席位资格进行表决'
+                  : '对当前事件进行中性表决'}
             </p>
           </aside>
 
           <div ref={agendaRef} className="chapter-assessment__agenda">
-            <ol className="chapter-assessment__flow" aria-label="章节会议流程">
-              {[
-                ['01', '事件说明'],
-                ['02', '中性表决'],
-                ['03', '任务包接取'],
-              ].map(([number, label], index) => {
-                const step =
-                  phase === 'event'
-                    ? 1
-                    : phase === 'vote' || phase === 'result'
-                      ? 2
-                      : 3
+            <ol
+              className="chapter-assessment__flow"
+              aria-label="章节会议流程"
+              data-special={specialVote ? true : undefined}
+            >
+              {flowSteps.map(([number, label], index) => {
                 return (
                   <li
                     key={number}
                     data-state={
-                      index + 1 < step
+                      index + 1 < currentFlowStep
                         ? 'complete'
-                        : index + 1 === step
+                        : index + 1 === currentFlowStep
                           ? 'active'
                           : 'pending'
                     }
                   >
-                    <span>{index + 1 < step ? '✓' : number}</span>
+                    <span>{index + 1 < currentFlowStep ? '✓' : number}</span>
                     <strong>{label}</strong>
                   </li>
                 )
               })}
             </ol>
+
+            {phase === 'special' && specialVote ? (
+              <section className="chapter-assessment__eligibility">
+                <div className="chapter-assessment__proposal">
+                  <span>KEY SEAT ELIGIBILITY</span>
+                  <h2>{specialVote.title}</h2>
+                  <p>{specialVote.description}</p>
+                </div>
+                <div className="chapter-assessment__eligibility-question">
+                  <span>COUNCIL MOTION</span>
+                  <strong>{specialVote.question}</strong>
+                  <small>
+                    此轮由核心席位投票，Thomas 不参与投票；结果为固定剧情演出。
+                  </small>
+                </div>
+                <button
+                  ref={phaseActionRef}
+                  type="button"
+                  className="chapter-assessment__primary"
+                  onClick={() => setPhase('specialResult')}
+                >
+                  开始资格表决
+                </button>
+              </section>
+            ) : null}
+
+            {phase === 'specialResult' && specialVote ? (
+              <section
+                className="chapter-assessment__result chapter-assessment__eligibility-result"
+                role="status"
+                aria-label={`${specialVote.title}结果`}
+              >
+                <div className="chapter-assessment__result-heading">
+                  <span>ELIGIBILITY PASSED</span>
+                  <strong>{specialVote.resultTitle}</strong>
+                  <p>{specialVote.resultDetail}</p>
+                </div>
+                <ul
+                  className="chapter-assessment__members"
+                  aria-label="资格表决席位票型"
+                >
+                  {specialVote.memberVotes.map((member, index) => (
+                    <li
+                      key={member.name}
+                      className="chapter-assessment__member"
+                      data-vote={member.vote}
+                      style={
+                        {
+                          '--vote-index': index,
+                        } as CSSProperties
+                      }
+                    >
+                      <div style={portraitStyle(member.portraitIndex)} />
+                      <span>
+                        <strong>{member.name}</strong>
+                        <small>{member.role}</small>
+                      </span>
+                      <em>{member.vote === 'approve' ? '赞成' : '保留'}</em>
+                    </li>
+                  ))}
+                </ul>
+                <div className="chapter-assessment__player-vote">
+                  <span>{`赞成 ${specialVote.approveCount} 席 · 保留 ${specialVote.abstainCount} 席 · 资格通过`}</span>
+                  <button
+                    ref={phaseActionRef}
+                    type="button"
+                    onClick={() => setPhase('specialDialogue')}
+                  >
+                    听取表决后的对话
+                  </button>
+                </div>
+              </section>
+            ) : null}
 
             {phase === 'event' ? (
               <section className="chapter-assessment__event">

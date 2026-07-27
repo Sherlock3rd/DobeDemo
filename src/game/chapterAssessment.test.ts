@@ -39,6 +39,32 @@ describe('chapter assessment meeting', () => {
     }
   })
 
+  it('adds fixed eligibility votes only before formal membership and the presidency', () => {
+    const formalMemberVote = getChapterAssessment(1)?.specialVote
+    const presidentVote = getChapterAssessment(6)?.specialVote
+
+    expect(formalMemberVote).toMatchObject({
+      id: 'formal-member',
+      approveCount: 5,
+      abstainCount: 1,
+      dialogueEventId: 'special-vote:formal-member',
+    })
+    expect(formalMemberVote?.memberVotes).toHaveLength(6)
+    expect(presidentVote).toMatchObject({
+      id: 'president',
+      approveCount: 6,
+      abstainCount: 0,
+      dialogueEventId: 'special-vote:president',
+    })
+    expect(presidentVote?.memberVotes).toHaveLength(6)
+
+    for (const completedChapterNumber of [2, 3, 4, 5]) {
+      expect(
+        getChapterAssessment(completedChapterNumber)?.specialVote,
+      ).toBeNull()
+    }
+  })
+
   it('rejects numbers without a next chapter', () => {
     expect(getChapterAssessment(0)).toBeNull()
     expect(getChapterAssessment(7)).toBeNull()

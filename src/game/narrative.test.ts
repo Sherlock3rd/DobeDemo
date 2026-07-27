@@ -6,6 +6,8 @@ describe('progression narrative', () => {
   it('provides one to three in-world lines for every required trigger', () => {
     const ids = [
       'first-entry',
+      'special-vote:formal-member',
+      'special-vote:president',
       ...Array.from({ length: 7 }, (_, index) => `chapter-start:${index + 1}`),
       ...Array.from({ length: 7 }, (_, index) => `chapter-end:${index + 1}`),
       ...BUILDING_IDS.map((id) => `building-claimed:${id}`),
@@ -47,6 +49,23 @@ describe('progression narrative', () => {
     expect(allCopy).toContain('城市一直是剃刀党的')
     expect(repairShop?.title).toBe('修车厂管理权交接')
     expect(allCopy).not.toMatch(/第一块地盘|拿下修车厂|换了主人|整座城市服从/)
+  })
+
+  it('provides post-vote portrait dialogue for the two key eligibility decisions', () => {
+    expect(getNarrativeEvent('special-vote:formal-member')).toMatchObject({
+      title: '正式成员资格通过',
+      lines: [
+        expect.objectContaining({ speaker: 'Maeve “Red” Quinn' }),
+        expect.objectContaining({ speaker: 'Thomas Shelby' }),
+      ],
+    })
+    expect(getNarrativeEvent('special-vote:president')).toMatchObject({
+      title: '主席继任资格通过',
+      lines: [
+        expect.objectContaining({ speaker: 'Winston Cole' }),
+        expect.objectContaining({ speaker: 'Thomas Shelby' }),
+      ],
+    })
   })
 
   it('publishes chapter one directly and frames later openings as post-meeting task packages', () => {

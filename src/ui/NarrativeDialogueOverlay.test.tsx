@@ -38,14 +38,26 @@ describe('NarrativeDialogueOverlay', () => {
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
 
-  it('leads a chapter opening directly into its assessment meeting', async () => {
+  it('labels a chapter opening as the start of chapter action', async () => {
     const event = getNarrativeEvent('chapter-start:2')
     if (!event) throw new Error('Missing chapter narrative')
     const onComplete = vi.fn()
     render(<NarrativeDialogueOverlay event={event} onComplete={onComplete} />)
 
     await userEvent.click(screen.getByRole('button', { name: '下一句' }))
-    await userEvent.click(screen.getByRole('button', { name: '参加评定会议' }))
+    await userEvent.click(screen.getByRole('button', { name: '开始章节行动' }))
+
+    expect(onComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns post-eligibility dialogue to the assessment meeting', async () => {
+    const event = getNarrativeEvent('special-vote:formal-member')
+    if (!event) throw new Error('Missing eligibility narrative')
+    const onComplete = vi.fn()
+    render(<NarrativeDialogueOverlay event={event} onComplete={onComplete} />)
+
+    await userEvent.click(screen.getByRole('button', { name: '下一句' }))
+    await userEvent.click(screen.getByRole('button', { name: '继续评定会议' }))
 
     expect(onComplete).toHaveBeenCalledTimes(1)
   })

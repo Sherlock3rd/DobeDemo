@@ -533,6 +533,13 @@ describe('App', () => {
         name: '第一章 · 冷炉初燃完成评定会议',
       }),
     ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '开始资格表决' }))
+    expect(
+      screen.getByRole('status', { name: '正式成员资格表决结果' }),
+    ).toHaveTextContent('赞成 5 席 · 保留 1 席 · 资格通过')
+    await user.click(screen.getByRole('button', { name: '听取表决后的对话' }))
+    await user.click(screen.getByRole('button', { name: '下一句' }))
+    await user.click(screen.getByRole('button', { name: '继续评定会议' }))
     await user.click(screen.getByRole('button', { name: '进入事件表决' }))
     await user.click(screen.getByRole('button', { name: /先核清来源/ }))
     await user.click(screen.getByRole('button', { name: '查看三个任务包' }))

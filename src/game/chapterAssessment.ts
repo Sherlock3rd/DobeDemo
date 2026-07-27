@@ -25,10 +25,33 @@ export interface AssessmentMemberVote {
   vote: ChapterMeetingVote
 }
 
+export type SpecialEligibilityDecision = 'approve' | 'abstain'
+
+export interface SpecialEligibilityMemberVote {
+  name: string
+  role: string
+  portraitIndex: number
+  vote: SpecialEligibilityDecision
+}
+
+export interface SpecialEligibilityVote {
+  id: 'formal-member' | 'president'
+  title: string
+  question: string
+  description: string
+  resultTitle: string
+  resultDetail: string
+  memberVotes: readonly SpecialEligibilityMemberVote[]
+  approveCount: number
+  abstainCount: number
+  dialogueEventId: 'special-vote:formal-member' | 'special-vote:president'
+}
+
 export interface ChapterAssessment {
   completedChapter: ChapterDefinition
   nextChapter: ChapterDefinition
   chair: GangCoreSeat
+  specialVote: SpecialEligibilityVote | null
   eventTitle: string
   eventDescription: string
   options: readonly [NeutralEventOption, NeutralEventOption]
@@ -131,6 +154,57 @@ const TRANSITION_EVENTS: Readonly<
 
 const VOTING_SEATS = GANG_CORE_SEATS.slice(1)
 
+function getSpecialEligibilityVote(
+  completedChapterNumber: number,
+): SpecialEligibilityVote | null {
+  if (completedChapterNumber !== 1 && completedChapterNumber !== 6) return null
+
+  const decisions: readonly SpecialEligibilityDecision[] =
+    completedChapterNumber === 1
+      ? ['approve', 'approve', 'approve', 'approve', 'abstain', 'approve']
+      : ['approve', 'approve', 'approve', 'approve', 'approve', 'approve']
+  const memberVotes = VOTING_SEATS.map((seat, index) => ({
+    name: seat.holder,
+    role: roleForCoreSeat(seat).chineseTitle,
+    portraitIndex: seat.portraitIndex,
+    vote: decisions[index],
+  }))
+  const approveCount = memberVotes.filter(
+    (member) => member.vote === 'approve',
+  ).length
+
+  if (completedChapterNumber === 1) {
+    return {
+      id: 'formal-member',
+      title: '正式成员资格表决',
+      question: '是否接纳 Thomas Shelby 成为剃刀党正式成员？',
+      description:
+        'Thomas 已以见习身份完成修车厂重启、街区清理与首次公路行动。核心席位现在按帮派规矩表决他是否有资格佩戴完整补丁。',
+      resultTitle: '正式成员资格通过',
+      resultDetail:
+        '5 席赞成、1 席保留。Thomas 获准在完成席位交接后成为正式成员。',
+      memberVotes,
+      approveCount,
+      abstainCount: memberVotes.length - approveCount,
+      dialogueEventId: 'special-vote:formal-member',
+    }
+  }
+
+  return {
+    id: 'president',
+    title: '主席继任资格表决',
+    question: '是否推举 Thomas Shelby 接掌剃刀党主席席位？',
+    description:
+      'Thomas 已完成副主席阶段的产业整编，账本、车队、工厂与 Clubhouse 都进入同一条指挥链。核心席位将对最高权力交接作最终表决。',
+    resultTitle: '主席继任资格通过',
+    resultDetail: '6 席一致赞成。Thomas 获准在完成最终席位交接后接掌主席职责。',
+    memberVotes,
+    approveCount,
+    abstainCount: memberVotes.length - approveCount,
+    dialogueEventId: 'special-vote:president',
+  }
+}
+
 function seededVoteScore(chapterNumber: number, memberIndex: number): number {
   let value = Math.imul(chapterNumber + 17, 0x45d9f3b)
   value ^= Math.imul(memberIndex + 31, 0x27d4eb2d)
@@ -176,6 +250,7 @@ export function getChapterAssessment(
       VOTING_SEATS[
         Math.min(completedChapterNumber - 1, VOTING_SEATS.length - 1)
       ],
+    specialVote: getSpecialEligibilityVote(completedChapterNumber),
     eventTitle: event.title,
     eventDescription: event.description,
     options: [
