@@ -330,7 +330,7 @@ function RaceSession({
           <strong>{definition.mode === 'race' ? '竞速' : '追击'}</strong>
           <span>
             {definition.mode === 'race'
-              ? '七车对抗 · 落后补氮 · 满格双击超级飞跃'
+              ? '七车对抗 · 前三通关 · 落后补氮'
               : '纯追击枪战 · 空中特技缩短强化冷却 · 摧毁目标车'}
           </span>
         </div>
@@ -500,7 +500,7 @@ function RaceSession({
           </strong>
           {definition.mode === 'race' && state.pendingResult ? (
             <div className="race-screen__result-meta" aria-label="竞速成绩">
-              <p>{`通关时长 ${formatResultTime(
+              <p>{`冲线时长 ${formatResultTime(
                 state.pendingResult.triggeredAtMs,
               )}`}</p>
               <p>{`最终排名 第 ${state.pendingResult.rank ?? raceRank(state)}/7`}</p>
@@ -546,7 +546,7 @@ function RaceSession({
                     ? '车辆耐久耗尽'
                     : state.reason === 'timeout'
                       ? '时间耗尽'
-                      : '车辆速度不足，未能率先冲线'}
+                      : '最终排名未进入前三'}
               </p>
               <p>前往养成提升车辆与配件后再来挑战。</p>
             </>

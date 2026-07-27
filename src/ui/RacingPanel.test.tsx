@@ -20,6 +20,7 @@ describe('RacingPanel', () => {
     expect(screen.queryByText('第 2 关')).toBeNull()
     expect(screen.getByText(/满三格双击超级飞跃/)).toBeInTheDocument()
     expect(screen.getByText(/七车同场/)).toBeInTheDocument()
+    expect(screen.getByText(/冲进前三名即可通关/)).toBeInTheDocument()
     expect(screen.queryByText('限时')).not.toBeInTheDocument()
     expect(
       screen.getByText(`${getRacingStage(1).distance} m`),

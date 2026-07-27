@@ -45,7 +45,7 @@ describe('RaceScreen V2', () => {
     render(<RaceScreen stage={1} heroId="foreman" onExit={() => {}} />)
 
     expect(
-      screen.getByText('七车对抗 · 落后补氮 · 满格双击超级飞跃'),
+      screen.getByText('七车对抗 · 前三通关 · 落后补氮'),
     ).toBeInTheDocument()
     expect(screen.getByText('当前排名 7/7')).toBeInTheDocument()
     expect(screen.getByLabelText('三格氮气')).toBeInTheDocument()
@@ -112,7 +112,7 @@ describe('RaceScreen V2', () => {
 
     expect(screen.getByText('失败')).toBeInTheDocument()
     expect(screen.getByLabelText('竞速成绩')).toHaveTextContent(
-      /通关时长 \d{2}:\d{2}\.\d{2}/,
+      /冲线时长 \d{2}:\d{2}\.\d{2}/,
     )
     expect(screen.getByLabelText('竞速成绩')).toHaveTextContent(
       /最终排名 第 \d\/7/,

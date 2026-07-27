@@ -13,6 +13,7 @@ import {
 export const RACE_TICK_MS = 50
 export const RACE_SETTLEMENT_DELAY_MS = 2000
 export const PURSUIT_SETTLEMENT_DELAY_MS = 1000
+export const RACE_CLEAR_MAX_RANK = 3
 export const AIR_GRAVITY = 12.4
 export const NATURAL_NITRO_PER_SECOND = 3.5
 export const NITRO_MAX = 100
@@ -1244,7 +1245,7 @@ function resolveFinish(state: RaceState, stage: RacingStageConfig): RaceState {
       return {
         ...state,
         pendingResult: {
-          status: rank === 1 ? 'victory' : 'defeat',
+          status: rank <= RACE_CLEAR_MAX_RANK ? 'victory' : 'defeat',
           reason: 'finished',
           triggeredAtMs: state.elapsedMs,
           settleAtMs: state.elapsedMs + RACE_SETTLEMENT_DELAY_MS,

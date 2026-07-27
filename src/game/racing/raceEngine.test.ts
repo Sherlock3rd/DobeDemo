@@ -18,6 +18,7 @@ import {
   NITRO_SUPER_LAUNCH_SPEED,
   PURSUIT_SETTLEMENT_DELAY_MS,
   PURSUIT_STUNT_FIRE_COOLDOWN_REDUCTION_MS,
+  RACE_CLEAR_MAX_RANK,
   RACE_LANE_X,
   RACE_SETTLEMENT_DELAY_MS,
   RACE_TICK_MS,
@@ -633,14 +634,45 @@ describe('raceEngine V2', () => {
     expect(next.player.durability).toBe(1)
   })
 
-  it('does not let an idle starter car finish first', () => {
+  it('does not let an idle starter car finish in the top three', () => {
     let state = createRaceState(1, STARTER)
     for (let tick = 0; tick < 2_200 && state.status === 'running'; tick += 1) {
       state = advanceRace(state, {}, STARTER)
     }
 
     expect(state.status).toBe('defeat')
-    expect(state.pendingResult?.rank).toBeGreaterThan(1)
+    expect(state.pendingResult?.rank).toBeGreaterThan(RACE_CLEAR_MAX_RANK)
+  })
+
+  it.each([
+    [2, 'victory'],
+    [3, 'victory'],
+    [4, 'defeat'],
+  ] as const)('settles a rank %i finish as %s', (rank, expectedStatus) => {
+    let state = createRaceState(1, STARTER)
+    const finishDistance = getRacingStage(1).distance
+    state.player = {
+      ...state.player,
+      distance: finishDistance - 1,
+      speed: 42,
+      desiredSpeed: 42,
+    }
+    state.vehicles = state.vehicles.map((vehicle, index) => ({
+      ...vehicle,
+      distance:
+        index < rank - 1
+          ? finishDistance + 100 + index * 10
+          : finishDistance - 500 - index * 10,
+      speed: 1,
+      desiredSpeed: 1,
+    }))
+
+    state = advanceRace(state, {}, STARTER)
+
+    expect(state.pendingResult).toMatchObject({
+      status: expectedStatus,
+      rank,
+    })
   })
 
   it('keeps driving for two seconds after crossing before settling the race', () => {
