@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { StrictMode, type ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { getNextCampaignStage } from '../config/campaignConfig'
 import { combatConfig } from '../config/combatConfig'
 import { buildBattleInput, simulateBattle } from '../game/combat/battleEngine'
 import { getGangLevel } from '../game/gangProgression'
@@ -76,6 +77,11 @@ describe('BattleScreen', () => {
     )
   })
 
+  it('stops direct continuation after the final campaign stage', () => {
+    expect(getNextCampaignStage(19)).toBe(20)
+    expect(getNextCampaignStage(20)).toBeNull()
+  })
+
   it('shows true initial rage before a tick-one action, then advances to 20', () => {
     expect(
       useAdventureStore
@@ -148,6 +154,26 @@ describe('BattleScreen', () => {
     expect(screen.getByLabelText('英雄经验 500')).toBeInTheDocument()
   })
 
+  it('offers exit and starts the next stage directly after victory', () => {
+    const onExit = vi.fn()
+    const onNext = vi.fn()
+    motionState.reduced = true
+
+    render(<BattleScreen stage={1} onExit={onExit} onNext={onNext} />)
+    act(() => {
+      vi.runAllTimers()
+    })
+
+    expect(screen.getByText('VICTORY · 胜利')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '退出' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '下一关' }))
+    expect(onNext).toHaveBeenCalledWith(2)
+    expect(onExit).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: '退出' }))
+    expect(onExit).toHaveBeenCalledTimes(1)
+  })
+
   it('guides a defeated player directly to development', () => {
     const onDevelop = vi.fn()
     motionState.reduced = true
@@ -157,6 +183,10 @@ describe('BattleScreen', () => {
     expect(
       screen.getByText('前往养成提升英雄、车辆与装备后再来挑战。'),
     ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '退出' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: '下一关' }),
+    ).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '前往养成' }))
 
     expect(onDevelop).toHaveBeenCalledTimes(1)

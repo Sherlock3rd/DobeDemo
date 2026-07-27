@@ -466,6 +466,7 @@ export default function App(): JSX.Element {
           <BattleScreen
             stage={activeOverlay.stage}
             onExit={() => setPlayOverlay({ kind: 'adventure' })}
+            onNext={(stage) => setPlayOverlay({ kind: 'battle', stage })}
             onDevelop={() =>
               setPlayOverlay({ kind: 'heroes', initialTab: 'level' })
             }

@@ -186,6 +186,13 @@ export function getStage(g: number): StageConfig {
   return stage
 }
 
+export function getNextCampaignStage(g: number): number | null {
+  return (
+    campaignConfig.stages.find((stage) => stage.global === g + 1)?.global ??
+    null
+  )
+}
+
 export function getFirstClearReward(g: number): number {
   return getStage(g).firstClearReward.sharedExp
 }

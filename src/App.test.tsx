@@ -120,10 +120,19 @@ vi.mock('./ui/FormationPanel', () => ({
 }))
 
 vi.mock('./ui/BattleScreen', () => ({
-  BattleScreen: (p: { onExit: () => void; onDevelop: () => void }) => (
-    <div role="dialog" aria-label="战斗">
+  BattleScreen: (p: {
+    stage: number
+    onExit: () => void
+    onNext: (stage: number) => void
+    onDevelop: () => void
+  }) => (
+    <div role="dialog" aria-label="战斗" data-stage={p.stage}>
+      <p>{`战斗关卡 ${p.stage}`}</p>
       <button type="button" onClick={p.onExit}>
         退出战斗
+      </button>
+      <button type="button" onClick={() => p.onNext(p.stage + 1)}>
+        下一关战斗
       </button>
       <button type="button" onClick={p.onDevelop}>
         战斗失败养成
@@ -434,8 +443,12 @@ describe('App', () => {
     expect(screen.getByRole('dialog', { name: '编队' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '开始' }))
     expect(screen.getByRole('dialog', { name: '战斗' })).toBeInTheDocument()
+    expect(screen.getByText('战斗关卡 1')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '推关' })).toBeNull()
     expect(screen.queryByRole('button', { name: '设置' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: '下一关战斗' }))
+    expect(screen.getByText('战斗关卡 2')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: '推关地图' })).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: '退出战斗' }))
     expect(screen.getByRole('dialog', { name: '推关地图' })).toBeInTheDocument()
   })

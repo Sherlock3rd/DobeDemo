@@ -1,5 +1,6 @@
 import { Canvas } from '@react-three/fiber'
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
+import { getNextCampaignStage } from '../config/campaignConfig'
 import { combatConfig } from '../config/combatConfig'
 import {
   buildBattleInput,
@@ -24,6 +25,7 @@ import { ResourceAmount } from './ResourceAmount'
 export interface BattleScreenProps {
   stage: number
   onExit: () => void
+  onNext?: (stage: number) => void
   onDevelop?: () => void
 }
 
@@ -56,6 +58,7 @@ function bootBattle(stage: number): BootState {
 export function BattleScreen({
   stage,
   onExit,
+  onNext,
   onDevelop = onExit,
 }: BattleScreenProps): JSX.Element {
   return (
@@ -63,6 +66,7 @@ export function BattleScreen({
       <BattleScreenSession
         stage={stage}
         onExit={onExit}
+        onNext={onNext}
         onDevelop={onDevelop}
       />
     </BattleErrorBoundary>
@@ -72,6 +76,7 @@ export function BattleScreen({
 function BattleScreenSession({
   stage,
   onExit,
+  onNext,
   onDevelop = onExit,
 }: BattleScreenProps): JSX.Element {
   const recordVictory = useAdventureStore((s) => s.recordVictory)
@@ -187,6 +192,7 @@ function BattleScreenSession({
       phase === 'resolved' &&
       highestClearedStage >= stage &&
       highestBefore < stage)
+  const nextStage = getNextCampaignStage(stage)
 
   if (!boot.ok) {
     return (
@@ -205,6 +211,7 @@ function BattleScreenSession({
       className="battle-screen"
       role="dialog"
       aria-label="战斗"
+      data-stage={stage}
       data-current-tick={currentTick}
       data-ended-tick={boot.result.endedAtTick}
       data-basic-hits={replayMetrics.basicHits}
@@ -269,24 +276,41 @@ function BattleScreenSession({
                 前往养成
               </button>
             ) : null}
-            <button type="button" onClick={onExit}>
-              继续
+            <button
+              type="button"
+              className="battle-screen__result-exit"
+              onClick={onExit}
+            >
+              退出
             </button>
+            {boot.result.outcome === 'victory' &&
+            nextStage !== null &&
+            onNext ? (
+              <button
+                type="button"
+                className="battle-screen__result-next"
+                onClick={() => onNext(nextStage)}
+              >
+                下一关
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
 
-      <BattleHud
-        phase={phase}
-        speed={speed}
-        exitPending={exitPending}
-        onTogglePause={() => setPaused((value) => !value)}
-        onSetSpeed={setSpeed}
-        onRequestExitPrompt={() => setExitPending(true)}
-        onCancelExit={() => setExitPending(false)}
-        onConfirmExit={onExit}
-        units={units}
-      />
+      {phase !== 'resolved' ? (
+        <BattleHud
+          phase={phase}
+          speed={speed}
+          exitPending={exitPending}
+          onTogglePause={() => setPaused((value) => !value)}
+          onSetSpeed={setSpeed}
+          onRequestExitPrompt={() => setExitPending(true)}
+          onCancelExit={() => setExitPending(false)}
+          onConfirmExit={onExit}
+          units={units}
+        />
+      ) : null}
     </div>
   )
 }

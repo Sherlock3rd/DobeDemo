@@ -5812,6 +5812,18 @@
   cursor: pointer;
 }
 
+.battle-screen__result .battle-screen__result-exit {
+  border-color: rgba(148, 163, 184, 0.48);
+  color: #e2e8f0;
+  background: rgba(30, 41, 59, 0.92);
+}
+
+.battle-screen__result .battle-screen__result-next {
+  min-width: 7rem;
+  border-color: #fde68a;
+  box-shadow: 0 0.7rem 1.8rem rgba(251, 191, 36, 0.2);
+}
+
 .battle-hud {
   position: relative;
   z-index: 3;
