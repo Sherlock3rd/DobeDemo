@@ -234,7 +234,9 @@ describe('App', () => {
       }),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '听取会议决议' }))
-    await user.click(screen.getByRole('button', { name: '接受本章任务' }))
+    await user.click(screen.getByRole('button', { name: '根据决议形成任务' }))
+    await user.click(screen.getByRole('button', { name: '进入成员分配' }))
+    await user.click(screen.getByRole('button', { name: '接取四项章节任务' }))
 
     await user.click(screen.getByRole('button', { name: '地图接管修车厂' }))
     expect(

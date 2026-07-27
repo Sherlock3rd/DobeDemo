@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ChapterAssessmentMeeting } from './ChapterAssessmentMeeting'
 
 describe('ChapterAssessmentMeeting', () => {
-  it('briefs chapter one as a non-voting meeting before accepting the tasks', async () => {
+  it('progresses from the chapter-one decision to task confirmation and assignment', async () => {
     const onComplete = vi.fn()
     render(
       <ChapterAssessmentMeeting chapterNumber={1} onComplete={onComplete} />,
@@ -16,14 +16,9 @@ describe('ChapterAssessmentMeeting', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getByText('旁听席 · 无投票权')).toBeInTheDocument()
-    expect(screen.getByText('你的章节任务')).toBeInTheDocument()
-    expect(screen.getByText('其他成员任务')).toBeInTheDocument()
-    expect(screen.getByLabelText('Thomas的章节任务').children).toHaveLength(4)
-    expect(screen.getByLabelText('其他成员分派任务').children).toHaveLength(4)
-    expect(screen.getByText('领头人就位')).toBeInTheDocument()
-    expect(screen.getByText('点燃修理厂')).toBeInTheDocument()
-    expect(screen.getByText('清理街口')).toBeInTheDocument()
-    expect(screen.getByText('第一面完整补丁')).toBeInTheDocument()
+    expect(screen.getByText('此刻只评定行动方向')).toBeInTheDocument()
+    expect(screen.queryByText('你的章节任务')).not.toBeInTheDocument()
+    expect(screen.queryByText('领头人就位')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: '投赞成票' }),
     ).not.toBeInTheDocument()
@@ -34,8 +29,28 @@ describe('ChapterAssessmentMeeting', () => {
       screen.getByRole('status', { name: '第一章评定结果' }),
     ).toHaveTextContent('议案通过')
     expect(screen.getByText('本章只记录委员会决议')).toBeInTheDocument()
+    expect(screen.queryByText('领头人就位')).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: '接受本章任务' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: '根据决议形成任务' }),
+    )
+    expect(screen.getByText('本章行动任务已形成')).toBeInTheDocument()
+    expect(screen.getByLabelText('本章行动任务池').children).toHaveLength(8)
+    expect(screen.getByText('领头人就位')).toBeInTheDocument()
+    expect(screen.getByText('点燃修理厂')).toBeInTheDocument()
+    expect(screen.getByText('清理街口')).toBeInTheDocument()
+    expect(screen.getByText('第一面完整补丁')).toBeInTheDocument()
+    expect(screen.queryByText('你的章节任务')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: '进入成员分配' }))
+    expect(screen.getByText('你的章节任务')).toBeInTheDocument()
+    expect(screen.getByText('其他成员任务')).toBeInTheDocument()
+    expect(screen.getByLabelText('Thomas的章节任务').children).toHaveLength(4)
+    expect(screen.getByLabelText('其他成员分派任务').children).toHaveLength(4)
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '接取四项章节任务' }),
+    )
     expect(onComplete).toHaveBeenCalledWith(1)
   })
 
@@ -69,8 +84,8 @@ describe('ChapterAssessmentMeeting', () => {
       await userEvent.click(
         screen.getByRole('button', { name: '进入本章任务评定' }),
       )
-      expect(screen.getByText('你的章节任务')).toBeInTheDocument()
-      expect(screen.getByText('其他成员任务')).toBeInTheDocument()
+      expect(screen.getByText('此刻只评定行动方向')).toBeInTheDocument()
+      expect(screen.queryByText('你的章节任务')).not.toBeInTheDocument()
       await userEvent.click(screen.getByRole('button', { name: '进入表决' }))
       await userEvent.click(screen.getByRole('button', { name: buttonName }))
       const result =
@@ -80,6 +95,16 @@ describe('ChapterAssessmentMeeting', () => {
           '.chapter-assessment__member[data-vote]',
         ),
       ).map((element) => element.dataset.vote ?? '')
+      await userEvent.click(
+        screen.getByRole('button', { name: '根据决议形成任务' }),
+      )
+      expect(screen.getByLabelText('本章行动任务池').children).toHaveLength(8)
+      expect(screen.queryByText('你的章节任务')).not.toBeInTheDocument()
+      await userEvent.click(
+        screen.getByRole('button', { name: '进入成员分配' }),
+      )
+      expect(screen.getByText('你的章节任务')).toBeInTheDocument()
+      expect(screen.getByText('其他成员任务')).toBeInTheDocument()
       view.unmount()
       return { result, memberVotes }
     }
