@@ -256,7 +256,7 @@ describe('App', () => {
     })
     useChapterStore.setState({
       activeChapterNumber: 2,
-      selectedTaskPackageIds: { 2: 'chapter-2-package-yard' },
+      selectedTaskPackageIds: { 2: 'chapter-2-package-random-b' },
       seenNarrativeIds: [
         'first-entry',
         'chapter-start:1',
@@ -604,7 +604,7 @@ describe('App', () => {
     expect(
       screen.queryByRole('button', { name: '进入事件表决' }),
     ).not.toBeInTheDocument()
-    await user.click(screen.getByRole('radio', { name: /拆解产线/ }))
+    await user.click(screen.getAllByRole('radio')[1])
     await user.click(
       screen.getByRole('button', { name: '确认接取并开始第2章' }),
     )
@@ -620,7 +620,7 @@ describe('App', () => {
     ).toBeInTheDocument()
     expect(useChapterStore.getState()).toMatchObject({
       activeChapterNumber: 2,
-      selectedTaskPackageIds: { 2: 'chapter-2-package-yard' },
+      selectedTaskPackageIds: { 2: 'chapter-2-package-random-b' },
       meetingVotes: { 1: 'formal-member-approved' },
       completedAssessmentChapterNumbers: [1],
       prologueStep: 'complete',

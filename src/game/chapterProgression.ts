@@ -1,14 +1,17 @@
 import type { ResourceWallet } from '../config/economyConfig'
+import { equipmentConfig } from '../config/equipmentConfig'
 import { buildingCatalogById } from './buildingCatalog'
-import type { BuildingId } from './cityTypes'
-import type {
-  CarId,
-  CarPartQuality,
-  CarPartSlot,
-  GunId,
+import { BUILDING_IDS, type BuildingId } from './cityTypes'
+import {
+  CAR_IDS,
+  type CarId,
+  type CarPartQuality,
+  type CarPartSlot,
+  type GunId,
 } from './equipmentTypes'
 import { GANG_ROLES, type GangRole } from './gangProgression'
 import { PROLOGUE_TUNED_PART_ID } from './prologue'
+import { carUnlockLevel, getBuildingUnlock } from './progressionUnlocks'
 import type { AdventureDurableState } from '../store/adventureMigration'
 import type { BuildingProgressById } from '../store/cityProgressMigration'
 
@@ -600,7 +603,7 @@ const CHAPTER_ONE_STARTER_TASKS: readonly ChapterTaskDefinition[] = [
   },
 ]
 
-const CHAPTER_TASK_PACKAGES: Readonly<
+const CHAPTER_TASK_BLUEPRINTS: Readonly<
   Record<number, readonly ChapterTaskPackage[]>
 > = {
   2: [
@@ -952,6 +955,312 @@ const CHAPTER_TASK_PACKAGES: Readonly<
     ),
   ],
 }
+
+type MeetingTaskBlueprint = Pick<
+  ChapterTaskDefinition,
+  'name' | 'description' | 'requirement'
+>
+
+const MEETING_TASK_TARGETS = {
+  money: [12_000, 14_000, 16_000, 20_000, 25_000, 30_000],
+  materials: [100, 200, 300, 700, 1_000, 1_500],
+  oil: [100, 200, 350, 500, 1_000, 1_500],
+  spareParts: [150, 250, 400, 600, 900, 1_200],
+  heroLevel: [8, 18, 26, 34, 42, 50],
+  gunLevel: [1, 2, 3, 4, 6, 8],
+  partUpgrades: [2, 4, 6, 9, 12, 15],
+  partLevel: [1, 2, 3, 4, 5, 6],
+  totalPower: [1_400, 2_200, 3_200, 5_000, 8_000, 12_000],
+  carPower: [1_000, 1_300, 1_700, 2_200, 2_800, 3_400],
+} as const
+
+const PACKAGE_PRESENTATIONS = [
+  {
+    id: 'random-a',
+    title: '稳妥推进',
+    summary: '从当前已经具备的产业和养成能力中抽取一组职责。',
+  },
+  {
+    id: 'random-b',
+    title: '多线协作',
+    summary: '把当前可执行的经营、城建与战力任务重新组合。',
+  },
+  {
+    id: 'random-c',
+    title: '强硬执行',
+    summary: '只从本章真实解锁的功能中形成另一组行动命令。',
+  },
+] as const
+
+function meetingTaskBlueprintKey(task: MeetingTaskBlueprint): string {
+  const requirement = task.requirement
+  if (requirement.kind === 'building-level') {
+    return `${requirement.kind}:${requirement.buildingId}`
+  }
+  if (requirement.kind === 'car-power') {
+    return `${requirement.kind}:${requirement.carId}`
+  }
+  return requirement.kind
+}
+
+const MEETING_TASK_BLUEPRINTS: readonly MeetingTaskBlueprint[] = [
+  ...new Map(
+    [
+      ...Object.values(CHAPTER_TASK_BLUEPRINTS).flatMap((taskPackages) =>
+        taskPackages.flatMap((taskPackage) =>
+          taskPackage.tasks.map(({ name, description, requirement }) => ({
+            name,
+            description,
+            requirement,
+          })),
+        ),
+      ),
+      ...BUILDING_IDS.map((buildingId): MeetingTaskBlueprint => ({
+        name: buildingCatalogById[buildingId].name,
+        description: `${buildingCatalogById[buildingId].name}升级任务`,
+        requirement: { kind: 'building-level', buildingId, target: 2 },
+      })),
+      ...CAR_IDS.map((carId): MeetingTaskBlueprint => ({
+        name: equipmentConfig.cars[carId].name,
+        description: equipmentConfig.cars[carId].description,
+        requirement: { kind: 'car-power', carId, target: 1 },
+      })),
+    ].map((task) => [meetingTaskBlueprintKey(task), task] as const),
+  ).values(),
+]
+
+function taskUnlockLevel(task: MeetingTaskBlueprint): number {
+  const requirement = task.requirement
+  switch (requirement.kind) {
+    case 'resource-money':
+      return getBuildingUnlock('repair-shop')?.requiredLevel ?? 1
+    case 'resource-materials':
+      return (
+        getBuildingUnlock('metalworking-plant')?.requiredLevel ??
+        Number.MAX_SAFE_INTEGER
+      )
+    case 'resource-oil':
+      return (
+        getBuildingUnlock('gas-station')?.requiredLevel ??
+        Number.MAX_SAFE_INTEGER
+      )
+    case 'spare-parts':
+    case 'part-level':
+    case 'part-upgrades':
+      return (
+        getBuildingUnlock('recycling-yard')?.requiredLevel ??
+        Number.MAX_SAFE_INTEGER
+      )
+    case 'building-level':
+      return (
+        getBuildingUnlock(requirement.buildingId)?.requiredLevel ??
+        Number.MAX_SAFE_INTEGER
+      )
+    case 'car-power':
+      return carUnlockLevel(requirement.carId)
+    case 'hero-level':
+    case 'gun-level':
+    case 'total-power':
+      return 1
+    default:
+      return Number.MAX_SAFE_INTEGER
+  }
+}
+
+function chapterScaleIndex(chapterNumber: number): number {
+  return Math.min(
+    MEETING_TASK_TARGETS.money.length - 1,
+    Math.max(0, chapterNumber - 2),
+  )
+}
+
+function displayTarget(target: number): string {
+  return target.toLocaleString('en-US')
+}
+
+function retargetMeetingTask(
+  blueprint: MeetingTaskBlueprint,
+  chapter: ChapterDefinition,
+): MeetingTaskBlueprint | null {
+  const scaleIndex = chapterScaleIndex(chapter.number)
+  const requirement = blueprint.requirement
+  switch (requirement.kind) {
+    case 'resource-money': {
+      const target = MEETING_TASK_TARGETS.money[scaleIndex]
+      return {
+        name: '筹齐行动资金',
+        description: `持有钱资源 ${displayTarget(target)}`,
+        requirement: { kind: 'resource-money', target },
+      }
+    }
+    case 'resource-materials': {
+      const target = MEETING_TASK_TARGETS.materials[scaleIndex]
+      return {
+        name: '备齐工业物资',
+        description: `持有物资资源 ${displayTarget(target)}`,
+        requirement: { kind: 'resource-materials', target },
+      }
+    }
+    case 'resource-oil': {
+      const target = MEETING_TASK_TARGETS.oil[scaleIndex]
+      return {
+        name: '备齐路线油料',
+        description: `持有汽油资源 ${displayTarget(target)}`,
+        requirement: { kind: 'resource-oil', target },
+      }
+    }
+    case 'spare-parts': {
+      const target = MEETING_TASK_TARGETS.spareParts[scaleIndex]
+      return {
+        name: '整理维修零件',
+        description: `持有零件资源 ${displayTarget(target)}`,
+        requirement: { kind: 'spare-parts', target },
+      }
+    }
+    case 'building-level': {
+      const unlock = getBuildingUnlock(requirement.buildingId)
+      if (!unlock) return null
+      const target = Math.min(
+        10,
+        2 + Math.ceil((chapter.minimumLevel - unlock.requiredLevel) / 16),
+      )
+      const buildingName = buildingCatalogById[requirement.buildingId].name
+      return {
+        name: `升级${buildingName}`,
+        description: `${buildingName}达到 Lv.${target}`,
+        requirement: {
+          kind: 'building-level',
+          buildingId: requirement.buildingId,
+          target,
+        },
+      }
+    }
+    case 'hero-level': {
+      const target = MEETING_TASK_TARGETS.heroLevel[scaleIndex]
+      return {
+        name: '核心成员训练',
+        description: `任意英雄达到 Lv.${target}`,
+        requirement: { kind: 'hero-level', target },
+      }
+    }
+    case 'gun-level': {
+      const target = MEETING_TASK_TARGETS.gunLevel[scaleIndex]
+      return {
+        name: '枪械升级',
+        description: `任意枪械达到 Lv.${target}`,
+        requirement: { kind: 'gun-level', target },
+      }
+    }
+    case 'part-upgrades': {
+      const target = MEETING_TASK_TARGETS.partUpgrades[scaleIndex]
+      return {
+        name: '车辆配件强化',
+        description: `累计升级车辆配件 ${target} 次`,
+        requirement: { kind: 'part-upgrades', target },
+      }
+    }
+    case 'part-level': {
+      const target = MEETING_TASK_TARGETS.partLevel[scaleIndex]
+      return {
+        name: '配件等级检验',
+        description: `任意车辆配件达到 Lv.${target}`,
+        requirement: { kind: 'part-level', target },
+      }
+    }
+    case 'total-power': {
+      const target = MEETING_TASK_TARGETS.totalPower[scaleIndex]
+      return {
+        name: '整队战力过线',
+        description: `账号总战力达到 ${displayTarget(target)}`,
+        requirement: { kind: 'total-power', target },
+      }
+    }
+    case 'car-power': {
+      const target = MEETING_TASK_TARGETS.carPower[scaleIndex]
+      const carName = equipmentConfig.cars[requirement.carId].name
+      return {
+        name: `${carName}整备`,
+        description: `${carName}最高装备战力达到 ${displayTarget(target)}`,
+        requirement: {
+          kind: 'car-power',
+          carId: requirement.carId,
+          target,
+        },
+      }
+    }
+    default:
+      return null
+  }
+}
+
+function seededTaskScore(
+  chapterNumber: number,
+  packageIndex: number,
+  taskIndex: number,
+): number {
+  let value = Math.imul(chapterNumber + 41, 0x45d9f3b)
+  value ^= Math.imul(packageIndex + 17, 0x27d4eb2d)
+  value ^= Math.imul(taskIndex + 73, 0x165667b1)
+  value ^= value >>> 16
+  value = Math.imul(value, 0x45d9f3b)
+  value ^= value >>> 16
+  return value >>> 0
+}
+
+function packageTaskCount(chapterNumber: number, packageIndex: number): number {
+  const minimum = chapterNumber <= 4 ? 1 : 2
+  const maximum = chapterNumber <= 4 ? 2 : 3
+  return (
+    minimum +
+    (seededTaskScore(chapterNumber, packageIndex, 97) % (maximum - minimum + 1))
+  )
+}
+
+function createRandomChapterTaskPackages(
+  chapter: ChapterDefinition,
+): readonly ChapterTaskPackage[] {
+  const eligibleTasks = MEETING_TASK_BLUEPRINTS.filter(
+    (task) => taskUnlockLevel(task) <= chapter.minimumLevel,
+  )
+    .map((task) => retargetMeetingTask(task, chapter))
+    .filter((task): task is MeetingTaskBlueprint => task !== null)
+    .map((task, taskIndex) => ({
+      task,
+      score: seededTaskScore(chapter.number, 11, taskIndex),
+    }))
+    .sort((left, right) => right.score - left.score)
+    .map(({ task }) => task)
+
+  let taskOffset = 0
+  return PACKAGE_PRESENTATIONS.map((presentation, packageIndex) => {
+    const taskCount = Math.min(
+      packageTaskCount(chapter.number, packageIndex),
+      eligibleTasks.length,
+    )
+    const selectedTasks = Array.from(
+      { length: taskCount },
+      (_, taskIndex) =>
+        eligibleTasks[(taskOffset + taskIndex) % eligibleTasks.length],
+    )
+    taskOffset += taskCount
+    return defineTaskPackage(
+      chapter.number,
+      presentation.id,
+      presentation.title,
+      presentation.summary,
+      selectedTasks,
+    )
+  })
+}
+
+const CHAPTER_TASK_PACKAGES: Readonly<
+  Record<number, readonly ChapterTaskPackage[]>
+> = Object.fromEntries(
+  CHAPTERS.slice(1).map((chapter) => [
+    chapter.number,
+    createRandomChapterTaskPackages(chapter),
+  ]),
+)
 
 function getChapterExtraTasks(
   chapterNumber: number,

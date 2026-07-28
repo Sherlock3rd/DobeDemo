@@ -52,7 +52,7 @@ describe('ChapterPanel', () => {
     useGangStore.setState({ currentLevel: 24 })
     useChapterStore.setState({
       activeChapterNumber: 4,
-      selectedTaskPackageIds: { 4: 'chapter-4-package-fuel' },
+      selectedTaskPackageIds: { 4: 'chapter-4-package-random-a' },
     })
 
     render(<ChapterPanel onClose={() => {}} onNavigateTask={() => {}} />)

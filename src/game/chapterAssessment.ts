@@ -64,6 +64,24 @@ export interface ChapterAssessment {
   taskPackages: readonly ChapterTaskPackage[]
 }
 
+export type PerformanceGrade = 'S' | 'A' | 'B' | 'C' | 'D'
+
+export interface PerformanceReviewEntry {
+  name: string
+  position: string
+  taskName: string
+  grade: PerformanceGrade
+  portraitIndex: number | null
+  isPlayer: boolean
+}
+
+export interface ChapterPerformanceReview {
+  chapter: ChapterDefinition
+  entries: readonly PerformanceReviewEntry[]
+  playerGrade: 'S'
+  verdict: string
+}
+
 const TRANSITION_EVENTS: Readonly<
   Record<
     number,
@@ -156,6 +174,42 @@ const TRANSITION_EVENTS: Readonly<
 }
 
 const VOTING_SEATS = GANG_CORE_SEATS.slice(1)
+const REVIEW_GRADES = ['A', 'B', 'C', 'D'] as const
+const REVIEW_MEMBERS = GANG_CORE_SEATS.flatMap((seat) => seat.support)
+const REVIEW_TASKS: Readonly<
+  Record<number, readonly { taskName: string; description: string }[]>
+> = {
+  2: [
+    { taskName: '整理废车来源', description: '登记每批废车的来路与价值' },
+    { taskName: '压住零件黑市', description: '阻止外人截走可用配件' },
+    { taskName: '重开北侧车库', description: '恢复废车拆解与分类工位' },
+    { taskName: '护送回收车队', description: '保证运输车辆按时回场' },
+  ],
+  3: [
+    { taskName: '核清商业街租账', description: '完成本月所有店铺账目核验' },
+    { taskName: '联络夜市掌柜', description: '重新确认帮派内部的经营规矩' },
+    { taskName: '安排货场巡逻', description: '填补晚班巡逻的空缺路线' },
+    { taskName: '处理假账商户', description: '追回隐瞒的营业分成' },
+  ],
+  4: [
+    { taskName: '恢复金属炉线', description: '让停摆的两条加工线重新点火' },
+    { taskName: '校验军火批次', description: '剔除不合格枪械与弹药' },
+    { taskName: '护送钢材入库', description: '保证原料完整进入帮派仓库' },
+    { taskName: '安抚工厂领班', description: '稳定工人并重新排定轮班' },
+  ],
+  5: [
+    { taskName: '盘点公路油料', description: '核对沿线加油点的储备' },
+    { taskName: '绘制备用路线', description: '准备绕开封锁的第二条车道' },
+    { taskName: '训练护送车手', description: '让新车手熟悉车队手势' },
+    { taskName: '清除沿途路障', description: '保证主车队可以高速通过' },
+  ],
+  6: [
+    { taskName: '整顿会所纪律', description: '统一各席位的值守与汇报规则' },
+    { taskName: '审计产业分账', description: '核对所有产业的季度账目' },
+    { taskName: '重排武装巡逻', description: '覆盖城市内的关键节点' },
+    { taskName: '协调车队与枪手', description: '建立统一的行动时间表' },
+  ],
+}
 
 function getSpecialEligibilityVote(
   completedChapterNumber: number,
@@ -215,6 +269,52 @@ function seededVoteScore(chapterNumber: number, memberIndex: number): number {
   value = Math.imul(value, 0x45d9f3b)
   value ^= value >>> 16
   return value >>> 0
+}
+
+export function getChapterPerformanceReview(
+  completedChapterNumber: number,
+): ChapterPerformanceReview | null {
+  if (completedChapterNumber <= 1) return null
+  const chapter = getChapterByNumber(completedChapterNumber)
+  const tasks = REVIEW_TASKS[completedChapterNumber]
+  if (!chapter || !tasks) return null
+
+  const reviewedMembers = REVIEW_MEMBERS.map((member, index) => ({
+    member,
+    score: seededVoteScore(completedChapterNumber + 11, index),
+  }))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, tasks.length)
+  const shuffledGrades = REVIEW_GRADES.map((grade, index) => ({
+    grade,
+    score: seededVoteScore(completedChapterNumber + 29, index),
+  }))
+    .sort((left, right) => right.score - left.score)
+    .map(({ grade }) => grade)
+
+  return {
+    chapter,
+    entries: [
+      {
+        name: 'Thomas Shelby',
+        position: `${chapter.role.chineseTitle} · 玩家章节任务`,
+        taskName: `完成${chapter.title}全部玩家职责`,
+        grade: 'S',
+        portraitIndex: 0,
+        isPlayer: true,
+      },
+      ...reviewedMembers.map(({ member }, index) => ({
+        name: member.name,
+        position: member.position,
+        taskName: tasks[index].taskName,
+        grade: shuffledGrades[index],
+        portraitIndex: null,
+        isPlayer: false,
+      })),
+    ],
+    playerGrade: 'S',
+    verdict: `Thomas 以 S 级完成${chapter.title}全部职责；其他成员的完成度已按本轮结果归档。`,
+  }
 }
 
 export function getChapterAssessment(

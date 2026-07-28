@@ -8,6 +8,7 @@ import {
 import gangPortraitAtlas from '../assets/peaky-blinders-hierarchy-atlas.png'
 import {
   getChapterAssessment,
+  getChapterPerformanceReview,
   type ChapterMeetingDecision,
   type ChapterMeetingVote,
 } from '../game/chapterAssessment'
@@ -28,6 +29,8 @@ interface ChapterAssessmentMeetingProps {
 }
 
 type MeetingPhase =
+  | 'review'
+  | 'reviewResult'
   | 'special'
   | 'specialResult'
   | 'specialDialogue'
@@ -50,9 +53,11 @@ export function ChapterAssessmentMeeting({
   onComplete,
 }: ChapterAssessmentMeetingProps): JSX.Element | null {
   const assessment = getChapterAssessment(completedChapterNumber)
-  const [phase, setPhase] = useState<MeetingPhase>(() =>
-    assessment?.specialVote ? 'special' : 'event',
-  )
+  const performanceReview = getChapterPerformanceReview(completedChapterNumber)
+  const [phase, setPhase] = useState<MeetingPhase>(() => {
+    if (performanceReview) return 'review'
+    return assessment?.specialVote ? 'special' : 'event'
+  })
   const [meetingDecision, setMeetingDecision] =
     useState<ChapterMeetingDecision | null>(null)
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
@@ -94,42 +99,31 @@ export function ChapterAssessmentMeeting({
     setMeetingDecision(vote)
     setPhase('result')
   }
-  const flowSteps = !eventVoteRequired
-    ? [
-        ['01', '资格表决'],
-        ['02', '任务包接取'],
-      ]
-    : specialVote
-      ? [
-          ['01', '资格表决'],
-          ['02', '事件说明'],
-          ['03', '中性表决'],
-          ['04', '任务包接取'],
-        ]
-      : [
-          ['01', '事件说明'],
-          ['02', '中性表决'],
-          ['03', '任务包接取'],
-        ]
-  const currentFlowStep = !eventVoteRequired
-    ? phase === 'packages'
-      ? 2
-      : 1
-    : specialVote
-      ? phase === 'special' ||
-        phase === 'specialResult' ||
-        phase === 'specialDialogue'
-        ? 1
-        : phase === 'event'
-          ? 2
-          : phase === 'vote' || phase === 'result'
-            ? 3
-            : 4
-      : phase === 'event'
-        ? 1
-        : phase === 'vote' || phase === 'result'
-          ? 2
-          : 3
+  const flowSteps: Array<{
+    label: string
+    phases: readonly MeetingPhase[]
+  }> = []
+  if (performanceReview) {
+    flowSteps.push({
+      label: '上章评级',
+      phases: ['review', 'reviewResult'],
+    })
+  }
+  if (specialVote) {
+    flowSteps.push({
+      label: '资格表决',
+      phases: ['special', 'specialResult', 'specialDialogue'],
+    })
+  }
+  if (eventVoteRequired) {
+    flowSteps.push({ label: '事件说明', phases: ['event'] })
+    flowSteps.push({ label: '中性表决', phases: ['vote', 'result'] })
+  }
+  flowSteps.push({ label: '任务包接取', phases: ['packages'] })
+  const currentFlowStep = Math.max(
+    1,
+    flowSteps.findIndex((step) => step.phases.includes(phase)) + 1,
+  )
 
   if (phase === 'specialDialogue' && specialDialogue) {
     return (
@@ -162,9 +156,11 @@ export function ChapterAssessmentMeeting({
             <h1>
               {phase === 'packages'
                 ? '下一章任务接取'
-                : phase === 'special' || phase === 'specialResult'
-                  ? '关键席位资格表决'
-                  : '帮派评定会议'}
+                : phase === 'review' || phase === 'reviewResult'
+                  ? '上章任务评定'
+                  : phase === 'special' || phase === 'specialResult'
+                    ? '关键席位资格表决'
+                    : '帮派评定会议'}
             </h1>
           </div>
           <div className="chapter-assessment__chapter">
@@ -181,15 +177,21 @@ export function ChapterAssessmentMeeting({
               role="img"
               aria-label={chair.holder}
             />
-            <span>会议主持</span>
+            <span>
+              {phase === 'review' || phase === 'reviewResult'
+                ? '评定主持'
+                : '会议主持'}
+            </span>
             <strong>{chair.holder}</strong>
             <small>{chair.seatDescription}</small>
             <p>
-              {phase === 'packages'
-                ? `为${nextChapter.title}确定职责`
-                : phase === 'special' || phase === 'specialResult'
-                  ? '对关键席位资格进行表决'
-                  : '对当前事件进行中性表决'}
+              {phase === 'review' || phase === 'reviewResult'
+                ? '逐项核对上次会议分派的职责'
+                : phase === 'packages'
+                  ? `为${nextChapter.title}确定职责`
+                  : phase === 'special' || phase === 'specialResult'
+                    ? '对关键席位资格进行表决'
+                    : '对当前事件进行中性表决'}
             </p>
           </aside>
 
@@ -198,11 +200,16 @@ export function ChapterAssessmentMeeting({
               className="chapter-assessment__flow"
               aria-label="章节会议流程"
               data-special={specialVote ? true : undefined}
+              style={
+                {
+                  '--flow-step-count': flowSteps.length,
+                } as CSSProperties
+              }
             >
-              {flowSteps.map(([number, label], index) => {
+              {flowSteps.map((step, index) => {
                 return (
                   <li
-                    key={number}
+                    key={step.label}
                     data-state={
                       index + 1 < currentFlowStep
                         ? 'complete'
@@ -211,12 +218,118 @@ export function ChapterAssessmentMeeting({
                           : 'pending'
                     }
                   >
-                    <span>{index + 1 < currentFlowStep ? '✓' : number}</span>
-                    <strong>{label}</strong>
+                    <span>
+                      {index + 1 < currentFlowStep
+                        ? '✓'
+                        : String(index + 1).padStart(2, '0')}
+                    </span>
+                    <strong>{step.label}</strong>
                   </li>
                 )
               })}
             </ol>
+
+            {phase === 'review' && performanceReview ? (
+              <section className="chapter-assessment__performance">
+                <div className="chapter-assessment__proposal">
+                  <span>LAST MANDATE REVIEW</span>
+                  <h2>{`${performanceReview.chapter.title} · 全员完成度评定`}</h2>
+                  <p>
+                    {chair.holder}
+                    ：上次会议分给 Thomas
+                    和其他成员的职责，现在按实际结果逐项结账。
+                  </p>
+                </div>
+                <div className="chapter-assessment__dialogue">
+                  <p>
+                    <strong>{chair.holder}</strong>
+                    产业、路口、车队和账本都摆在桌上。每个人只凭结果拿等级。
+                  </p>
+                  <p data-speaker="player">
+                    <strong>Thomas Shelby</strong>
+                    我的任务已经完成。该交的账，一项不少。
+                  </p>
+                </div>
+                <ol
+                  className="chapter-assessment__grades"
+                  aria-label={`${performanceReview.chapter.title}全员完成度`}
+                >
+                  {performanceReview.entries.map((entry) => (
+                    <li
+                      key={entry.name}
+                      data-grade={entry.grade}
+                      data-player={entry.isPlayer || undefined}
+                    >
+                      {entry.portraitIndex === null ? (
+                        <span
+                          className="chapter-assessment__grade-initial"
+                          aria-hidden="true"
+                        >
+                          {entry.name.slice(0, 1)}
+                        </span>
+                      ) : (
+                        <span
+                          className="chapter-assessment__grade-portrait"
+                          style={portraitStyle(entry.portraitIndex)}
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span className="chapter-assessment__grade-copy">
+                        <strong>{entry.name}</strong>
+                        <small>{entry.position}</small>
+                        <em>{entry.taskName}</em>
+                      </span>
+                      <b aria-label={`${entry.name}评级 ${entry.grade}`}>
+                        {entry.grade}
+                      </b>
+                    </li>
+                  ))}
+                </ol>
+                <button
+                  ref={phaseActionRef}
+                  type="button"
+                  className="chapter-assessment__primary"
+                  onClick={() => setPhase('reviewResult')}
+                >
+                  宣读评定结论
+                </button>
+              </section>
+            ) : null}
+
+            {phase === 'reviewResult' && performanceReview ? (
+              <section
+                className="chapter-assessment__review-result"
+                role="status"
+                aria-label={`${performanceReview.chapter.title}全员评定完成`}
+              >
+                <span>PERFORMANCE VERDICT</span>
+                <div>
+                  <b>S</b>
+                  <p>
+                    <strong>Thomas Shelby · 本章最佳</strong>
+                    {performanceReview.verdict}
+                  </p>
+                </div>
+                <div className="chapter-assessment__dialogue">
+                  <p>
+                    <strong>{chair.holder}</strong>S
+                    级是你把分内工作全部做完的凭据。其他人的等级也已经写进账本。
+                  </p>
+                  <p data-speaker="player">
+                    <strong>Thomas Shelby</strong>
+                    上一章的账结清了。继续今天的议程。
+                  </p>
+                </div>
+                <button
+                  ref={phaseActionRef}
+                  type="button"
+                  className="chapter-assessment__primary"
+                  onClick={() => setPhase(specialVote ? 'special' : 'event')}
+                >
+                  继续本次评定会议
+                </button>
+              </section>
+            ) : null}
 
             {phase === 'special' && specialVote ? (
               <section className="chapter-assessment__eligibility">
@@ -398,9 +511,11 @@ export function ChapterAssessmentMeeting({
                   <span>NEXT CHAPTER ORDERS</span>
                   <h2>{`${nextChapter.title} · 选择任务包`}</h2>
                   <p>
-                    {eventVoteRequired
-                      ? '三个任务包均由刚才的事件延伸而来。只能接取一个；每包包含 1–3 项会议任务，并自动附加本章固定任务。'
-                      : '转正表决已经通过。委员会现在给出下一阶段的三个任务包；只能接取一个，并自动附加本章固定任务。'}
+                    {`三个任务包只会从 Lv.${nextChapter.minimumLevel} 已解锁的产业、资源和养成功能中生成。${
+                      nextChapter.number <= 4
+                        ? '前期每包随机 1–2 项'
+                        : '后期每包随机 2–3 项'
+                    }，选择其中一个后自动附加本章固定任务。`}
                   </p>
                 </div>
 

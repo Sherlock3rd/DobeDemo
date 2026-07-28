@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { getChapterAssessment } from './chapterAssessment'
+import {
+  getChapterAssessment,
+  getChapterPerformanceReview,
+} from './chapterAssessment'
 
 describe('chapter assessment meeting', () => {
   it('uses the formal-member vote as the only first transition vote and keeps later neutral events deterministic', () => {
@@ -26,17 +29,42 @@ describe('chapter assessment meeting', () => {
     }
   })
 
-  it('offers exactly three packages containing one, two, and three meeting tasks', () => {
+  it('offers three deterministic packages with lighter early and fuller late counts', () => {
     for (
       let completedChapterNumber = 1;
       completedChapterNumber < 7;
       completedChapterNumber += 1
     ) {
+      const first = getChapterAssessment(completedChapterNumber)?.taskPackages
+      const second = getChapterAssessment(completedChapterNumber)?.taskPackages
+      expect(first).toEqual(second)
+      expect(first).toHaveLength(3)
+      const nextChapterNumber = completedChapterNumber + 1
+      const minimum = nextChapterNumber <= 4 ? 1 : 2
+      const maximum = nextChapterNumber <= 4 ? 2 : 3
+      for (const taskPackage of first ?? []) {
+        expect(taskPackage.tasks.length).toBeGreaterThanOrEqual(minimum)
+        expect(taskPackage.tasks.length).toBeLessThanOrEqual(maximum)
+      }
+    }
+  })
+
+  it('skips the prologue review but rates every later meeting participant deterministically', () => {
+    expect(getChapterPerformanceReview(1)).toBeNull()
+
+    for (const completedChapterNumber of [2, 3, 4, 5, 6]) {
+      const first = getChapterPerformanceReview(completedChapterNumber)
+      const second = getChapterPerformanceReview(completedChapterNumber)
+      expect(first).toEqual(second)
+      expect(first?.entries).toHaveLength(5)
+      expect(first?.entries[0]).toMatchObject({
+        name: 'Thomas Shelby',
+        grade: 'S',
+        isPlayer: true,
+      })
       expect(
-        getChapterAssessment(completedChapterNumber)?.taskPackages.map(
-          (taskPackage) => taskPackage.tasks.length,
-        ),
-      ).toEqual([1, 2, 3])
+        new Set(first?.entries.slice(1).map((entry) => entry.grade)),
+      ).toEqual(new Set(['A', 'B', 'C', 'D']))
     }
   })
 

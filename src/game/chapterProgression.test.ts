@@ -13,7 +13,7 @@ import {
   getCarPartUpgradeCost,
   getGunUpgradeCost,
 } from './equipmentProgression'
-import { getBuildingUnlock } from './progressionUnlocks'
+import { carUnlockLevel, getBuildingUnlock } from './progressionUnlocks'
 
 function snapshot() {
   const adventure = createInitialAdventureState(0)
@@ -58,10 +58,12 @@ describe('chapter progression', () => {
     expect(getChapterTasks(1)).toHaveLength(3)
     for (let chapterNumber = 2; chapterNumber <= 7; chapterNumber += 1) {
       const packages = getChapterTaskPackages(chapterNumber)
-      expect(packages.map((taskPackage) => taskPackage.tasks.length)).toEqual([
-        1, 2, 3,
-      ])
+      const minimum = chapterNumber <= 4 ? 1 : 2
+      const maximum = chapterNumber <= 4 ? 2 : 3
+      expect(packages).toHaveLength(3)
       for (const taskPackage of packages) {
+        expect(taskPackage.tasks.length).toBeGreaterThanOrEqual(minimum)
+        expect(taskPackage.tasks.length).toBeLessThanOrEqual(maximum)
         const tasks = getChapterTasks(chapterNumber, taskPackage.id)
         expect(tasks).toHaveLength(taskPackage.tasks.length + 3)
         expect(
@@ -73,28 +75,95 @@ describe('chapter progression', () => {
     }
   })
 
-  it('covers every requested meeting-task category across the package collection', () => {
-    const kinds = new Set(
-      CHAPTERS.slice(1).flatMap((chapter) =>
-        getChapterTaskPackages(chapter.number).flatMap((taskPackage) =>
-          taskPackage.tasks.map((task) => task.requirement.kind),
-        ),
+  it('never generates a task for a resource, building, or car that the chapter rank cannot unlock', () => {
+    for (const chapter of CHAPTERS.slice(1)) {
+      const tasks = getChapterTaskPackages(chapter.number).flatMap(
+        (taskPackage) => taskPackage.tasks,
+      )
+      for (const task of tasks) {
+        const requirement = task.requirement
+        if (requirement.kind === 'resource-materials') {
+          expect(chapter.minimumLevel).toBeGreaterThanOrEqual(
+            getBuildingUnlock('metalworking-plant')?.requiredLevel ?? Infinity,
+          )
+        }
+        if (requirement.kind === 'resource-oil') {
+          expect(chapter.minimumLevel).toBeGreaterThanOrEqual(
+            getBuildingUnlock('gas-station')?.requiredLevel ?? Infinity,
+          )
+        }
+        if (
+          requirement.kind === 'spare-parts' ||
+          requirement.kind === 'part-level' ||
+          requirement.kind === 'part-upgrades'
+        ) {
+          expect(chapter.minimumLevel).toBeGreaterThanOrEqual(
+            getBuildingUnlock('recycling-yard')?.requiredLevel ?? Infinity,
+          )
+        }
+        if (requirement.kind === 'building-level') {
+          expect(
+            getBuildingUnlock(requirement.buildingId)?.requiredLevel,
+          ).toBeLessThanOrEqual(chapter.minimumLevel)
+        }
+        if (requirement.kind === 'car-power') {
+          expect(carUnlockLevel(requirement.carId)).toBeLessThanOrEqual(
+            chapter.minimumLevel,
+          )
+        }
+      }
+    }
+
+    const earlyTasks = [2, 3].flatMap((chapterNumber) =>
+      getChapterTaskPackages(chapterNumber).flatMap(
+        (taskPackage) => taskPackage.tasks,
       ),
     )
-    expect(kinds).toEqual(
-      new Set([
-        'resource-money',
-        'resource-oil',
-        'resource-materials',
-        'spare-parts',
-        'building-level',
-        'hero-level',
-        'gun-level',
-        'part-upgrades',
-        'total-power',
-        'car-power',
-      ]),
+    expect(
+      earlyTasks.some(
+        (task) =>
+          task.requirement.kind === 'resource-oil' ||
+          task.requirement.kind === 'resource-materials',
+      ),
+    ).toBe(false)
+    const chapterFourTasks = getChapterTaskPackages(4).flatMap(
+      (taskPackage) => taskPackage.tasks,
     )
+    expect(
+      chapterFourTasks.some((task) => task.requirement.kind === 'resource-oil'),
+    ).toBe(false)
+  })
+
+  it('uses non-repeating random draws and keeps generated targets inside the current chapter ceiling', () => {
+    for (const chapter of CHAPTERS.slice(1)) {
+      const packageTasks = getChapterTaskPackages(chapter.number).flatMap(
+        (taskPackage) => taskPackage.tasks,
+      )
+      const requirementKeys = packageTasks.map((task) => {
+        const requirement = task.requirement
+        if (requirement.kind === 'building-level') {
+          return `${requirement.kind}:${requirement.buildingId}`
+        }
+        if (requirement.kind === 'car-power') {
+          return `${requirement.kind}:${requirement.carId}`
+        }
+        return requirement.kind
+      })
+      expect(new Set(requirementKeys).size).toBe(requirementKeys.length)
+
+      for (const task of packageTasks) {
+        const requirement = task.requirement
+        if (requirement.kind === 'hero-level') {
+          expect(requirement.target).toBeLessThanOrEqual(
+            chapter.nextRoleLevel ?? chapter.minimumLevel,
+          )
+        }
+        if (requirement.kind === 'building-level') {
+          expect(requirement.target).toBeGreaterThanOrEqual(2)
+          expect(requirement.target).toBeLessThanOrEqual(10)
+        }
+      }
+    }
   })
 
   it('splits promotion experience between task rewards and chapter completion', () => {

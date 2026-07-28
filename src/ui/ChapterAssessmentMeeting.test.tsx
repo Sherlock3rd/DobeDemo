@@ -4,6 +4,18 @@ import { describe, expect, it, vi } from 'vitest'
 import { ChapterAssessmentMeeting } from './ChapterAssessmentMeeting'
 
 describe('ChapterAssessmentMeeting', () => {
+  const finishPerformanceReview = async (): Promise<void> => {
+    expect(screen.getByText(/全员完成度评定/)).toBeInTheDocument()
+    expect(
+      screen.getByLabelText(/全员完成度/).querySelectorAll('li'),
+    ).toHaveLength(5)
+    expect(screen.getByLabelText('Thomas Shelby评级 S')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '宣读评定结论' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: '继续本次评定会议' }),
+    )
+  }
+
   const finishFormalMemberEligibility = async (): Promise<void> => {
     expect(screen.getByText('正式成员资格表决')).toBeInTheDocument()
     expect(
@@ -55,17 +67,19 @@ describe('ChapterAssessmentMeeting', () => {
     expect(
       screen.queryByRole('button', { name: '进入事件表决' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByText(/转正表决已经通过/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Lv\.8 已解锁的产业、资源和养成功能/),
+    ).toBeInTheDocument()
 
     const packageGroup = screen.getByRole('radiogroup', {
       name: '第二章 · 废铁生意任务包',
     })
     expect(packageGroup.querySelectorAll('[role="radio"]')).toHaveLength(3)
-    expect(screen.getByText('方案 A · 1 项')).toBeInTheDocument()
-    expect(screen.getByText('方案 B · 2 项')).toBeInTheDocument()
-    expect(screen.getByText('方案 C · 3 项')).toBeInTheDocument()
+    for (const taskPackage of screen.getAllByRole('radio')) {
+      expect(taskPackage).toHaveTextContent(/方案 [ABC] · [12] 项/)
+    }
 
-    await userEvent.click(screen.getByRole('radio', { name: /拆解产线/ }))
+    await userEvent.click(screen.getAllByRole('radio')[1])
     expect(screen.getByLabelText('本章固定额外任务')).toHaveTextContent(
       '职位声望',
     )
@@ -82,7 +96,7 @@ describe('ChapterAssessmentMeeting', () => {
     expect(onComplete).toHaveBeenCalledWith({
       completedChapterNumber: 1,
       nextChapterNumber: 2,
-      selectedPackageId: 'chapter-2-package-yard',
+      selectedPackageId: 'chapter-2-package-random-b',
       decision: 'formal-member-approved',
     })
   })
@@ -97,6 +111,7 @@ describe('ChapterAssessmentMeeting', () => {
           onComplete={() => {}}
         />,
       )
+      await finishPerformanceReview()
       await userEvent.click(
         screen.getByRole('button', { name: '进入事件表决' }),
       )
@@ -126,6 +141,7 @@ describe('ChapterAssessmentMeeting', () => {
       />,
     )
 
+    await finishPerformanceReview()
     expect(screen.getByText('主席继任资格表决')).toBeInTheDocument()
     expect(
       screen.getByText('是否推举 Thomas Shelby 接掌剃刀党主席席位？'),
@@ -145,7 +161,7 @@ describe('ChapterAssessmentMeeting', () => {
     expect(screen.getByText('主席席位需要最终章程')).toBeInTheDocument()
   })
 
-  it('keeps ordinary chapter transitions on the original three-step flow', () => {
+  it('starts every ordinary formal-member meeting with the previous chapter review', () => {
     render(
       <ChapterAssessmentMeeting
         completedChapterNumber={2}
@@ -154,6 +170,10 @@ describe('ChapterAssessmentMeeting', () => {
     )
 
     expect(screen.queryByText('资格表决')).not.toBeInTheDocument()
-    expect(screen.getByText('商业街夜间货流改道')).toBeInTheDocument()
+    expect(screen.getByText('上章任务评定')).toBeInTheDocument()
+    expect(screen.getByLabelText('章节会议流程')).toHaveTextContent('上章评级')
+    expect(
+      screen.getByText('第二章 · 废铁生意 · 全员完成度评定'),
+    ).toBeInTheDocument()
   })
 })

@@ -2912,7 +2912,7 @@
 
 .chapter-assessment__flow {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--flow-step-count, 3), minmax(0, 1fr));
   gap: 1rem;
   margin: 0;
   padding: 0.15rem 0.2rem;
@@ -2920,7 +2920,7 @@
 }
 
 .chapter-assessment__flow[data-special] {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--flow-step-count, 4), minmax(0, 1fr));
 }
 
 .chapter-assessment__flow li {

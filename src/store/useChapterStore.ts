@@ -388,7 +388,7 @@ export const useChapterStore = create<ChapterState>()(
     }),
     {
       name: CHAPTER_STORAGE_KEY,
-      version: 7,
+      version: 8,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted, version) => {
         const source =

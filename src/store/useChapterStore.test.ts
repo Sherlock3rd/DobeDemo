@@ -72,7 +72,7 @@ describe('useChapterStore', () => {
     ).toBe(false)
     useAdventureStore.setState({ highestClearedStage: 20 })
     expect(
-      useChapterStore.getState().claimTask('chapter-7-package-supply-1'),
+      useChapterStore.getState().claimTask('chapter-7-package-random-a-1'),
     ).toBe(false)
   })
 
@@ -115,14 +115,14 @@ describe('useChapterStore', () => {
         .getState()
         .completeAssessment(
           1,
-          'chapter-2-package-yard',
+          'chapter-2-package-random-b',
           'formal-member-approved',
         ),
     ).toBe(true)
     expect(useChapterStore.getState()).toMatchObject({
       activeChapterNumber: 2,
       selectedTaskPackageIds: {
-        2: 'chapter-2-package-yard',
+        2: 'chapter-2-package-random-b',
       },
       meetingVotes: { 1: 'formal-member-approved' },
       completedAssessmentChapterNumbers: [1],
@@ -135,7 +135,7 @@ describe('useChapterStore', () => {
         .getState()
         .completeAssessment(
           1,
-          'chapter-2-package-yard',
+          'chapter-2-package-random-b',
           'formal-member-approved',
         ),
     ).toBe(false)
@@ -178,7 +178,7 @@ describe('useChapterStore', () => {
     expect(useChapterStore.getState()).toMatchObject({
       activeChapterNumber: 2,
       selectedTaskPackageIds: {
-        2: 'chapter-2-package-cashflow',
+        2: 'chapter-2-package-random-a',
       },
       claimedTaskIds: [],
       claimedChapterNumbers: [1],
@@ -194,7 +194,7 @@ describe('useChapterStore', () => {
         state: {
           activeChapterNumber: 2,
           selectedTaskPackageIds: {
-            2: 'chapter-2-package-yard',
+            2: 'chapter-2-package-random-b',
           },
           meetingVotes: { 1: 'option-b' },
           claimedChapterNumbers: [1],
@@ -208,6 +208,42 @@ describe('useChapterStore', () => {
 
     expect(useChapterStore.getState().meetingVotes).toEqual({
       1: 'formal-member-approved',
+    })
+  })
+
+  it('moves a version-seven fixed package onto the deterministic unlocked random package', async () => {
+    window.localStorage.setItem(
+      CHAPTER_STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          prologueStep: 'complete',
+          activeChapterNumber: 3,
+          selectedTaskPackageIds: {
+            2: 'chapter-2-package-yard',
+            3: 'chapter-3-package-armed-convoy',
+          },
+          claimedTaskIds: [
+            'chapter-3-package-armed-convoy-1',
+            'chapter-3-extra-campaign',
+          ],
+          claimedChapterNumbers: [1, 2],
+          completedAssessmentChapterNumbers: [1, 2],
+        },
+        version: 7,
+      }),
+    )
+
+    await useChapterStore.persist.rehydrate()
+
+    expect(useChapterStore.getState()).toMatchObject({
+      prologueStep: 'complete',
+      activeChapterNumber: 3,
+      selectedTaskPackageIds: {
+        3: 'chapter-3-package-random-a',
+      },
+      claimedTaskIds: ['chapter-3-extra-campaign'],
+      claimedChapterNumbers: [1, 2],
+      completedAssessmentChapterNumbers: [1, 2],
     })
   })
 })
