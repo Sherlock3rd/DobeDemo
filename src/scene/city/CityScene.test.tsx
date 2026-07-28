@@ -5,7 +5,16 @@ import { markPointerEventHandled } from './pointerDragClick'
 import { cityPointerDragTracker } from './pointerDragTracker'
 
 vi.mock('./CityCameraControls', () => ({
-  CityCameraControls: () => <div data-testid="camera-controls" />,
+  CityCameraControls: ({
+    focusBuildingId,
+  }: {
+    focusBuildingId?: string | null
+  }) => (
+    <div
+      data-testid="camera-controls"
+      data-focus-building={focusBuildingId ?? ''}
+    />
+  ),
 }))
 
 vi.mock('./CityEnvironment', () => ({
@@ -17,8 +26,14 @@ vi.mock('./CityGround', () => ({
 }))
 
 vi.mock('./InteractiveBuilding', () => ({
-  InteractiveBuilding: ({ id }: { id: string }) => (
-    <div data-testid="interactive-building">{id}</div>
+  InteractiveBuilding: ({ id, guided }: { id: string; guided?: boolean }) => (
+    <div
+      data-testid="interactive-building"
+      data-building-id={id}
+      data-guided={guided || undefined}
+    >
+      {id}
+    </div>
   ),
 }))
 
@@ -48,6 +63,23 @@ describe('CityScene', () => {
     render(<CityScene />)
 
     expect(screen.getByTestId('city-pointer-gestures')).toBeInTheDocument()
+  })
+
+  it('forwards the guided building to its badge and camera controls', () => {
+    render(<CityScene guidedBuildingId="recycling-yard" />)
+
+    expect(screen.getByTestId('camera-controls')).toHaveAttribute(
+      'data-focus-building',
+      'recycling-yard',
+    )
+    expect(
+      screen
+        .getAllByTestId('interactive-building')
+        .find(
+          (building) =>
+            building.getAttribute('data-building-id') === 'recycling-yard',
+        ),
+    ).toHaveAttribute('data-guided', 'true')
   })
 
   it('clears the selection on a normal background click', () => {

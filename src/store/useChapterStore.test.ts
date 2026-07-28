@@ -246,4 +246,38 @@ describe('useChapterStore', () => {
       completedAssessmentChapterNumbers: [1, 2],
     })
   })
+
+  it('persists the post-meeting promotion and takeover guide checkpoints', async () => {
+    for (const prologueStep of [
+      'formal-promotion',
+      'chapter-briefing',
+      'recycling-takeover',
+    ] as const) {
+      window.localStorage.setItem(
+        CHAPTER_STORAGE_KEY,
+        JSON.stringify({
+          state: {
+            prologueStep,
+            activeChapterNumber: 2,
+            selectedTaskPackageIds: {
+              2: 'chapter-2-package-random-b',
+            },
+            claimedChapterNumbers: [1],
+            completedAssessmentChapterNumbers: [1],
+          },
+          version: 9,
+        }),
+      )
+
+      await useChapterStore.persist.rehydrate()
+
+      expect(useChapterStore.getState()).toMatchObject({
+        prologueStep,
+        activeChapterNumber: 2,
+        selectedTaskPackageIds: {
+          2: 'chapter-2-package-random-b',
+        },
+      })
+    }
+  })
 })

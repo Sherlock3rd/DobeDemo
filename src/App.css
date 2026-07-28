@@ -294,6 +294,24 @@
   outline-offset: 3px;
 }
 
+.building-takeover-badge[data-guided='true'] {
+  min-width: 12rem;
+  border-color: #fff7ae;
+  background:
+    linear-gradient(135deg, rgba(180, 83, 9, 0.98), rgba(13, 99, 82, 0.98)),
+    #071315;
+  box-shadow:
+    0 0 0 0.35rem rgba(251, 191, 36, 0.24),
+    0 1rem 2.6rem rgba(0, 0, 0, 0.62),
+    0 0 2.8rem rgba(251, 191, 36, 0.72);
+  animation: building-takeover-guided 900ms ease-in-out infinite alternate;
+}
+
+.building-takeover-badge[data-guided='true'] strong::before {
+  content: '当前任务 · ';
+  color: #fde68a;
+}
+
 .building-takeover-badge__icon {
   display: grid;
   flex: 0 0 auto;
@@ -330,6 +348,16 @@
       0 0 0 0.4rem rgba(251, 191, 36, 0.08),
       0 0.8rem 2rem rgba(0, 0, 0, 0.52),
       0 0 2.2rem rgba(251, 191, 36, 0.56);
+  }
+}
+
+@keyframes building-takeover-guided {
+  to {
+    transform: translateY(-0.35rem) scale(1.035);
+    box-shadow:
+      0 0 0 0.55rem rgba(251, 191, 36, 0.1),
+      0 1rem 2.6rem rgba(0, 0, 0, 0.62),
+      0 0 3.4rem rgba(251, 191, 36, 0.9);
   }
 }
 
@@ -4587,6 +4615,62 @@
   font-size: 0.92rem;
 }
 
+.chapter-panel__mandatory-guide {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  width: min(70rem, 100%);
+  margin: 0 auto;
+  padding: 0.85rem 1rem;
+  border: 2px solid #fbbf24;
+  border-radius: 0.8rem;
+  color: #f8fafc;
+  background:
+    linear-gradient(110deg, rgba(180, 83, 9, 0.32), transparent 50%),
+    rgba(5, 19, 22, 0.94);
+  box-shadow:
+    0 0 0 0.24rem rgba(251, 191, 36, 0.1),
+    0 0 2rem rgba(251, 191, 36, 0.2);
+}
+
+.chapter-panel__mandatory-guide > span:first-child {
+  color: #5eead4;
+  font-size: 0.64rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.chapter-panel__mandatory-guide strong,
+.chapter-panel__mandatory-guide p {
+  display: block;
+  margin: 0;
+}
+
+.chapter-panel__mandatory-guide strong {
+  color: #fde68a;
+}
+
+.chapter-panel__mandatory-guide p {
+  margin-top: 0.2rem;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.chapter-panel__mandatory-arrow {
+  color: #fbbf24;
+  font-size: 1.8rem;
+  font-weight: 950;
+  animation: chapter-mandatory-arrow 700ms ease-in-out infinite alternate;
+}
+
+@keyframes chapter-mandatory-arrow {
+  to {
+    transform: translateY(0.35rem);
+  }
+}
+
 .chapter-panel__story {
   display: flex;
   align-items: center;
@@ -4639,6 +4723,31 @@
 .chapter-panel__task[data-state='claimed'] {
   border-color: rgba(74, 222, 128, 0.32);
   background: rgba(20, 83, 45, 0.16);
+}
+
+.chapter-panel__task[data-guide='target'] {
+  order: -1;
+  border: 2px solid #fbbf24;
+  background:
+    linear-gradient(120deg, rgba(180, 83, 9, 0.26), transparent 48%),
+    rgba(6, 27, 28, 0.96);
+  box-shadow:
+    0 0 0 0.2rem rgba(251, 191, 36, 0.1),
+    0 0 2rem rgba(251, 191, 36, 0.2);
+}
+
+.chapter-panel__task[data-guide='blocked'] {
+  opacity: 0.42;
+  filter: saturate(0.35);
+}
+
+.chapter-panel__task[data-guide='target']
+  .chapter-panel__task-action
+  .chapter-panel__task-go {
+  border-color: #fde68a;
+  color: #1c1302;
+  background: #fbbf24;
+  box-shadow: 0 0 1.1rem rgba(251, 191, 36, 0.4);
 }
 
 .chapter-panel__task-copy {
@@ -7056,6 +7165,14 @@
     flex-direction: column;
   }
 
+  .chapter-panel__mandatory-guide {
+    grid-template-columns: 1fr auto;
+  }
+
+  .chapter-panel__mandatory-guide > span:first-child {
+    grid-column: 1 / -1;
+  }
+
   .chapter-panel__close {
     align-self: flex-start;
   }
@@ -7678,6 +7795,7 @@
   .gang-tree-panel__ceremony-rays,
   .gang-tree-panel__ceremony > .gang-tree-panel__portrait,
   .building-takeover-badge,
+  .chapter-panel__mandatory-arrow,
   .progression-milestone,
   .progression-milestone__rays,
   .takeover-hammer__tool,

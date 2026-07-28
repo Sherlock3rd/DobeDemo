@@ -603,6 +603,23 @@ const CHAPTER_ONE_STARTER_TASKS: readonly ChapterTaskDefinition[] = [
   },
 ]
 
+export const CHAPTER_TWO_RECYCLING_TAKEOVER_TASK_ID =
+  'chapter-2-mandatory-recycling-takeover'
+
+const CHAPTER_TWO_MANDATORY_TASKS: readonly ChapterTaskDefinition[] = [
+  {
+    id: CHAPTER_TWO_RECYCLING_TAKEOVER_TASK_ID,
+    name: '交接废车回收厂',
+    description: '前往城市地图，完成废车回收厂管理权交接',
+    requirement: {
+      kind: 'building-claimed',
+      buildingId: 'recycling-yard',
+      target: 1,
+    },
+    reward: reward(20, 300, 30),
+  },
+]
+
 const CHAPTER_TASK_BLUEPRINTS: Readonly<
   Record<number, readonly ChapterTaskPackage[]>
 > = {
@@ -1306,6 +1323,12 @@ function getChapterExtraTasks(
   ]
 }
 
+function getChapterMandatoryTasks(
+  chapterNumber: number,
+): readonly ChapterTaskDefinition[] {
+  return chapterNumber === 2 ? CHAPTER_TWO_MANDATORY_TASKS : []
+}
+
 export function getChapterByNumber(
   chapterNumber: number,
 ): ChapterDefinition | null {
@@ -1326,16 +1349,20 @@ export function getChapterTasks(
   if (chapterNumber === 1) {
     return [...CHAPTER_ONE_STARTER_TASKS, ...extraTasks]
   }
+  const mandatoryTasks = getChapterMandatoryTasks(chapterNumber)
   const selectedPackage = getChapterTaskPackages(chapterNumber).find(
     (taskPackage) => taskPackage.id === selectedPackageId,
   )
-  return selectedPackage ? [...selectedPackage.tasks, ...extraTasks] : []
+  return selectedPackage
+    ? [...mandatoryTasks, ...selectedPackage.tasks, ...extraTasks]
+    : []
 }
 
 export function getAllSelectableChapterTasks(): readonly ChapterTaskDefinition[] {
   return [
     ...getChapterTasks(1),
     ...CHAPTERS.slice(1).flatMap((chapter) => [
+      ...getChapterMandatoryTasks(chapter.number),
       ...getChapterTaskPackages(chapter.number).flatMap(
         (taskPackage) => taskPackage.tasks,
       ),

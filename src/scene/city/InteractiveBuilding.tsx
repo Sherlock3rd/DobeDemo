@@ -19,6 +19,7 @@ interface InteractiveBuildingProps {
   id: BuildingId
   position: readonly [number, number, number]
   rotation?: number
+  guided?: boolean
   onClaimed?: (buildingId: BuildingId) => void
 }
 
@@ -26,6 +27,7 @@ export function InteractiveBuilding({
   id,
   position,
   rotation = 0,
+  guided = false,
   onClaimed,
 }: InteractiveBuildingProps): JSX.Element {
   const definition = buildingCatalogById[id]
@@ -78,7 +80,11 @@ export function InteractiveBuilding({
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       <BuildingVisual id={id} highlighted={highlighted} />
-      <BuildingTakeoverBadge buildingId={id} onClaimed={onClaimed} />
+      <BuildingTakeoverBadge
+        buildingId={id}
+        guided={guided}
+        onClaimed={onClaimed}
+      />
       {accessState === 'claimed' ? (
         <BuildingUpgradeBadge buildingId={id} />
       ) : null}

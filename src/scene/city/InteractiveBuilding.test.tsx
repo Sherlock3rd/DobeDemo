@@ -67,6 +67,17 @@ describe('InteractiveBuilding', () => {
     expect(useCityStore.getState().selectedBuildingId).toBeNull()
   })
 
+  it('focuses and visually marks a guided takeover action', () => {
+    useCityStore.getState().reset(BASE_TIME)
+    render(<InteractiveBuilding id="repair-shop" position={[0, 0, 0]} guided />)
+
+    const takeover = screen.getByRole('button', {
+      name: '接管修车厂管理权',
+    })
+    expect(takeover).toHaveAttribute('data-guided', 'true')
+    expect(takeover).toHaveFocus()
+  })
+
   it('shows the repair-shop handover after rehydrating a v6 legacy save', async () => {
     const city = useCityStore.getState()
     window.localStorage.setItem(

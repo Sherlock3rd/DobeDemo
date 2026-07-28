@@ -26,8 +26,14 @@ vi.mock('@react-three/drei', () => ({
 }))
 
 vi.mock('./scene/city/CityScene', () => ({
-  CityScene: (p: { onBuildingClaimed?: (id: 'repair-shop') => void }) => (
-    <div data-testid="city-scene-mock">
+  CityScene: (p: {
+    guidedBuildingId?: 'repair-shop' | 'recycling-yard' | null
+    onBuildingClaimed?: (id: 'repair-shop' | 'recycling-yard') => void
+  }) => (
+    <div
+      data-testid="city-scene-mock"
+      data-guided-building={p.guidedBuildingId ?? ''}
+    >
       <button
         type="button"
         onClick={() => {
@@ -36,6 +42,21 @@ vi.mock('./scene/city/CityScene', () => ({
         }}
       >
         地图接管修车厂
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          useCityStore
+            .getState()
+            .claimBuilding(
+              'recycling-yard',
+              useGangStore.getState().currentLevel,
+              BASE_TIME,
+            )
+          p.onBuildingClaimed?.('recycling-yard')
+        }}
+      >
+        地图交接废车回收厂
       </button>
     </div>
   ),
@@ -574,7 +595,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: '修车厂' })).toBeInTheDocument()
   })
 
-  it('holds the prologue promotion meeting and starts the selected second chapter package', async () => {
+  it('routes the approved first meeting through manual promotion and the recycling-yard task', async () => {
     const user = userEvent.setup()
     useGangStore.setState({
       totalReputation: getTotalReputationForLevel(8),
@@ -610,14 +631,53 @@ describe('App', () => {
     )
 
     expect(
+      screen.getByRole('dialog', { name: '帮派权力树' }),
+    ).toBeInTheDocument()
+    expect(useGangStore.getState().currentLevel).toBe(7)
+    expect(useChapterStore.getState().prologueStep).toBe('formal-promotion')
+
+    await user.click(screen.getByRole('button', { name: '晋升正式成员' }))
+    expect(useGangStore.getState().currentLevel).toBe(8)
+    expect(
+      screen.getByRole('status', { name: '职级晋升：正式成员' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '跳过晋升演出' }))
+
+    expect(
       screen.getByRole('dialog', {
         name: '剧情对话：第二章 · 废铁生意',
       }),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
+
     expect(
-      screen.getByRole('dialog', { name: '帮派权力树' }),
+      screen.getByRole('status', {
+        name: '强制引导：交接废车回收厂',
+      }),
     ).toBeInTheDocument()
+    const takeoverTask = screen.getByRole('button', {
+      name: '立即交接废车回收厂',
+    })
+    expect(takeoverTask).toHaveFocus()
+    await user.click(takeoverTask)
+
+    expect(screen.getByTestId('city-scene-mock')).toHaveAttribute(
+      'data-guided-building',
+      'recycling-yard',
+    )
+    expect(useChapterStore.getState().prologueStep).toBe('recycling-takeover')
+    await user.click(screen.getByRole('button', { name: '地图交接废车回收厂' }))
+    expect(
+      screen.getByRole('status', { name: '废车回收厂管理权已交接' }),
+    ).toBeInTheDocument()
+    expect(useChapterStore.getState().prologueStep).toBe('complete')
+    await user.click(screen.getByRole('button', { name: '听取管理简报' }))
+    await user.click(screen.getByRole('button', { name: '跳过剧情对话' }))
+
+    expect(
+      screen.getByRole('heading', { name: '交接废车回收厂' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('交接废车回收厂进度')).toHaveTextContent('1/1')
     expect(useChapterStore.getState()).toMatchObject({
       activeChapterNumber: 2,
       selectedTaskPackageIds: { 2: 'chapter-2-package-random-b' },
@@ -625,7 +685,6 @@ describe('App', () => {
       completedAssessmentChapterNumbers: [1],
       prologueStep: 'complete',
     })
-    expect(useGangStore.getState().currentLevel).toBe(8)
   })
 
   it('keeps focus inside the adventure, formation, and battle transition chain', async () => {

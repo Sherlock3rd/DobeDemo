@@ -101,6 +101,44 @@ describe('ChapterPanel', () => {
     })
   })
 
+  it('strongly guides the newly promoted player to the recycling-yard handover first', async () => {
+    const onNavigateTask = vi.fn()
+    useGangStore.setState({ currentLevel: 8 })
+    useCityStore.setState({ claimedBuildingIds: ['repair-shop'] })
+    useChapterStore.setState({
+      prologueStep: 'chapter-briefing',
+      activeChapterNumber: 2,
+      selectedTaskPackageIds: { 2: 'chapter-2-package-random-a' },
+      claimedChapterNumbers: [1],
+      completedAssessmentChapterNumbers: [1],
+    })
+
+    render(<ChapterPanel onClose={() => {}} onNavigateTask={onNavigateTask} />)
+
+    expect(
+      screen.getByRole('status', {
+        name: '强制引导：交接废车回收厂',
+      }),
+    ).toBeInTheDocument()
+    const takeoverButton = screen.getByRole('button', {
+      name: '立即交接废车回收厂',
+    })
+    expect(takeoverButton).toHaveFocus()
+    expect(
+      screen
+        .getByRole('heading', { name: '交接废车回收厂' })
+        .closest('article'),
+    ).toHaveAttribute('data-guide', 'target')
+
+    await userEvent.click(takeoverButton)
+
+    expect(onNavigateTask).toHaveBeenCalledWith({
+      kind: 'building-claimed',
+      buildingId: 'recycling-yard',
+      target: 1,
+    })
+  })
+
   it('requires all three prologue task rewards and never opens a meeting here', async () => {
     const adventure = useAdventureStore.getState()
     useAdventureStore.setState({

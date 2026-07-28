@@ -239,6 +239,32 @@ describe('GangTreePanel', () => {
     ).toBeInTheDocument()
   })
 
+  it('turns the approved prologue vote into an explicit formal-member promotion action', async () => {
+    const onCompleteProloguePromotion = vi.fn()
+    useChapterStore.setState({ claimedChapterNumbers: [1] })
+    useGangStore.setState({
+      totalReputation: getTotalReputationForLevel(8),
+      currentLevel: 7,
+    })
+
+    render(
+      <GangTreePanel
+        open
+        onClose={() => {}}
+        prologuePromotionReady
+        onCompleteProloguePromotion={onCompleteProloguePromotion}
+      />,
+    )
+
+    expect(
+      screen.getByText('资格表决已通过，点击登记正式成员席位'),
+    ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '晋升正式成员' }))
+
+    expect(onCompleteProloguePromotion).toHaveBeenCalledTimes(1)
+    expect(useGangStore.getState().currentLevel).toBe(7)
+  })
+
   it('plays a special ceremony when a core role promotion succeeds', async () => {
     const user = userEvent.setup()
     const onRolePromoted = vi.fn()

@@ -13,6 +13,9 @@ describe('prologue progression', () => {
     expect(PROLOGUE_STEPS[0]).toBe('opening-dialogue')
     expect(PROLOGUE_STEPS.at(-1)).toBe('complete')
     expect(isPrologueStep('borrowed-shooting')).toBe(true)
+    expect(isPrologueStep('formal-promotion')).toBe(true)
+    expect(isPrologueStep('chapter-briefing')).toBe(true)
+    expect(isPrologueStep('recycling-takeover')).toBe(true)
     expect(isPrologueStep('unknown')).toBe(false)
     expect(isPrologueAtLeast('prospect-tasks', 'part-tutorial')).toBe(true)
     expect(isPrologueAtLeast('police-race', 'part-tutorial')).toBe(false)
@@ -43,6 +46,12 @@ describe('prologue progression', () => {
       campaign: false,
     })
     expect(getPrologueVisibility('gun-gift').gun).toBe(true)
+    expect(getPrologueVisibility('chapter-briefing')).toMatchObject({
+      gangTree: true,
+      chapters: true,
+      campaign: false,
+    })
+    expect(getPrologueVisibility('recycling-takeover').campaign).toBe(false)
     expect(getPrologueVisibility('complete')).toEqual({
       heroes: true,
       heroLevel: true,

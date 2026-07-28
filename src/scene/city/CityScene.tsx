@@ -12,9 +12,13 @@ import { consumePointerDrag, isPointerEventHandled } from './pointerDragClick'
 
 interface CitySceneProps {
   onBuildingClaimed?: (buildingId: BuildingId) => void
+  guidedBuildingId?: BuildingId | null
 }
 
-export function CityScene({ onBuildingClaimed }: CitySceneProps): JSX.Element {
+export function CityScene({
+  onBuildingClaimed,
+  guidedBuildingId = null,
+}: CitySceneProps): JSX.Element {
   const clearSelection = useCityStore((state) => state.clearSelection)
 
   const handleBackgroundClick = (event: ThreeEvent<MouseEvent>) => {
@@ -58,10 +62,11 @@ export function CityScene({ onBuildingClaimed }: CitySceneProps): JSX.Element {
           <InteractiveBuilding
             key={placement.id}
             {...placement}
+            guided={guidedBuildingId === placement.id}
             onClaimed={onBuildingClaimed}
           />
         ))}
-        <CityCameraControls />
+        <CityCameraControls focusBuildingId={guidedBuildingId} />
       </group>
     </>
   )

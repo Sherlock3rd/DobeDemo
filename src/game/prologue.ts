@@ -17,6 +17,9 @@ export const PROLOGUE_STEPS = [
   'gang-dialogue',
   'gang-training',
   'meeting',
+  'formal-promotion',
+  'chapter-briefing',
+  'recycling-takeover',
   'complete',
 ] as const
 

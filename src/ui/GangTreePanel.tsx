@@ -48,6 +48,8 @@ export interface GangTreePanelProps {
   onStartRoleHandover?: (handover: RoleHandoverDefinition) => void
   prologueMeetingReady?: boolean
   onStartPrologueMeeting?: () => void
+  prologuePromotionReady?: boolean
+  onCompleteProloguePromotion?: () => void
   promotionCeremonyLevel?: number | null
   onPromotionCeremonyComplete?: () => void
 }
@@ -250,6 +252,8 @@ export function GangTreePanel({
   onStartRoleHandover,
   prologueMeetingReady = false,
   onStartPrologueMeeting,
+  prologuePromotionReady = false,
+  onCompleteProloguePromotion,
   promotionCeremonyLevel = null,
   onPromotionCeremonyComplete,
 }: GangTreePanelProps): JSX.Element | null {
@@ -351,6 +355,8 @@ export function GangTreePanel({
     currentRole.threshold !== getGangRole(nextLevel).threshold
   const startsPrologueMeeting =
     prologueMeetingReady && currentLevel === 7 && nextLevel === 8
+  const finishesProloguePromotion =
+    prologuePromotionReady && currentLevel === 7 && nextLevel === 8
   const canPromote =
     currentLevel < GANG_MAX_LEVEL &&
     totalReputation >= requiredReputation &&
@@ -585,11 +591,13 @@ export function GangTreePanel({
                     ? `还需 ${requiredReputation - totalReputation} 声望`
                     : startsPrologueMeeting
                       ? '条件已满足，参加正式成员资格会议'
-                      : crossesRole && !chapterComplete
-                        ? `需完成并领取${currentChapter.title}奖励`
-                        : handover
-                          ? `交接方式：${handover.modeLabel}`
-                          : '晋升条件已满足'}
+                      : finishesProloguePromotion
+                        ? '资格表决已通过，点击登记正式成员席位'
+                        : crossesRole && !chapterComplete
+                          ? `需完成并领取${currentChapter.title}奖励`
+                          : handover
+                            ? `交接方式：${handover.modeLabel}`
+                            : '晋升条件已满足'}
               </span>
             </div>
             <button
@@ -599,6 +607,11 @@ export function GangTreePanel({
                 if (startsPrologueMeeting && onStartPrologueMeeting) {
                   onStartPrologueMeeting()
                   setFeedback('委员会正在召集正式成员资格会议')
+                  return
+                }
+                if (finishesProloguePromotion && onCompleteProloguePromotion) {
+                  onCompleteProloguePromotion()
+                  setFeedback('正式成员席位正在登记')
                   return
                 }
                 const promotedRole = crossesRole ? getGangRole(nextLevel) : null
@@ -624,13 +637,15 @@ export function GangTreePanel({
                 ? '已满级'
                 : startsPrologueMeeting
                   ? '参加转正会议'
-                  : crossesRole
-                    ? handover?.mode === 'dialogue'
-                      ? '和平交接'
-                      : handover?.mode === 'battle'
-                        ? '推关挑战'
-                        : 'SUP 竞速挑战'
-                    : '晋升一级'}
+                  : finishesProloguePromotion
+                    ? '晋升正式成员'
+                    : crossesRole
+                      ? handover?.mode === 'dialogue'
+                        ? '和平交接'
+                        : handover?.mode === 'battle'
+                          ? '推关挑战'
+                          : 'SUP 竞速挑战'
+                      : '晋升一级'}
             </button>
           </div>
           <p className="gang-tree-panel__feedback" aria-live="polite">

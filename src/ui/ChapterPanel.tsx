@@ -1,7 +1,8 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import { equipmentConfig } from '../config/equipmentConfig'
 import { CAR_PART_QUALITY_INFO } from '../game/equipmentProgression'
 import {
+  CHAPTER_TWO_RECYCLING_TAKEOVER_TASK_ID,
   getChapterByNumber,
   getChapterTasks,
   getTaskProgress,
@@ -81,8 +82,8 @@ export function ChapterPanel({
   onChapterCompleted,
 }: ChapterPanelProps): JSX.Element {
   useAdventureStore()
-  useCityStore()
   useGangStore()
+  const claimedBuildingIds = useCityStore((state) => state.claimedBuildingIds)
   const activeChapterNumber = useChapterStore(
     (state) => state.activeChapterNumber,
   )
@@ -125,6 +126,15 @@ export function ChapterPanel({
   const claimedTaskCount = tasks.filter((task) =>
     claimedTaskIds.includes(task.id),
   ).length
+  const guideRecyclingTakeover =
+    chapter.number === 2 &&
+    prologueStep === 'chapter-briefing' &&
+    !claimedBuildingIds.includes('recycling-yard')
+  const guidedTaskButtonRef = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    if (guideRecyclingTakeover) guidedTaskButtonRef.current?.focus()
+  }, [guideRecyclingTakeover])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -135,7 +145,15 @@ export function ChapterPanel({
   }, [onClose])
 
   return (
-    <section className="chapter-panel" role="dialog" aria-labelledby={TITLE_ID}>
+    <section
+      className={
+        guideRecyclingTakeover
+          ? 'chapter-panel chapter-panel--guided'
+          : 'chapter-panel'
+      }
+      role="dialog"
+      aria-labelledby={TITLE_ID}
+    >
       <header className="chapter-panel__header">
         <div>
           <p className="chapter-panel__eyebrow">
@@ -173,6 +191,25 @@ export function ChapterPanel({
         </strong>
       </div>
 
+      {guideRecyclingTakeover ? (
+        <aside
+          className="chapter-panel__mandatory-guide"
+          role="status"
+          aria-label="强制引导：交接废车回收厂"
+        >
+          <span>MANDATORY FIRST STEP</span>
+          <div>
+            <strong>正式成员的第一项职责：接过废车回收厂管理权</strong>
+            <p>
+              先点击下方高亮任务前往城市地图；完成管理权交接后，第二章其他任务才开放操作。
+            </p>
+          </div>
+          <span className="chapter-panel__mandatory-arrow" aria-hidden="true">
+            ↓
+          </span>
+        </aside>
+      ) : null}
+
       <div className="chapter-panel__story">
         <p>{chapter.story}</p>
         <strong>{`已完成 ${completedCount}/${tasks.length}`}</strong>
@@ -183,10 +220,17 @@ export function ChapterPanel({
           const progress = taskProgress[index]
           const claimed = claimedTaskIds.includes(task.id)
           const parts = task.reward.carParts.map(partRewardLabel)
+          const isGuidedTask =
+            guideRecyclingTakeover &&
+            task.id === CHAPTER_TWO_RECYCLING_TAKEOVER_TASK_ID
+          const blockedByGuide = guideRecyclingTakeover && !isGuidedTask
           return (
             <article
               key={task.id}
               className="chapter-panel__task"
+              data-guide={
+                isGuidedTask ? 'target' : blockedByGuide ? 'blocked' : undefined
+              }
               data-state={
                 claimed ? 'claimed' : progress.complete ? 'complete' : 'active'
               }
@@ -213,7 +257,7 @@ export function ChapterPanel({
                 </span>
                 <button
                   type="button"
-                  disabled={!progress.complete || claimed}
+                  disabled={blockedByGuide || !progress.complete || claimed}
                   onClick={() => {
                     if (claimTask(task.id)) {
                       setFeedback(`${task.name}奖励已领取`)
@@ -222,13 +266,16 @@ export function ChapterPanel({
                 >
                   {claimed ? '已领取' : progress.complete ? '领取' : '进行中'}
                 </button>
-                {!progress.complete && (
+                {!progress.complete && !blockedByGuide && (
                   <button
+                    ref={isGuidedTask ? guidedTaskButtonRef : undefined}
                     type="button"
                     className="chapter-panel__task-go"
                     onClick={() => onNavigateTask(task.requirement)}
                   >
-                    {`前往${taskDestinationLabel(task.requirement)}`}
+                    {isGuidedTask
+                      ? '立即交接废车回收厂'
+                      : `前往${taskDestinationLabel(task.requirement)}`}
                   </button>
                 )}
               </div>

@@ -110,7 +110,9 @@ const MODAL_KINDS = new Set([
 interface QueuedNarrative {
   event: NarrativeEvent
   after?:
-    'gangTree' | { kind: 'assessmentMeeting'; completedChapterNumber: number }
+    | 'gangTree'
+    | 'chapters'
+    | { kind: 'assessmentMeeting'; completedChapterNumber: number }
 }
 
 function resolveActiveOverlay(
@@ -160,6 +162,7 @@ export default function App(): JSX.Element {
       eventId: NarrativeEventId,
       after?:
         | 'gangTree'
+        | 'chapters'
         | { kind: 'assessmentMeeting'; completedChapterNumber: number },
     ): void => {
       if (
@@ -275,6 +278,18 @@ export default function App(): JSX.Element {
             completedChapterNumber: 1,
           })
           return
+        case 'formal-promotion':
+          setPlayOverlay({ kind: 'gangTree' })
+          return
+        case 'chapter-briefing':
+          if (seenNarrativeIds.includes('chapter-start:2')) {
+            setPlayOverlay({ kind: 'chapters' })
+          } else {
+            enqueueNarrative('chapter-start:2', 'chapters')
+          }
+          return
+        case 'recycling-takeover':
+          return
         case 'complete':
           enqueueNarrative(`chapter-start:${activeChapterNumber}`)
           return
@@ -286,7 +301,13 @@ export default function App(): JSX.Element {
     return () => {
       cancelled = true
     }
-  }, [activeChapterNumber, enqueueNarrative, playOverlay.kind, prologueStep])
+  }, [
+    activeChapterNumber,
+    enqueueNarrative,
+    playOverlay.kind,
+    prologueStep,
+    seenNarrativeIds,
+  ])
 
   useEffect(() => {
     if (
@@ -352,6 +373,17 @@ export default function App(): JSX.Element {
   const navigateFromChapter = (requirement: ChapterTaskRequirement): void => {
     switch (requirement.kind) {
       case 'building-claimed':
+        setPlayOverlay({ kind: 'none' })
+        if (
+          requirement.buildingId === 'recycling-yard' &&
+          prologueStep === 'chapter-briefing'
+        ) {
+          advancePrologue('chapter-briefing', 'recycling-takeover')
+        }
+        if (claimedBuildingIds.includes(requirement.buildingId)) {
+          selectBuilding(requirement.buildingId)
+        }
+        return
       case 'building-level':
         setPlayOverlay({ kind: 'none' })
         if (claimedBuildingIds.includes(requirement.buildingId)) {
@@ -513,6 +545,8 @@ export default function App(): JSX.Element {
     }
     if (activeNarrative.after === 'gangTree') {
       setPlayOverlay({ kind: 'gangTree' })
+    } else if (activeNarrative.after === 'chapters') {
+      setPlayOverlay({ kind: 'chapters' })
     } else if (activeNarrative.after?.kind === 'assessmentMeeting') {
       setPlayOverlay(activeNarrative.after)
     }
@@ -571,9 +605,20 @@ export default function App(): JSX.Element {
           >
             <Suspense fallback={null}>
               <CityScene
-                onBuildingClaimed={(buildingId) =>
-                  setPlayOverlay({ kind: 'buildingUnlock', buildingId })
+                guidedBuildingId={
+                  prologueStep === 'recycling-takeover'
+                    ? 'recycling-yard'
+                    : null
                 }
+                onBuildingClaimed={(buildingId) => {
+                  if (
+                    buildingId === 'recycling-yard' &&
+                    prologueStep === 'recycling-takeover'
+                  ) {
+                    advancePrologue('recycling-takeover', 'complete')
+                  }
+                  setPlayOverlay({ kind: 'buildingUnlock', buildingId })
+                }}
               />
             </Suspense>
           </Canvas>
@@ -626,6 +671,12 @@ export default function App(): JSX.Element {
             })
           }
           onRolePromoted={(level) => {
+            if (level === 8 && prologueStep === 'formal-promotion') {
+              if (advancePrologue('formal-promotion', 'chapter-briefing')) {
+                enqueueNarrative('chapter-start:2', 'chapters')
+              }
+              return
+            }
             enqueueNarrative(`promotion:${level}`)
           }}
           prologueMeetingReady={prologueStep === 'gang-training'}
@@ -637,6 +688,8 @@ export default function App(): JSX.Element {
               })
             }
           }}
+          prologuePromotionReady={prologueStep === 'formal-promotion'}
+          onCompleteProloguePromotion={() => completeRoleHandover(8)}
         />
         {activeOverlay.kind === 'roleHandover' &&
         getRoleHandover(activeOverlay.targetLevel) ? (
@@ -780,8 +833,18 @@ export default function App(): JSX.Element {
             }}
             onContinue={() => {
               const buildingId = activeOverlay.buildingId
-              setPlayOverlay({ kind: 'none' })
-              enqueueNarrative(`building-claimed:${buildingId}`)
+              const eventId = `building-claimed:${buildingId}` as const
+              const returnsToChapter =
+                buildingId === 'recycling-yard' && activeChapterNumber === 2
+              if (returnsToChapter && seenNarrativeIds.includes(eventId)) {
+                setPlayOverlay({ kind: 'chapters' })
+              } else {
+                setPlayOverlay({ kind: 'none' })
+                enqueueNarrative(
+                  eventId,
+                  returnsToChapter ? 'chapters' : undefined,
+                )
+              }
             }}
           />
         ) : null}
@@ -820,12 +883,9 @@ export default function App(): JSX.Element {
                 selection.completedChapterNumber === 1 &&
                 prologueStep === 'meeting'
               ) {
-                const promotion = useGangStore
-                  .getState()
-                  .promoteOneLevel(Date.now(), true)
-                if (!promotion.applied) return
-                if (!advancePrologue('meeting', 'complete')) return
-                setPromotionCeremonyLevel(8)
+                if (!advancePrologue('meeting', 'formal-promotion')) return
+                setPlayOverlay({ kind: 'gangTree' })
+                return
               }
               setPlayOverlay({ kind: 'none' })
               enqueueNarrative(

@@ -55,5 +55,43 @@ export function PrologueGuide({
     )
   }
 
+  if (step === 'formal-promotion') {
+    return (
+      <aside className="prologue-guide" role="status">
+        <span>FULL PATCH · 资格通过</span>
+        <strong>亲自完成正式成员晋升</strong>
+        <p>
+          委员会已经通过表决。前往帮派权力树，点击“晋升正式成员”登记新席位。
+        </p>
+        <button type="button" onClick={onOpenGangTree}>
+          前往完成晋升
+        </button>
+      </aside>
+    )
+  }
+
+  if (step === 'chapter-briefing') {
+    return (
+      <aside className="prologue-guide" role="status">
+        <span>CHAPTER 2 · 任务说明</span>
+        <strong>查看正式成员的第一项职责</strong>
+        <p>返回章节任务，先接过废车回收厂管理权，再开始本章其他行动。</p>
+        <button type="button" onClick={onOpenTasks}>
+          查看第二章任务
+        </button>
+      </aside>
+    )
+  }
+
+  if (step === 'recycling-takeover') {
+    return (
+      <aside className="prologue-guide" role="status">
+        <span>MANDATORY · 管理权交接</span>
+        <strong>点击废车回收厂上方的任务图标</strong>
+        <p>镜头已经定位到目标建筑。完成帮派内部管理权交接后，再继续第二章。</p>
+      </aside>
+    )
+  }
+
   return null
 }

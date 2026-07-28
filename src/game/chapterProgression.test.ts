@@ -3,6 +3,7 @@ import { createInitialAdventureState } from '../store/adventureMigration'
 import { createInitialBuildingProgress } from '../store/cityProgressMigration'
 import {
   CHAPTERS,
+  CHAPTER_TWO_RECYCLING_TAKEOVER_TASK_ID,
   getChapterForGangLevel,
   getChapterTaskPackages,
   getChapterTasks,
@@ -54,7 +55,7 @@ describe('chapter progression', () => {
     expect(getChapterForGangLevel(50).number).toBe(7)
   })
 
-  it('combines one selected meeting package with three mandatory tasks', () => {
+  it('combines one selected package with fixed duties and the chapter-two takeover', () => {
     expect(getChapterTasks(1)).toHaveLength(3)
     for (let chapterNumber = 2; chapterNumber <= 7; chapterNumber += 1) {
       const packages = getChapterTaskPackages(chapterNumber)
@@ -65,12 +66,24 @@ describe('chapter progression', () => {
         expect(taskPackage.tasks.length).toBeGreaterThanOrEqual(minimum)
         expect(taskPackage.tasks.length).toBeLessThanOrEqual(maximum)
         const tasks = getChapterTasks(chapterNumber, taskPackage.id)
-        expect(tasks).toHaveLength(taskPackage.tasks.length + 3)
+        expect(tasks).toHaveLength(
+          taskPackage.tasks.length + 3 + (chapterNumber === 2 ? 1 : 0),
+        )
         expect(
           tasks
             .filter((task) => task.id.includes('-extra-'))
             .map((task) => task.requirement.kind),
         ).toEqual(['gang-level', 'campaign-clears', 'racing-clears'])
+        if (chapterNumber === 2) {
+          expect(tasks[0]).toMatchObject({
+            id: CHAPTER_TWO_RECYCLING_TAKEOVER_TASK_ID,
+            requirement: {
+              kind: 'building-claimed',
+              buildingId: 'recycling-yard',
+              target: 1,
+            },
+          })
+        }
       }
     }
   })
