@@ -97,7 +97,6 @@ export const GANG_PHOTO_WALL: readonly GangWallTier[] = [
       },
       empty('t1-empty-1'),
       empty('t1-empty-2'),
-      empty('t1-empty-3'),
     ],
   },
   {
@@ -131,7 +130,6 @@ export const GANG_PHOTO_WALL: readonly GangWallTier[] = [
       },
       empty('t2-empty-1'),
       empty('t2-empty-2'),
-      empty('t2-empty-3'),
     ],
   },
   {

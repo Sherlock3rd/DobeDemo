@@ -8,7 +8,7 @@ import {
 } from './gangPhotoWall'
 
 describe('gang photo wall', () => {
-  it('uses the ten Plan A hierarchy tiers with one to five photo slots', () => {
+  it('uses the ten Plan A hierarchy tiers with no more than two empty slots', () => {
     expect(GANG_PHOTO_WALL).toHaveLength(10)
     expect(GANG_PHOTO_WALL.map((tier) => tier.tier)).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -16,6 +16,10 @@ describe('gang photo wall', () => {
     for (const tier of GANG_PHOTO_WALL) {
       expect(tier.slots.length).toBeGreaterThanOrEqual(1)
       expect(tier.slots.length).toBeLessThanOrEqual(5)
+      const emptySlotCount = tier.slots.filter(
+        (slot) => slot.kind === 'empty',
+      ).length
+      expect(emptySlotCount).toBeLessThanOrEqual(2)
     }
   })
 

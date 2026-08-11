@@ -7777,7 +7777,7 @@
 
 .gang-photo-wall__player > span {
   width: 2.6rem;
-  aspect-ratio: 0.86;
+  aspect-ratio: 1;
   border: 2px solid #fbbf24;
   background-repeat: no-repeat;
   background-size: 400% 200%;
@@ -7865,6 +7865,13 @@
   background-repeat: no-repeat;
   background-size: 400% 200%;
   filter: sepia(0.18) contrast(1.05);
+}
+
+.gang-photo-wall__photo[data-kind='person'] .gang-photo-wall__image {
+  justify-self: center;
+  width: min(100%, 10rem);
+  height: auto;
+  aspect-ratio: 1;
 }
 
 .gang-photo-wall__image::after {
