@@ -37,10 +37,10 @@ describe('BattleUnit', () => {
     expect(frameMock.mock.calls[0]?.[0]).toBeTypeOf('function')
   })
 
-  it('maps foreman appearance to capsule shotgun', () => {
+  it('maps the first combat hero to Maeve’s slim rifle silhouette', () => {
     const appearance = appearanceForUnit(ally)
-    expect(appearance.silhouette).toBe('capsule')
-    expect(appearance.weapon).toBe('shotgun')
+    expect(appearance.silhouette).toBe('slim')
+    expect(appearance.weapon).toBe('rifle')
     const { container } = render(
       <BattleUnit unit={ally} appearance={appearance} />,
     )

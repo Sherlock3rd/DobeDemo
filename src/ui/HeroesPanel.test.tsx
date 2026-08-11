@@ -56,8 +56,8 @@ describe('HeroesPanel', () => {
   it('lists all three heroes, locking those above gang level', () => {
     render(<HeroesPanel onClose={() => {}} />)
     const roster = within(screen.getByRole('navigation', { name: '英雄列表' }))
-    expect(roster.getByText('Thomas Shelby')).toBeInTheDocument()
-    expect(roster.getByText('剃刀党掌权人 · Lv.1')).toBeInTheDocument()
+    expect(roster.getByText('Maeve “Red” Quinn')).toBeInTheDocument()
+    expect(roster.getByText('主席派来的调查员 · Lv.1')).toBeInTheDocument()
     expect(roster.getByText('Arthur Shelby')).toBeInTheDocument()
     expect(
       roster.getByText('技术骨干席位 · 帮派 Lv.16 接掌后加入'),
@@ -78,7 +78,7 @@ describe('HeroesPanel', () => {
     expect(identity).not.toBeNull()
     expect(identityCopy).not.toBeNull()
     const name = within(identityCopy as HTMLElement).getByRole('heading', {
-      name: 'Thomas Shelby',
+      name: 'Maeve “Red” Quinn',
     })
     const level = within(identityCopy as HTMLElement).getByText('Lv.1')
     const power = within(identityCopy as HTMLElement).getByLabelText(
@@ -137,13 +137,15 @@ describe('HeroesPanel', () => {
     expect(
       portrait.querySelector('.heroes-panel__portrait-head'),
     ).not.toBeInTheDocument()
-    expect(screen.getByText('剃刀党 · 见习席位 · 后排火力')).toBeInTheDocument()
+    expect(
+      screen.getByText('剃刀党 · 正式成员席位 · 后排火力'),
+    ).toBeInTheDocument()
     expect(identityStyle.zIndex).toBe('2')
     expect(powerStyle.position).toBe('relative')
     expect(powerStyle.zIndex).toBe('1')
   })
 
-  it('upgrades foreman spending shared exp when cap allows', async () => {
+  it('upgrades the first combat hero spending shared exp when cap allows', async () => {
     useGangStore.setState({
       totalReputation: 60,
       currentLevel: 3,
@@ -154,7 +156,7 @@ describe('HeroesPanel', () => {
     await userEvent.click(screen.getByRole('button', { name: /提升至 Lv\.2/ }))
     expect(useAdventureStore.getState().heroLevels.foreman).toBe(2)
     expect(screen.getByRole('status')).toHaveTextContent(
-      '已升级 Thomas Shelby 至 Lv.2',
+      '已升级 Maeve “Red” Quinn 至 Lv.2',
     )
   })
 
@@ -292,7 +294,7 @@ describe('HeroesPanel', () => {
     await userEvent.click(
       screen.getByRole('button', { name: '车辆 · 灰狐旧改车' }),
     )
-    expect(screen.getByText('当前装备 · Thomas Shelby')).toBeInTheDocument()
+    expect(screen.getByText('当前装备 · Maeve “Red” Quinn')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '更换车辆' }))
     expect(
       screen.getByRole('heading', { name: '选择车辆' }),

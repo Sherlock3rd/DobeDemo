@@ -31,6 +31,13 @@ describe('FormationPanel', () => {
     expect(screen.getAllByRole('button', { name: /阵位/ })).toHaveLength(5)
   })
 
+  it('deploys Maeve as the first combat hero and never lists Thomas as a unit', () => {
+    render(<FormationPanel stage={1} onCancel={() => {}} onStart={() => {}} />)
+
+    expect(screen.getAllByText(/Maeve “Red” Quinn/).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Thomas Shelby/)).not.toBeInTheDocument()
+  })
+
   it('shows both team powers using position-modified stats', () => {
     render(<FormationPanel stage={1} onCancel={() => {}} onStart={() => {}} />)
     const ourPower = computeTeamPowerForFormation(

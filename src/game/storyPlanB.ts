@@ -553,16 +553,16 @@ export const STORY_STEPS: readonly StoryStep[] = [
     number: 25,
     act: 2,
     time: '26:40',
-    title: '刚启用的场子立刻遭袭',
-    kicker: '叛徒线索',
+    title: '主席派 Maeve 来查这桩案子',
+    kicker: '首名英雄加入',
     speaker: 'Maeve Quinn',
     lines: [
-      '你刚把成员派进回收场，黑手党的摩托就准确找到了你的工位；我撞开他们才保住这条线。',
-      '连续两次袭击都知道你的精确路线，帮派内部一定有人报信。主席派我与你一起把内鬼挖出来。',
+      '你刚把成员派进回收场，黑手党的摩托就准确找到了工位；我撞开他们，才保住这条刚恢复的分拣线。',
+      '连续两次袭击都掌握了精确路线，帮派内部一定有人报信。主席派我加入你的行动队：你查清泄密链，我替你带人清场。',
     ],
-    objective: '完成回收场派驻，在袭击后与 Maeve 开始内鬼调查。',
+    objective: '接收首名英雄 Maeve “Red” Quinn 的协助，开始调查内鬼案。',
     artwork: 'assassination-rescue',
-    action: { kind: 'continue', label: '与 Maeve 追查泄密者' },
+    action: { kind: 'continue', label: '让 Maeve 加入行动队' },
   },
   {
     number: 26,
@@ -573,9 +573,9 @@ export const STORY_STEPS: readonly StoryStep[] = [
     speaker: 'Maeve Quinn',
     lines: [
       '袭击者的联络链通向五个城外据点，内鬼只用代号与他们联系。',
-      '从最外围逐个打进去；第五处留一个活口，我会在撤离路上让他交出那个代号。',
+      '你留在后方统筹线索，不必亲自进入火线。把我编入行动队，从最外围逐个打进去；第五处留一个活口。',
     ],
-    objective: '连续完成 5 个推关关卡，取得叛徒代号。',
+    objective: '以 Maeve 为首名推关英雄连续完成 5 关，取得叛徒代号。',
     artwork: 'informant-interrogation',
     action: {
       kind: 'campaign',
@@ -889,7 +889,7 @@ export function getStoryRank(stepNumber: number): StoryRank {
 
 export function getStoryVisibility(stepNumber: number) {
   return {
-    heroes: stepNumber >= 7,
+    heroes: stepNumber >= 25,
     gangTree: stepNumber >= 5,
     story: stepNumber >= 10,
     campaign: stepNumber >= 26,

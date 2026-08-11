@@ -50,14 +50,26 @@ describe('Plan B story progression', () => {
       money: false,
     })
     expect(getStoryVisibility(8)).toMatchObject({
-      heroes: true,
+      heroes: false,
       gangTree: true,
       campaign: false,
       money: true,
     })
+    expect(getStoryVisibility(25).heroes).toBe(true)
     expect(getStoryVisibility(26).campaign).toBe(true)
     expect(getStoryVisibility(34).oil).toBe(true)
     expect(getStoryVisibility(38).materials).toBe(true)
+  })
+
+  it('introduces the first combat hero before campaign and keeps Thomas out of the formation story', () => {
+    const heroArrival = STORY_STEPS[24]
+    const firstCampaign = STORY_STEPS[25]
+
+    expect(heroArrival.title).toContain('Maeve')
+    expect(heroArrival.kicker).toBe('首名英雄加入')
+    expect(heroArrival.objective).toContain('首名英雄 Maeve “Red” Quinn')
+    expect(firstCampaign.lines.join('')).toContain('不必亲自进入火线')
+    expect(firstCampaign.objective).toContain('以 Maeve 为首名推关英雄')
   })
 
   it('places the customized 3D vehicle workshops into the Plan B route', () => {

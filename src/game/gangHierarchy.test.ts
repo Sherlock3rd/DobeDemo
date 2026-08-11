@@ -28,14 +28,15 @@ describe('gangHierarchy', () => {
     expect(GANG_CORE_SEATS.map(roleForCoreSeat)).toEqual(GANG_ROLES)
   })
 
-  it('maps every released hero to the matching gang portrait, name and core seat', () => {
+  it('keeps Thomas as the player identity while mapping combat heroes to gang members', () => {
     expect(GANG_HERO_PROFILES.foreman).toMatchObject({
-      seatThreshold: 1,
-      portraitIndex: 0,
+      seatThreshold: 8,
+      portraitIndex: 2,
     })
-    expect(heroesConfig.heroes.foreman.name).toBe(PLAYER_GANG_LEADER)
+    expect(heroesConfig.heroes.foreman.name).toBe('Maeve “Red” Quinn')
+    expect(heroesConfig.heroes.foreman.name).not.toBe(PLAYER_GANG_LEADER)
 
-    for (const heroId of ['anvil', 'skyline'] as const) {
+    for (const heroId of ['foreman', 'anvil', 'skyline'] as const) {
       const profile = GANG_HERO_PROFILES[heroId]
       const seat = getGangCoreSeat(profile.seatThreshold)
       expect(profile.portraitIndex).toBe(seat.portraitIndex)

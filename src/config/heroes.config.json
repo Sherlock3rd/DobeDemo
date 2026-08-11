@@ -53,8 +53,8 @@
   },
   "heroes": {
     "foreman": {
-      "name": "Thomas Shelby",
-      "alias": "Tommy",
+      "name": "Maeve “Red” Quinn",
+      "alias": "Red",
       "role": "back",
       "defaultSlot": { "row": "back", "index": 1 },
       "unlockGangLevel": 1,
@@ -65,8 +65,8 @@
       "atkPerLevel": 10,
       "defPerLevel": 3,
       "skill": {
-        "name": "散射压制",
-        "description": "射击主目标造成高额伤害，并对其他敌人造成伤害。",
+        "name": "红线清场",
+        "description": "精准射击主目标造成高额伤害，并压制周围敌人。",
         "targetMultiplier": 2.5,
         "splashMultiplier": 0.8,
         "initialCooldownTicks": 30,
@@ -76,10 +76,10 @@
         "ragePerHitTaken": 10
       },
       "appearance": {
-        "primaryColor": "#e8b83a",
-        "accentColor": "#3a3a3a",
-        "silhouette": "capsule",
-        "weapon": "shotgun"
+        "primaryColor": "#7f1d1d",
+        "accentColor": "#e7d4ad",
+        "silhouette": "slim",
+        "weapon": "rifle"
       }
     },
     "anvil": {

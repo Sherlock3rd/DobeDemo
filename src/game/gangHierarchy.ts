@@ -104,9 +104,9 @@ export const GANG_CORE_SEATS: readonly GangCoreSeat[] = [
 
 export const GANG_HERO_PROFILES: Readonly<Record<HeroId, GangHeroProfile>> = {
   foreman: {
-    seatThreshold: 1,
-    portraitIndex: 0,
-    relation: '剃刀党掌权人',
+    seatThreshold: 8,
+    portraitIndex: 2,
+    relation: '主席派来的调查员',
   },
   anvil: {
     seatThreshold: 16,
