@@ -33,6 +33,25 @@ describe('useStoryStore', () => {
       enabled: true,
       currentStepNumber: 1,
       briefedStepNumbers: [],
+      claimedGangWallRewardIds: [],
     })
+  })
+
+  it('allows only the previous tier rewards after their story release step', () => {
+    useStoryStore.setState({ currentStepNumber: 11 })
+    expect(
+      useStoryStore.getState().claimGangWallReward('repair-shop-vacancy'),
+    ).toBe(true)
+    expect(useStoryStore.getState().claimGangWallReward('eddie-operator')).toBe(
+      false,
+    )
+    expect(useStoryStore.getState().claimGangWallReward('maeve-hero')).toBe(
+      false,
+    )
+
+    useStoryStore.setState({ currentStepNumber: 13 })
+    expect(useStoryStore.getState().claimGangWallReward('eddie-operator')).toBe(
+      true,
+    )
   })
 })

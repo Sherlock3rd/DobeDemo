@@ -42,6 +42,27 @@ describe('Plan B story progression', () => {
     expect(getStoryClaimBuilding(22)).toBeNull()
   })
 
+  it('gates early Plan B people and buildings behind explicit photo-wall clicks', () => {
+    expect(STORY_STEPS[10].action).toMatchObject({
+      kind: 'gang-tree',
+      rewardId: 'repair-shop-vacancy',
+      buildingId: 'repair-shop',
+    })
+    expect(STORY_STEPS[12].action).toMatchObject({
+      kind: 'gang-tree',
+      rewardId: 'eddie-operator',
+    })
+    expect(STORY_STEPS[22].action).toMatchObject({
+      kind: 'gang-tree',
+      rewardId: 'freddie-yard-manager',
+      buildingId: 'recycling-yard',
+    })
+    expect(STORY_STEPS[24].action).toMatchObject({
+      kind: 'gang-tree',
+      rewardId: 'maeve-hero',
+    })
+  })
+
   it('reveals HUD systems only when the story reaches them', () => {
     expect(getStoryVisibility(1)).toMatchObject({
       heroes: false,

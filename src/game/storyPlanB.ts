@@ -1,5 +1,6 @@
 import type { BuildingId } from './cityTypes'
 import type { DevelopmentTab } from '../ui/HeroesPanel'
+import type { GangWallRewardId } from './gangPhotoWall'
 
 export type StoryArtworkId =
   | 'police-chase'
@@ -40,7 +41,12 @@ export type StoryAction =
   | { kind: 'building-claim'; buildingId: BuildingId; label: string }
   | { kind: 'building-upgrade'; buildingId: BuildingId; label: string }
   | { kind: 'campaign'; targetStage: number; label: string }
-  | { kind: 'gang-tree'; label: string }
+  | {
+      kind: 'gang-tree'
+      label: string
+      rewardId?: GangWallRewardId
+      buildingId?: BuildingId
+    }
   | { kind: 'meeting'; label: string }
 
 export interface StoryStep {
@@ -318,12 +324,13 @@ export const STORY_STEPS: readonly StoryStep[] = [
       '表决已经通过，你现在是正式成员。修车厂也一直是帮派产业，今天不改变它的归属。',
       '去入口确认交接；从那一锤落下开始，由你负责对账、派人，并承担经营结果。',
     ],
-    objective: '在城市地图点击修车厂上方的可交接标记。',
+    objective: '先在照片墙点击空置修车厂，再到城市地图确认管理交接。',
     artwork: 'workshop-takeover',
     action: {
-      kind: 'building-claim',
+      kind: 'gang-tree',
+      rewardId: 'repair-shop-vacancy',
       buildingId: 'repair-shop',
-      label: '前往修车厂',
+      label: '打开照片墙 · 接管修车厂',
     },
   },
   {
@@ -356,9 +363,13 @@ export const STORY_STEPS: readonly StoryStep[] = [
       '工位已经修好，接下来不能让你每天亲自守着扳手。',
       '把见习成员 Eddie 派驻进来；他负责日常维修，你负责人员安排和最终产出。',
     ],
-    objective: '完成成员派驻，开启修车厂自动经营。',
+    objective: '在照片墙点击 Eddie，将他派驻到修车厂。',
     artwork: 'workshop-takeover',
-    action: { kind: 'continue', label: '派驻 Eddie' },
+    action: {
+      kind: 'gang-tree',
+      rewardId: 'eddie-operator',
+      label: '打开照片墙 · 派驻 Eddie',
+    },
   },
   {
     number: 14,
@@ -522,12 +533,13 @@ export const STORY_STEPS: readonly StoryStep[] = [
       '会议已经任命你为执行者，Freddie 留下的回收场钥匙现在正式交到你手里。',
       '去入口完成内部交接；从此你不只使用设备，还要对人员、账目和流出的每件装备负责。',
     ],
-    objective: '在地图完成废车回收厂管理权交接。',
+    objective: '先在照片墙接过 Freddie 的职责，再到地图完成回收厂交接。',
     artwork: 'workshop-takeover',
     action: {
-      kind: 'building-claim',
+      kind: 'gang-tree',
+      rewardId: 'freddie-yard-manager',
       buildingId: 'recycling-yard',
-      label: '前往废车回收厂',
+      label: '打开照片墙 · 接过 Freddie 的职责',
     },
   },
   {
@@ -560,9 +572,13 @@ export const STORY_STEPS: readonly StoryStep[] = [
       '你刚把成员派进回收场，黑手党的摩托就准确找到了工位；我撞开他们，才保住这条刚恢复的分拣线。',
       '连续两次袭击都掌握了精确路线，帮派内部一定有人报信。主席派我加入你的行动队：你查清泄密链，我替你带人清场。',
     ],
-    objective: '接收首名英雄 Maeve “Red” Quinn 的协助，开始调查内鬼案。',
+    objective: '在照片墙点击首名英雄 Maeve “Red” Quinn，将她编入行动队。',
     artwork: 'assassination-rescue',
-    action: { kind: 'continue', label: '让 Maeve 加入行动队' },
+    action: {
+      kind: 'gang-tree',
+      rewardId: 'maeve-hero',
+      label: '打开照片墙 · 编入 Maeve',
+    },
   },
   {
     number: 26,
@@ -609,12 +625,13 @@ export const STORY_STEPS: readonly StoryStep[] = [
       '道路成员的任命已经生效，前任负责人也把商业街的钥匙和旧账送来了。',
       '这条街一直认剃刀党的标志；现在改的是内部负责人，以后商户的问题先到你的桌上。',
     ],
-    objective: '完成商业街管理权交接。',
+    objective: '先在照片墙接过 Merrill 的账本职责，再到地图完成商业街交接。',
     artwork: 'workshop-takeover',
     action: {
-      kind: 'building-claim',
+      kind: 'gang-tree',
+      rewardId: 'merrill-street-manager',
       buildingId: 'commercial-street',
-      label: '前往商业街',
+      label: '打开照片墙 · 接过商业街职责',
     },
   },
   {
@@ -677,12 +694,13 @@ export const STORY_STEPS: readonly StoryStep[] = [
       '你带回背章和路线图，会议已经确认你接任路线队长。',
       '给所有路线供血的加油站也随职位交给你管理；去完成内部交接，别让帮派车辆因缺油停下。',
     ],
-    objective: '完成加油站管理权交接。',
+    objective: '先在照片墙接管 Billy 留下的燃油网络，再到地图完成交接。',
     artwork: 'workshop-takeover',
     action: {
-      kind: 'building-claim',
+      kind: 'gang-tree',
+      rewardId: 'billy-gas-manager',
       buildingId: 'gas-station',
-      label: '前往加油站',
+      label: '打开照片墙 · 接管燃油网络',
     },
   },
   {
@@ -749,12 +767,13 @@ export const STORY_STEPS: readonly StoryStep[] = [
       '会议接受了我的辞任，你现在是财务官。帮派的物资账最终都落在这座金属加工厂。',
       '工厂从来属于帮派；我会把仓位、车队和排班表逐项交给你，之后由你统一结算。',
     ],
-    objective: '完成金属加工厂管理权交接。',
+    objective: '先在照片墙接过 Dale 的物资账，再到地图完成加工厂交接。',
     artwork: 'workshop-takeover',
     action: {
-      kind: 'building-claim',
+      kind: 'gang-tree',
+      rewardId: 'dale-plant-manager',
       buildingId: 'metalworking-plant',
-      label: '前往金属加工厂',
+      label: '打开照片墙 · 接过物资账',
     },
   },
   {
@@ -902,5 +921,8 @@ export function getStoryVisibility(stepNumber: number) {
 
 export function getStoryClaimBuilding(stepNumber: number): BuildingId | null {
   const action = getStoryStep(stepNumber)?.action
-  return action?.kind === 'building-claim' ? action.buildingId : null
+  if (action?.kind === 'building-claim') return action.buildingId
+  return action?.kind === 'gang-tree' && action.buildingId
+    ? action.buildingId
+    : null
 }

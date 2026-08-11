@@ -1,6 +1,18 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { STORY_COMPLETE_STEP, getStoryStep } from '../game/storyPlanB'
+import {
+  STORY_COMPLETE_STEP,
+  getStoryRank,
+  getStoryStep,
+} from '../game/storyPlanB'
+import {
+  getGangWallReward,
+  getGangWallTierForSystemLevel,
+  getGangWallTierForReward,
+  getHistoricalGangWallRewards,
+  isGangWallRewardId,
+  type GangWallRewardId,
+} from '../game/gangPhotoWall'
 import { createSafeStorage } from './safeStorage'
 
 export const STORY_STORAGE_KEY = 'dobe-story-plan-b-v1'
@@ -9,8 +21,10 @@ interface StoryState {
   enabled: boolean
   currentStepNumber: number
   briefedStepNumbers: number[]
+  claimedGangWallRewardIds: GangWallRewardId[]
   advance: (expectedStepNumber: number) => boolean
   markBriefed: (stepNumber: number) => void
+  claimGangWallReward: (rewardId: GangWallRewardId) => boolean
   setEnabled: (enabled: boolean) => void
   reset: () => void
 }
@@ -34,12 +48,23 @@ function normalizeBriefed(value: unknown): number[] {
   ]
 }
 
+function normalizeClaimedRewards(
+  value: unknown,
+  currentStepNumber: number,
+): GangWallRewardId[] {
+  const saved = Array.isArray(value)
+    ? value.filter(isGangWallRewardId)
+    : getHistoricalGangWallRewards(currentStepNumber)
+  return [...new Set(saved)]
+}
+
 export const useStoryStore = create<StoryState>()(
   persist(
     (set, get) => ({
       enabled: true,
       currentStepNumber: 1,
       briefedStepNumbers: [],
+      claimedGangWallRewardIds: [],
       advance: (expectedStepNumber) => {
         if (get().currentStepNumber !== expectedStepNumber) return false
         set({
@@ -60,17 +85,40 @@ export const useStoryStore = create<StoryState>()(
               },
         )
       },
+      claimGangWallReward: (rewardId) => {
+        const state = get()
+        if (state.claimedGangWallRewardIds.includes(rewardId)) return false
+        const reward = getGangWallReward(rewardId)
+        const storyRank = getGangWallTierForSystemLevel(
+          getStoryRank(state.currentStepNumber).systemLevel,
+        )
+        const rewardTier = getGangWallTierForReward(reward.id)
+        if (
+          rewardTier.tier !== storyRank.tier - 1 ||
+          reward.availableFromStep > state.currentStepNumber
+        ) {
+          return false
+        }
+        set({
+          claimedGangWallRewardIds: [
+            ...state.claimedGangWallRewardIds,
+            rewardId,
+          ],
+        })
+        return true
+      },
       setEnabled: (enabled) => set({ enabled }),
       reset: () =>
         set({
           enabled: true,
           currentStepNumber: 1,
           briefedStepNumbers: [],
+          claimedGangWallRewardIds: [],
         }),
     }),
     {
       name: STORY_STORAGE_KEY,
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted) => {
         const source =
@@ -79,18 +127,25 @@ export const useStoryStore = create<StoryState>()(
                 enabled?: unknown
                 currentStepNumber?: unknown
                 briefedStepNumbers?: unknown
+                claimedGangWallRewardIds?: unknown
               })
             : {}
+        const currentStepNumber = normalizeStep(source.currentStepNumber)
         return {
           enabled: source.enabled !== false,
-          currentStepNumber: normalizeStep(source.currentStepNumber),
+          currentStepNumber,
           briefedStepNumbers: normalizeBriefed(source.briefedStepNumbers),
+          claimedGangWallRewardIds: normalizeClaimedRewards(
+            source.claimedGangWallRewardIds,
+            currentStepNumber,
+          ),
         }
       },
       partialize: (state) => ({
         enabled: state.enabled,
         currentStepNumber: state.currentStepNumber,
         briefedStepNumbers: state.briefedStepNumbers,
+        claimedGangWallRewardIds: state.claimedGangWallRewardIds,
       }),
     },
   ),

@@ -197,12 +197,20 @@ export default function App(): JSX.Element {
   const storyEnabled = useStoryStore((s) => s.enabled)
   const storyStepNumber = useStoryStore((s) => s.currentStepNumber)
   const storyBriefedStepNumbers = useStoryStore((s) => s.briefedStepNumbers)
+  const claimedGangWallRewardIds = useStoryStore(
+    (s) => s.claimedGangWallRewardIds,
+  )
   const advanceStory = useStoryStore((s) => s.advance)
   const markStoryBriefed = useStoryStore((s) => s.markBriefed)
   const storyStep = storyEnabled ? getStoryStep(storyStepNumber) : null
-  const storyClaimBuilding = storyEnabled
-    ? getStoryClaimBuilding(storyStepNumber)
-    : null
+  const storyWallGateSatisfied =
+    storyStep?.action.kind !== 'gang-tree' ||
+    !storyStep.action.rewardId ||
+    claimedGangWallRewardIds.includes(storyStep.action.rewardId)
+  const storyClaimBuilding =
+    storyEnabled && storyWallGateSatisfied
+      ? getStoryClaimBuilding(storyStepNumber)
+      : null
   const activeOverlay = resolveActiveOverlay(playOverlay, selectedBuildingId)
   const activeNarrative = narrativeQueue[0] ?? null
 
@@ -500,9 +508,11 @@ export default function App(): JSX.Element {
 
   useEffect(() => {
     if (!storyEnabled || !storyStep) return
+    const claimBuildingId = getStoryClaimBuilding(storyStep.number)
     if (
-      storyStep.action.kind === 'building-claim' &&
-      claimedBuildingIds.includes(storyStep.action.buildingId)
+      claimBuildingId &&
+      storyWallGateSatisfied &&
+      claimedBuildingIds.includes(claimBuildingId)
     ) {
       advanceStoryStep(storyStep.number)
       return
@@ -518,6 +528,7 @@ export default function App(): JSX.Element {
     buildingProgress,
     claimedBuildingIds,
     storyEnabled,
+    storyWallGateSatisfied,
     storyStep,
   ])
 
@@ -1023,11 +1034,36 @@ export default function App(): JSX.Element {
         {activeOverlay.kind === 'storyGangTree' ? (
           <StoryGangTreePanel
             currentStepNumber={storyStepNumber}
-            canContinue={storyStep?.action.kind === 'gang-tree'}
+            canContinue={
+              storyStep?.action.kind === 'gang-tree' &&
+              !storyStep.action.rewardId
+            }
+            requiredRewardId={
+              storyStep?.action.kind === 'gang-tree'
+                ? storyStep.action.rewardId
+                : undefined
+            }
             onContinue={() => {
-              if (storyStep?.action.kind === 'gang-tree') {
+              if (
+                storyStep?.action.kind === 'gang-tree' &&
+                !storyStep.action.rewardId
+              ) {
                 advanceStoryStep(storyStep.number)
               }
+              setPlayOverlay({ kind: 'none' })
+            }}
+            onRewardClaimed={(rewardId) => {
+              if (
+                storyStep?.action.kind !== 'gang-tree' ||
+                storyStep.action.rewardId !== rewardId
+              ) {
+                return
+              }
+              if (storyStep.action.buildingId) {
+                setPlayOverlay({ kind: 'none' })
+                return
+              }
+              advanceStoryStep(storyStep.number)
               setPlayOverlay({ kind: 'none' })
             }}
             onClose={closeOverlay}
