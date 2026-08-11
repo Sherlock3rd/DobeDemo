@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-Thomas 与推关英雄已解耦：主界面、会议、帮派树继续以 Thomas 代表玩家；历史首名英雄 ID 的可见身份改为 Maeve “Red” Quinn，方案 B 到 L25 才开放英雄入口并交代主席派她调查内鬼，L26 明确 Thomas 留在后方统筹、Maeve 进入火线带队。format、typecheck、lint、build 全绿，全量 93 个测试文件/957 项测试通过；真实浏览器完整走通 L17–L26，确认 L25 首名英雄加入、L26 默认编队为 Maeve、编队不含 Thomas，主界面 Thomas 玩家身份与英雄培养名单正确分离，控制台 0 error。待提交并发布。
+Thomas 与推关英雄已解耦：主界面、会议、帮派树继续以 Thomas 代表玩家；历史首名英雄 ID 的可见身份改为 Maeve “Red” Quinn，方案 B 到 L25 才开放英雄入口并交代主席派她调查内鬼，L26 明确 Thomas 留在后方统筹、Maeve 进入火线带队。format、typecheck、lint、build 全绿，全量 93 个测试文件/957 项测试通过；真实浏览器完整走通 L17–L26，确认 L25 首名英雄加入、L26 默认编队为 Maeve、编队不含 Thomas，主界面 Thomas 玩家身份与英雄培养名单正确分离，控制台 0 error。`main` 功能提交 `0092c0f`、`gh-pages` 产物提交 `e30d5de1ab735f42221381076c0e64e502c6e08e` 已推送，Pages 状态 `built`；公开 HTML、`index-BSLWsNNQ.js`、`index-Cuw3Zp1E.css` 均为 HTTP 200，线上包包含 Maeve 首名英雄与 Thomas 不入火线的新文案。
 
 ## 角色
 
@@ -100,4 +100,4 @@ Thomas 与推关英雄已解耦：主界面、会议、帮派树继续以 Thomas
 | 2026-08-11 | 方案 B 一日渐进重构：新增 43 节点/6 幕/10 职级独立存档与当前幕任务界面，十五张剧情插图全部复用 Dobe 既有素材；SUP、推关、车辆/枪械养成、建筑、纵向帮派树和会议按 90 分钟故事顺序重新串联，物流中心映射现有金属加工厂。会议保留玩家固定 S 的上轮评级和剧情固定表决；地图交接按钮严格跟随当前任务。SUP 十关按剧情改为竞速/追击组合，旧满仓存档可安全置换剧情引擎。format/typecheck/lint/build 全绿，92 文件/943 测试通过；真实浏览器 1280×720 与 390×844 走通 L01–L13，控制台 0 error。`main` `ad10e46`、`gh-pages` `43d02c66b94b59adbc81e286d1594d7a45ec3f84` 已推送，Pages build `1144699612` 为 `built`；线上 HTML、JS、CSS、剧情插图均为 200，桌面与手机首屏通过。 | 方案 B 渐进、剧情与系统串联 |
 | 2026-08-11 | 3D 改车/拆车教学：保持方案 B 43 节点不变，将 L07 替换为开盖、拆旧引擎、装调校引擎、点火四步 3D 改车工位；将 L15 替换为两辆车各自拆轮组、切引擎、压车壳的六步 3D 拆车工位。改车完成真实装备剧情引擎，拆车完成后才发放 25 零件与普通悬挂；两者均不可通过 Escape 跳过。format/typecheck/lint/build 全绿，93 文件/948 测试通过；真实浏览器桌面与 390×844 手机链路均通过，控制台 0 error。`main` `10a64fe`、`gh-pages` `6c13f9580e22d810703a7b318a18ad99b0315657` 已推送，Pages build `1144781297` 为 `built`；线上 HTML/JS/CSS 均为 200，线上工位桌面与手机复验通过。 | 3D 车辆工位与流程串联 |
 | 2026-08-11 | 方案 B 剧情润色与定制 3D 工位：43 个剧情弹屏全部补齐“前因—当前行动—后续结果”，Freddie Thorne 与叛徒 Billy Kimber 分离，产业交接统一为帮派内部管理责任；L06 三车维修、L07 引擎强化、L16 赛前悬挂换件分别使用独立 3D 操作链，并补回 L19 追杀残车取证与 L20 铁獠复仇整备。format/typecheck/lint/build 全绿，93 文件/955 测试通过；本地真实浏览器走通赛前换件四步并正确衔接一对一竞速。`main` `3c685e9`、`gh-pages` `c47608afbbcf0c3c5f85c7c12f0657b55cab7f3e` 已推送，Pages 状态 `built`；公开 HTML、JS、CSS 均为 200，线上 L07 文案与 3D 引擎强化工位复验通过。 | 方案 B 剧情与车辆小游戏 |
-| 2026-08-11 | 推关玩家身份与英雄解耦：Thomas 仅保留为剧情、会议、帮派树和主 HUD 中的玩家身份，不再作为英雄或推关战斗单位；首名英雄改为主席派来调查内鬼的 Maeve “Red” Quinn，L25 完成加入交代、L26 明确 Thomas 后方统筹且 Maeve 带队，英雄入口延后至 L25。format/typecheck/lint/build 全绿，93 文件/957 测试通过；真实浏览器走通 L17–L26，确认编队只显示 Maeve 而不含 Thomas、主 HUD 与英雄培养身份分离、控制台 0 error。 | 推关角色归属 |
+| 2026-08-11 | 推关玩家身份与英雄解耦：Thomas 仅保留为剧情、会议、帮派树和主 HUD 中的玩家身份，不再作为英雄或推关战斗单位；首名英雄改为主席派来调查内鬼的 Maeve “Red” Quinn，L25 完成加入交代、L26 明确 Thomas 后方统筹且 Maeve 带队，英雄入口延后至 L25。format/typecheck/lint/build 全绿，93 文件/957 测试通过；真实浏览器走通 L17–L26，确认编队只显示 Maeve 而不含 Thomas、主 HUD 与英雄培养身份分离、控制台 0 error。`main` 功能提交 `0092c0f`、`gh-pages` `e30d5de1ab735f42221381076c0e64e502c6e08e` 已推送，Pages 状态 `built`；公开 HTML、当前 JS/CSS 均为 200，线上包包含新角色边界文案。 | 推关角色归属 |
