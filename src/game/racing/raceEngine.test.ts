@@ -111,13 +111,13 @@ describe('raceEngine V2', () => {
     ).toHaveLength(6)
     const pursuit = createRaceState(3, STARTER)
     expect(
-      [3, 4, 6, 8, 10].map(
+      [2, 3, 5, 6, 8].map(
         (stage) =>
           createRaceState(stage, STARTER).vehicles.filter(
             (vehicle) => vehicle.role === 'escort',
           ).length,
       ),
-    ).toEqual([0, 1, 1, 2, 2])
+    ).toEqual([0, 0, 1, 1, 2])
     expect(
       [
         race.player,

@@ -768,7 +768,20 @@ export const useAdventureStore = create<AdventureState>()(
             return state
           }
           if (state.carPartInventory.length >= CAR_PART_INVENTORY_LIMIT) {
-            return state
+            const replaceIndex = state.carPartInventory.findIndex(
+              (part) =>
+                !isPartInstalled(part.id, state.carPartSlotsByCar) &&
+                part.quality === 'common',
+            )
+            const fallbackIndex = state.carPartInventory.findIndex(
+              (part) => !isPartInstalled(part.id, state.carPartSlotsByCar),
+            )
+            const targetIndex = replaceIndex >= 0 ? replaceIndex : fallbackIndex
+            if (targetIndex < 0) return state
+            const carPartInventory = [...state.carPartInventory]
+            carPartInventory[targetIndex] = { ...PROLOGUE_TUNED_PART }
+            applied = true
+            return { carPartInventory }
           }
           applied = true
           return {

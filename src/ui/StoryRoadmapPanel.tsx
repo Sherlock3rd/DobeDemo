@@ -1,0 +1,102 @@
+import { useMemo, type JSX } from 'react'
+import { STORY_STEPS, getStoryStep } from '../game/storyPlanB'
+
+const ACT_NAMES = [
+  '亡命入城',
+  '见习证明',
+  '兄弟与复仇',
+  '叛徒调查',
+  '资源掌控',
+  '核心席位',
+] as const
+
+export function StoryRoadmapPanel({
+  currentStepNumber,
+  onClose,
+  onContinue,
+}: {
+  currentStepNumber: number
+  onClose: () => void
+  onContinue: () => void
+}): JSX.Element {
+  const current = getStoryStep(currentStepNumber)
+  const activeAct = current?.act ?? 5
+  const actSteps = useMemo(
+    () => STORY_STEPS.filter((step) => step.act === activeAct),
+    [activeAct],
+  )
+
+  return (
+    <div className="story-roadmap__overlay">
+      <section
+        className="story-roadmap"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="story-roadmap-title"
+      >
+        <header>
+          <div>
+            <span>PLAN B · 90 MINUTES</span>
+            <h2 id="story-roadmap-title">{`ACT ${activeAct} · ${ACT_NAMES[activeAct]}`}</h2>
+          </div>
+          <button type="button" onClick={onClose}>
+            关闭
+          </button>
+        </header>
+        <div className="story-roadmap__acts" aria-label="幕进度">
+          {ACT_NAMES.map((name, act) => (
+            <span
+              key={name}
+              data-state={
+                act < activeAct
+                  ? 'complete'
+                  : act === activeAct
+                    ? 'current'
+                    : 'locked'
+              }
+            >
+              {`ACT ${act}`}
+            </span>
+          ))}
+        </div>
+        <ol className="story-roadmap__steps">
+          {actSteps.map((step) => {
+            const state =
+              step.number < currentStepNumber
+                ? 'complete'
+                : step.number === currentStepNumber
+                  ? 'current'
+                  : 'locked'
+            return (
+              <li key={step.number} data-state={state}>
+                <span>{`L${String(step.number).padStart(2, '0')}`}</span>
+                <div>
+                  <strong>
+                    {state === 'locked' ? '尚未公开' : step.title}
+                  </strong>
+                  <small>
+                    {state === 'complete'
+                      ? '已完成'
+                      : state === 'current'
+                        ? step.objective
+                        : '完成前置节点后公开'}
+                  </small>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+        <footer>
+          <span>{`总进度 ${Math.min(43, currentStepNumber - 1)} / 43`}</span>
+          {current ? (
+            <button type="button" onClick={onContinue}>
+              返回当前任务
+            </button>
+          ) : (
+            <strong>方案 B 全流程已完成</strong>
+          )}
+        </footer>
+      </section>
+    </div>
+  )
+}

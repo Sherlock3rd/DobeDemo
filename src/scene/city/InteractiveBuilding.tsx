@@ -20,6 +20,7 @@ interface InteractiveBuildingProps {
   position: readonly [number, number, number]
   rotation?: number
   guided?: boolean
+  takeoverEnabled?: boolean
   onClaimed?: (buildingId: BuildingId) => void
 }
 
@@ -28,6 +29,7 @@ export function InteractiveBuilding({
   position,
   rotation = 0,
   guided = false,
+  takeoverEnabled = true,
   onClaimed,
 }: InteractiveBuildingProps): JSX.Element {
   const definition = buildingCatalogById[id]
@@ -83,6 +85,7 @@ export function InteractiveBuilding({
       <BuildingTakeoverBadge
         buildingId={id}
         guided={guided}
+        enabled={takeoverEnabled}
         onClaimed={onClaimed}
       />
       {accessState === 'claimed' ? (

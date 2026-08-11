@@ -13,11 +13,13 @@ import { consumePointerDrag, isPointerEventHandled } from './pointerDragClick'
 interface CitySceneProps {
   onBuildingClaimed?: (buildingId: BuildingId) => void
   guidedBuildingId?: BuildingId | null
+  takeoverBuildingId?: BuildingId | null
 }
 
 export function CityScene({
   onBuildingClaimed,
   guidedBuildingId = null,
+  takeoverBuildingId,
 }: CitySceneProps): JSX.Element {
   const clearSelection = useCityStore((state) => state.clearSelection)
 
@@ -63,6 +65,10 @@ export function CityScene({
             key={placement.id}
             {...placement}
             guided={guidedBuildingId === placement.id}
+            takeoverEnabled={
+              takeoverBuildingId === undefined ||
+              takeoverBuildingId === placement.id
+            }
             onClaimed={onBuildingClaimed}
           />
         ))}

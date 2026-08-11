@@ -21,6 +21,11 @@ import { getHeroCombatStats } from '../game/heroEquipment'
 import { HERO_IDS, isHeroUnlocked } from '../game/heroes'
 import { getPrologueVisibility } from '../game/prologue'
 import {
+  getStoryRank,
+  getStoryStep,
+  getStoryVisibility,
+} from '../game/storyPlanB'
+import {
   getClaimableIdleExp,
   useAdventureStore,
 } from '../store/useAdventureStore'
@@ -40,6 +45,7 @@ export interface GlobalHudProps {
   onOpenAdventure: () => void
   onOpenRacing?: () => void
   onOpenSettings: () => void
+  storyStepNumber?: number
 }
 
 export function GlobalHud(props: GlobalHudProps): JSX.Element {
@@ -70,6 +76,14 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
   const tick = useChestTick((s) => s.tick)
   const now = useChestTick((s) => s.now)
   const role = getGangRole(gangLevel)
+  const storyStep =
+    props.storyStepNumber === undefined
+      ? null
+      : getStoryStep(props.storyStepNumber)
+  const storyRank =
+    props.storyStepNumber === undefined
+      ? null
+      : getStoryRank(props.storyStepNumber)
   const totalPower = useMemo(() => {
     const progression = { gunLevels, carPartInventory, carPartSlotsByCar }
     return getAccountTotalPower({
@@ -140,16 +154,42 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
     gangLevel < GANG_MAX_LEVEL &&
     totalReputation >= getTotalReputationForLevel(nextGangLevel) &&
     (!crossesRole || chapterComplete)
-  const visibility = getPrologueVisibility(prologueStep)
+  const legacyVisibility = getPrologueVisibility(prologueStep)
+  const storyVisibility =
+    props.storyStepNumber === undefined
+      ? null
+      : getStoryVisibility(props.storyStepNumber)
+  const visibility = storyVisibility
+    ? {
+        heroes: storyVisibility.heroes,
+        gangTree: storyVisibility.gangStatus,
+        chapters: false,
+        campaign: storyVisibility.campaign,
+      }
+    : legacyVisibility
   const visibleResources = [
-    claimedBuildingIds.includes('repair-shop') ||
-    claimedBuildingIds.includes('commercial-street')
-      ? ('money' as const)
-      : null,
-    claimedBuildingIds.includes('gas-station') ? ('oil' as const) : null,
-    claimedBuildingIds.includes('metalworking-plant')
-      ? ('materials' as const)
-      : null,
+    storyVisibility
+      ? storyVisibility.money
+        ? ('money' as const)
+        : null
+      : claimedBuildingIds.includes('repair-shop') ||
+          claimedBuildingIds.includes('commercial-street')
+        ? ('money' as const)
+        : null,
+    storyVisibility
+      ? storyVisibility.oil
+        ? ('oil' as const)
+        : null
+      : claimedBuildingIds.includes('gas-station')
+        ? ('oil' as const)
+        : null,
+    storyVisibility
+      ? storyVisibility.materials
+        ? ('materials' as const)
+        : null
+      : claimedBuildingIds.includes('metalworking-plant')
+        ? ('materials' as const)
+        : null,
   ].filter((resource) => resource !== null)
 
   return (
@@ -172,12 +212,18 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
             <button
               type="button"
               className="global-hud__gang"
-              data-promotion-ready={gangPromotionReady}
+              data-promotion-ready={
+                storyVisibility ? undefined : gangPromotionReady
+              }
               onClick={props.onOpenGangTree}
             >
-              <span>{`Lv.${gangLevel} ${role.title}（${role.chineseTitle}）`}</span>
+              <span>
+                {storyRank
+                  ? `T${storyRank.tier} ${storyRank.title}（${storyRank.chineseTitle}）`
+                  : `Lv.${gangLevel} ${role.title}（${role.chineseTitle}）`}
+              </span>
               <ResourceAmount kind="power" amount={totalPower} />
-              {gangPromotionReady ? (
+              {!storyVisibility && gangPromotionReady ? (
                 <span
                   className="global-hud__promotion-ready"
                   aria-label="帮派等级可晋升"
@@ -221,16 +267,20 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
           onClick={props.onOpenChapters}
         >
           <span>
-            {prologueStep === 'complete'
-              ? `章节 ${currentChapter.number} / ${CHAPTERS.length}`
-              : '序章 · 转正任务'}
+            {storyStep
+              ? `方案 B · ACT ${storyStep.act}`
+              : prologueStep === 'complete'
+                ? `章节 ${currentChapter.number} / ${CHAPTERS.length}`
+                : '序章 · 转正任务'}
           </span>
           <small>
-            {prologueStep === 'complete'
-              ? currentChapter.title.replace(/^第.+? · /, '')
-              : '完成三项见习职责'}
+            {storyStep
+              ? `L${String(storyStep.number).padStart(2, '0')} · ${storyStep.title}`
+              : prologueStep === 'complete'
+                ? currentChapter.title.replace(/^第.+? · /, '')
+                : '完成三项见习职责'}
           </small>
-          {chapterClaimable ? (
+          {!storyVisibility && chapterClaimable ? (
             <span className="global-hud__dot" aria-label="有章节奖励可领取" />
           ) : null}
         </button>

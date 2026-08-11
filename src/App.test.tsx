@@ -9,6 +9,7 @@ import { useAdventureStore } from './store/useAdventureStore'
 import { useChapterStore } from './store/useChapterStore'
 import { useCityStore } from './store/useCityStore'
 import { useGangStore } from './store/useGangStore'
+import { useStoryStore } from './store/useStoryStore'
 
 const BASE_TIME = 1_700_000_000_000
 
@@ -231,12 +232,33 @@ describe('App', () => {
     useGangStore.getState().reset(BASE_TIME)
     useAdventureStore.getState().reset(BASE_TIME)
     useChapterStore.getState().reset()
+    useStoryStore.getState().reset()
+    useStoryStore.setState({ enabled: false })
     useChapterStore.setState({
       prologueStep: 'complete',
       seenNarrativeIds: ['first-entry', 'chapter-start:1'],
     })
     useChestTick.setState({ now: BASE_TIME, tick: 0 })
     canvasPropsSpy.mockClear()
+  })
+
+  it('starts Plan B with the illustrated police pursuit and enters SUP', async () => {
+    const user = userEvent.setup()
+    useStoryStore.setState({
+      enabled: true,
+      currentStepNumber: 1,
+      briefedStepNumbers: [],
+    })
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('heading', { name: '警灯咬住后视镜' }),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: '进入 SUP · 甩开警察' }),
+    )
+    expect(screen.getByRole('dialog', { name: '公路争霸' })).toBeInTheDocument()
   })
 
   it('renders the canvas with an orthographic projection', () => {

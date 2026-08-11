@@ -15,12 +15,14 @@ import { getBuildingAccessState } from './buildingAccess'
 interface BuildingTakeoverBadgeProps {
   buildingId: BuildingId
   guided?: boolean
+  enabled?: boolean
   onClaimed?: (buildingId: BuildingId) => void
 }
 
 export function BuildingTakeoverBadge({
   buildingId,
   guided = false,
+  enabled = true,
   onClaimed,
 }: BuildingTakeoverBadgeProps): JSX.Element | null {
   const gangLevel = useGangStore((state) => state.currentLevel)
@@ -37,7 +39,7 @@ export function BuildingTakeoverBadge({
     if (guided) buttonRef.current?.focus()
   }, [guided])
 
-  if (accessState !== 'claimable') return null
+  if (!enabled || accessState !== 'claimable') return null
 
   const buildingName = buildingCatalogById[buildingId].name
 
