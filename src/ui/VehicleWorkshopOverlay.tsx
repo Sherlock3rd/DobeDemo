@@ -1,35 +1,124 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useEffect, useRef, useState, type JSX } from 'react'
 import type { Group } from 'three'
+import type {
+  CarDismantleScenario,
+  CarModificationScenario,
+} from '../game/storyPlanB'
 import './VehicleWorkshopOverlay.css'
 
 interface WorkshopOverlayProps {
   onComplete: () => void
 }
 
-const MODIFICATION_ACTIONS = [
-  '抬起引擎盖',
-  '拆下损坏引擎',
-  '装入博赠送的调校引擎',
-  '点火测试',
-] as const
+interface ModificationDefinition {
+  overline: string
+  title: string
+  sceneLabel: string
+  actions: readonly string[]
+  status: readonly string[]
+  jobLabels: readonly string[]
+  actionsPerJob: number
+}
 
-const MODIFICATION_STATUS = [
-  '先打开引擎盖，找到发红的故障引擎。',
-  '故障引擎已经暴露，把它从发动机舱拆下来。',
-  '旧引擎已移除，把青绿色调校引擎装入空位。',
-  '引擎已经固定，最后进行一次点火测试。',
-  '转速稳定，调校引擎安装完成。',
-] as const
+const MODIFICATION_DEFINITIONS: Readonly<
+  Record<CarModificationScenario, ModificationDefinition>
+> = {
+  'repair-trio': {
+    overline: 'RAZOR GARAGE · THREE-CAR SHIFT',
+    title: '伏击后三车维修',
+    sceneLabel: '三辆车 · 三种损伤',
+    actions: [
+      '打开灰狐引擎舱',
+      '更换灰狐散热器',
+      '完成灰狐压力测试',
+      '举升 Eddie 的通勤车',
+      '拆下变形轮组',
+      '安装备用轮组并落车',
+      '拆除 Bo 的破损护杠',
+      '固定强化护杠',
+      '检查灯光与车身间隙',
+    ],
+    status: [
+      '灰狐在伏击中高温报警，先打开引擎舱确认散热器位置。',
+      '漏液点已经找到，拆下破损散热器并换入完好件。',
+      '散热系统已经闭合，做一次压力测试确认灰狐能够返程。',
+      '灰狐维修完成。第二辆车的右前轮外倾，先把车辆举升。',
+      '悬挂已经卸载，拆下在撞击中变形的轮组。',
+      '安装备用轮组并让车辆落地，确认轮胎能够直线滚动。',
+      '第二辆车可以交付。第三辆接应车的前护杠已经松脱。',
+      '破损护杠已拆下，把强化护杠固定到车架受力点。',
+      '三辆车都已恢复，最后检查灯光与车身间隙。',
+      '三辆车全部交付，第二份见习证明完成。',
+    ],
+    jobLabels: ['Thomas · 灰狐', 'Eddie · 通勤车', 'Bo · 接应车'],
+    actionsPerJob: 3,
+  },
+  'tune-engine': {
+    overline: 'RAZOR GARAGE · ENGINE BAY',
+    title: '灰狐引擎强化',
+    sceneLabel: '剧情配件 · 调校引擎',
+    actions: ['抬起引擎盖', '拆下损坏引擎', '装入博赠送的调校引擎', '点火测试'],
+    status: [
+      '先打开引擎盖，找到发红的故障引擎。',
+      '故障引擎已经暴露，把它从发动机舱拆下来。',
+      '旧引擎已移除，把青绿色调校引擎装入空位。',
+      '引擎已经固定，最后进行一次点火测试。',
+      '转速稳定，调校引擎安装完成。',
+    ],
+    jobLabels: ['Thomas · 灰狐'],
+    actionsPerJob: 4,
+  },
+  'race-prep': {
+    overline: 'SCRAP YARD · RACE SETUP',
+    title: '赛前悬挂换件',
+    sceneLabel: '回收配件 · 竞速调校',
+    actions: ['举升灰狐', '拆下弯曲悬挂', '安装回收悬挂', '完成四轮定位'],
+    status: [
+      '回收所得的悬挂已经送到工位，先举升车辆释放轮组载荷。',
+      '右前轮角度异常，拆下在伏击中弯曲的旧悬挂。',
+      '安装回收场挑出的青绿色悬挂，并锁紧全部连接点。',
+      '新悬挂已经落位，完成四轮定位后才能安全参加一对一竞速。',
+      '定位数据归零，灰狐已经完成赛前准备。',
+    ],
+    jobLabels: ['Thomas · 灰狐'],
+    actionsPerJob: 4,
+  },
+  'revenge-build': {
+    overline: 'SCRAP YARD · ARMORED BAY',
+    title: '铁獠复仇整备',
+    sceneLabel: '第二辆车 · 装甲修复',
+    actions: [
+      '打开铁獠装甲舱',
+      '装入残车引擎部件',
+      '固定前部装甲',
+      '完成武装点火',
+    ],
+    status: [
+      '铁獠一直由 Freddie 看守，先打开装甲舱确认空缺部位。',
+      '把追杀残车里拆出的引擎部件装入铁獠动力舱。',
+      '动力已经恢复，重新固定能承受正面火力的前部装甲。',
+      '装甲锁止，完成武装点火并确认车辆可以投入复仇行动。',
+      '铁獠已经苏醒，第二辆剧情车辆整备完成。',
+    ],
+    jobLabels: ['Freddie 遗留 · 铁獠'],
+    actionsPerJob: 4,
+  },
+}
 
-const DISMANTLE_ACTIONS = [
-  '拆下 1 号车轮组',
-  '切出 1 号车引擎',
-  '压缩 1 号车车壳',
-  '拆下 2 号车轮组',
-  '切出 2 号车引擎',
-  '压缩 2 号车车壳',
-] as const
+const DISMANTLE_ACTIONS: Readonly<
+  Record<CarDismantleScenario, readonly string[]>
+> = {
+  'salvage-pair': [
+    '拆下 1 号车轮组',
+    '切出 1 号车引擎',
+    '压缩 1 号车车壳',
+    '拆下 2 号车轮组',
+    '切出 2 号车引擎',
+    '压缩 2 号车车壳',
+  ],
+  'pursuit-wreck': ['拆下追杀车轮组', '切出引擎与车架编号', '压缩残骸'],
+}
 
 function WorkshopLights(): JSX.Element {
   return (
@@ -142,17 +231,78 @@ function EngineBlock({
   )
 }
 
+function SuspensionModule({
+  tuned,
+  position,
+}: {
+  tuned: boolean
+  position: [number, number, number]
+}): JSX.Element {
+  return (
+    <group position={position} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh castShadow>
+        <cylinderGeometry args={[0.14, 0.14, 0.92, 12]} />
+        <meshStandardMaterial
+          color={tuned ? '#51e5c2' : '#a43b32'}
+          emissive={tuned ? '#0c6d59' : '#4b100c'}
+          emissiveIntensity={0.7}
+          metalness={0.8}
+          roughness={0.26}
+        />
+      </mesh>
+      {[-0.3, -0.1, 0.1, 0.3].map((z) => (
+        <mesh key={z} position={[0, 0, z]}>
+          <torusGeometry args={[0.29, 0.055, 8, 20]} />
+          <meshStandardMaterial
+            color={tuned ? '#c8fff2' : '#d87968'}
+            metalness={0.9}
+            roughness={0.2}
+          />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 function ModificationVehicle({
+  scenario,
   operation,
 }: {
+  scenario: CarModificationScenario
   operation: number
 }): JSX.Element {
   const vehicleRef = useRef<Group>(null)
-  const bonnetOpen = operation >= 1
-  const brokenEngineVisible = operation < 2
-  const tunedEngineVisible = operation >= 2
-  const tunedEngineInstalled = operation >= 3
-  const tested = operation >= MODIFICATION_ACTIONS.length
+  const definition = MODIFICATION_DEFINITIONS[scenario]
+  const repairCarIndex =
+    scenario === 'repair-trio'
+      ? Math.min(2, Math.floor(operation / definition.actionsPerJob))
+      : 0
+  const localOperation =
+    scenario === 'repair-trio'
+      ? operation - repairCarIndex * definition.actionsPerJob
+      : operation
+  const isEngineJob =
+    scenario === 'tune-engine' ||
+    (scenario === 'repair-trio' && repairCarIndex === 0)
+  const isWheelJob = scenario === 'repair-trio' && repairCarIndex === 1
+  const isBumperJob = scenario === 'repair-trio' && repairCarIndex === 2
+  const isRacePrep = scenario === 'race-prep'
+  const isIronFang = scenario === 'revenge-build'
+  const bonnetOpen = isEngineJob || isIronFang ? localOperation >= 1 : false
+  const brokenEngineVisible =
+    scenario === 'tune-engine' ? localOperation < 2 : false
+  const tunedEngineVisible =
+    scenario === 'tune-engine' ? localOperation >= 2 : isIronFang
+  const tunedEngineInstalled =
+    scenario === 'tune-engine' ? localOperation >= 3 : localOperation >= 2
+  const wheelRemoved = isWheelJob && localOperation >= 2
+  const tunedSuspensionInstalled = isRacePrep && localOperation >= 3
+  const tested = operation >= definition.actions.length
+  const bodyColor = isIronFang
+    ? '#28302e'
+    : scenario === 'repair-trio'
+      ? ['#315f3f', '#755638', '#354f70'][repairCarIndex]
+      : '#315f3f'
 
   useFrame((state) => {
     if (!vehicleRef.current) return
@@ -164,11 +314,16 @@ function ModificationVehicle({
   })
 
   return (
-    <group ref={vehicleRef} position={[0, 0.07, 0]} rotation={[0, -0.34, 0]}>
+    <group
+      ref={vehicleRef}
+      position={[0, 0.07, 0]}
+      rotation={[0, -0.34, 0]}
+      scale={isIronFang ? [1.08, 1.02, 1.12] : [1, 1, 1]}
+    >
       <mesh castShadow position={[0, 0.72, 0.18]}>
         <boxGeometry args={[2.18, 0.58, 3.62]} />
         <meshStandardMaterial
-          color="#315f3f"
+          color={bodyColor}
           metalness={0.55}
           roughness={0.36}
         />
@@ -196,7 +351,7 @@ function ModificationVehicle({
         <mesh castShadow position={[0, 0, -0.42]}>
           <boxGeometry args={[1.95, 0.12, 1.1]} />
           <meshStandardMaterial
-            color="#315f3f"
+            color={bodyColor}
             metalness={0.58}
             roughness={0.32}
           />
@@ -211,10 +366,82 @@ function ModificationVehicle({
           position={tunedEngineInstalled ? [0, 1.02, -0.92] : [2.55, 0.9, 0.2]}
         />
       ) : null}
+      {scenario === 'repair-trio' && repairCarIndex === 0 ? (
+        <group position={[0, 1.01, -1.2]}>
+          <mesh castShadow>
+            <boxGeometry args={[1.36, 0.5, 0.18]} />
+            <meshStandardMaterial
+              color={localOperation >= 2 ? '#65ddbd' : '#a23932'}
+              emissive={localOperation >= 2 ? '#155f50' : '#4d100c'}
+              emissiveIntensity={0.62}
+              metalness={0.74}
+              roughness={0.32}
+            />
+          </mesh>
+          {[-0.42, -0.14, 0.14, 0.42].map((x) => (
+            <mesh key={x} position={[x, 0, -0.11]}>
+              <boxGeometry args={[0.055, 0.4, 0.07]} />
+              <meshStandardMaterial color="#18201e" metalness={0.82} />
+            </mesh>
+          ))}
+        </group>
+      ) : null}
       <Wheel position={[-1.12, 0.52, -1.18]} />
-      <Wheel position={[1.12, 0.52, -1.18]} />
+      <Wheel position={[1.12, 0.52, -1.18]} visible={!wheelRemoved} />
       <Wheel position={[-1.12, 0.52, 1.18]} />
       <Wheel position={[1.12, 0.52, 1.18]} />
+      {wheelRemoved ? (
+        <group position={[2.65, 0.45, -0.55]} rotation={[0, 0.3, 0.4]}>
+          <Wheel position={[0, 0, 0]} />
+        </group>
+      ) : null}
+      {isRacePrep ? (
+        <>
+          <SuspensionModule
+            tuned={tunedSuspensionInstalled}
+            position={
+              tunedSuspensionInstalled
+                ? [0.86, 0.72, -1.05]
+                : [2.55, 0.72, 0.15]
+            }
+          />
+          {localOperation < 2 ? (
+            <SuspensionModule tuned={false} position={[0.86, 0.72, -1.05]} />
+          ) : null}
+        </>
+      ) : null}
+      {isBumperJob ? (
+        <mesh castShadow position={[0, 0.72, -2.03]}>
+          <boxGeometry args={[2.44, 0.34, 0.28]} />
+          <meshStandardMaterial
+            color={localOperation >= 2 ? '#5bd8ba' : '#9c342d'}
+            emissive={localOperation >= 2 ? '#155b4b' : '#45100c'}
+            emissiveIntensity={0.55}
+            metalness={0.82}
+            roughness={0.3}
+          />
+        </mesh>
+      ) : null}
+      {isIronFang ? (
+        <>
+          <mesh castShadow position={[0, 0.86, -1.94]}>
+            <boxGeometry args={[2.5, 0.58, 0.34]} />
+            <meshStandardMaterial
+              color={localOperation >= 3 ? '#5e6d66' : '#843a31'}
+              metalness={0.9}
+              roughness={0.28}
+            />
+          </mesh>
+          <mesh castShadow position={[-0.72, 1.56, 0.12]}>
+            <boxGeometry args={[0.18, 0.18, 2.05]} />
+            <meshStandardMaterial color="#222c29" metalness={0.92} />
+          </mesh>
+          <mesh castShadow position={[0.72, 1.56, 0.12]}>
+            <boxGeometry args={[0.18, 0.18, 2.05]} />
+            <meshStandardMaterial color="#222c29" metalness={0.92} />
+          </mesh>
+        </>
+      ) : null}
       {tested ? (
         <>
           <pointLight
@@ -318,33 +545,56 @@ function CompletedBales({ count }: { count: number }): JSX.Element {
   )
 }
 
-function ModificationScene({ operation }: { operation: number }): JSX.Element {
+function ModificationScene({
+  scenario,
+  operation,
+}: {
+  scenario: CarModificationScenario
+  operation: number
+}): JSX.Element {
   return (
     <Canvas
       shadows
       dpr={[1, 1.5]}
       camera={{ position: [6.2, 4.2, 7.2], fov: 35 }}
-      aria-label="灰狐改车三维示意"
+      aria-label={`${MODIFICATION_DEFINITIONS[scenario].title}三维示意`}
     >
       <color attach="background" args={['#07100f']} />
       <fog attach="fog" args={['#07100f', 8, 18]} />
       <WorkshopLights />
       <WorkshopFloor />
-      <ModificationVehicle operation={operation} />
+      <ModificationVehicle scenario={scenario} operation={operation} />
     </Canvas>
   )
 }
 
-function DismantleScene({ operation }: { operation: number }): JSX.Element {
-  const carIndex = Math.min(1, Math.floor(operation / 3))
-  const phase = operation >= DISMANTLE_ACTIONS.length ? 3 : operation % 3
-  const completedCount = Math.min(2, Math.floor(operation / 3))
+function DismantleScene({
+  scenario,
+  operation,
+}: {
+  scenario: CarDismantleScenario
+  operation: number
+}): JSX.Element {
+  const actions = DISMANTLE_ACTIONS[scenario]
+  const carIndex =
+    scenario === 'salvage-pair' ? Math.min(1, Math.floor(operation / 3)) : 0
+  const phase = operation >= actions.length ? 3 : operation % 3
+  const completedCount =
+    scenario === 'salvage-pair'
+      ? Math.min(2, Math.floor(operation / 3))
+      : operation >= actions.length
+        ? 1
+        : 0
   return (
     <Canvas
       shadows
       dpr={[1, 1.5]}
       camera={{ position: [6.5, 4.4, 7.5], fov: 36 }}
-      aria-label="废车拆解三维示意"
+      aria-label={
+        scenario === 'salvage-pair'
+          ? '黑市车辆拆解三维示意'
+          : '追杀残车拆解三维示意'
+      }
     >
       <color attach="background" args={['#0d100f']} />
       <fog attach="fog" args={['#0d100f', 8, 19]} />
@@ -358,11 +608,19 @@ function DismantleScene({ operation }: { operation: number }): JSX.Element {
 
 export function CarModificationOverlay({
   onComplete,
-}: WorkshopOverlayProps): JSX.Element {
+  scenario = 'tune-engine',
+}: WorkshopOverlayProps & {
+  scenario?: CarModificationScenario
+}): JSX.Element {
   const [operation, setOperation] = useState(0)
   const completionSentRef = useRef(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
-  const finished = operation >= MODIFICATION_ACTIONS.length
+  const definition = MODIFICATION_DEFINITIONS[scenario]
+  const finished = operation >= definition.actions.length
+  const activeJobIndex = Math.min(
+    definition.jobLabels.length - 1,
+    Math.floor(operation / definition.actionsPerJob),
+  )
 
   useEffect(() => {
     titleRef.current?.focus()
@@ -371,7 +629,7 @@ export function CarModificationOverlay({
   const handleAction = (): void => {
     if (!finished) {
       setOperation((current) =>
-        Math.min(MODIFICATION_ACTIONS.length, current + 1),
+        Math.min(definition.actions.length, current + 1),
       )
       return
     }
@@ -386,28 +644,33 @@ export function CarModificationOverlay({
       role="dialog"
       aria-modal="true"
       aria-label="3D 改车工位"
+      data-scenario={scenario}
     >
       <header className="vehicle-workshop__header">
         <div>
-          <span>RAZOR GARAGE · MOD BAY</span>
+          <span>{definition.overline}</span>
           <h2 ref={titleRef} tabIndex={-1}>
-            灰狐改车工位
+            {definition.title}
           </h2>
         </div>
-        <strong>{`${Math.min(operation, MODIFICATION_ACTIONS.length)} / ${MODIFICATION_ACTIONS.length}`}</strong>
+        <strong>{`${Math.min(operation, definition.actions.length)} / ${definition.actions.length}`}</strong>
       </header>
       <div className="vehicle-workshop__scene">
-        <ModificationScene operation={operation} />
-        <div className="vehicle-workshop__scene-label">3D 实时工位</div>
+        <ModificationScene scenario={scenario} operation={operation} />
+        <div className="vehicle-workshop__scene-label">
+          {definition.sceneLabel}
+        </div>
       </div>
       <footer className="vehicle-workshop__console">
         <div className="vehicle-workshop__task">
-          <span>{finished ? '改装完成' : '当前操作'}</span>
-          <p aria-live="polite">{MODIFICATION_STATUS[operation]}</p>
+          <span>
+            {finished ? '工位完成' : definition.jobLabels[activeJobIndex]}
+          </span>
+          <p aria-live="polite">{definition.status[operation]}</p>
         </div>
         <progress
           value={operation}
-          max={MODIFICATION_ACTIONS.length}
+          max={definition.actions.length}
           aria-label="改车进度"
         />
         <button
@@ -415,7 +678,7 @@ export function CarModificationOverlay({
           className="vehicle-workshop__action"
           onClick={handleAction}
         >
-          {finished ? '确认改装完成' : MODIFICATION_ACTIONS[operation]}
+          {finished ? '确认工位完成' : definition.actions[operation]}
         </button>
       </footer>
     </section>
@@ -424,12 +687,17 @@ export function CarModificationOverlay({
 
 export function CarDismantleOverlay({
   onComplete,
-}: WorkshopOverlayProps): JSX.Element {
+  scenario = 'salvage-pair',
+}: WorkshopOverlayProps & {
+  scenario?: CarDismantleScenario
+}): JSX.Element {
   const [operation, setOperation] = useState(0)
   const completionSentRef = useRef(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
-  const finished = operation >= DISMANTLE_ACTIONS.length
-  const activeCar = Math.min(2, Math.floor(operation / 3) + 1)
+  const actions = DISMANTLE_ACTIONS[scenario]
+  const finished = operation >= actions.length
+  const vehicleCount = scenario === 'salvage-pair' ? 2 : 1
+  const activeCar = Math.min(vehicleCount, Math.floor(operation / 3) + 1)
 
   useEffect(() => {
     titleRef.current?.focus()
@@ -437,7 +705,7 @@ export function CarDismantleOverlay({
 
   const handleAction = (): void => {
     if (!finished) {
-      setOperation((current) => Math.min(DISMANTLE_ACTIONS.length, current + 1))
+      setOperation((current) => Math.min(actions.length, current + 1))
       return
     }
     if (completionSentRef.current) return
@@ -451,38 +719,58 @@ export function CarDismantleOverlay({
       role="dialog"
       aria-modal="true"
       aria-label="3D 拆车工位"
+      data-scenario={scenario}
     >
       <header className="vehicle-workshop__header">
         <div>
           <span>SCRAP YARD · BREAKDOWN LINE</span>
           <h2 ref={titleRef} tabIndex={-1}>
-            黑市车辆拆解
+            {scenario === 'salvage-pair' ? '黑市车辆拆解' : '追杀残车取证'}
           </h2>
         </div>
-        <strong>{finished ? '2 / 2' : `${activeCar} / 2`}</strong>
+        <strong>
+          {finished
+            ? `${vehicleCount} / ${vehicleCount}`
+            : `${activeCar} / ${vehicleCount}`}
+        </strong>
       </header>
       <div className="vehicle-workshop__scene">
-        <DismantleScene operation={operation} />
-        <div className="vehicle-workshop__scene-label">车辆拆解台</div>
+        <DismantleScene scenario={scenario} operation={operation} />
+        <div className="vehicle-workshop__scene-label">
+          {scenario === 'salvage-pair' ? '车辆拆解台' : '残车取证台'}
+        </div>
       </div>
       <footer className="vehicle-workshop__console">
         <div className="vehicle-workshop__task">
           <span>{finished ? '拆解完成' : `当前车辆 · ${activeCar} 号`}</span>
           <p aria-live="polite">
             {finished
-              ? '两辆黑市车已经拆成可用部件，回收物等待入库。'
-              : '按轮组、引擎、车壳顺序拆解，观察车辆模型实时变化。'}
+              ? scenario === 'salvage-pair'
+                ? '两辆黑市车已经拆成可用部件，回收物等待入库。'
+                : '追杀残车已经拆解，车架编号与可用部件等待交给 Arthur。'
+              : scenario === 'salvage-pair'
+                ? '按轮组、引擎、车壳顺序拆解，观察车辆模型实时变化。'
+                : '拆解敌方残车，保留车架编号并取出修复铁獠所需部件。'}
           </p>
         </div>
         <progress
           value={operation}
-          max={DISMANTLE_ACTIONS.length}
+          max={actions.length}
           aria-label="拆车进度"
         />
         {finished ? (
           <div className="vehicle-workshop__reward" aria-label="拆车奖励">
-            <span>零件 +25</span>
-            <span>普通悬挂 ×1</span>
+            {scenario === 'salvage-pair' ? (
+              <>
+                <span>零件 +25</span>
+                <span>普通悬挂 ×1</span>
+              </>
+            ) : (
+              <>
+                <span>袭击车架编号 ×1</span>
+                <span>铁獠修复部件 ×1</span>
+              </>
+            )}
           </div>
         ) : null}
         <button
@@ -490,7 +778,7 @@ export function CarDismantleOverlay({
           className="vehicle-workshop__action"
           onClick={handleAction}
         >
-          {finished ? '收取拆解物' : DISMANTLE_ACTIONS[operation]}
+          {finished ? '收取拆解物' : actions[operation]}
         </button>
       </footer>
     </section>

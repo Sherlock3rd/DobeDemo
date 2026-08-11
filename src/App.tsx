@@ -560,7 +560,9 @@ export default function App(): JSX.Element {
         setPlayOverlay({ kind: 'heroes', initialTab: storyStep.action.tab })
         return
       case 'car-customize':
-        grantProloguePart()
+        if (storyStep.action.scenario === 'tune-engine') {
+          grantProloguePart()
+        }
         setPlayOverlay({ kind: 'storyCarCustomize' })
         return
       case 'car-dismantle':
@@ -625,16 +627,31 @@ export default function App(): JSX.Element {
     const currentStep = getStoryStep(currentStepNumber)
     if (!storyEnabled || currentStep?.action.kind !== 'car-customize') return
 
-    grantProloguePart()
-    const result = useAdventureStore
-      .getState()
-      .equipCarPart(
-        'rust-fox',
-        PROLOGUE_TUNED_PART_ID,
-        useGangStore.getState().currentLevel,
-      )
-    if (!result.applied) return
-    grantPrologueGun()
+    if (currentStep.action.scenario === 'tune-engine') {
+      grantProloguePart()
+      const result = useAdventureStore
+        .getState()
+        .equipCarPart(
+          'rust-fox',
+          PROLOGUE_TUNED_PART_ID,
+          useGangStore.getState().currentLevel,
+        )
+      if (!result.applied) return
+      grantPrologueGun()
+    }
+    if (currentStep.action.scenario === 'race-prep') {
+      const adventure = useAdventureStore.getState()
+      const recoveredSuspension = [...adventure.carPartInventory]
+        .reverse()
+        .find((part) => part.slot === 'suspension')
+      if (recoveredSuspension) {
+        adventure.equipCarPart(
+          'rust-fox',
+          recoveredSuspension.id,
+          useGangStore.getState().currentLevel,
+        )
+      }
+    }
     advanceStoryStep(currentStepNumber)
     setPlayOverlay({ kind: 'none' })
   }
@@ -1026,10 +1043,24 @@ export default function App(): JSX.Element {
           />
         ) : null}
         {activeOverlay.kind === 'storyCarCustomize' ? (
-          <CarModificationOverlay onComplete={finishStoryCarCustomization} />
+          <CarModificationOverlay
+            scenario={
+              storyStep?.action.kind === 'car-customize'
+                ? storyStep.action.scenario
+                : 'tune-engine'
+            }
+            onComplete={finishStoryCarCustomization}
+          />
         ) : null}
         {activeOverlay.kind === 'storyCarDismantle' ? (
-          <CarDismantleOverlay onComplete={finishStoryCarDismantle} />
+          <CarDismantleOverlay
+            scenario={
+              storyStep?.action.kind === 'car-dismantle'
+                ? storyStep.action.scenario
+                : 'salvage-pair'
+            }
+            onComplete={finishStoryCarDismantle}
+          />
         ) : null}
         <GangTreePanel
           open={activeOverlay.kind === 'gangTree'}

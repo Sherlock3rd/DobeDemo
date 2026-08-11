@@ -279,6 +279,30 @@ describe('App', () => {
     expect(screen.getByRole('dialog', { name: '公路争霸' })).toBeInTheDocument()
   })
 
+  it('requires the customized 3D three-car repair before advancing from L06', async () => {
+    const user = userEvent.setup()
+    useStoryStore.setState({
+      enabled: true,
+      currentStepNumber: 6,
+      briefedStepNumbers: [],
+    })
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', { name: '进入 3D 三车维修工位' }),
+    )
+    expect(
+      screen.getByRole('dialog', { name: '3D 改车工位' }),
+    ).toBeInTheDocument()
+    expect(useStoryStore.getState().currentStepNumber).toBe(6)
+
+    await user.click(screen.getByRole('button', { name: '完成 3D 改车' }))
+
+    expect(useStoryStore.getState().currentStepNumber).toBe(7)
+    expect(useCityStore.getState().resources.money).toBeGreaterThan(10_000)
+  })
+
   it('requires the 3D modification workshop before advancing from L07', async () => {
     const user = userEvent.setup()
     useAdventureStore.getState().grantProloguePart()
@@ -294,7 +318,7 @@ describe('App', () => {
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 改车工位' }),
+      await screen.findByRole('button', { name: '进入 3D 引擎强化工位' }),
     )
     expect(
       screen.getByRole('dialog', { name: '3D 改车工位' }),
@@ -324,7 +348,7 @@ describe('App', () => {
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 拆车工位' }),
+      await screen.findByRole('button', { name: '进入 3D 黑市车拆解台' }),
     )
     expect(
       screen.getByRole('dialog', { name: '3D 拆车工位' }),
@@ -342,6 +366,39 @@ describe('App', () => {
           (part) => part.slot === 'suspension' && part.quality === 'common',
         ),
     ).toBe(true)
+  })
+
+  it('uses the 3D race-prep workshop and equips the recovered suspension at L16', async () => {
+    const user = userEvent.setup()
+    useAdventureStore.getState().grantChapterReward({
+      gangReputation: 0,
+      heroExperience: 0,
+      spareParts: 0,
+      carParts: [{ slot: 'suspension', quality: 'common' }],
+      resources: { money: 0, oil: 0, materials: 0 },
+      unlockCarIds: [],
+      unlockGunIds: [],
+    })
+    const suspension = useAdventureStore
+      .getState()
+      .carPartInventory.find((part) => part.slot === 'suspension')
+    useStoryStore.setState({
+      enabled: true,
+      currentStepNumber: 16,
+      briefedStepNumbers: [],
+    })
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', { name: '进入 3D 赛前换件工位' }),
+    )
+    await user.click(screen.getByRole('button', { name: '完成 3D 改车' }))
+
+    expect(useStoryStore.getState().currentStepNumber).toBe(17)
+    expect(
+      useAdventureStore.getState().carPartSlotsByCar['rust-fox'].suspension,
+    ).toBe(suspension?.id)
   })
 
   it('renders the canvas with an orthographic projection', () => {

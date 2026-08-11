@@ -60,15 +60,55 @@ describe('Plan B story progression', () => {
     expect(getStoryVisibility(38).materials).toBe(true)
   })
 
-  it('places the 3D vehicle workshops into the existing story route', () => {
+  it('places the customized 3D vehicle workshops into the Plan B route', () => {
+    expect(STORY_STEPS[5].action).toEqual({
+      kind: 'car-customize',
+      scenario: 'repair-trio',
+      label: '进入 3D 三车维修工位',
+    })
     expect(STORY_STEPS[6].action).toEqual({
       kind: 'car-customize',
-      label: '进入 3D 改车工位',
+      scenario: 'tune-engine',
+      label: '进入 3D 引擎强化工位',
     })
     expect(STORY_STEPS[14].action).toEqual({
       kind: 'car-dismantle',
-      label: '进入 3D 拆车工位',
+      scenario: 'salvage-pair',
+      label: '进入 3D 黑市车拆解台',
+    })
+    expect(STORY_STEPS[15].action).toEqual({
+      kind: 'car-customize',
+      scenario: 'race-prep',
+      label: '进入 3D 赛前换件工位',
+    })
+    expect(STORY_STEPS[18].action).toEqual({
+      kind: 'car-dismantle',
+      scenario: 'pursuit-wreck',
+      label: '致意后进入 3D 残车拆解台',
+    })
+    expect(STORY_STEPS[19].action).toEqual({
+      kind: 'car-customize',
+      scenario: 'revenge-build',
+      label: '进入 3D 铁獠整备工位',
     })
     expect(STORY_STEPS).toHaveLength(43)
+  })
+
+  it('gives every story slide enough context to connect cause, action, and result', () => {
+    for (const step of STORY_STEPS) {
+      expect(
+        step.lines.length,
+        `L${step.number} dialogue lines`,
+      ).toBeGreaterThanOrEqual(2)
+      expect(step.objective.trim(), `L${step.number} objective`).not.toBe('')
+      expect(step.action.label.trim(), `L${step.number} action`).not.toBe('')
+    }
+  })
+
+  it('keeps Freddie the fallen yard manager distinct from Billy the traitor', () => {
+    expect(STORY_STEPS[13].speaker).toBe('Freddie Thorne')
+    expect(STORY_STEPS[17].speaker).toBe('Freddie Thorne')
+    expect(STORY_STEPS[29].lines.join(' ')).toContain('Billy Kimber')
+    expect(STORY_STEPS[29].lines.join(' ')).not.toContain('Freddie')
   })
 })
