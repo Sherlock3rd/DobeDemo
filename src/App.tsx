@@ -17,7 +17,11 @@ import {
   type ChapterTaskRequirement,
 } from './game/chapterProgression'
 import type { BuildingId } from './game/cityTypes'
-import { PROLOGUE_TASK_IDS, isTutorialPartInstalled } from './game/prologue'
+import {
+  PROLOGUE_TASK_IDS,
+  PROLOGUE_TUNED_PART_ID,
+  isTutorialPartInstalled,
+} from './game/prologue'
 import {
   STORY_COMPLETE_STEP,
   getStoryClaimBuilding,
@@ -61,6 +65,10 @@ import { StoryCouncilOverlay } from './ui/StoryCouncilOverlay'
 import { StoryGangTreePanel } from './ui/StoryGangTreePanel'
 import { StoryProgressGuide } from './ui/StoryProgressGuide'
 import { StoryRoadmapPanel } from './ui/StoryRoadmapPanel'
+import {
+  CarDismantleOverlay,
+  CarModificationOverlay,
+} from './ui/VehicleWorkshopOverlay'
 import './App.css'
 
 export type ActiveOverlay =
@@ -86,6 +94,8 @@ export type ActiveOverlay =
   | { kind: 'storyRoadmap' }
   | { kind: 'storyGangTree' }
   | { kind: 'storyCouncil' }
+  | { kind: 'storyCarCustomize' }
+  | { kind: 'storyCarDismantle' }
 
 type PlayOverlay = Exclude<ActiveOverlay, { kind: 'buildingDetail' }>
 
@@ -107,6 +117,8 @@ const FULLSCREEN_KINDS = new Set([
   'storyRoadmap',
   'storyGangTree',
   'storyCouncil',
+  'storyCarCustomize',
+  'storyCarDismantle',
 ])
 const MODAL_KINDS = new Set([
   'gangTree',
@@ -129,6 +141,8 @@ const MODAL_KINDS = new Set([
   'storyRoadmap',
   'storyGangTree',
   'storyCouncil',
+  'storyCarCustomize',
+  'storyCarDismantle',
 ])
 
 interface QueuedNarrative {
@@ -485,16 +499,6 @@ export default function App(): JSX.Element {
   ])
 
   useEffect(() => {
-    if (
-      storyEnabled &&
-      storyStepNumber === 7 &&
-      isTutorialPartInstalled(tutorialEnginePartId)
-    ) {
-      advanceStoryStep(7)
-    }
-  }, [advanceStoryStep, storyEnabled, storyStepNumber, tutorialEnginePartId])
-
-  useEffect(() => {
     if (!storyEnabled || !storyStep) return
     if (
       storyStep.action.kind === 'building-claim' &&
@@ -552,13 +556,15 @@ export default function App(): JSX.Element {
         })
         return
       case 'heroes':
-        if (storyStep.number === 7) {
-          grantProloguePart()
-          grantPrologueGun()
-        } else {
-          advanceStoryStep(storyStep.number)
-        }
+        advanceStoryStep(storyStep.number)
         setPlayOverlay({ kind: 'heroes', initialTab: storyStep.action.tab })
+        return
+      case 'car-customize':
+        grantProloguePart()
+        setPlayOverlay({ kind: 'storyCarCustomize' })
+        return
+      case 'car-dismantle':
+        setPlayOverlay({ kind: 'storyCarDismantle' })
         return
       case 'building-claim':
         setPlayOverlay({ kind: 'none' })
@@ -612,6 +618,34 @@ export default function App(): JSX.Element {
     advanceStoryStep(currentStepNumber)
     setPlayOverlay({ kind: 'none' })
     return true
+  }
+
+  const finishStoryCarCustomization = (): void => {
+    const currentStepNumber = useStoryStore.getState().currentStepNumber
+    const currentStep = getStoryStep(currentStepNumber)
+    if (!storyEnabled || currentStep?.action.kind !== 'car-customize') return
+
+    grantProloguePart()
+    const result = useAdventureStore
+      .getState()
+      .equipCarPart(
+        'rust-fox',
+        PROLOGUE_TUNED_PART_ID,
+        useGangStore.getState().currentLevel,
+      )
+    if (!result.applied) return
+    grantPrologueGun()
+    advanceStoryStep(currentStepNumber)
+    setPlayOverlay({ kind: 'none' })
+  }
+
+  const finishStoryCarDismantle = (): void => {
+    const currentStepNumber = useStoryStore.getState().currentStepNumber
+    const currentStep = getStoryStep(currentStepNumber)
+    if (!storyEnabled || currentStep?.action.kind !== 'car-dismantle') return
+
+    advanceStoryStep(currentStepNumber)
+    setPlayOverlay({ kind: 'none' })
   }
 
   const completeRoleHandover = (targetLevel: number): void => {
@@ -730,7 +764,9 @@ export default function App(): JSX.Element {
         activeOverlay.kind === 'chapterComplete' ||
         activeOverlay.kind === 'assessmentMeeting' ||
         activeOverlay.kind === 'storyBeat' ||
-        activeOverlay.kind === 'storyCouncil'
+        activeOverlay.kind === 'storyCouncil' ||
+        activeOverlay.kind === 'storyCarCustomize' ||
+        activeOverlay.kind === 'storyCarDismantle'
       ) {
         return
       }
@@ -988,6 +1024,12 @@ export default function App(): JSX.Element {
               setPlayOverlay({ kind: 'none' })
             }}
           />
+        ) : null}
+        {activeOverlay.kind === 'storyCarCustomize' ? (
+          <CarModificationOverlay onComplete={finishStoryCarCustomization} />
+        ) : null}
+        {activeOverlay.kind === 'storyCarDismantle' ? (
+          <CarDismantleOverlay onComplete={finishStoryCarDismantle} />
         ) : null}
         <GangTreePanel
           open={activeOverlay.kind === 'gangTree'}

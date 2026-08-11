@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChestTick } from './game/chestTick'
 import { getChapterForGangLevel } from './game/chapterProgression'
 import { getTotalReputationForLevel } from './game/gangProgression'
+import { PROLOGUE_TUNED_PART_ID } from './game/prologue'
 import { useAdventureStore } from './store/useAdventureStore'
 import { useChapterStore } from './store/useChapterStore'
 import { useCityStore } from './store/useCityStore'
@@ -222,6 +223,23 @@ vi.mock('./ui/RaceScreen', () => ({
   ),
 }))
 
+vi.mock('./ui/VehicleWorkshopOverlay', () => ({
+  CarModificationOverlay: (p: { onComplete: () => void }) => (
+    <div role="dialog" aria-label="3D 改车工位">
+      <button type="button" onClick={p.onComplete}>
+        完成 3D 改车
+      </button>
+    </div>
+  ),
+  CarDismantleOverlay: (p: { onComplete: () => void }) => (
+    <div role="dialog" aria-label="3D 拆车工位">
+      <button type="button" onClick={p.onComplete}>
+        完成 3D 拆车
+      </button>
+    </div>
+  ),
+}))
+
 const { default: App } = await import('./App')
 
 describe('App', () => {
@@ -259,6 +277,71 @@ describe('App', () => {
       screen.getByRole('button', { name: '进入 SUP · 甩开警察' }),
     )
     expect(screen.getByRole('dialog', { name: '公路争霸' })).toBeInTheDocument()
+  })
+
+  it('requires the 3D modification workshop before advancing from L07', async () => {
+    const user = userEvent.setup()
+    useAdventureStore.getState().grantProloguePart()
+    useAdventureStore
+      .getState()
+      .equipCarPart('rust-fox', PROLOGUE_TUNED_PART_ID, 1)
+    useStoryStore.setState({
+      enabled: true,
+      currentStepNumber: 7,
+      briefedStepNumbers: [],
+    })
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', { name: '进入 3D 改车工位' }),
+    )
+    expect(
+      screen.getByRole('dialog', { name: '3D 改车工位' }),
+    ).toBeInTheDocument()
+    expect(useStoryStore.getState().currentStepNumber).toBe(7)
+
+    await user.click(screen.getByRole('button', { name: '完成 3D 改车' }))
+
+    expect(useStoryStore.getState().currentStepNumber).toBe(8)
+    expect(
+      useAdventureStore.getState().carPartSlotsByCar['rust-fox'].engine,
+    ).toBe(PROLOGUE_TUNED_PART_ID)
+    expect(useAdventureStore.getState().equipmentByHero.foreman.gunId).toBe(
+      'rivet-smg',
+    )
+  })
+
+  it('requires the 3D dismantling workshop and grants its salvage reward', async () => {
+    const user = userEvent.setup()
+    const initialSpareParts = useAdventureStore.getState().spareParts
+    useStoryStore.setState({
+      enabled: true,
+      currentStepNumber: 15,
+      briefedStepNumbers: [],
+    })
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', { name: '进入 3D 拆车工位' }),
+    )
+    expect(
+      screen.getByRole('dialog', { name: '3D 拆车工位' }),
+    ).toBeInTheDocument()
+    expect(useStoryStore.getState().currentStepNumber).toBe(15)
+
+    await user.click(screen.getByRole('button', { name: '完成 3D 拆车' }))
+
+    expect(useStoryStore.getState().currentStepNumber).toBe(16)
+    expect(useAdventureStore.getState().spareParts).toBe(initialSpareParts + 25)
+    expect(
+      useAdventureStore
+        .getState()
+        .carPartInventory.some(
+          (part) => part.slot === 'suspension' && part.quality === 'common',
+        ),
+    ).toBe(true)
   })
 
   it('renders the canvas with an orthographic projection', () => {

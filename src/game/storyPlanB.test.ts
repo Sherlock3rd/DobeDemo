@@ -59,4 +59,16 @@ describe('Plan B story progression', () => {
     expect(getStoryVisibility(34).oil).toBe(true)
     expect(getStoryVisibility(38).materials).toBe(true)
   })
+
+  it('places the 3D vehicle workshops into the existing story route', () => {
+    expect(STORY_STEPS[6].action).toEqual({
+      kind: 'car-customize',
+      label: '进入 3D 改车工位',
+    })
+    expect(STORY_STEPS[14].action).toEqual({
+      kind: 'car-dismantle',
+      label: '进入 3D 拆车工位',
+    })
+    expect(STORY_STEPS).toHaveLength(43)
+  })
 })

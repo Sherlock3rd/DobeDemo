@@ -22,6 +22,8 @@ export type StoryAction =
   | { kind: 'continue'; label: string }
   | { kind: 'race'; stage: number; label: string }
   | { kind: 'heroes'; tab: DevelopmentTab; label: string }
+  | { kind: 'car-customize'; label: string }
+  | { kind: 'car-dismantle'; label: string }
   | { kind: 'building-claim'; buildingId: BuildingId; label: string }
   | { kind: 'building-upgrade'; buildingId: BuildingId; label: string }
   | { kind: 'campaign'; targetStage: number; label: string }
@@ -222,9 +224,9 @@ export const STORY_STEPS: readonly StoryStep[] = [
     kicker: '车辆养成',
     speaker: 'Arthur Shelby',
     lines: ['旧引擎撑不到下一次追击。把这个调校件换上，之后这把枪也归你保管。'],
-    objective: '进入英雄养成，为灰狐替换损坏的引擎配件。',
+    objective: '进入 3D 改车工位，拆下损坏引擎并安装调校引擎。',
     artwork: 'garage-repair',
-    action: { kind: 'heroes', tab: 'car', label: '安装调校引擎' },
+    action: { kind: 'car-customize', label: '进入 3D 改车工位' },
   },
   {
     number: 8,
@@ -340,9 +342,9 @@ export const STORY_STEPS: readonly StoryStep[] = [
     lines: [
       '你还没有这里的管理权，但可以用我的设备。拆掉两辆车，留下真正有价值的部件。',
     ],
-    objective: '拆解两辆黑市车辆，首次获得零件。',
+    objective: '在 3D 拆车工位拆解两辆黑市车辆，首次获得零件。',
     artwork: 'scrapyard-salvage',
-    action: { kind: 'continue', label: '完成车辆拆解' },
+    action: { kind: 'car-dismantle', label: '进入 3D 拆车工位' },
   },
   {
     number: 16,

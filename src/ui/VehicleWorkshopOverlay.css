@@ -1,0 +1,225 @@
+.vehicle-workshop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  color: #f4f2e8;
+  background:
+    linear-gradient(180deg, rgba(4, 10, 9, 0.08), rgba(4, 10, 9, 0.96)), #07100f;
+}
+
+.vehicle-workshop__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 82px;
+  padding: 14px clamp(18px, 4vw, 54px);
+  border-bottom: 1px solid rgba(98, 240, 207, 0.28);
+  background: rgba(3, 10, 9, 0.92);
+  backdrop-filter: blur(12px);
+}
+
+.vehicle-workshop__header span,
+.vehicle-workshop__task > span {
+  color: #67e6ca;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vehicle-workshop--dismantle .vehicle-workshop__header span,
+.vehicle-workshop--dismantle .vehicle-workshop__task > span {
+  color: #efbd57;
+}
+
+.vehicle-workshop__header h2 {
+  margin: 3px 0 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.35rem, 3vw, 2.25rem);
+  line-height: 1;
+}
+
+.vehicle-workshop__header strong {
+  display: grid;
+  min-width: 72px;
+  min-height: 42px;
+  place-items: center;
+  border: 1px solid rgba(239, 189, 87, 0.55);
+  border-radius: 5px;
+  color: #f3cd73;
+  background: rgba(48, 35, 7, 0.58);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem;
+}
+
+.vehicle-workshop__scene {
+  position: relative;
+  min-height: 0;
+}
+
+.vehicle-workshop__scene canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+}
+
+.vehicle-workshop__scene-label {
+  position: absolute;
+  top: 16px;
+  left: clamp(18px, 4vw, 54px);
+  padding: 7px 10px;
+  border-left: 3px solid #62efd0;
+  color: #d8fff6;
+  background: rgba(4, 15, 13, 0.72);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.vehicle-workshop--dismantle .vehicle-workshop__scene-label {
+  border-left-color: #efbd57;
+  color: #ffe9b5;
+}
+
+.vehicle-workshop__console {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.4fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px clamp(18px, 4vw, 54px) 20px;
+  border-top: 1px solid rgba(98, 240, 207, 0.24);
+  background: rgba(3, 10, 9, 0.96);
+  box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.32);
+}
+
+.vehicle-workshop__task p {
+  max-width: 56rem;
+  margin: 5px 0 0;
+  color: #d8dedb;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.vehicle-workshop__console progress {
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  accent-color: #56d9ba;
+  background: #1d2b27;
+}
+
+.vehicle-workshop--dismantle .vehicle-workshop__console progress {
+  accent-color: #d6a43a;
+}
+
+.vehicle-workshop__action {
+  min-width: 220px;
+  min-height: 52px;
+  border: 1px solid #edca67;
+  border-radius: 5px;
+  color: #08110f;
+  background: linear-gradient(180deg, #f6db82, #cfa235);
+  box-shadow: 0 0 26px rgba(225, 179, 58, 0.18);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.vehicle-workshop__action:hover,
+.vehicle-workshop__action:focus-visible {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.vehicle-workshop__reward {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  grid-column: 1 / 3;
+}
+
+.vehicle-workshop__reward span {
+  padding: 6px 10px;
+  border: 1px solid rgba(239, 189, 87, 0.46);
+  border-radius: 999px;
+  color: #ffe2a1;
+  background: rgba(68, 45, 8, 0.56);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+@media (max-width: 720px) {
+  .vehicle-workshop__header {
+    min-height: 68px;
+    padding: 10px 14px;
+  }
+
+  .vehicle-workshop__header h2 {
+    font-size: 1.28rem;
+  }
+
+  .vehicle-workshop__header strong {
+    min-width: 58px;
+    min-height: 38px;
+  }
+
+  .vehicle-workshop__scene-label {
+    top: 10px;
+    left: 12px;
+  }
+
+  .vehicle-workshop__console {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+  }
+
+  .vehicle-workshop__task p {
+    min-height: 2.5em;
+    font-size: 0.82rem;
+  }
+
+  .vehicle-workshop__action {
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
+  }
+
+  .vehicle-workshop__reward {
+    grid-column: 1;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .vehicle-workshop__header {
+    min-height: 58px;
+    padding-block: 8px;
+  }
+
+  .vehicle-workshop__console {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 0.3fr) auto;
+    gap: 12px;
+    padding-block: 10px;
+  }
+
+  .vehicle-workshop__task p {
+    margin-top: 2px;
+    font-size: 0.78rem;
+  }
+
+  .vehicle-workshop__action {
+    min-width: 188px;
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vehicle-workshop__action {
+    transition: none;
+  }
+}
