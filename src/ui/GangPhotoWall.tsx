@@ -86,7 +86,18 @@ export function GangPhotoWall({
   const currentTierRef = useRef<HTMLLIElement | null>(null)
 
   useEffect(() => {
-    currentTierRef.current?.scrollIntoView?.({ block: 'center' })
+    const tier = currentTierRef.current
+    const container = tier?.closest<HTMLElement>('.story-gang__scroll')
+    if (!tier || !container) return
+    const containerRect = container.getBoundingClientRect()
+    const tierRect = tier.getBoundingClientRect()
+    container.scrollTop = Math.max(
+      0,
+      container.scrollTop +
+        tierRect.top -
+        containerRect.top -
+        (container.clientHeight - tierRect.height) / 2,
+    )
   }, [currentTier])
 
   return (
