@@ -24,7 +24,7 @@ describe('useStoryStore', () => {
     )
   })
 
-  it('resets the full Plan B route', () => {
+  it('resets the full Plan C route', () => {
     useStoryStore.getState().advance(1)
     useStoryStore.getState().markBriefed(2)
     useStoryStore.getState().setEnabled(false)
@@ -38,20 +38,20 @@ describe('useStoryStore', () => {
   })
 
   it('allows only the previous tier rewards after their story release step', () => {
-    useStoryStore.setState({ currentStepNumber: 11 })
-    expect(
-      useStoryStore.getState().claimGangWallReward('repair-shop-vacancy'),
-    ).toBe(true)
-    expect(useStoryStore.getState().claimGangWallReward('eddie-operator')).toBe(
-      false,
-    )
-    expect(useStoryStore.getState().claimGangWallReward('maeve-hero')).toBe(
-      false,
-    )
-
     useStoryStore.setState({ currentStepNumber: 13 })
-    expect(useStoryStore.getState().claimGangWallReward('eddie-operator')).toBe(
-      true,
-    )
+    expect(
+      useStoryStore.getState().claimGangWallReward('hugo-garage-manager'),
+    ).toBe(true)
+    expect(
+      useStoryStore.getState().claimGangWallReward('prospect-wreck-runner'),
+    ).toBe(false)
+    expect(
+      useStoryStore.getState().claimGangWallReward('walter-yard-manager'),
+    ).toBe(false)
+
+    useStoryStore.setState({ currentStepNumber: 14 })
+    expect(
+      useStoryStore.getState().claimGangWallReward('prospect-wreck-runner'),
+    ).toBe(true)
   })
 })

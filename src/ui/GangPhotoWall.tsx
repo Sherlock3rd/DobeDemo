@@ -61,8 +61,8 @@ function getPhotoState(
 }
 
 function stateLabel(state: PhotoState): string {
-  if (state === 'claimed') return '已接管'
-  if (state === 'claimable') return '点击交接'
+  if (state === 'claimed') return '已收复'
+  if (state === 'claimable') return '可以收复'
   if (state === 'managed') return '辖下成员'
   if (state === 'current') return '同层成员'
   return '尚未公开'
@@ -106,8 +106,8 @@ export function GangPhotoWall({
         <span>照片墙 · 上级在上</span>
         <strong>
           {currentTier === 1
-            ? 'N-1 规则：晋升 T2 后，才可接管 T1'
-            : `N-1 规则：你到达 T${currentTier}，可接管 T${currentTier - 1}`}
+            ? 'N-1 规则：晋升 T2 后，才可收复 T1'
+            : `N-1 规则：你到达 T${currentTier}，可收复 T${currentTier - 1}`}
         </strong>
         {requiredRewardId ? <em>点击发光照片完成本次交接</em> : null}
       </div>
@@ -133,7 +133,8 @@ export function GangPhotoWall({
                   <strong>{tier.title}</strong>
                   <small>{`${tier.chineseTitle} · Lv.${tier.systemLevel}`}</small>
                 </div>
-                <p>{tier.duty}</p>
+                <p>{`${tier.duty} · 声望 ${tier.reputationThreshold}`}</p>
+                <em>{tier.promotionEvent}</em>
                 {tier.tier === currentTier ? (
                   <article
                     className="gang-photo-wall__player"
@@ -202,6 +203,7 @@ export function GangPhotoWall({
                       </div>
                       <strong>{slot.name}</strong>
                       <small>{slot.position}</small>
+                      <b>{`任务 · ${slot.task}`}</b>
                       <p>{slot.description}</p>
                       {canClaim ? (
                         <button
@@ -209,7 +211,7 @@ export function GangPhotoWall({
                           aria-label={slot.claimLabel}
                           onClick={() => onClaimReward(slot.id)}
                         >
-                          {isRequired ? '完成本次交接' : '点击接管'}
+                          {isRequired ? '完成本次收复' : '点击收复'}
                         </button>
                       ) : (
                         <em>{stateLabel(state)}</em>

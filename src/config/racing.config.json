@@ -58,6 +58,8 @@
       "distance": 3950,
       "requiredPartLevel": 0,
       "opponentSpeeds": [37, 39, 41],
+      "opponentCount": 1,
+      "clearMaxRank": 1,
       "obstacleEvery": 190,
       "firstClearExp": 270,
       "firstClearMoney": 600,

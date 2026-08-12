@@ -93,6 +93,32 @@ describe('VehicleWorkshopOverlay', () => {
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
 
+  it('installs the Plan C nitrous system through a dedicated 3D sequence', async () => {
+    const user = userEvent.setup()
+    const onComplete = vi.fn()
+    render(
+      <CarModificationOverlay
+        scenario="nitrous-install"
+        onComplete={onComplete}
+      />,
+    )
+
+    for (const action of [
+      '打开后备舱',
+      '固定双瓶支架',
+      '连接氮气管路',
+      '点火喷射测试',
+    ]) {
+      await user.click(screen.getByRole('button', { name: action }))
+    }
+
+    expect(
+      screen.getByText('蓝色尾焰稳定，灰狐获得氮气冲刺能力。'),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '确认工位完成' }))
+    expect(onComplete).toHaveBeenCalledTimes(1)
+  })
+
   it('dismantles two vehicles before exposing the salvage reward', async () => {
     const user = userEvent.setup()
     const onComplete = vi.fn()
@@ -111,6 +137,27 @@ describe('VehicleWorkshopOverlay', () => {
     }
 
     expect(screen.getByLabelText('拆车奖励')).toHaveTextContent('零件 +25')
+    await user.click(screen.getByRole('button', { name: '收取拆解物' }))
+    expect(onComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('dismantles the first Plan C wreck and exposes parts plus nitrous', async () => {
+    const user = userEvent.setup()
+    const onComplete = vi.fn()
+    render(
+      <CarDismantleOverlay scenario="salvage-single" onComplete={onComplete} />,
+    )
+
+    for (const action of [
+      '拆下废车轮组',
+      '取出引擎与氮气装置',
+      '压缩废车车壳',
+    ]) {
+      await user.click(screen.getByRole('button', { name: action }))
+    }
+
+    expect(screen.getByLabelText('拆车奖励')).toHaveTextContent('零件 +15')
+    expect(screen.getByLabelText('拆车奖励')).toHaveTextContent('氮气装置 ×1')
     await user.click(screen.getByRole('button', { name: '收取拆解物' }))
     expect(onComplete).toHaveBeenCalledTimes(1)
   })

@@ -125,7 +125,7 @@ const TRANSITION_EVENTS: Readonly<
       '商业街带来一批加急金属订单。先扩大炉线还是先校准军火，都能推进帮派利益，但资源分配顺序不同。',
     optionA: {
       label: '优先扩大炉线',
-      detail: '先让金属加工厂稳定连续生产。',
+      detail: '先让物流中心稳定连续运转。',
     },
     optionB: {
       label: '优先校准军火',

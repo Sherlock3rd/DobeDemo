@@ -1,5 +1,9 @@
 import { useEffect, useRef, type CSSProperties, type JSX } from 'react'
-import type { StoryArtworkId, StoryStep } from '../game/storyPlanB'
+import {
+  STORY_STEPS,
+  type StoryArtworkId,
+  type StoryStep,
+} from '../game/storyPlanC'
 import assassinationRescue from '../assets/story/assassination-hero-rescue.webp'
 import blondSacrifice from '../assets/story/blond-ally-sacrifice.webp'
 import cargoAmbush from '../assets/story/cargo-ambush-rescue.webp'
@@ -65,7 +69,7 @@ export function StoryBeatOverlay({
       <div className="story-beat__shade" aria-hidden="true" />
       <header className="story-beat__header">
         <span>{`ACT ${step.act} · ${step.time}`}</span>
-        <strong>{`L${String(step.number).padStart(2, '0')} / 43`}</strong>
+        <strong>{`L${String(step.number).padStart(2, '0')} / ${STORY_STEPS.length}`}</strong>
       </header>
       <article className="story-beat__card">
         <p className="story-beat__kicker">{step.kicker}</p>

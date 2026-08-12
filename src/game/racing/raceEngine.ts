@@ -314,7 +314,7 @@ export function createRaceState(
   )
   const vehicles =
     stage.mode === 'race'
-      ? Array.from({ length: stage.opponentSpeeds.length * 2 }, (_, index) =>
+      ? Array.from({ length: stage.opponentCount }, (_, index) =>
           vehicle(
             `racer-${index + 1}`,
             'racer',
@@ -1246,7 +1246,7 @@ function resolveFinish(state: RaceState, stage: RacingStageConfig): RaceState {
       return {
         ...state,
         pendingResult: {
-          status: rank <= RACE_CLEAR_MAX_RANK ? 'victory' : 'defeat',
+          status: rank <= stage.clearMaxRank ? 'victory' : 'defeat',
           reason: 'finished',
           triggeredAtMs: state.elapsedMs,
           settleAtMs: state.elapsedMs + RACE_SETTLEMENT_DELAY_MS,

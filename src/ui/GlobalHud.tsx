@@ -24,7 +24,7 @@ import {
   getStoryRank,
   getStoryStep,
   getStoryVisibility,
-} from '../game/storyPlanB'
+} from '../game/storyPlanC'
 import {
   getClaimableIdleExp,
   useAdventureStore,
@@ -268,7 +268,7 @@ export function GlobalHud(props: GlobalHudProps): JSX.Element {
         >
           <span>
             {storyStep
-              ? `方案 B · ACT ${storyStep.act}`
+              ? `方案 C · ACT ${storyStep.act}`
               : prologueStep === 'complete'
                 ? `章节 ${currentChapter.number} / ${CHAPTERS.length}`
                 : '序章 · 转正任务'}

@@ -8,7 +8,7 @@ import {
 } from './gangPhotoWall'
 
 describe('gang photo wall', () => {
-  it('uses the ten Plan A hierarchy tiers with no more than two empty slots', () => {
+  it('uses the ten Plan C hierarchy tiers with one to five photo positions', () => {
     expect(GANG_PHOTO_WALL).toHaveLength(10)
     expect(GANG_PHOTO_WALL.map((tier) => tier.tier)).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -23,14 +23,14 @@ describe('gang photo wall', () => {
     }
   })
 
-  it('keeps the first repair shop as a standalone vacant building photo', () => {
-    const repairShop = getGangWallReward('repair-shop-vacancy')
+  it('binds Hugo to the first repair-shop management line', () => {
+    const repairShop = getGangWallReward('hugo-garage-manager')
     expect(repairShop).toMatchObject({
-      kind: 'building',
-      name: '修车厂',
-      position: '管理席位空置',
+      kind: 'person',
+      name: 'Hugo Vale',
+      position: '修车厂看守人',
       buildingId: 'repair-shop',
-      tags: ['building'],
+      tags: ['building', 'parts'],
     })
     expect(getGangWallTierForReward(repairShop.id).tier).toBe(1)
   })
@@ -49,5 +49,14 @@ describe('gang photo wall', () => {
     expect(getGangWallTierForSystemLevel(8).tier).toBe(2)
     expect(getGangWallTierForSystemLevel(43).tier).toBe(7)
     expect(getGangWallTierForSystemLevel(50).tier).toBe(10)
+  })
+
+  it('uses the Plan C reputation ladder on every tier', () => {
+    expect(GANG_PHOTO_WALL.map((tier) => tier.reputationThreshold)).toEqual([
+      0, 100, 300, 650, 1_100, 1_700, 2_400, 3_200, 4_200, 5_500,
+    ])
+    expect(
+      GANG_PHOTO_WALL.every((tier) => tier.promotionEvent.length > 0),
+    ).toBe(true)
   })
 })

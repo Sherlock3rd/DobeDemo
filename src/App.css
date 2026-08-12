@@ -7599,7 +7599,7 @@
   }
 }
 
-/* Plan A hierarchy + Plan B cast: gang photo wall */
+/* Plan C hierarchy and cast: gang photo wall */
 
 .story-gang {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
@@ -7760,6 +7760,14 @@
   grid-column: 1 / -1;
   margin: 0.35rem 0 0;
   line-height: 1.45;
+}
+
+.gang-photo-wall__tier > header > em {
+  grid-column: 1 / -1;
+  color: #5eead4;
+  font-size: 0.52rem;
+  font-style: normal;
+  font-weight: 800;
 }
 
 .gang-photo-wall__player {
@@ -7938,6 +7946,13 @@
   white-space: nowrap;
 }
 
+.gang-photo-wall__photo > b {
+  margin-top: 0.24rem;
+  color: #7c2d12;
+  font-size: 0.48rem;
+  line-height: 1.25;
+}
+
 .gang-photo-wall__photo > p {
   display: -webkit-box;
   overflow: hidden;
@@ -8093,7 +8108,7 @@
   }
 }
 
-/* Plan B one-day progression */
+/* Plan C one-day progression */
 .story-beat {
   --story-art: none;
   position: fixed;
@@ -8482,7 +8497,7 @@
   border-bottom: 1px solid rgba(99, 230, 190, 0.18);
 }
 
-.story-gang__summary span {
+.story-gang__summary > span {
   grid-row: 1 / 3;
   align-self: center;
   padding: 0.5rem;
@@ -8490,6 +8505,38 @@
   background: #63e6be;
   font-size: 0.6rem;
   font-weight: 950;
+}
+
+.story-gang__reputation {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  overflow: hidden;
+  min-height: 1.35rem;
+  padding: 0.16rem 0.4rem;
+  border: 1px solid rgba(94, 234, 212, 0.24);
+  border-radius: 0.25rem;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.story-gang__reputation b,
+.story-gang__reputation i {
+  position: relative;
+  z-index: 1;
+  font-size: 0.58rem;
+  font-style: normal;
+}
+
+.story-gang__reputation i {
+  color: #94a3b8;
+}
+
+.story-gang__reputation span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, rgba(13, 148, 136, 0.32), transparent);
 }
 
 .story-gang__summary strong {

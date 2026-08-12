@@ -16,6 +16,8 @@ interface RacingStageBase {
 export interface RaceStageConfig extends RacingStageBase {
   mode: 'race'
   opponentSpeeds: number[]
+  opponentCount: number
+  clearMaxRank: number
 }
 
 export interface PursuitStageConfig extends RacingStageBase {
@@ -134,9 +136,21 @@ export function parseRacingConfig(value: unknown): RacingConfig {
       ) {
         invalid(`${path}.opponentSpeeds`)
       }
+      const opponentCount =
+        candidate.opponentCount === undefined
+          ? 6
+          : positiveInt(candidate.opponentCount, `${path}.opponentCount`)
+      if (opponentCount > 6) invalid(`${path}.opponentCount`)
+      const clearMaxRank =
+        candidate.clearMaxRank === undefined
+          ? 3
+          : positiveInt(candidate.clearMaxRank, `${path}.clearMaxRank`)
+      if (clearMaxRank > opponentCount + 1) invalid(`${path}.clearMaxRank`)
       return {
         ...base,
         mode: 'race',
+        opponentCount,
+        clearMaxRank,
         opponentSpeeds: candidate.opponentSpeeds.map((speed, opponentIndex) =>
           positiveNumber(speed, `${path}.opponentSpeeds.${opponentIndex}`),
         ),

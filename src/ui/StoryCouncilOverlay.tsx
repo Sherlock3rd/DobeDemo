@@ -1,9 +1,9 @@
 import { useMemo, useState, type JSX } from 'react'
-import type { StoryStep } from '../game/storyPlanB'
+import type { StoryStep } from '../game/storyPlanC'
 
-const MEMBERS = ['Thomas Shelby', 'Bo Carter', 'Maeve Quinn', 'Merrill Gray']
+const MEMBERS = ['Thomas Shelby', 'Maeve Quinn', 'Hugo Vale', 'Walter Vale']
 const GRADES = ['A', 'B', 'C', 'D'] as const
-const MEETING_STEPS = [10, 22, 27, 30, 35, 43] as const
+const MEETING_STEPS = [10, 20, 26, 29, 30, 34, 37, 38, 40, 42] as const
 
 function gradeFor(step: number, memberIndex: number): string {
   if (memberIndex === 0) return 'S'
@@ -11,12 +11,18 @@ function gradeFor(step: number, memberIndex: number): string {
 }
 
 function meetingProposal(step: StoryStep): string {
-  if (step.number === 10) return 'Thomas Shelby 是否完成见习并获得正式背章？'
-  if (step.number === 22) return '由谁承担执行者职责与废车回收厂管理责任？'
-  if (step.number === 27) return '是否扩大 Thomas 对商业网络的管理权限？'
-  if (step.number === 30) return '是否摘除叛徒 Billy 的背章并追回帮派财产？'
-  if (step.number === 35) return '是否接受 Dale 辞任并由 Thomas 接管物资账？'
-  if (step.number === 43) return '是否通过主席席位与全部管理责任的和平交接？'
+  if (step.number === 10) return 'Thomas Shelby 是否通过终考，获得 Full Patch？'
+  if (step.number === 20) return '复仇行动结束后，是否授予 Thomas 打手职责？'
+  if (step.number === 26) return '内鬼线索成立后，是否扩大 Thomas 的道路权限？'
+  if (step.number === 29) return '证据指向 Billy，是否解除其路线队长权限？'
+  if (step.number === 30) return '追回叛徒与帮派资产后，是否授予路线队长背章？'
+  if (step.number === 34) return '救援完成后，是否由 Thomas 统筹全城产业账？'
+  if (step.number === 37) return '是否通过友好枪战结果，授予武装队长职责？'
+  if (step.number === 38)
+    return '核心据点清理完成，是否接纳 Thomas 为资深成员？'
+  if (step.number === 40) return '传统竞速通过后，是否授予副会长席位？'
+  if (step.number === 42)
+    return '是否通过会长席位、木槌与全部管理责任的和平交接？'
   return '是否根据本轮行动结果提升 Thomas 的席位与职责？'
 }
 
@@ -51,7 +57,7 @@ export function StoryCouncilOverlay({
       aria-labelledby="story-council-title"
     >
       <header>
-        <span>CLUBHOUSE · ASSESSMENT</span>
+        <span>PLAN C · CLUBHOUSE ASSESSMENT</span>
         <strong>{`第 ${meetingNumber} 次评定会议`}</strong>
       </header>
       <div className="story-council__table" aria-hidden="true">
@@ -61,7 +67,7 @@ export function StoryCouncilOverlay({
         {phase === 'review' ? (
           <>
             <p className="story-council__eyebrow">上一轮任务完成度</p>
-            <h2 id="story-council-title">先评定，再讨论新的责任</h2>
+            <h2 id="story-council-title">先评定所有成员，再讨论下一项责任</h2>
             <div className="story-council__ratings">
               {ratings.map((rating) => (
                 <div key={rating.member}>
@@ -70,7 +76,7 @@ export function StoryCouncilOverlay({
                   <small>
                     {rating.member === 'Thomas Shelby'
                       ? '玩家 · 固定 S'
-                      : 'NPC · 本轮评定'}
+                      : 'NPC · 伪随机评定'}
                   </small>
                 </div>
               ))}
@@ -81,10 +87,10 @@ export function StoryCouncilOverlay({
           </>
         ) : phase === 'vote' ? (
           <>
-            <p className="story-council__eyebrow">本轮中性议题</p>
+            <p className="story-council__eyebrow">本轮帮派议题</p>
             <h2 id="story-council-title">{meetingProposal(step)}</h2>
             <p>
-              桌边成员会依次亮出标记。表决结果由剧情固定，玩家的选择只代表
+              桌边成员会依次亮出标记。结果由方案 C 剧情固定，玩家的选择只代表
               Thomas 的态度。
             </p>
             <div className="story-council__vote-actions">
@@ -105,10 +111,10 @@ export function StoryCouncilOverlay({
                 <span
                   key={member}
                   data-vote={
-                    index === 3 && step.number === 30 ? 'abstain' : 'yes'
+                    index === 3 && step.number === 29 ? 'abstain' : 'yes'
                   }
                 >
-                  {index === 3 && step.number === 30 ? '—' : '✓'}
+                  {index === 3 && step.number === 29 ? '—' : '✓'}
                 </span>
               ))}
             </div>

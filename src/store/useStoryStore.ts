@@ -4,7 +4,7 @@ import {
   STORY_COMPLETE_STEP,
   getStoryRank,
   getStoryStep,
-} from '../game/storyPlanB'
+} from '../game/storyPlanC'
 import {
   getGangWallReward,
   getGangWallTierForSystemLevel,
@@ -15,7 +15,7 @@ import {
 } from '../game/gangPhotoWall'
 import { createSafeStorage } from './safeStorage'
 
-export const STORY_STORAGE_KEY = 'dobe-story-plan-b-v1'
+export const STORY_STORAGE_KEY = 'dobe-story-plan-c-v1'
 
 interface StoryState {
   enabled: boolean

@@ -675,6 +675,28 @@ describe('raceEngine V2', () => {
     })
   })
 
+  it('runs the Plan C blond duel as a true one-opponent race requiring first place', () => {
+    let state = createRaceState(4, STARTER)
+    const finishDistance = getRacingStage(4).distance
+    expect(state.vehicles).toHaveLength(1)
+    state.player = {
+      ...state.player,
+      distance: finishDistance - 1,
+      speed: 42,
+      desiredSpeed: 42,
+    }
+    state.vehicles = state.vehicles.map((vehicle) => ({
+      ...vehicle,
+      distance: finishDistance + 100,
+      speed: 1,
+      desiredSpeed: 1,
+    }))
+
+    state = advanceRace(state, {}, STARTER)
+
+    expect(state.pendingResult).toMatchObject({ status: 'defeat', rank: 2 })
+  })
+
   it('keeps driving for two seconds after crossing before settling the race', () => {
     let state = createRaceState(1, STARTER)
     const finishDistance = getRacingStage(1).distance

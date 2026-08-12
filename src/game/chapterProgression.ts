@@ -309,7 +309,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
     nextRoleLevel: 32,
     title: '第四章 · 烈焰联络线',
     story:
-      '酒吧里的承诺要靠工厂兑现。晋升酒吧联络人后，Thomas 将获得金属加工厂的管理权限。',
+      '酒吧里的承诺要靠物流兑现。晋升酒吧联络人后，Thomas 将获得物流中心的管理权限。',
     completionReward: completionReward(
       160,
       2_000,
@@ -321,7 +321,7 @@ export const CHAPTERS: readonly ChapterDefinition[] = [
       {
         id: 'chapter-4-building',
         name: '工业心脏',
-        description: '金属加工厂达到 Lv.2',
+        description: '物流中心达到 Lv.2',
         requirement: {
           kind: 'building-level',
           buildingId: 'metalworking-plant',
@@ -753,11 +753,11 @@ const CHAPTER_TASK_BLUEPRINTS: Readonly<
       4,
       'factory',
       '工厂复产',
-      '重开金属加工厂并准备周转资金。',
+      '重开物流中心并准备周转资金。',
       [
         {
           name: '重启金属炉线',
-          description: '金属加工厂达到 Lv.2',
+          description: '物流中心达到 Lv.2',
           requirement: {
             kind: 'building-level',
             buildingId: 'metalworking-plant',

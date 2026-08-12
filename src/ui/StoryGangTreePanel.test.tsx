@@ -16,13 +16,14 @@ describe('StoryGangTreePanel', () => {
         currentStepNumber={5}
         canContinue
         onContinue={vi.fn()}
+        onPromotionRequested={vi.fn()}
         onRewardClaimed={vi.fn()}
         onClose={vi.fn()}
       />,
     )
 
     expect(
-      screen.getByRole('dialog', { name: '剃刀党照片墙' }),
+      screen.getByRole('dialog', { name: '帮派照片墙' }),
     ).toBeInTheDocument()
     expect(screen.getAllByRole('listitem')).toHaveLength(10)
     expect(
@@ -35,26 +36,48 @@ describe('StoryGangTreePanel', () => {
 
   it('requires an explicit N-1 photo click before reporting the handover', async () => {
     const onRewardClaimed = vi.fn()
-    useStoryStore.setState({ currentStepNumber: 11 })
+    useStoryStore.setState({ currentStepNumber: 13 })
     render(
       <StoryGangTreePanel
-        currentStepNumber={11}
+        currentStepNumber={13}
         canContinue={false}
-        requiredRewardId="repair-shop-vacancy"
+        requiredRewardId="hugo-garage-manager"
         onContinue={vi.fn()}
+        onPromotionRequested={vi.fn()}
         onRewardClaimed={onRewardClaimed}
         onClose={vi.fn()}
       />,
     )
 
-    expect(screen.getByText('管理席位空置')).toBeInTheDocument()
+    expect(screen.getByText('修车厂看守人')).toBeInTheDocument()
     await userEvent.click(
-      screen.getByRole('button', { name: '接管修车厂管理权' }),
+      screen.getByRole('button', { name: '收复 Hugo 与修车厂管理线' }),
     )
 
-    expect(onRewardClaimed).toHaveBeenCalledWith('repair-shop-vacancy')
+    expect(onRewardClaimed).toHaveBeenCalledWith('hugo-garage-manager')
     expect(useStoryStore.getState().claimedGangWallRewardIds).toContain(
-      'repair-shop-vacancy',
+      'hugo-garage-manager',
     )
+  })
+
+  it('shows the exact reputation threshold before a promotion meeting', async () => {
+    const onPromotionRequested = vi.fn()
+    render(
+      <StoryGangTreePanel
+        currentStepNumber={10}
+        canContinue={false}
+        promotionTargetTier={2}
+        onContinue={vi.fn()}
+        onPromotionRequested={onPromotionRequested}
+        onRewardClaimed={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('声望 100')).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', { name: '晋升 Full Patch' }),
+    )
+    expect(onPromotionRequested).toHaveBeenCalledTimes(1)
   })
 })

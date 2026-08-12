@@ -1,5 +1,5 @@
 import { useMemo, type JSX } from 'react'
-import { STORY_STEPS, getStoryStep } from '../game/storyPlanB'
+import { STORY_STEPS, getStoryStep } from '../game/storyPlanC'
 
 const ACT_NAMES = [
   '亡命入城',
@@ -87,13 +87,13 @@ export function StoryRoadmapPanel({
           })}
         </ol>
         <footer>
-          <span>{`总进度 ${Math.min(43, currentStepNumber - 1)} / 43`}</span>
+          <span>{`总进度 ${Math.min(STORY_STEPS.length, currentStepNumber - 1)} / ${STORY_STEPS.length}`}</span>
           {current ? (
             <button type="button" onClick={onContinue}>
               返回当前任务
             </button>
           ) : (
-            <strong>方案 B 全流程已完成</strong>
+            <strong>方案 C 全流程已完成</strong>
           )}
         </footer>
       </section>

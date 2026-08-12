@@ -4,7 +4,7 @@ import type { Group } from 'three'
 import type {
   CarDismantleScenario,
   CarModificationScenario,
-} from '../game/storyPlanB'
+} from '../game/storyPlanC'
 import './VehicleWorkshopOverlay.css'
 
 interface WorkshopOverlayProps {
@@ -69,6 +69,21 @@ const MODIFICATION_DEFINITIONS: Readonly<
     jobLabels: ['Thomas · 灰狐'],
     actionsPerJob: 4,
   },
+  'nitrous-install': {
+    overline: 'RAZOR GARAGE · NITROUS BAY',
+    title: '灰狐氮气装置加装',
+    sceneLabel: '拆车所得 · 双瓶氮气',
+    actions: ['打开后备舱', '固定双瓶支架', '连接氮气管路', '点火喷射测试'],
+    status: [
+      '刚拆出的氮气装置已经清理完毕，先打开灰狐后备舱。',
+      '找到车架受力点，把双瓶支架固定在后轴上方。',
+      '钢瓶已经锁紧，将高压管路接入进气与驾驶舱开关。',
+      '检查压力表，点火并做一次短促喷射测试。',
+      '蓝色尾焰稳定，灰狐获得氮气冲刺能力。',
+    ],
+    jobLabels: ['Thomas · 灰狐'],
+    actionsPerJob: 4,
+  },
   'race-prep': {
     overline: 'SCRAP YARD · RACE SETUP',
     title: '赛前悬挂换件',
@@ -109,6 +124,7 @@ const MODIFICATION_DEFINITIONS: Readonly<
 const DISMANTLE_ACTIONS: Readonly<
   Record<CarDismantleScenario, readonly string[]>
 > = {
+  'salvage-single': ['拆下废车轮组', '取出引擎与氮气装置', '压缩废车车壳'],
   'salvage-pair': [
     '拆下 1 号车轮组',
     '切出 1 号车引擎',
@@ -287,6 +303,7 @@ function ModificationVehicle({
   const isWheelJob = scenario === 'repair-trio' && repairCarIndex === 1
   const isBumperJob = scenario === 'repair-trio' && repairCarIndex === 2
   const isRacePrep = scenario === 'race-prep'
+  const isNitrous = scenario === 'nitrous-install'
   const isIronFang = scenario === 'revenge-build'
   const bonnetOpen = isEngineJob || isIronFang ? localOperation >= 1 : false
   const brokenEngineVisible =
@@ -409,6 +426,34 @@ function ModificationVehicle({
             <SuspensionModule tuned={false} position={[0.86, 0.72, -1.05]} />
           ) : null}
         </>
+      ) : null}
+      {isNitrous ? (
+        <group
+          position={localOperation >= 2 ? [0, 0.94, 1.18] : [2.5, 0.72, 0.2]}
+        >
+          {[-0.3, 0.3].map((x) => (
+            <group key={x} position={[x, 0, 0]}>
+              <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.17, 0.17, 0.92, 16]} />
+                <meshStandardMaterial
+                  color={localOperation >= 3 ? '#53d8ff' : '#b9c4c8'}
+                  emissive={localOperation >= 3 ? '#075a78' : '#000000'}
+                  emissiveIntensity={0.8}
+                  metalness={0.9}
+                  roughness={0.22}
+                />
+              </mesh>
+              <mesh position={[0, 0, -0.5]}>
+                <cylinderGeometry args={[0.07, 0.1, 0.12, 12]} />
+                <meshStandardMaterial color="#d6a84d" metalness={0.95} />
+              </mesh>
+            </group>
+          ))}
+          <mesh position={[0, -0.22, 0]}>
+            <boxGeometry args={[0.92, 0.08, 1.08]} />
+            <meshStandardMaterial color="#17211f" metalness={0.75} />
+          </mesh>
+        </group>
       ) : null}
       {isBumperJob ? (
         <mesh castShadow position={[0, 0.72, -2.03]}>
@@ -593,7 +638,9 @@ function DismantleScene({
       aria-label={
         scenario === 'salvage-pair'
           ? '黑市车辆拆解三维示意'
-          : '追杀残车拆解三维示意'
+          : scenario === 'salvage-single'
+            ? '见习废车拆解三维示意'
+            : '追杀残车拆解三维示意'
       }
     >
       <color attach="background" args={['#0d100f']} />
@@ -725,7 +772,11 @@ export function CarDismantleOverlay({
         <div>
           <span>SCRAP YARD · BREAKDOWN LINE</span>
           <h2 ref={titleRef} tabIndex={-1}>
-            {scenario === 'salvage-pair' ? '黑市车辆拆解' : '追杀残车取证'}
+            {scenario === 'salvage-pair'
+              ? '黑市车辆拆解'
+              : scenario === 'salvage-single'
+                ? '见习废车拆解'
+                : '追杀残车取证'}
           </h2>
         </div>
         <strong>
@@ -737,7 +788,11 @@ export function CarDismantleOverlay({
       <div className="vehicle-workshop__scene">
         <DismantleScene scenario={scenario} operation={operation} />
         <div className="vehicle-workshop__scene-label">
-          {scenario === 'salvage-pair' ? '车辆拆解台' : '残车取证台'}
+          {scenario === 'salvage-pair'
+            ? '车辆拆解台'
+            : scenario === 'salvage-single'
+              ? '单车回收台'
+              : '残车取证台'}
         </div>
       </div>
       <footer className="vehicle-workshop__console">
@@ -747,10 +802,14 @@ export function CarDismantleOverlay({
             {finished
               ? scenario === 'salvage-pair'
                 ? '两辆黑市车已经拆成可用部件，回收物等待入库。'
-                : '追杀残车已经拆解，车架编号与可用部件等待交给 Arthur。'
+                : scenario === 'salvage-single'
+                  ? '第一辆废车已经拆完，零件与氮气装置等待装上灰狐。'
+                  : '追杀残车已经拆解，车架编号与可用部件等待交给车队。'
               : scenario === 'salvage-pair'
                 ? '按轮组、引擎、车壳顺序拆解，观察车辆模型实时变化。'
-                : '拆解敌方残车，保留车架编号并取出修复铁獠所需部件。'}
+                : scenario === 'salvage-single'
+                  ? '按轮组、动力件、车壳顺序拆解，取出可用零件和氮气装置。'
+                  : '拆解敌方残车，保留车架编号并取出可用修复部件。'}
           </p>
         </div>
         <progress
@@ -764,6 +823,11 @@ export function CarDismantleOverlay({
               <>
                 <span>零件 +25</span>
                 <span>普通悬挂 ×1</span>
+              </>
+            ) : scenario === 'salvage-single' ? (
+              <>
+                <span>零件 +15</span>
+                <span>氮气装置 ×1</span>
               </>
             ) : (
               <>

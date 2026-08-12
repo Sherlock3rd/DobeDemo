@@ -27,7 +27,7 @@ import {
   getStoryClaimBuilding,
   getStoryRank,
   getStoryStep,
-} from './game/storyPlanB'
+} from './game/storyPlanC'
 import {
   getNarrativeEvent,
   type NarrativeEvent,
@@ -408,14 +408,12 @@ export default function App(): JSX.Element {
       if (!advanceStory(expectedStepNumber)) return false
 
       if (expectedStepNumber === 6) {
-        useCityStore.getState().grantRewardResources('story-b:first-money', {
-          money: 500,
-          oil: 0,
-          materials: 0,
+        grantChapterReward({
+          gangReputation: 0,
+          heroExperience: 0,
+          spareParts: 15,
+          carParts: [],
         })
-      }
-      if (expectedStepNumber === 8) {
-        useGangStore.getState().addReputation(90, Date.now())
       }
       if (expectedStepNumber === 15) {
         grantChapterReward({
@@ -425,18 +423,7 @@ export default function App(): JSX.Element {
           carParts: [{ slot: 'suspension', quality: 'common' }],
         })
       }
-      if (expectedStepNumber === 20) {
-        grantChapterReward({
-          gangReputation: 0,
-          heroExperience: 0,
-          spareParts: 0,
-          carParts: [],
-          resources: { money: 0, oil: 0, materials: 0 },
-          unlockCarIds: ['iron-fang'],
-          unlockGunIds: [],
-        })
-      }
-      if (expectedStepNumber === 38) {
+      if (expectedStepNumber === 37) {
         grantChapterReward({
           gangReputation: 0,
           heroExperience: 0,
@@ -447,7 +434,7 @@ export default function App(): JSX.Element {
           unlockGunIds: ['industrial-carbine'],
         })
       }
-      if (expectedStepNumber === 41) {
+      if (expectedStepNumber === 40) {
         grantChapterReward({
           gangReputation: 0,
           heroExperience: 0,
@@ -610,6 +597,20 @@ export default function App(): JSX.Element {
       currentStep.action.stage === stage &&
       cleared
     ) {
+      if (currentStep.action.meetingAfter) {
+        setPlayOverlay({ kind: 'storyCouncil' })
+      } else {
+        advanceStoryStep(currentStepNumber)
+        setPlayOverlay({ kind: 'none' })
+      }
+      return
+    }
+    if (
+      storyEnabled &&
+      currentStep?.action.kind === 'campaign' &&
+      currentStep.action.followUpRaceStage === stage &&
+      cleared
+    ) {
       advanceStoryStep(currentStepNumber)
       setPlayOverlay({ kind: 'none' })
       return
@@ -628,8 +629,18 @@ export default function App(): JSX.Element {
     ) {
       return false
     }
-    advanceStoryStep(currentStepNumber)
-    setPlayOverlay({ kind: 'none' })
+    if (currentStep.action.followUpRaceStage) {
+      setPlayOverlay({
+        kind: 'race',
+        stage: currentStep.action.followUpRaceStage,
+        heroId: 'foreman',
+      })
+    } else if (currentStep.action.meetingAfter) {
+      setPlayOverlay({ kind: 'storyCouncil' })
+    } else {
+      advanceStoryStep(currentStepNumber)
+      setPlayOverlay({ kind: 'none' })
+    }
     return true
   }
 
@@ -1036,11 +1047,22 @@ export default function App(): JSX.Element {
             currentStepNumber={storyStepNumber}
             canContinue={
               storyStep?.action.kind === 'gang-tree' &&
-              !storyStep.action.rewardId
+              !storyStep.action.rewardId &&
+              !storyStep.action.promotionTier
             }
             requiredRewardId={
               storyStep?.action.kind === 'gang-tree'
                 ? storyStep.action.rewardId
+                : undefined
+            }
+            promotionTargetTier={
+              storyStep?.action.kind === 'gang-tree'
+                ? storyStep.action.promotionTier
+                : undefined
+            }
+            continueLabel={
+              storyStep?.action.kind === 'gang-tree'
+                ? storyStep.action.continueLabel
                 : undefined
             }
             onContinue={() => {
@@ -1050,6 +1072,20 @@ export default function App(): JSX.Element {
               ) {
                 advanceStoryStep(storyStep.number)
               }
+              setPlayOverlay({ kind: 'none' })
+            }}
+            onPromotionRequested={() => {
+              if (
+                storyStep?.action.kind !== 'gang-tree' ||
+                !storyStep.action.promotionTier
+              ) {
+                return
+              }
+              if (storyStep.action.meetingAfterPromotion) {
+                setPlayOverlay({ kind: 'storyCouncil' })
+                return
+              }
+              advanceStoryStep(storyStep.number)
               setPlayOverlay({ kind: 'none' })
             }}
             onRewardClaimed={(rewardId) => {
@@ -1098,38 +1134,86 @@ export default function App(): JSX.Element {
             onComplete={finishStoryCarDismantle}
           />
         ) : null}
-        <GangTreePanel
-          open={activeOverlay.kind === 'gangTree'}
-          onClose={closeOverlay}
-          promotionCeremonyLevel={promotionCeremonyLevel}
-          onPromotionCeremonyComplete={() => setPromotionCeremonyLevel(null)}
-          onStartRoleHandover={(handover) =>
-            setPlayOverlay({
-              kind: 'roleHandover',
-              targetLevel: handover.targetLevel,
-            })
-          }
-          onRolePromoted={(level) => {
-            if (level === 8 && prologueStep === 'formal-promotion') {
-              if (advancePrologue('formal-promotion', 'chapter-briefing')) {
-                enqueueNarrative('chapter-start:2', 'chapters')
+        {storyEnabled ? (
+          activeOverlay.kind === 'gangTree' ? (
+            <StoryGangTreePanel
+              currentStepNumber={storyStepNumber}
+              canContinue={false}
+              requiredRewardId={
+                storyStep?.action.kind === 'gang-tree'
+                  ? storyStep.action.rewardId
+                  : undefined
               }
-              return
-            }
-            enqueueNarrative(`promotion:${level}`)
-          }}
-          prologueMeetingReady={prologueStep === 'gang-training'}
-          onStartPrologueMeeting={() => {
-            if (advancePrologue('gang-training', 'meeting')) {
+              promotionTargetTier={
+                storyStep?.action.kind === 'gang-tree'
+                  ? storyStep.action.promotionTier
+                  : undefined
+              }
+              continueLabel={
+                storyStep?.action.kind === 'gang-tree'
+                  ? storyStep.action.continueLabel
+                  : undefined
+              }
+              onContinue={closeOverlay}
+              onPromotionRequested={() => {
+                if (
+                  storyStep?.action.kind === 'gang-tree' &&
+                  storyStep.action.promotionTier
+                ) {
+                  setPlayOverlay({ kind: 'storyCouncil' })
+                }
+              }}
+              onRewardClaimed={(rewardId) => {
+                if (
+                  storyStep?.action.kind !== 'gang-tree' ||
+                  storyStep.action.rewardId !== rewardId
+                ) {
+                  return
+                }
+                if (storyStep.action.buildingId) {
+                  closeOverlay()
+                  return
+                }
+                advanceStoryStep(storyStep.number)
+                closeOverlay()
+              }}
+              onClose={closeOverlay}
+            />
+          ) : null
+        ) : (
+          <GangTreePanel
+            open={activeOverlay.kind === 'gangTree'}
+            onClose={closeOverlay}
+            promotionCeremonyLevel={promotionCeremonyLevel}
+            onPromotionCeremonyComplete={() => setPromotionCeremonyLevel(null)}
+            onStartRoleHandover={(handover) =>
               setPlayOverlay({
-                kind: 'assessmentMeeting',
-                completedChapterNumber: 1,
+                kind: 'roleHandover',
+                targetLevel: handover.targetLevel,
               })
             }
-          }}
-          prologuePromotionReady={prologueStep === 'formal-promotion'}
-          onCompleteProloguePromotion={() => completeRoleHandover(8)}
-        />
+            onRolePromoted={(level) => {
+              if (level === 8 && prologueStep === 'formal-promotion') {
+                if (advancePrologue('formal-promotion', 'chapter-briefing')) {
+                  enqueueNarrative('chapter-start:2', 'chapters')
+                }
+                return
+              }
+              enqueueNarrative(`promotion:${level}`)
+            }}
+            prologueMeetingReady={prologueStep === 'gang-training'}
+            onStartPrologueMeeting={() => {
+              if (advancePrologue('gang-training', 'meeting')) {
+                setPlayOverlay({
+                  kind: 'assessmentMeeting',
+                  completedChapterNumber: 1,
+                })
+              }
+            }}
+            prologuePromotionReady={prologueStep === 'formal-promotion'}
+            onCompleteProloguePromotion={() => completeRoleHandover(8)}
+          />
+        )}
         {activeOverlay.kind === 'roleHandover' &&
         getRoleHandover(activeOverlay.targetLevel) ? (
           <RoleHandoverOverlay

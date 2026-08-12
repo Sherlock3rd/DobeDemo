@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useChestTick } from './game/chestTick'
 import { getChapterForGangLevel } from './game/chapterProgression'
 import { getTotalReputationForLevel } from './game/gangProgression'
-import { PROLOGUE_TUNED_PART_ID } from './game/prologue'
 import { useAdventureStore } from './store/useAdventureStore'
 import { useChapterStore } from './store/useChapterStore'
 import { useCityStore } from './store/useCityStore'
@@ -260,7 +259,7 @@ describe('App', () => {
     canvasPropsSpy.mockClear()
   })
 
-  it('starts Plan B with the illustrated police pursuit and enters SUP', async () => {
+  it('starts Plan C with the illustrated police pursuit and enters SUP', async () => {
     const user = userEvent.setup()
     useStoryStore.setState({
       enabled: true,
@@ -271,16 +270,35 @@ describe('App', () => {
     render(<App />)
 
     expect(
-      await screen.findByRole('heading', { name: '警灯咬住后视镜' }),
+      await screen.findByRole('heading', { name: '警匪追逐' }),
     ).toBeInTheDocument()
     await user.click(
-      screen.getByRole('button', { name: '进入 SUP · 甩开警察' }),
+      screen.getByRole('button', { name: '进入 SUP · 甩开警方' }),
     )
     expect(screen.getByRole('dialog', { name: '公路争霸' })).toBeInTheDocument()
   })
 
-  it('requires the customized 3D three-car repair before advancing from L06', async () => {
+  it('opens the Plan C photo wall from the main gang-tree entry', async () => {
     const user = userEvent.setup()
+    useStoryStore.setState({
+      enabled: true,
+      currentStepNumber: 5,
+      briefedStepNumbers: [5],
+    })
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: '帮派树' }))
+
+    expect(
+      screen.getByRole('dialog', { name: '帮派照片墙' }),
+    ).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem')).toHaveLength(10)
+    expect(screen.getByText('声望 60')).toBeInTheDocument()
+  })
+
+  it('requires the first 3D dismantle before advancing from L06', async () => {
+    const user = userEvent.setup()
+    const initialSpareParts = useAdventureStore.getState().spareParts
     useStoryStore.setState({
       enabled: true,
       currentStepNumber: 6,
@@ -290,25 +308,21 @@ describe('App', () => {
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 三车维修工位' }),
+      await screen.findByRole('button', { name: '进入 3D 首次拆车工位' }),
     )
     expect(
-      screen.getByRole('dialog', { name: '3D 改车工位' }),
+      screen.getByRole('dialog', { name: '3D 拆车工位' }),
     ).toBeInTheDocument()
     expect(useStoryStore.getState().currentStepNumber).toBe(6)
 
-    await user.click(screen.getByRole('button', { name: '完成 3D 改车' }))
+    await user.click(screen.getByRole('button', { name: '完成 3D 拆车' }))
 
     expect(useStoryStore.getState().currentStepNumber).toBe(7)
-    expect(useCityStore.getState().resources.money).toBeGreaterThan(10_000)
+    expect(useAdventureStore.getState().spareParts).toBe(initialSpareParts + 15)
   })
 
-  it('requires the 3D modification workshop before advancing from L07', async () => {
+  it('requires the 3D nitrous workshop before advancing from L07', async () => {
     const user = userEvent.setup()
-    useAdventureStore.getState().grantProloguePart()
-    useAdventureStore
-      .getState()
-      .equipCarPart('rust-fox', PROLOGUE_TUNED_PART_ID, 1)
     useStoryStore.setState({
       enabled: true,
       currentStepNumber: 7,
@@ -318,7 +332,7 @@ describe('App', () => {
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 引擎强化工位' }),
+      await screen.findByRole('button', { name: '进入 3D 氮气安装工位' }),
     )
     expect(
       screen.getByRole('dialog', { name: '3D 改车工位' }),
@@ -328,12 +342,6 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '完成 3D 改车' }))
 
     expect(useStoryStore.getState().currentStepNumber).toBe(8)
-    expect(
-      useAdventureStore.getState().carPartSlotsByCar['rust-fox'].engine,
-    ).toBe(PROLOGUE_TUNED_PART_ID)
-    expect(useAdventureStore.getState().equipmentByHero.foreman.gunId).toBe(
-      'rivet-smg',
-    )
   })
 
   it('requires the 3D dismantling workshop and grants its salvage reward', async () => {
@@ -348,7 +356,7 @@ describe('App', () => {
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 黑市车拆解台' }),
+      await screen.findByRole('button', { name: '进入 3D 废车拆解台' }),
     )
     expect(
       screen.getByRole('dialog', { name: '3D 拆车工位' }),
@@ -391,7 +399,7 @@ describe('App', () => {
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 赛前换件工位' }),
+      await screen.findByRole('button', { name: '进入 3D 配件安装工位' }),
     )
     await user.click(screen.getByRole('button', { name: '完成 3D 改车' }))
 

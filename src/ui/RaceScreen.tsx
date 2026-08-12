@@ -334,6 +334,7 @@ function RaceSession({
         : '强化就绪'
   const finishProgress = raceProgress(state)
   const finishPercent = Math.round(finishProgress * 100)
+  const raceVehicleCount = state.vehicles.length + 1
 
   return (
     <div
@@ -379,7 +380,12 @@ function RaceSession({
             {isRoleChallenge
               ? roleChallengeTitle
               : definition.mode === 'race'
-                ? '七车对抗 · 前三通关 · 落后补氮'
+                ? definition.opponentCount === 1
+                  ? '双车对决 · 第一通关 · 主动使用氮气'
+                  : definition.opponentCount === 6 &&
+                      definition.clearMaxRank === 3
+                    ? '七车对抗 · 前三通关 · 落后补氮'
+                    : `${definition.opponentCount + 1}车对抗 · 前${definition.clearMaxRank}通关 · 落后补氮`
                 : '纯追击枪战 · 空中特技缩短强化冷却 · 摧毁目标车'}
           </span>
         </div>
@@ -463,7 +469,7 @@ function RaceSession({
           </label>
         ) : null}
         {definition.mode === 'race' ? (
-          <p>{`当前排名 ${raceRank(state)}/7`}</p>
+          <p>{`当前排名 ${raceRank(state)}/${raceVehicleCount}`}</p>
         ) : (
           <>
             <label>
@@ -603,7 +609,7 @@ function RaceSession({
               <p>{`冲线时长 ${formatResultTime(
                 state.pendingResult.triggeredAtMs,
               )}`}</p>
-              <p>{`最终排名 第 ${state.pendingResult.rank ?? raceRank(state)}/7`}</p>
+              <p>{`最终排名 第 ${state.pendingResult.rank ?? raceRank(state)}/${raceVehicleCount}`}</p>
             </div>
           ) : null}
           {definition.mode === 'pursuit' &&
@@ -646,7 +652,7 @@ function RaceSession({
                     ? '车辆耐久耗尽'
                     : state.reason === 'timeout'
                       ? '时间耗尽'
-                      : '最终排名未进入前三'}
+                      : `最终排名未进入前${definition.mode === 'race' ? definition.clearMaxRank : 3}`}
               </p>
               <p>前往养成提升车辆与配件后再来挑战。</p>
             </>

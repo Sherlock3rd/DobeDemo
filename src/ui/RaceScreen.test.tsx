@@ -65,6 +65,19 @@ describe('RaceScreen V2', () => {
     expect(screen.queryByText('耐久')).not.toBeInTheDocument()
   })
 
+  it('shows the Plan C blond duel as a first-place two-car race', () => {
+    render(<RaceScreen stage={4} heroId="foreman" onExit={() => {}} />)
+
+    expect(
+      screen.getByText('双车对决 · 第一通关 · 主动使用氮气'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('当前排名 2/2')).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: '公路争霸' })).toHaveAttribute(
+      'data-opponents',
+      '1',
+    )
+  })
+
   it('uses A/D and left/right arrows for desktop lane changes', () => {
     render(<RaceScreen stage={1} heroId="foreman" onExit={() => {}} />)
     const screenRoot = screen.getByRole('dialog', { name: '公路争霸' })
