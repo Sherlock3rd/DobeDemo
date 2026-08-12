@@ -272,9 +272,7 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: '警匪追逐' }),
     ).toBeInTheDocument()
-    await user.click(
-      screen.getByRole('button', { name: '进入 SUP · 甩开警方' }),
-    )
+    await user.click(screen.getByRole('button', { name: '开始警匪追逐' }))
     expect(screen.getByRole('dialog', { name: '公路争霸' })).toBeInTheDocument()
   })
 
@@ -293,55 +291,81 @@ describe('App', () => {
       screen.getByRole('dialog', { name: '帮派照片墙' }),
     ).toBeInTheDocument()
     expect(screen.getAllByRole('listitem')).toHaveLength(10)
-    expect(screen.getByText('声望 60')).toBeInTheDocument()
+    expect(screen.getByText('声望 0')).toBeInTheDocument()
   })
 
-  it('requires the first 3D dismantle before advancing from L06', async () => {
+  it('opens the L20 branch selector and starts the chosen line', async () => {
     const user = userEvent.setup()
-    const initialSpareParts = useAdventureStore.getState().spareParts
     useStoryStore.setState({
       enabled: true,
-      currentStepNumber: 6,
+      currentStepNumber: 20,
       briefedStepNumbers: [],
     })
 
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 首次拆车工位' }),
+      await screen.findByRole('button', { name: '选择先执行的任务线' }),
     )
-    expect(
-      screen.getByRole('dialog', { name: '3D 拆车工位' }),
-    ).toBeInTheDocument()
-    expect(useStoryStore.getState().currentStepNumber).toBe(6)
+    await user.click(screen.getByRole('button', { name: '先做内奸调查线' }))
 
-    await user.click(screen.getByRole('button', { name: '完成 3D 拆车' }))
-
-    expect(useStoryStore.getState().currentStepNumber).toBe(7)
-    expect(useAdventureStore.getState().spareParts).toBe(initialSpareParts + 15)
+    expect(useStoryStore.getState()).toMatchObject({
+      currentStepNumber: 24,
+      parallelOrder: 'investigation-first',
+    })
+    expect(useStoryStore.getState().completedStepNumbers).toContain(20)
   })
 
-  it('requires the 3D nitrous workshop before advancing from L07', async () => {
+  it('does not skip an already satisfied L22 until the player acknowledges it', async () => {
+    const user = userEvent.setup()
+    useCityStore.getState().claimBuilding('recycling-yard', 16, BASE_TIME)
+    useStoryStore.setState({
+      enabled: true,
+      currentStepNumber: 22,
+      parallelOrder: 'industry-first',
+      briefedStepNumbers: [],
+    })
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('heading', {
+        name: '产业线·任意顺序接管两座建筑',
+      }),
+    ).toBeInTheDocument()
+    expect(useStoryStore.getState().currentStepNumber).toBe(22)
+
+    await user.click(
+      screen.getByRole('button', { name: '返回城市接管两座建筑' }),
+    )
+
+    expect(
+      await screen.findByRole('heading', { name: '产业线·废车厂自动化' }),
+    ).toBeInTheDocument()
+    expect(useStoryStore.getState().currentStepNumber).toBe(23)
+  })
+
+  it('requires the 3D nitrous workshop before advancing from L05', async () => {
     const user = userEvent.setup()
     useStoryStore.setState({
       enabled: true,
-      currentStepNumber: 7,
+      currentStepNumber: 5,
       briefedStepNumbers: [],
     })
 
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 氮气安装工位' }),
+      await screen.findByRole('button', { name: '进入改装工位' }),
     )
     expect(
       screen.getByRole('dialog', { name: '3D 改车工位' }),
     ).toBeInTheDocument()
-    expect(useStoryStore.getState().currentStepNumber).toBe(7)
+    expect(useStoryStore.getState().currentStepNumber).toBe(5)
 
     await user.click(screen.getByRole('button', { name: '完成 3D 改车' }))
 
-    expect(useStoryStore.getState().currentStepNumber).toBe(8)
+    expect(useStoryStore.getState().currentStepNumber).toBe(6)
   })
 
   it('requires the 3D dismantling workshop and grants its salvage reward', async () => {
@@ -349,23 +373,23 @@ describe('App', () => {
     const initialSpareParts = useAdventureStore.getState().spareParts
     useStoryStore.setState({
       enabled: true,
-      currentStepNumber: 15,
+      currentStepNumber: 13,
       briefedStepNumbers: [],
     })
 
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 废车拆解台' }),
+      await screen.findByRole('button', { name: '开始批量拆车' }),
     )
     expect(
       screen.getByRole('dialog', { name: '3D 拆车工位' }),
     ).toBeInTheDocument()
-    expect(useStoryStore.getState().currentStepNumber).toBe(15)
+    expect(useStoryStore.getState().currentStepNumber).toBe(13)
 
     await user.click(screen.getByRole('button', { name: '完成 3D 拆车' }))
 
-    expect(useStoryStore.getState().currentStepNumber).toBe(16)
+    expect(useStoryStore.getState().currentStepNumber).toBe(14)
     expect(useAdventureStore.getState().spareParts).toBe(initialSpareParts + 25)
     expect(
       useAdventureStore
@@ -376,37 +400,22 @@ describe('App', () => {
     ).toBe(true)
   })
 
-  it('uses the 3D race-prep workshop and equips the recovered suspension at L16', async () => {
+  it('uses the 3D workshop to strengthen member vehicles at L14', async () => {
     const user = userEvent.setup()
-    useAdventureStore.getState().grantChapterReward({
-      gangReputation: 0,
-      heroExperience: 0,
-      spareParts: 0,
-      carParts: [{ slot: 'suspension', quality: 'common' }],
-      resources: { money: 0, oil: 0, materials: 0 },
-      unlockCarIds: [],
-      unlockGunIds: [],
-    })
-    const suspension = useAdventureStore
-      .getState()
-      .carPartInventory.find((part) => part.slot === 'suspension')
     useStoryStore.setState({
       enabled: true,
-      currentStepNumber: 16,
+      currentStepNumber: 14,
       briefedStepNumbers: [],
     })
 
     render(<App />)
 
     await user.click(
-      await screen.findByRole('button', { name: '进入 3D 配件安装工位' }),
+      await screen.findByRole('button', { name: '强化成员车辆' }),
     )
     await user.click(screen.getByRole('button', { name: '完成 3D 改车' }))
 
-    expect(useStoryStore.getState().currentStepNumber).toBe(17)
-    expect(
-      useAdventureStore.getState().carPartSlotsByCar['rust-fox'].suspension,
-    ).toBe(suspension?.id)
+    expect(useStoryStore.getState().currentStepNumber).toBe(15)
   })
 
   it('renders the canvas with an orthographic projection', () => {

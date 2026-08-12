@@ -4,142 +4,134 @@ import {
   STORY_RANKS,
   STORY_STEPS,
   getStoryClaimBuilding,
+  getStoryClaimBuildings,
   getStoryRank,
   getStoryReputation,
   getStoryVisibility,
 } from './storyPlanC'
 
-describe('Plan C story progression', () => {
-  it('contains the complete 42-node, 6-act route', () => {
-    expect(STORY_STEPS).toHaveLength(42)
-    expect(STORY_COMPLETE_STEP).toBe(43)
+describe('latest Plan C story progression', () => {
+  it('contains the complete 44-node, 7-act route', () => {
+    expect(STORY_STEPS).toHaveLength(44)
+    expect(STORY_COMPLETE_STEP).toBe(45)
     expect(STORY_STEPS.map((step) => step.number)).toEqual(
-      Array.from({ length: 42 }, (_, index) => index + 1),
+      Array.from({ length: 44 }, (_, index) => index + 1),
     )
     expect(new Set(STORY_STEPS.map((step) => step.act))).toEqual(
-      new Set([0, 1, 2, 3, 4, 5]),
+      new Set([0, 1, 2, 3, 4, 5, 6]),
     )
   })
 
-  it('maps all ten Plan C ranks and exact reputation thresholds', () => {
-    expect(STORY_RANKS).toHaveLength(10)
+  it('maps all ten ranks after their matching promotion nodes', () => {
     expect(STORY_RANKS.map((rank) => rank.startsAtStep)).toEqual([
-      1, 11, 21, 27, 31, 35, 38, 39, 41, 43,
-    ])
-    expect(STORY_RANKS.map((rank) => rank.systemLevel)).toEqual([
-      1, 8, 16, 24, 32, 40, 42, 44, 46, 50,
+      1, 9, 20, 28, 32, 37, 40, 41, 43, 45,
     ])
     expect(STORY_RANKS.map((rank) => rank.reputationThreshold)).toEqual([
       0, 100, 300, 650, 1_100, 1_700, 2_400, 3_200, 4_200, 5_500,
     ])
     for (const rank of STORY_RANKS) {
-      expect(getStoryReputation(rank.startsAtStep)).toBe(
+      expect(getStoryReputation(rank.startsAtStep)).toBeGreaterThanOrEqual(
         rank.reputationThreshold,
       )
     }
+    expect([8, 19, 27, 31, 36, 39, 40, 42, 44].map(getStoryReputation)).toEqual(
+      [100, 300, 650, 1_100, 1_700, 2_400, 3_200, 4_200, 5_500],
+    )
   })
 
-  it('releases buildings in the Plan C management order', () => {
-    expect([13, 21, 27, 31, 35].map(getStoryClaimBuilding)).toEqual([
+  it('models the L20 parallel window and both complete branch chains', () => {
+    expect(STORY_STEPS[19].action).toMatchObject({ kind: 'parallel-choice' })
+    expect(STORY_STEPS.slice(20, 23).map((step) => step.title)).toEqual([
+      '产业线·收复两名管理者',
+      '产业线·任意顺序接管两座建筑',
+      '产业线·废车厂自动化',
+    ])
+    expect(STORY_STEPS.slice(23, 26).map((step) => step.title)).toEqual([
+      '调查线·收复英雄 NPC',
+      '调查线·首次推关寻找线索',
+      '调查线·挡风玻璃逼问',
+    ])
+  })
+
+  it('requires both L22 buildings and keeps later claims in source order', () => {
+    expect(getStoryClaimBuildings(22)).toEqual([
       'repair-shop',
       'recycling-yard',
+    ])
+    expect(getStoryClaimBuilding(22)).toBeNull()
+    expect([32, 34, 37].map(getStoryClaimBuilding)).toEqual([
       'commercial-street',
       'gas-station',
       'metalworking-plant',
     ])
-    expect(getStoryClaimBuilding(12)).toBeNull()
   })
 
-  it('gates the early N-1 rewards behind explicit photo-wall clicks', () => {
-    expect(STORY_STEPS[12].action).toMatchObject({
+  it('keeps N-1 rewards behind explicit photo-wall clicks', () => {
+    expect(STORY_STEPS[9].action).toMatchObject({
       kind: 'gang-tree',
       rewardId: 'hugo-garage-manager',
-      buildingId: 'repair-shop',
-    })
-    expect(STORY_STEPS[13].action).toMatchObject({
-      kind: 'gang-tree',
-      rewardId: 'prospect-wreck-runner',
     })
     expect(STORY_STEPS[20].action).toMatchObject({
       kind: 'gang-tree',
       rewardId: 'walter-yard-manager',
-      buildingId: 'recycling-yard',
+    })
+    expect(STORY_STEPS[33].action).toMatchObject({
+      kind: 'gang-tree',
+      rewardId: 'spencer-gas-manager',
+      buildingId: 'gas-station',
     })
   })
 
-  it('reveals systems only when Plan C reaches them', () => {
+  it('keeps the blond ally alive at L17', () => {
+    const returnStep = STORY_STEPS[16]
+    expect(returnStep.title).toContain('与金发一起返城')
+    expect(returnStep.lines.join('')).toContain('一起回城')
+    expect(returnStep.artwork).not.toBe('blond-sacrifice')
+  })
+
+  it('reveals systems only when the latest route reaches them', () => {
     expect(getStoryVisibility(1)).toMatchObject({
       heroes: false,
       gangTree: false,
       campaign: false,
       money: false,
     })
-    expect(getStoryVisibility(4).gangTree).toBe(true)
-    expect(getStoryVisibility(23).heroes).toBe(true)
-    expect(getStoryVisibility(24).campaign).toBe(true)
-    expect(getStoryVisibility(28).money).toBe(true)
-    expect(getStoryVisibility(32).oil).toBe(true)
-    expect(getStoryVisibility(36).materials).toBe(true)
+    expect(getStoryVisibility(7).gangTree).toBe(true)
+    expect(getStoryVisibility(24).heroes).toBe(true)
+    expect(getStoryVisibility(25).campaign).toBe(true)
+    expect(getStoryVisibility(33).money).toBe(true)
+    expect(getStoryVisibility(35).oil).toBe(true)
+    expect(getStoryVisibility(38).materials).toBe(true)
   })
 
-  it('introduces Maeve before campaign and keeps Thomas outside the formation', () => {
-    const heroArrival = STORY_STEPS[22]
-    const firstCampaign = STORY_STEPS[23]
-
-    expect(heroArrival.speaker).toContain('Maeve')
-    expect(heroArrival.objective).toContain('首名英雄 Maeve')
-    expect(firstCampaign.lines.join('')).toContain('Thomas 留在后方')
-    expect(firstCampaign.objective).toContain('Maeve 为首名推关英雄')
-  })
-
-  it('places the custom 3D dismantle and modification jobs in the opening', () => {
-    expect(STORY_STEPS[5].action).toMatchObject({
-      kind: 'car-dismantle',
-      scenario: 'salvage-single',
-    })
-    expect(STORY_STEPS[6].action).toMatchObject({
+  it('places the required 3D workshop jobs in the revised opening', () => {
+    expect(STORY_STEPS[4].action).toMatchObject({
       kind: 'car-customize',
       scenario: 'nitrous-install',
     })
-    expect(STORY_STEPS[14].action).toMatchObject({
+    expect(STORY_STEPS[12].action).toMatchObject({
       kind: 'car-dismantle',
-      scenario: 'salvage-single',
+      scenario: 'salvage-pair',
     })
-    expect(STORY_STEPS[15].action).toMatchObject({
+    expect(STORY_STEPS[13].action).toMatchObject({
       kind: 'car-customize',
-      scenario: 'race-prep',
+      scenario: 'repair-trio',
     })
   })
 
   it('gives every slide cause, action, objective, and reputation data', () => {
     for (const step of STORY_STEPS) {
-      expect(
-        step.lines.length,
-        `L${step.number} dialogue`,
-      ).toBeGreaterThanOrEqual(2)
-      expect(step.objective.trim(), `L${step.number} objective`).not.toBe('')
-      expect(step.action.label.trim(), `L${step.number} action`).not.toBe('')
+      expect(step.lines.length).toBeGreaterThanOrEqual(2)
+      expect(step.objective.trim()).not.toBe('')
+      expect(step.action.label.trim()).not.toBe('')
       expect(step.reputationReward).toBeGreaterThanOrEqual(0)
     }
   })
 
   it('switches ranks only after the matching promotion event', () => {
-    expect(getStoryRank(10).title).toBe('Prospect')
-    expect(getStoryRank(11).title).toBe('Full Patch')
-    expect(getStoryRank(42).title).toBe('Vice President')
-    expect(getStoryRank(43).title).toBe('President')
-  })
-
-  it('has enough reputation when every photo-wall promotion becomes clickable', () => {
-    const promotionSteps = [10, 20, 26, 34, 42]
-    for (const stepNumber of promotionSteps) {
-      const action = STORY_STEPS[stepNumber - 1].action
-      expect(action.kind).toBe('gang-tree')
-      if (action.kind !== 'gang-tree' || !action.promotionTier) continue
-      const targetRank = STORY_RANKS[action.promotionTier - 1]
-      expect(getStoryReputation(stepNumber)).toBeGreaterThanOrEqual(
-        targetRank.reputationThreshold,
-      )
-    }
+    expect(getStoryRank(8).title).toBe('Prospect')
+    expect(getStoryRank(9).title).toBe('Full Patch')
+    expect(getStoryRank(44).title).toBe('Vice President')
+    expect(getStoryRank(45).title).toBe('President')
   })
 })

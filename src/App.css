@@ -8472,6 +8472,20 @@
   line-height: 1.4;
 }
 
+.story-parallel-choice > p {
+  margin: 0;
+  color: rgba(232, 239, 235, 0.8);
+  line-height: 1.6;
+}
+
+.story-parallel-choice .story-roadmap__steps li {
+  align-items: flex-start;
+}
+
+.story-parallel-choice .story-roadmap__steps button {
+  margin-top: 14px;
+}
+
 .story-roadmap > footer,
 .story-gang > footer {
   display: flex;

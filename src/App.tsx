@@ -24,7 +24,7 @@ import {
 } from './game/prologue'
 import {
   STORY_COMPLETE_STEP,
-  getStoryClaimBuilding,
+  getStoryClaimBuildings,
   getStoryRank,
   getStoryStep,
 } from './game/storyPlanC'
@@ -65,6 +65,7 @@ import { StoryCouncilOverlay } from './ui/StoryCouncilOverlay'
 import { StoryGangTreePanel } from './ui/StoryGangTreePanel'
 import { StoryProgressGuide } from './ui/StoryProgressGuide'
 import { StoryRoadmapPanel } from './ui/StoryRoadmapPanel'
+import { StoryParallelChoicePanel } from './ui/StoryParallelChoicePanel'
 import {
   CarDismantleOverlay,
   CarModificationOverlay,
@@ -92,6 +93,7 @@ export type ActiveOverlay =
   | { kind: 'prologueShoot' }
   | { kind: 'storyBeat' }
   | { kind: 'storyRoadmap' }
+  | { kind: 'storyParallelChoice' }
   | { kind: 'storyGangTree' }
   | { kind: 'storyCouncil' }
   | { kind: 'storyCarCustomize' }
@@ -115,6 +117,7 @@ const FULLSCREEN_KINDS = new Set([
   'prologueShoot',
   'storyBeat',
   'storyRoadmap',
+  'storyParallelChoice',
   'storyGangTree',
   'storyCouncil',
   'storyCarCustomize',
@@ -197,20 +200,24 @@ export default function App(): JSX.Element {
   const storyEnabled = useStoryStore((s) => s.enabled)
   const storyStepNumber = useStoryStore((s) => s.currentStepNumber)
   const storyBriefedStepNumbers = useStoryStore((s) => s.briefedStepNumbers)
+  const storyCompletedStepNumbers = useStoryStore((s) => s.completedStepNumbers)
   const claimedGangWallRewardIds = useStoryStore(
     (s) => s.claimedGangWallRewardIds,
   )
   const advanceStory = useStoryStore((s) => s.advance)
+  const chooseStoryParallelOrder = useStoryStore((s) => s.chooseParallelOrder)
   const markStoryBriefed = useStoryStore((s) => s.markBriefed)
   const storyStep = storyEnabled ? getStoryStep(storyStepNumber) : null
   const storyWallGateSatisfied =
     storyStep?.action.kind !== 'gang-tree' ||
     !storyStep.action.rewardId ||
     claimedGangWallRewardIds.includes(storyStep.action.rewardId)
-  const storyClaimBuilding =
+  const storyClaimBuildings =
     storyEnabled && storyWallGateSatisfied
-      ? getStoryClaimBuilding(storyStepNumber)
-      : null
+      ? getStoryClaimBuildings(storyStepNumber)
+      : []
+  const storyClaimBuilding =
+    storyClaimBuildings.length === 1 ? storyClaimBuildings[0] : null
   const activeOverlay = resolveActiveOverlay(playOverlay, selectedBuildingId)
   const activeNarrative = narrativeQueue[0] ?? null
 
@@ -407,7 +414,7 @@ export default function App(): JSX.Element {
     (expectedStepNumber: number): boolean => {
       if (!advanceStory(expectedStepNumber)) return false
 
-      if (expectedStepNumber === 6) {
+      if (expectedStepNumber === 5) {
         grantChapterReward({
           gangReputation: 0,
           heroExperience: 0,
@@ -415,7 +422,7 @@ export default function App(): JSX.Element {
           carParts: [],
         })
       }
-      if (expectedStepNumber === 15) {
+      if (expectedStepNumber === 13) {
         grantChapterReward({
           gangReputation: 0,
           heroExperience: 0,
@@ -423,7 +430,7 @@ export default function App(): JSX.Element {
           carParts: [{ slot: 'suspension', quality: 'common' }],
         })
       }
-      if (expectedStepNumber === 37) {
+      if (expectedStepNumber === 39) {
         grantChapterReward({
           gangReputation: 0,
           heroExperience: 0,
@@ -434,7 +441,7 @@ export default function App(): JSX.Element {
           unlockGunIds: ['industrial-carbine'],
         })
       }
-      if (expectedStepNumber === 40) {
+      if (expectedStepNumber === 42) {
         grantChapterReward({
           gangReputation: 0,
           heroExperience: 0,
@@ -446,10 +453,7 @@ export default function App(): JSX.Element {
         })
       }
 
-      const nextStepNumber = Math.min(
-        STORY_COMPLETE_STEP,
-        expectedStepNumber + 1,
-      )
+      const nextStepNumber = useStoryStore.getState().currentStepNumber
       const targetSystemLevel = getStoryRank(nextStepNumber).systemLevel
       let guard = 0
       while (
@@ -495,16 +499,20 @@ export default function App(): JSX.Element {
 
   useEffect(() => {
     if (!storyEnabled || !storyStep) return
-    const claimBuildingId = getStoryClaimBuilding(storyStep.number)
+    const claimBuildingIds = getStoryClaimBuildings(storyStep.number)
     if (
-      claimBuildingId &&
+      storyBriefedStepNumbers.includes(storyStep.number) &&
+      claimBuildingIds.length > 0 &&
       storyWallGateSatisfied &&
-      claimedBuildingIds.includes(claimBuildingId)
+      claimBuildingIds.every((buildingId) =>
+        claimedBuildingIds.includes(buildingId),
+      )
     ) {
       advanceStoryStep(storyStep.number)
       return
     }
     if (
+      storyBriefedStepNumbers.includes(storyStep.number) &&
       storyStep.action.kind === 'building-upgrade' &&
       (buildingProgress[storyStep.action.buildingId].childLevels[0] ?? 0) >= 1
     ) {
@@ -515,6 +523,7 @@ export default function App(): JSX.Element {
     buildingProgress,
     claimedBuildingIds,
     storyEnabled,
+    storyBriefedStepNumbers,
     storyWallGateSatisfied,
     storyStep,
   ])
@@ -567,7 +576,11 @@ export default function App(): JSX.Element {
         setPlayOverlay({ kind: 'storyCarDismantle' })
         return
       case 'building-claim':
+      case 'building-claim-batch':
         setPlayOverlay({ kind: 'none' })
+        return
+      case 'parallel-choice':
+        setPlayOverlay({ kind: 'storyParallelChoice' })
         return
       case 'building-upgrade':
         setPlayOverlay({ kind: 'none' })
@@ -957,9 +970,20 @@ export default function App(): JSX.Element {
                 takeoverBuildingId={
                   storyEnabled ? storyClaimBuilding : undefined
                 }
+                takeoverBuildingIds={
+                  storyEnabled && storyClaimBuildings.length > 1
+                    ? storyClaimBuildings
+                    : undefined
+                }
                 onBuildingClaimed={(buildingId) => {
-                  if (storyEnabled && buildingId === storyClaimBuilding) {
-                    advanceStoryStep(storyStepNumber)
+                  if (
+                    storyEnabled &&
+                    storyClaimBuildings.includes(buildingId)
+                  ) {
+                    const allClaimed = storyClaimBuildings.every((id) =>
+                      useCityStore.getState().claimedBuildingIds.includes(id),
+                    )
+                    if (allClaimed) advanceStoryStep(storyStepNumber)
                     setPlayOverlay({ kind: 'buildingUnlock', buildingId })
                     return
                   }
@@ -1038,8 +1062,18 @@ export default function App(): JSX.Element {
         {activeOverlay.kind === 'storyRoadmap' ? (
           <StoryRoadmapPanel
             currentStepNumber={storyStepNumber}
+            completedStepNumbers={storyCompletedStepNumbers}
             onClose={closeOverlay}
             onContinue={() => setPlayOverlay({ kind: 'storyBeat' })}
+          />
+        ) : null}
+        {activeOverlay.kind === 'storyParallelChoice' ? (
+          <StoryParallelChoicePanel
+            onChoose={(order) => {
+              if (chooseStoryParallelOrder(order)) {
+                setPlayOverlay({ kind: 'none' })
+              }
+            }}
           />
         ) : null}
         {activeOverlay.kind === 'storyGangTree' ? (

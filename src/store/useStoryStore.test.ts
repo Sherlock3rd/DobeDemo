@@ -32,13 +32,15 @@ describe('useStoryStore', () => {
     expect(useStoryStore.getState()).toMatchObject({
       enabled: true,
       currentStepNumber: 1,
+      completedStepNumbers: [],
+      parallelOrder: null,
       briefedStepNumbers: [],
       claimedGangWallRewardIds: [],
     })
   })
 
   it('allows only the previous tier rewards after their story release step', () => {
-    useStoryStore.setState({ currentStepNumber: 13 })
+    useStoryStore.setState({ currentStepNumber: 10 })
     expect(
       useStoryStore.getState().claimGangWallReward('hugo-garage-manager'),
     ).toBe(true)
@@ -48,10 +50,24 @@ describe('useStoryStore', () => {
     expect(
       useStoryStore.getState().claimGangWallReward('walter-yard-manager'),
     ).toBe(false)
+  })
 
-    useStoryStore.setState({ currentStepNumber: 14 })
+  it('runs either L20 branch first and joins only after both finish', () => {
+    useStoryStore.setState({ currentStepNumber: 20 })
     expect(
-      useStoryStore.getState().claimGangWallReward('prospect-wreck-runner'),
+      useStoryStore.getState().chooseParallelOrder('investigation-first'),
     ).toBe(true)
+    expect(useStoryStore.getState()).toMatchObject({
+      currentStepNumber: 24,
+      parallelOrder: 'investigation-first',
+    })
+    expect(useStoryStore.getState().advance(24)).toBe(true)
+    expect(useStoryStore.getState().advance(25)).toBe(true)
+    expect(useStoryStore.getState().advance(26)).toBe(true)
+    expect(useStoryStore.getState().currentStepNumber).toBe(21)
+    expect(useStoryStore.getState().advance(21)).toBe(true)
+    expect(useStoryStore.getState().advance(22)).toBe(true)
+    expect(useStoryStore.getState().advance(23)).toBe(true)
+    expect(useStoryStore.getState().currentStepNumber).toBe(27)
   })
 })

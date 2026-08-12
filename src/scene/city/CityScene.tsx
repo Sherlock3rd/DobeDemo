@@ -14,12 +14,14 @@ interface CitySceneProps {
   onBuildingClaimed?: (buildingId: BuildingId) => void
   guidedBuildingId?: BuildingId | null
   takeoverBuildingId?: BuildingId | null
+  takeoverBuildingIds?: readonly BuildingId[]
 }
 
 export function CityScene({
   onBuildingClaimed,
   guidedBuildingId = null,
   takeoverBuildingId,
+  takeoverBuildingIds,
 }: CitySceneProps): JSX.Element {
   const clearSelection = useCityStore((state) => state.clearSelection)
 
@@ -66,8 +68,10 @@ export function CityScene({
             {...placement}
             guided={guidedBuildingId === placement.id}
             takeoverEnabled={
-              takeoverBuildingId === undefined ||
-              takeoverBuildingId === placement.id
+              takeoverBuildingIds !== undefined
+                ? takeoverBuildingIds.includes(placement.id)
+                : takeoverBuildingId === undefined ||
+                  takeoverBuildingId === placement.id
             }
             onClaimed={onBuildingClaimed}
           />

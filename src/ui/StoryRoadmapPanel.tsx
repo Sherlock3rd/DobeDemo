@@ -3,19 +3,22 @@ import { STORY_STEPS, getStoryStep } from '../game/storyPlanC'
 
 const ACT_NAMES = [
   '亡命入城',
-  '见习证明',
-  '兄弟与复仇',
-  '叛徒调查',
-  '资源掌控',
+  '正式转正',
+  '全员反击',
+  '双线试炼',
+  '营救与制裁',
+  '产业恢复',
   '核心席位',
 ] as const
 
 export function StoryRoadmapPanel({
   currentStepNumber,
+  completedStepNumbers,
   onClose,
   onContinue,
 }: {
   currentStepNumber: number
+  completedStepNumbers: readonly number[]
   onClose: () => void
   onContinue: () => void
 }): JSX.Element {
@@ -36,7 +39,7 @@ export function StoryRoadmapPanel({
       >
         <header>
           <div>
-            <span>PLAN B · 90 MINUTES</span>
+            <span>PLAN C · 90 MINUTES</span>
             <h2 id="story-roadmap-title">{`ACT ${activeAct} · ${ACT_NAMES[activeAct]}`}</h2>
           </div>
           <button type="button" onClick={onClose}>
@@ -61,12 +64,11 @@ export function StoryRoadmapPanel({
         </div>
         <ol className="story-roadmap__steps">
           {actSteps.map((step) => {
-            const state =
-              step.number < currentStepNumber
-                ? 'complete'
-                : step.number === currentStepNumber
-                  ? 'current'
-                  : 'locked'
+            const state = completedStepNumbers.includes(step.number)
+              ? 'complete'
+              : step.number === currentStepNumber
+                ? 'current'
+                : 'locked'
             return (
               <li key={step.number} data-state={state}>
                 <span>{`L${String(step.number).padStart(2, '0')}`}</span>
@@ -87,7 +89,7 @@ export function StoryRoadmapPanel({
           })}
         </ol>
         <footer>
-          <span>{`总进度 ${Math.min(STORY_STEPS.length, currentStepNumber - 1)} / ${STORY_STEPS.length}`}</span>
+          <span>{`总进度 ${Math.min(STORY_STEPS.length, completedStepNumbers.length)} / ${STORY_STEPS.length}`}</span>
           {current ? (
             <button type="button" onClick={onContinue}>
               返回当前任务

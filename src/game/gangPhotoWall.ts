@@ -98,7 +98,7 @@ export const GANG_PHOTO_WALL: readonly GangWallTier[] = [
         portraitIndex: 5,
         buildingId: 'repair-shop',
         tags: ['building', 'parts'],
-        availableFromStep: 13,
+        availableFromStep: 10,
         claimLabel: '收复 Hugo 与修车厂管理线',
       },
       {

@@ -36,10 +36,10 @@ describe('StoryGangTreePanel', () => {
 
   it('requires an explicit N-1 photo click before reporting the handover', async () => {
     const onRewardClaimed = vi.fn()
-    useStoryStore.setState({ currentStepNumber: 13 })
+    useStoryStore.setState({ currentStepNumber: 10 })
     render(
       <StoryGangTreePanel
-        currentStepNumber={13}
+        currentStepNumber={10}
         canContinue={false}
         requiredRewardId="hugo-garage-manager"
         onContinue={vi.fn()}
@@ -64,7 +64,7 @@ describe('StoryGangTreePanel', () => {
     const onPromotionRequested = vi.fn()
     render(
       <StoryGangTreePanel
-        currentStepNumber={10}
+        currentStepNumber={8}
         canContinue={false}
         promotionTargetTier={2}
         onContinue={vi.fn()}
