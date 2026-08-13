@@ -9,15 +9,15 @@ const OPTIONS: readonly {
 }[] = [
   {
     order: 'industry-first',
-    eyebrow: 'L21–L23',
+    eyebrow: 'L19–L21',
     title: '先做产业管理线',
-    detail: '收复两名管理者，任意顺序接管改装厂与废车厂，再完成废车厂自动化。',
+    detail: '确认两名管理者，任意顺序接管改装厂与废车厂，再完成废车厂自动化。',
   },
   {
     order: 'investigation-first',
-    eyebrow: 'L24–L26',
+    eyebrow: 'L22–L24',
     title: '先做内奸调查线',
-    detail: '收复 Maeve，连续推关寻找线索，再完成挡风玻璃逼问。',
+    detail: '获得 Maeve 协助，连续推关寻找线索，再完成挡风玻璃逼问。',
   },
 ]
 
@@ -42,7 +42,7 @@ export function StoryParallelChoicePanel({
         </header>
         <p>
           两条线都必须完成，选择只决定先后顺序。第一条结束后会自动切换到另一条，
-          两线完成才开放 L27。
+          两线完成才开放 L25。
         </p>
         <ol className="story-roadmap__steps">
           {OPTIONS.map((option) => (

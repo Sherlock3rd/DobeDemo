@@ -47,8 +47,15 @@ function getPhotoState(
   currentTier: number,
   currentStepNumber: number,
   claimedRewardIds: readonly GangWallRewardId[],
+  requiredRewardIds: readonly GangWallRewardId[],
 ): PhotoState {
   if (claimedRewardIds.includes(photo.id)) return 'claimed'
+  if (
+    requiredRewardIds.includes(photo.id) &&
+    photo.availableFromStep <= currentStepNumber
+  ) {
+    return 'claimable'
+  }
   if (
     tier === currentTier - 1 &&
     photo.availableFromStep <= currentStepNumber
@@ -61,8 +68,8 @@ function getPhotoState(
 }
 
 function stateLabel(state: PhotoState): string {
-  if (state === 'claimed') return '已收复'
-  if (state === 'claimable') return '可以收复'
+  if (state === 'claimed') return '已交接'
+  if (state === 'claimable') return '可以交接'
   if (state === 'managed') return '辖下成员'
   if (state === 'current') return '同层成员'
   return '尚未公开'
@@ -73,6 +80,7 @@ export interface GangPhotoWallProps {
   currentStepNumber: number
   claimedRewardIds: readonly GangWallRewardId[]
   requiredRewardId?: GangWallRewardId
+  requiredRewardIds?: readonly GangWallRewardId[]
   onClaimReward?: (rewardId: GangWallRewardId) => void
 }
 
@@ -81,9 +89,13 @@ export function GangPhotoWall({
   currentStepNumber,
   claimedRewardIds,
   requiredRewardId,
+  requiredRewardIds = [],
   onClaimReward,
 }: GangPhotoWallProps): JSX.Element {
   const currentTierRef = useRef<HTMLLIElement | null>(null)
+  const requiredIds = requiredRewardId
+    ? [...requiredRewardIds, requiredRewardId]
+    : requiredRewardIds
 
   useEffect(() => {
     const tier = currentTierRef.current
@@ -106,10 +118,10 @@ export function GangPhotoWall({
         <span>照片墙 · 上级在上</span>
         <strong>
           {currentTier === 1
-            ? 'N-1 规则：晋升 T2 后，才可收复 T1'
-            : `N-1 规则：你到达 T${currentTier}，可收复 T${currentTier - 1}`}
+            ? 'N-1 规则：晋升 T2 后，才可承接 T1'
+            : `N-1 规则：你到达 T${currentTier}，可承接 T${currentTier - 1}`}
         </strong>
-        {requiredRewardId ? <em>点击发光照片完成本次交接</em> : null}
+        {requiredIds.length > 0 ? <em>点击发光照片完成本次交接</em> : null}
       </div>
       <ol className="gang-photo-wall__tiers" aria-label="剃刀党照片墙层级">
         {[...GANG_PHOTO_WALL].reverse().map((tier) => {
@@ -176,8 +188,9 @@ export function GangPhotoWall({
                     currentTier,
                     currentStepNumber,
                     claimedRewardIds,
+                    requiredIds,
                   )
-                  const isRequired = slot.id === requiredRewardId
+                  const isRequired = requiredIds.includes(slot.id)
                   const canClaim = state === 'claimable' && onClaimReward
                   return (
                     <article
@@ -211,7 +224,7 @@ export function GangPhotoWall({
                           aria-label={slot.claimLabel}
                           onClick={() => onClaimReward(slot.id)}
                         >
-                          {isRequired ? '完成本次收复' : '点击收复'}
+                          {isRequired ? '完成本次交接' : '点击交接'}
                         </button>
                       ) : (
                         <em>{stateLabel(state)}</em>

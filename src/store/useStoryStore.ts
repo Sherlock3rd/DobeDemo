@@ -16,7 +16,7 @@ import {
 } from '../game/gangPhotoWall'
 import { createSafeStorage } from './safeStorage'
 
-export const STORY_STORAGE_KEY = 'dobe-story-plan-c-v2'
+export const STORY_STORAGE_KEY = 'dobe-story-plan-c-v3'
 
 interface StoryState {
   enabled: boolean
@@ -83,26 +83,26 @@ export const useStoryStore = create<StoryState>()(
           STORY_COMPLETE_STEP,
           expectedStepNumber + 1,
         )
-        if (expectedStepNumber === 23) {
+        if (expectedStepNumber === 21) {
           currentStepNumber =
-            state.parallelOrder === 'investigation-first' ? 27 : 24
-        } else if (expectedStepNumber === 26) {
-          currentStepNumber = state.parallelOrder === 'industry-first' ? 27 : 21
+            state.parallelOrder === 'investigation-first' ? 25 : 22
+        } else if (expectedStepNumber === 24) {
+          currentStepNumber = state.parallelOrder === 'industry-first' ? 25 : 19
         }
         set({ currentStepNumber, completedStepNumbers })
         return true
       },
       chooseParallelOrder: (order) => {
         const state = get()
-        if (state.currentStepNumber !== 20 || state.parallelOrder !== null) {
+        if (state.currentStepNumber !== 18 || state.parallelOrder !== null) {
           return false
         }
         set({
-          currentStepNumber: order === 'industry-first' ? 21 : 24,
+          currentStepNumber: order === 'industry-first' ? 19 : 22,
           parallelOrder: order,
-          completedStepNumbers: state.completedStepNumbers.includes(20)
+          completedStepNumbers: state.completedStepNumbers.includes(18)
             ? state.completedStepNumbers
-            : [...state.completedStepNumbers, 20],
+            : [...state.completedStepNumbers, 18],
         })
         return true
       },
@@ -124,8 +124,18 @@ export const useStoryStore = create<StoryState>()(
           getStoryRank(state.currentStepNumber).systemLevel,
         )
         const rewardTier = getGangWallTierForReward(reward.id)
+        const action = getStoryStep(state.currentStepNumber)?.action
+        const requiredRewardIds =
+          action?.kind === 'gang-tree'
+            ? [
+                ...(action.rewardIds ?? []),
+                ...(action.rewardId ? [action.rewardId] : []),
+              ]
+            : []
+        const isRequiredByCurrentStep = requiredRewardIds.includes(reward.id)
         if (
-          rewardTier.tier !== storyRank.tier - 1 ||
+          (!isRequiredByCurrentStep &&
+            rewardTier.tier !== storyRank.tier - 1) ||
           reward.availableFromStep > state.currentStepNumber
         ) {
           return false
@@ -151,15 +161,15 @@ export const useStoryStore = create<StoryState>()(
     }),
     {
       name: STORY_STORAGE_KEY,
-      version: 3,
+      version: 1,
       storage: createJSONStorage(() => createSafeStorage()),
       migrate: (persisted) => {
         const source =
           typeof persisted === 'object' && persisted !== null
             ? (persisted as { enabled?: unknown })
             : {}
-        // 最新方案 C 重排了 L01-L44，并新增 L20 双线门禁。旧版节点号
-        // 无法安全映射，必须从 L01 重新进入，避免跳过新必做交互。
+        // 新版方案 C 删除前段过早交接并重排为 L01-L43。旧版节点号
+        // 无法安全映射，使用独立 v3 存档从 L01 开始，避免跳过新必做链。
         const currentStepNumber = normalizeStep(1)
         return {
           enabled: source.enabled !== false,

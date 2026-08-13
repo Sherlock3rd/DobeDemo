@@ -40,34 +40,34 @@ describe('useStoryStore', () => {
   })
 
   it('allows only the previous tier rewards after their story release step', () => {
-    useStoryStore.setState({ currentStepNumber: 10 })
+    useStoryStore.setState({ currentStepNumber: 19 })
     expect(
       useStoryStore.getState().claimGangWallReward('hugo-garage-manager'),
     ).toBe(true)
     expect(
-      useStoryStore.getState().claimGangWallReward('prospect-wreck-runner'),
-    ).toBe(false)
-    expect(
       useStoryStore.getState().claimGangWallReward('walter-yard-manager'),
+    ).toBe(true)
+    expect(
+      useStoryStore.getState().claimGangWallReward('spencer-gas-manager'),
     ).toBe(false)
   })
 
-  it('runs either L20 branch first and joins only after both finish', () => {
-    useStoryStore.setState({ currentStepNumber: 20 })
+  it('runs either L18 branch first and joins only after both finish', () => {
+    useStoryStore.setState({ currentStepNumber: 18 })
     expect(
       useStoryStore.getState().chooseParallelOrder('investigation-first'),
     ).toBe(true)
     expect(useStoryStore.getState()).toMatchObject({
-      currentStepNumber: 24,
+      currentStepNumber: 22,
       parallelOrder: 'investigation-first',
     })
-    expect(useStoryStore.getState().advance(24)).toBe(true)
-    expect(useStoryStore.getState().advance(25)).toBe(true)
-    expect(useStoryStore.getState().advance(26)).toBe(true)
-    expect(useStoryStore.getState().currentStepNumber).toBe(21)
-    expect(useStoryStore.getState().advance(21)).toBe(true)
     expect(useStoryStore.getState().advance(22)).toBe(true)
     expect(useStoryStore.getState().advance(23)).toBe(true)
-    expect(useStoryStore.getState().currentStepNumber).toBe(27)
+    expect(useStoryStore.getState().advance(24)).toBe(true)
+    expect(useStoryStore.getState().currentStepNumber).toBe(19)
+    expect(useStoryStore.getState().advance(19)).toBe(true)
+    expect(useStoryStore.getState().advance(20)).toBe(true)
+    expect(useStoryStore.getState().advance(21)).toBe(true)
+    expect(useStoryStore.getState().currentStepNumber).toBe(25)
   })
 })

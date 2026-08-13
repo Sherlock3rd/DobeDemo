@@ -27,7 +27,7 @@ describe('RaceScreen V2', () => {
   })
 
   it('explains the pursuit objective, convoy state, and weapon controls', () => {
-    render(<RaceScreen stage={3} heroId="foreman" onExit={() => {}} />)
+    render(<RaceScreen stage={4} heroId="foreman" onExit={() => {}} />)
 
     expect(
       screen.getByText('纯追击枪战 · 空中特技缩短强化冷却 · 摧毁目标车'),
@@ -66,7 +66,7 @@ describe('RaceScreen V2', () => {
   })
 
   it('shows the Plan C blond duel as a first-place two-car race', () => {
-    render(<RaceScreen stage={4} heroId="foreman" onExit={() => {}} />)
+    render(<RaceScreen stage={3} heroId="foreman" onExit={() => {}} />)
 
     expect(
       screen.getByText('双车对决 · 第一通关 · 主动使用氮气'),
@@ -158,7 +158,7 @@ describe('RaceScreen V2', () => {
   })
 
   it('auto-fires and turns F or the button into a cooldown fire boost', () => {
-    render(<RaceScreen stage={3} heroId="foreman" onExit={() => {}} />)
+    render(<RaceScreen stage={4} heroId="foreman" onExit={() => {}} />)
     const screenRoot = screen.getByRole('dialog', { name: '公路争霸' })
 
     act(() => vi.advanceTimersByTime(50))
@@ -207,7 +207,7 @@ describe('RaceScreen V2', () => {
     useAdventureStore.setState((state) => ({
       gunLevels: { ...state.gunLevels, 'rivet-smg': 50 },
     }))
-    render(<RaceScreen stage={3} heroId="foreman" onExit={() => {}} />)
+    render(<RaceScreen stage={4} heroId="foreman" onExit={() => {}} />)
 
     act(() => vi.advanceTimersByTime(65_000))
 

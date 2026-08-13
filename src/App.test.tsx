@@ -294,11 +294,11 @@ describe('App', () => {
     expect(screen.getByText('声望 0')).toBeInTheDocument()
   })
 
-  it('opens the L20 branch selector and starts the chosen line', async () => {
+  it('opens the L18 branch selector and starts the chosen line', async () => {
     const user = userEvent.setup()
     useStoryStore.setState({
       enabled: true,
-      currentStepNumber: 20,
+      currentStepNumber: 18,
       briefedStepNumbers: [],
     })
 
@@ -310,18 +310,18 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '先做内奸调查线' }))
 
     expect(useStoryStore.getState()).toMatchObject({
-      currentStepNumber: 24,
+      currentStepNumber: 22,
       parallelOrder: 'investigation-first',
     })
-    expect(useStoryStore.getState().completedStepNumbers).toContain(20)
+    expect(useStoryStore.getState().completedStepNumbers).toContain(18)
   })
 
-  it('does not skip an already satisfied L22 until the player acknowledges it', async () => {
+  it('does not skip an already satisfied L20 until the player acknowledges it', async () => {
     const user = userEvent.setup()
     useCityStore.getState().claimBuilding('recycling-yard', 16, BASE_TIME)
     useStoryStore.setState({
       enabled: true,
-      currentStepNumber: 22,
+      currentStepNumber: 20,
       parallelOrder: 'industry-first',
       briefedStepNumbers: [],
     })
@@ -333,7 +333,7 @@ describe('App', () => {
         name: '产业线·任意顺序接管两座建筑',
       }),
     ).toBeInTheDocument()
-    expect(useStoryStore.getState().currentStepNumber).toBe(22)
+    expect(useStoryStore.getState().currentStepNumber).toBe(20)
 
     await user.click(
       screen.getByRole('button', { name: '返回城市接管两座建筑' }),
@@ -342,7 +342,7 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: '产业线·废车厂自动化' }),
     ).toBeInTheDocument()
-    expect(useStoryStore.getState().currentStepNumber).toBe(23)
+    expect(useStoryStore.getState().currentStepNumber).toBe(21)
   })
 
   it('requires the 3D nitrous workshop before advancing from L05', async () => {
@@ -368,12 +368,33 @@ describe('App', () => {
     expect(useStoryStore.getState().currentStepNumber).toBe(6)
   })
 
+  it('requires all three recovery markers before advancing from L10', async () => {
+    const user = userEvent.setup()
+    useStoryStore.setState({
+      enabled: true,
+      currentStepNumber: 10,
+      briefedStepNumbers: [],
+    })
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', { name: '打开收车任务地图' }),
+    )
+    for (const name of ['运河桥下废车', '旧货站残车', '纺织厂后巷废车']) {
+      await user.click(screen.getByRole('button', { name: new RegExp(name) }))
+    }
+    await user.click(screen.getByRole('button', { name: '派出拖车队' }))
+
+    expect(useStoryStore.getState().currentStepNumber).toBe(11)
+  })
+
   it('requires the 3D dismantling workshop and grants its salvage reward', async () => {
     const user = userEvent.setup()
     const initialSpareParts = useAdventureStore.getState().spareParts
     useStoryStore.setState({
       enabled: true,
-      currentStepNumber: 13,
+      currentStepNumber: 11,
       briefedStepNumbers: [],
     })
 
@@ -385,11 +406,11 @@ describe('App', () => {
     expect(
       screen.getByRole('dialog', { name: '3D 拆车工位' }),
     ).toBeInTheDocument()
-    expect(useStoryStore.getState().currentStepNumber).toBe(13)
+    expect(useStoryStore.getState().currentStepNumber).toBe(11)
 
     await user.click(screen.getByRole('button', { name: '完成 3D 拆车' }))
 
-    expect(useStoryStore.getState().currentStepNumber).toBe(14)
+    expect(useStoryStore.getState().currentStepNumber).toBe(12)
     expect(useAdventureStore.getState().spareParts).toBe(initialSpareParts + 25)
     expect(
       useAdventureStore
@@ -400,11 +421,11 @@ describe('App', () => {
     ).toBe(true)
   })
 
-  it('uses the 3D workshop to strengthen member vehicles at L14', async () => {
+  it('uses the 3D workshop to strengthen member vehicles at L12', async () => {
     const user = userEvent.setup()
     useStoryStore.setState({
       enabled: true,
-      currentStepNumber: 14,
+      currentStepNumber: 12,
       briefedStepNumbers: [],
     })
 
@@ -415,7 +436,7 @@ describe('App', () => {
     )
     await user.click(screen.getByRole('button', { name: '完成 3D 改车' }))
 
-    expect(useStoryStore.getState().currentStepNumber).toBe(15)
+    expect(useStoryStore.getState().currentStepNumber).toBe(13)
   })
 
   it('renders the canvas with an orthographic projection', () => {

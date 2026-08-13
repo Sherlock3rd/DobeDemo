@@ -66,6 +66,7 @@ import { StoryGangTreePanel } from './ui/StoryGangTreePanel'
 import { StoryProgressGuide } from './ui/StoryProgressGuide'
 import { StoryRoadmapPanel } from './ui/StoryRoadmapPanel'
 import { StoryParallelChoicePanel } from './ui/StoryParallelChoicePanel'
+import { WreckCollectionOverlay } from './ui/WreckCollectionOverlay'
 import {
   CarDismantleOverlay,
   CarModificationOverlay,
@@ -98,6 +99,7 @@ export type ActiveOverlay =
   | { kind: 'storyCouncil' }
   | { kind: 'storyCarCustomize' }
   | { kind: 'storyCarDismantle' }
+  | { kind: 'storyWreckCollection' }
 
 type PlayOverlay = Exclude<ActiveOverlay, { kind: 'buildingDetail' }>
 
@@ -122,6 +124,7 @@ const FULLSCREEN_KINDS = new Set([
   'storyCouncil',
   'storyCarCustomize',
   'storyCarDismantle',
+  'storyWreckCollection',
 ])
 const MODAL_KINDS = new Set([
   'gangTree',
@@ -146,6 +149,7 @@ const MODAL_KINDS = new Set([
   'storyCouncil',
   'storyCarCustomize',
   'storyCarDismantle',
+  'storyWreckCollection',
 ])
 
 interface QueuedNarrative {
@@ -422,7 +426,7 @@ export default function App(): JSX.Element {
           carParts: [],
         })
       }
-      if (expectedStepNumber === 13) {
+      if (expectedStepNumber === 11) {
         grantChapterReward({
           gangReputation: 0,
           heroExperience: 0,
@@ -441,7 +445,7 @@ export default function App(): JSX.Element {
           unlockGunIds: ['industrial-carbine'],
         })
       }
-      if (expectedStepNumber === 42) {
+      if (expectedStepNumber === 41) {
         grantChapterReward({
           gangReputation: 0,
           heroExperience: 0,
@@ -554,6 +558,9 @@ export default function App(): JSX.Element {
         advanceStoryStep(storyStep.number)
         setPlayOverlay({ kind: 'none' })
         return
+      case 'wreck-collection':
+        setPlayOverlay({ kind: 'storyWreckCollection' })
+        return
       case 'race':
         if (storyStep.action.stage >= 2) grantPrologueGun()
         setPlayOverlay({
@@ -624,8 +631,12 @@ export default function App(): JSX.Element {
       currentStep.action.followUpRaceStage === stage &&
       cleared
     ) {
-      advanceStoryStep(currentStepNumber)
-      setPlayOverlay({ kind: 'none' })
+      if (currentStep.action.meetingAfter) {
+        setPlayOverlay({ kind: 'storyCouncil' })
+      } else {
+        advanceStoryStep(currentStepNumber)
+        setPlayOverlay({ kind: 'none' })
+      }
       return
     }
     setPlayOverlay({ kind: 'storyBeat' })
@@ -695,6 +706,15 @@ export default function App(): JSX.Element {
     const currentStepNumber = useStoryStore.getState().currentStepNumber
     const currentStep = getStoryStep(currentStepNumber)
     if (!storyEnabled || currentStep?.action.kind !== 'car-dismantle') return
+
+    advanceStoryStep(currentStepNumber)
+    setPlayOverlay({ kind: 'none' })
+  }
+
+  const finishStoryWreckCollection = (): void => {
+    const currentStepNumber = useStoryStore.getState().currentStepNumber
+    const currentStep = getStoryStep(currentStepNumber)
+    if (!storyEnabled || currentStep?.action.kind !== 'wreck-collection') return
 
     advanceStoryStep(currentStepNumber)
     setPlayOverlay({ kind: 'none' })
@@ -1082,11 +1102,17 @@ export default function App(): JSX.Element {
             canContinue={
               storyStep?.action.kind === 'gang-tree' &&
               !storyStep.action.rewardId &&
+              !storyStep.action.rewardIds?.length &&
               !storyStep.action.promotionTier
             }
             requiredRewardId={
               storyStep?.action.kind === 'gang-tree'
                 ? storyStep.action.rewardId
+                : undefined
+            }
+            requiredRewardIds={
+              storyStep?.action.kind === 'gang-tree'
+                ? storyStep.action.rewardIds
                 : undefined
             }
             promotionTargetTier={
@@ -1102,7 +1128,8 @@ export default function App(): JSX.Element {
             onContinue={() => {
               if (
                 storyStep?.action.kind === 'gang-tree' &&
-                !storyStep.action.rewardId
+                !storyStep.action.rewardId &&
+                !storyStep.action.rewardIds?.length
               ) {
                 advanceStoryStep(storyStep.number)
               }
@@ -1123,12 +1150,20 @@ export default function App(): JSX.Element {
               setPlayOverlay({ kind: 'none' })
             }}
             onRewardClaimed={(rewardId) => {
-              if (
-                storyStep?.action.kind !== 'gang-tree' ||
-                storyStep.action.rewardId !== rewardId
-              ) {
+              if (storyStep?.action.kind !== 'gang-tree') {
                 return
               }
+              const requiredRewardIds = [
+                ...(storyStep.action.rewardIds ?? []),
+                ...(storyStep.action.rewardId
+                  ? [storyStep.action.rewardId]
+                  : []),
+              ]
+              if (!requiredRewardIds.includes(rewardId)) return
+              const allClaimed = requiredRewardIds.every((id) =>
+                useStoryStore.getState().claimedGangWallRewardIds.includes(id),
+              )
+              if (!allClaimed) return
               if (storyStep.action.buildingId) {
                 setPlayOverlay({ kind: 'none' })
                 return
@@ -1168,6 +1203,9 @@ export default function App(): JSX.Element {
             onComplete={finishStoryCarDismantle}
           />
         ) : null}
+        {activeOverlay.kind === 'storyWreckCollection' ? (
+          <WreckCollectionOverlay onComplete={finishStoryWreckCollection} />
+        ) : null}
         {storyEnabled ? (
           activeOverlay.kind === 'gangTree' ? (
             <StoryGangTreePanel
@@ -1176,6 +1214,11 @@ export default function App(): JSX.Element {
               requiredRewardId={
                 storyStep?.action.kind === 'gang-tree'
                   ? storyStep.action.rewardId
+                  : undefined
+              }
+              requiredRewardIds={
+                storyStep?.action.kind === 'gang-tree'
+                  ? storyStep.action.rewardIds
                   : undefined
               }
               promotionTargetTier={
@@ -1198,12 +1241,22 @@ export default function App(): JSX.Element {
                 }
               }}
               onRewardClaimed={(rewardId) => {
-                if (
-                  storyStep?.action.kind !== 'gang-tree' ||
-                  storyStep.action.rewardId !== rewardId
-                ) {
+                if (storyStep?.action.kind !== 'gang-tree') {
                   return
                 }
+                const requiredRewardIds = [
+                  ...(storyStep.action.rewardIds ?? []),
+                  ...(storyStep.action.rewardId
+                    ? [storyStep.action.rewardId]
+                    : []),
+                ]
+                if (!requiredRewardIds.includes(rewardId)) return
+                const allClaimed = requiredRewardIds.every((id) =>
+                  useStoryStore
+                    .getState()
+                    .claimedGangWallRewardIds.includes(id),
+                )
+                if (!allClaimed) return
                 if (storyStep.action.buildingId) {
                   closeOverlay()
                   return

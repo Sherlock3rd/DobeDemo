@@ -2,13 +2,13 @@ import { useMemo, type JSX } from 'react'
 import { STORY_STEPS, getStoryStep } from '../game/storyPlanC'
 
 const ACT_NAMES = [
-  '亡命入城',
-  '正式转正',
-  '全员反击',
+  '被卷入',
+  '见习与转正',
+  '全员任务与联手伏击',
   '双线试炼',
-  '营救与制裁',
+  '追杀叛徒与救援',
   '产业恢复',
-  '核心席位',
+  '高阶晋升',
 ] as const
 
 export function StoryRoadmapPanel({

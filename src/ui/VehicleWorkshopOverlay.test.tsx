@@ -104,16 +104,18 @@ describe('VehicleWorkshopOverlay', () => {
     )
 
     for (const action of [
+      '打开受损引擎舱',
+      '更换破损散热器',
+      '完成压力测试',
       '打开后备舱',
-      '固定双瓶支架',
-      '连接氮气管路',
+      '固定氮气瓶与管路',
       '点火喷射测试',
     ]) {
       await user.click(screen.getByRole('button', { name: action }))
     }
 
     expect(
-      screen.getByText('蓝色尾焰稳定，灰狐获得氮气冲刺能力。'),
+      screen.getByText('蓝色尾焰稳定，灰狐完成维修并获得氮气冲刺能力。'),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '确认工位完成' }))
     expect(onComplete).toHaveBeenCalledTimes(1)

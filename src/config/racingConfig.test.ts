@@ -14,12 +14,12 @@ describe('racingConfig', () => {
     expect(racingConfig.stages.map((stage) => stage.mode)).toEqual([
       'race',
       'pursuit',
-      'pursuit',
       'race',
       'pursuit',
       'pursuit',
-      'race',
       'pursuit',
+      'pursuit',
+      'race',
       'race',
       'race',
     ])
@@ -51,7 +51,7 @@ describe('racingConfig', () => {
       [6, 3],
     ])
     expect(racingConfig.stages.map((stage) => stage.requiredPartLevel)).toEqual(
-      [0, 0, 0, 0, 0, 2, 2, 3, 3, 4],
+      [0, 0, 0, 0, 0, 2, 3, 2, 3, 4],
     )
     for (const stage of racingConfig.stages) {
       if (stage.mode === 'race') {
@@ -90,12 +90,12 @@ describe('racingConfig', () => {
       }),
     ).toEqual([
       [300, 0.2],
-      [450, 0.3],
       [600, 0.3],
+      [450, 0.3],
       [750, 0.4],
       [900, 0.4],
-      [1_050, 0.5],
       [1_200, 0.5],
+      [1_050, 0.5],
       [1_350, 0.6],
       [1_500, 0.6],
     ])
@@ -103,7 +103,7 @@ describe('racingConfig', () => {
 
   it('configures Plan C pursuit escort counts', () => {
     expect(
-      [2, 3, 5, 6, 8].map(
+      [2, 4, 5, 6, 7].map(
         (stage) =>
           (
             getRacingStage(stage) as unknown as {

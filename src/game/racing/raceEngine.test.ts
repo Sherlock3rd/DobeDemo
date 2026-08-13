@@ -109,9 +109,9 @@ describe('raceEngine V2', () => {
     expect(
       race.vehicles.filter((vehicle) => vehicle.role === 'racer'),
     ).toHaveLength(6)
-    const pursuit = createRaceState(3, STARTER)
+    const pursuit = createRaceState(4, STARTER)
     expect(
-      [2, 3, 5, 6, 8].map(
+      [2, 4, 5, 6, 7].map(
         (stage) =>
           createRaceState(stage, STARTER).vehicles.filter(
             (vehicle) => vehicle.role === 'escort',
@@ -455,7 +455,7 @@ describe('raceEngine V2', () => {
   })
 
   it('uses visible projectile travel and hit effects in pursuit', () => {
-    let state = createRaceState(3, STARTER)
+    let state = createRaceState(4, STARTER)
     state.player = {
       ...state.player,
       x: 0,
@@ -490,7 +490,7 @@ describe('raceEngine V2', () => {
   })
 
   it('uses equipment durability, auto-fires, and makes input a fire boost', () => {
-    let state = createRaceState(3, STARTER)
+    let state = createRaceState(4, STARTER)
     expect(state.player.maxDurability).toBe(100)
     state = advanceRace(state, { fire: true }, STARTER)
     expect(state.shotsFired).toBe(1)
@@ -503,7 +503,7 @@ describe('raceEngine V2', () => {
   })
 
   it('reduces pursuit fire-boost cooldown after a clean airborne stunt', () => {
-    const state = createRaceState(3, STARTER)
+    const state = createRaceState(4, STARTER)
     state.fireBoostCooldownMs = 6000
     state.player = {
       ...state.player,
@@ -528,7 +528,7 @@ describe('raceEngine V2', () => {
   })
 
   it('disables all nitro charging and speed boosts in pursuit stages', () => {
-    const initial = createRaceState(3, STARTER)
+    const initial = createRaceState(4, STARTER)
     initial.player = {
       ...initial.player,
       boost: NITRO_MAX,
@@ -558,7 +558,7 @@ describe('raceEngine V2', () => {
   })
 
   it('lets the enemy convoy automatically return fire', () => {
-    let state = createRaceState(3, STARTER)
+    let state = createRaceState(4, STARTER)
     state = {
       ...state,
       nextEnemyFireMs: 0,
@@ -576,7 +576,7 @@ describe('raceEngine V2', () => {
 
   it('requires a gun for pursuit stages', () => {
     expect(() =>
-      createRaceState(3, { carId: 'rust-fox', gunId: null }),
+      createRaceState(4, { carId: 'rust-fox', gunId: null }),
     ).toThrow(/requires a gun/)
   })
 
@@ -603,7 +603,7 @@ describe('raceEngine V2', () => {
     expect(raceNext.status).toBe('running')
     expect(raceNext.reason).toBe('running')
 
-    const pursuit = createRaceState(3, STARTER)
+    const pursuit = createRaceState(4, STARTER)
     pursuit.player = { ...pursuit.player, durability: 0 }
     const pursuitNext = advanceRace(pursuit, {}, STARTER)
 
@@ -676,8 +676,8 @@ describe('raceEngine V2', () => {
   })
 
   it('runs the Plan C blond duel as a true one-opponent race requiring first place', () => {
-    let state = createRaceState(4, STARTER)
-    const finishDistance = getRacingStage(4).distance
+    let state = createRaceState(3, STARTER)
+    const finishDistance = getRacingStage(3).distance
     expect(state.vehicles).toHaveLength(1)
     state.player = {
       ...state.player,
@@ -739,7 +739,7 @@ describe('raceEngine V2', () => {
   })
 
   it('waits one second after destroying the pursuit target and preserves kill time', () => {
-    let state = createRaceState(3, STARTER)
+    let state = createRaceState(4, STARTER)
     state.vehicles = state.vehicles.map((vehicle) =>
       vehicle.role === 'target' ? { ...vehicle, durability: 0 } : vehicle,
     )

@@ -34,14 +34,14 @@ describe('StoryGangTreePanel', () => {
     expect(screen.getAllByText('经营者').length).toBeGreaterThan(0)
   })
 
-  it('requires an explicit N-1 photo click before reporting the handover', async () => {
+  it('requires both explicit photo clicks before reporting the dual handover', async () => {
     const onRewardClaimed = vi.fn()
-    useStoryStore.setState({ currentStepNumber: 10 })
+    useStoryStore.setState({ currentStepNumber: 19 })
     render(
       <StoryGangTreePanel
-        currentStepNumber={10}
+        currentStepNumber={19}
         canContinue={false}
-        requiredRewardId="hugo-garage-manager"
+        requiredRewardIds={['hugo-garage-manager', 'walter-yard-manager']}
         onContinue={vi.fn()}
         onPromotionRequested={vi.fn()}
         onRewardClaimed={onRewardClaimed}
@@ -51,10 +51,14 @@ describe('StoryGangTreePanel', () => {
 
     expect(screen.getByText('修车厂看守人')).toBeInTheDocument()
     await userEvent.click(
-      screen.getByRole('button', { name: '收复 Hugo 与修车厂管理线' }),
+      screen.getByRole('button', { name: '完成 Hugo 与修车厂管理交接' }),
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: '完成 Walter 与废车回收厂交接' }),
     )
 
     expect(onRewardClaimed).toHaveBeenCalledWith('hugo-garage-manager')
+    expect(onRewardClaimed).toHaveBeenCalledWith('walter-yard-manager')
     expect(useStoryStore.getState().claimedGangWallRewardIds).toContain(
       'hugo-garage-manager',
     )

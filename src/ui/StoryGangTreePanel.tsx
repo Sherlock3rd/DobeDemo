@@ -12,6 +12,7 @@ export function StoryGangTreePanel({
   currentStepNumber,
   canContinue,
   requiredRewardId,
+  requiredRewardIds,
   promotionTargetTier,
   continueLabel,
   onContinue,
@@ -22,6 +23,7 @@ export function StoryGangTreePanel({
   currentStepNumber: number
   canContinue: boolean
   requiredRewardId?: GangWallRewardId
+  requiredRewardIds?: readonly GangWallRewardId[]
   promotionTargetTier?: number
   continueLabel?: string
   onContinue: () => void
@@ -46,6 +48,9 @@ export function StoryGangTreePanel({
     (state) => state.claimedGangWallRewardIds,
   )
   const claimReward = useStoryStore((state) => state.claimGangWallReward)
+  const requiredIds = requiredRewardId
+    ? [...(requiredRewardIds ?? []), requiredRewardId]
+    : (requiredRewardIds ?? [])
 
   return (
     <div className="story-gang__overlay">
@@ -83,11 +88,11 @@ export function StoryGangTreePanel({
             />
           </div>
           <p>
-            {requiredRewardId
-              ? `你已到达 T${currentRank.tier}，请从 T${currentRank.tier - 1} 收复指定人物与奖励。`
+            {requiredIds.length > 0
+              ? `本轮需要完成 ${requiredIds.length} 名指定成员的交接；全部照片点亮后才能继续。`
               : promotionRank
                 ? `声望达到 ${promotionRank.reputationThreshold} 后，点击晋升并进入「${promotionRank.promotionEvent}」。`
-                : '玩法获得声望；达到门槛后主动晋升。晋升至 N 层，只能收复 N-1 层。'}
+                : '玩法获得声望；达到门槛后主动晋升。晋升至 N 层，只能承接 N-1 层。'}
           </p>
         </div>
         <div className="story-gang__scroll">
@@ -96,6 +101,7 @@ export function StoryGangTreePanel({
             currentStepNumber={currentStepNumber}
             claimedRewardIds={claimedRewardIds}
             requiredRewardId={requiredRewardId}
+            requiredRewardIds={requiredRewardIds}
             onClaimReward={(rewardId) => {
               if (claimReward(rewardId)) onRewardClaimed(rewardId)
             }}

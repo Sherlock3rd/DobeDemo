@@ -1,0 +1,177 @@
+.wreck-collection {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  color: #eefaf7;
+  background:
+    radial-gradient(
+      circle at 70% 20%,
+      rgba(34, 197, 148, 0.16),
+      transparent 38%
+    ),
+    #06110f;
+}
+
+.wreck-collection > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(94, 234, 212, 0.28);
+  letter-spacing: 0.12em;
+}
+
+.wreck-collection__body {
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.45fr) minmax(28rem, 1fr);
+  grid-template-rows: 1fr auto;
+  gap: 1rem 1.5rem;
+  width: min(72rem, calc(100% - 2rem));
+  min-height: 0;
+  margin: 1rem auto;
+}
+
+.wreck-collection__eyebrow {
+  color: #f6c54b;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.wreck-collection__body h2 {
+  margin: 0.4rem 0;
+  font-size: clamp(1.8rem, 4vw, 3.5rem);
+}
+
+.wreck-collection__map {
+  position: relative;
+  min-height: 31rem;
+  overflow: hidden;
+  border: 1px solid rgba(94, 234, 212, 0.32);
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(
+      120deg,
+      transparent 46%,
+      rgba(255, 255, 255, 0.09) 47% 52%,
+      transparent 53%
+    ),
+    linear-gradient(
+      30deg,
+      transparent 42%,
+      rgba(255, 255, 255, 0.07) 43% 48%,
+      transparent 49%
+    ),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.02) 0 1px,
+      transparent 1px 26px
+    ),
+    #0d1e1b;
+}
+
+.wreck-collection__marker {
+  position: absolute;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.1rem 0.6rem;
+  width: min(16rem, 42%);
+  padding: 0.65rem;
+  color: inherit;
+  text-align: left;
+  border: 1px solid rgba(246, 197, 75, 0.55);
+  border-radius: 0.85rem;
+  background: rgba(4, 16, 14, 0.92);
+  box-shadow: 0 0 1.5rem rgba(246, 197, 75, 0.08);
+}
+
+.wreck-collection__marker > span {
+  grid-row: 1 / 3;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  color: #07110f;
+  font-weight: 900;
+  border-radius: 50%;
+  background: #f6c54b;
+}
+
+.wreck-collection__marker small {
+  color: #a9c5bd;
+}
+
+.wreck-collection__marker[data-selected='true'] {
+  border-color: #5eead4;
+  background: rgba(15, 66, 57, 0.94);
+}
+
+.wreck-collection__marker[data-selected='true'] > span {
+  background: #5eead4;
+}
+
+.wreck-collection__marker--north {
+  top: 10%;
+  left: 8%;
+}
+
+.wreck-collection__marker--east {
+  top: 38%;
+  right: 6%;
+}
+
+.wreck-collection__marker--south {
+  bottom: 10%;
+  left: 15%;
+}
+
+.wreck-collection__garage {
+  position: absolute;
+  right: 11%;
+  bottom: 12%;
+  padding: 0.7rem 0.9rem;
+  color: #06110f;
+  border-radius: 0.7rem;
+  background: #5eead4;
+}
+
+.wreck-collection__garage span,
+.wreck-collection__garage strong {
+  display: block;
+}
+
+.wreck-collection__confirm {
+  grid-column: 2;
+  min-height: 3rem;
+  color: #06110f;
+  font-weight: 900;
+  border: 0;
+  border-radius: 0.75rem;
+  background: #f6c54b;
+}
+
+.wreck-collection__confirm:disabled {
+  color: #7b918b;
+  background: #20312e;
+}
+
+@media (max-width: 720px) {
+  .wreck-collection__body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .wreck-collection__map {
+    min-height: 25rem;
+  }
+
+  .wreck-collection__confirm {
+    grid-column: 1;
+  }
+
+  .wreck-collection__marker {
+    width: 48%;
+    font-size: 0.78rem;
+  }
+}
